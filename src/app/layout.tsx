@@ -14,8 +14,24 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "X Content Partner",
-  description: "Turn your research notes into optimized X/Twitter content",
+  title: "ThreadSmith",
+  description: "Your ideas, expertly threaded. Turn your research into engaging X content while keeping your authentic voice.",
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/icon-512.svg",
+  },
+  openGraph: {
+    title: "ThreadSmith",
+    description: "Your ideas, expertly threaded. Turn your research into engaging X content while keeping your authentic voice.",
+    images: ["/og-image.svg"],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ThreadSmith",
+    description: "Your ideas, expertly threaded. Turn your research into engaging X content while keeping your authentic voice.",
+    images: ["/og-image.svg"],
+  },
 };
 
 export default function RootLayout({

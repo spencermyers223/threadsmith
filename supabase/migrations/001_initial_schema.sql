@@ -1,4 +1,4 @@
--- X Content Partner Database Schema
+-- ThreadSmith Database Schema
 -- Run this in Supabase SQL Editor (Dashboard > SQL Editor > New Query)
 
 -- Enable UUID extension (usually already enabled)

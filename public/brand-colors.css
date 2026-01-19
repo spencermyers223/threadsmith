@@ -1,0 +1,71 @@
+/* ThreadSmith Brand Colors - CSS Variables */
+
+:root {
+  /* Primary Colors */
+  --ts-gold: #F59E0B;
+  --ts-gold-hover: #FBBF24;
+  --ts-gold-active: #D97706;
+  
+  --ts-night: #09090B;
+  --ts-silver: #E5E7EB;
+  
+  /* Secondary Colors */
+  --ts-warm-gray: #78716C;
+  --ts-charcoal: #18181B;
+  --ts-zinc: #27272A;
+  
+  /* Semantic Colors */
+  --ts-success: #22C55E;
+  --ts-error: #EF4444;
+  --ts-info: #3B82F6;
+  --ts-warning: #F59E0B;
+  
+  /* Text Colors */
+  --ts-text-primary: #E5E7EB;
+  --ts-text-secondary: #A1A1AA;
+  --ts-text-muted: #71717A;
+  --ts-text-inverse: #09090B;
+  
+  /* Background Colors */
+  --ts-bg-primary: #09090B;
+  --ts-bg-secondary: #18181B;
+  --ts-bg-elevated: #27272A;
+  
+  /* Border Colors */
+  --ts-border: #27272A;
+  --ts-border-focus: #F59E0B;
+  
+  /* Spacing */
+  --ts-radius-sm: 4px;
+  --ts-radius-md: 8px;
+  --ts-radius-lg: 12px;
+  --ts-radius-xl: 16px;
+  
+  /* Shadows */
+  --ts-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --ts-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --ts-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  /* Transitions */
+  --ts-transition-fast: 150ms ease;
+  --ts-transition-normal: 250ms ease;
+  --ts-transition-slow: 350ms ease;
+}
+
+/* Tailwind Config Extension */
+/*
+  Add to tailwind.config.js:
+  
+  theme: {
+    extend: {
+      colors: {
+        'ts-gold': '#F59E0B',
+        'ts-night': '#09090B',
+        'ts-silver': '#E5E7EB',
+        'ts-warm-gray': '#78716C',
+        'ts-charcoal': '#18181B',
+        'ts-zinc': '#27272A',
+      }
+    }
+  }
+*/

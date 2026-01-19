@@ -1,0 +1,43 @@
+<svg width="400" height="120" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Professional ThreadSmith Logo - Horizontal Lockup -->
+  
+  <!-- Spool Icon -->
+  <g transform="translate(50, 60)">
+    <!-- Spool core - refined cylinder -->
+    <rect x="-18" y="-28" width="36" height="56" fill="#F59E0B" rx="1"/>
+    
+    <!-- Thread wrapped around - clean gradient effect -->
+    <rect x="-22" y="-18" width="44" height="36" fill="#E5E7EB" rx="2"/>
+    
+    <!-- Subtle thread line details -->
+    <line x1="-22" y1="-8" x2="22" y2="-8" stroke="#D1D5DB" stroke-width="0.5"/>
+    <line x1="-22" y1="2" x2="22" y2="2" stroke="#D1D5DB" stroke-width="0.5"/>
+    <line x1="-22" y1="12" x2="22" y2="12" stroke="#D1D5DB" stroke-width="0.5"/>
+    
+    <!-- Top disc - refined ellipse -->
+    <ellipse cx="0" cy="-28" rx="28" ry="8" fill="#78716C"/>
+    <ellipse cx="0" cy="-28" rx="18" ry="5" fill="#09090B"/>
+    
+    <!-- Bottom disc -->
+    <ellipse cx="0" cy="28" rx="28" ry="8" fill="#78716C"/>
+    
+    <!-- Thread trailing - elegant curve -->
+    <path d="M 22 0 
+             C 38 -5, 42 10, 38 22
+             C 34 34, 45 38, 52 35"
+          stroke="#F59E0B" 
+          stroke-width="3" 
+          fill="none"
+          stroke-linecap="round"/>
+  </g>
+  
+  <!-- Wordmark -->
+  <text x="110" y="68" 
+        font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" 
+        font-size="38" 
+        font-weight="600"
+        letter-spacing="-0.5"
+        fill="#E5E7EB">
+    Thread<tspan fill="#F59E0B">Smith</tspan>
+  </text>
+</svg>

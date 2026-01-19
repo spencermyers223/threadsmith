@@ -2,8 +2,9 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Sparkles, Settings, LogOut } from 'lucide-react'
+import { Settings, LogOut } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState, useRef, useEffect } from 'react'
 import type { User } from '@supabase/supabase-js'
 
@@ -35,9 +36,15 @@ export function Header({ user }: HeaderProps) {
 
   return (
     <header className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4">
-      <Link href="/dashboard" className="flex items-center gap-2">
-        <Sparkles className="w-5 h-5 text-accent" />
-        <span className="font-semibold">X Content Partner</span>
+      <Link href="/dashboard" className="flex items-center">
+        <Image
+          src="/logo.svg"
+          alt="ThreadSmith"
+          width={160}
+          height={36}
+          className="h-8 w-auto"
+          priority
+        />
       </Link>
 
       <nav className="flex items-center gap-2">
@@ -72,7 +79,7 @@ export function Header({ user }: HeaderProps) {
           onClick={() => setShowMenu(!showMenu)}
           className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[var(--card)] transition-colors"
         >
-          <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-white text-sm font-medium">
+          <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-[var(--accent-text)] text-sm font-medium">
             {user.email?.[0].toUpperCase()}
           </div>
         </button>

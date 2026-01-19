@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 64" width="320" height="64">
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FBBF24"/>
+      <stop offset="50%" style="stop-color:#F59E0B"/>
+      <stop offset="100%" style="stop-color:#D97706"/>
+    </linearGradient>
+    <linearGradient id="threadGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#F3F4F6"/>
+      <stop offset="50%" style="stop-color:#E5E7EB"/>
+      <stop offset="100%" style="stop-color:#D1D5DB"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Thread Spool Icon -->
+  <g transform="translate(8, 8)">
+    <!-- Left disc -->
+    <ellipse cx="24" cy="24" rx="6" ry="24" fill="#78716C"/>
+    <ellipse cx="24" cy="24" rx="4" ry="22" fill="#8B8279"/>
+
+    <!-- Right disc -->
+    <ellipse cx="24" cy="24" rx="6" ry="24" fill="#78716C" transform="translate(0,0)"/>
+
+    <!-- Spool body (gold) -->
+    <rect x="8" y="8" width="32" height="32" rx="2" fill="url(#goldGradient)"/>
+
+    <!-- Thread wrapped around spool -->
+    <rect x="10" y="10" width="28" height="28" rx="14" fill="url(#threadGradient)"/>
+
+    <!-- Center hole -->
+    <circle cx="24" cy="24" r="6" fill="#09090B"/>
+    <circle cx="24" cy="24" r="4" fill="#18181B"/>
+
+    <!-- Thread detail lines -->
+    <path d="M12 16 Q24 14 36 16" stroke="#D1D5DB" stroke-width="0.5" fill="none" opacity="0.6"/>
+    <path d="M12 20 Q24 18 36 20" stroke="#D1D5DB" stroke-width="0.5" fill="none" opacity="0.6"/>
+    <path d="M12 28 Q24 26 36 28" stroke="#D1D5DB" stroke-width="0.5" fill="none" opacity="0.6"/>
+    <path d="M12 32 Q24 30 36 32" stroke="#D1D5DB" stroke-width="0.5" fill="none" opacity="0.6"/>
+
+    <!-- Top/bottom discs -->
+    <ellipse cx="24" cy="6" rx="18" ry="4" fill="#78716C"/>
+    <ellipse cx="24" cy="6" rx="16" ry="3" fill="#8B8279"/>
+    <ellipse cx="24" cy="42" rx="18" ry="4" fill="#78716C"/>
+    <ellipse cx="24" cy="42" rx="16" ry="3" fill="#6B6560"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="72" y="42" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="28" font-weight="600" fill="#E5E7EB">Thread</text>
+  <text x="165" y="42" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="28" font-weight="700" fill="#F59E0B">Smith</text>
+</svg>

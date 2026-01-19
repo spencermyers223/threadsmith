@@ -16,11 +16,30 @@ const config: Config = {
           DEFAULT: 'var(--accent)',
           hover: 'var(--accent-hover)',
         },
-        cream: {
-          50: '#FAF9F6',
-          100: '#f5f3ef',
-          200: '#e5e0d8',
+        // ThreadSmith Night Writer palette
+        night: {
+          DEFAULT: '#09090B',
+          50: '#18181B',
+          100: '#27272A',
         },
+        gold: {
+          DEFAULT: '#F59E0B',
+          light: '#FBBF24',
+          dark: '#D97706',
+        },
+        silver: {
+          DEFAULT: '#E5E7EB',
+          muted: '#D1D5DB',
+        },
+        warmgray: {
+          DEFAULT: '#78716C',
+          light: '#8B8279',
+        },
+        charcoal: '#18181B',
+        // Semantic colors
+        success: 'var(--success)',
+        error: 'var(--error)',
+        info: 'var(--info)',
       },
       borderRadius: {
         DEFAULT: '8px',
@@ -29,8 +48,9 @@ const config: Config = {
         DEFAULT: '150ms',
       },
       boxShadow: {
-        'soft': '0 2px 8px rgba(0, 0, 0, 0.04)',
-        'card': '0 1px 3px rgba(0, 0, 0, 0.08)',
+        'soft': '0 2px 8px rgba(0, 0, 0, 0.3)',
+        'card': '0 1px 3px rgba(0, 0, 0, 0.4)',
+        'glow': '0 0 20px rgba(245, 158, 11, 0.15)',
       },
     },
   },

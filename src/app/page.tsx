@@ -1,5 +1,6 @@
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton'
 import { FileText, MessageSquare, Calendar, Sparkles } from 'lucide-react'
+import Image from 'next/image'
 
 export default function LandingPage() {
   return (
@@ -7,10 +8,14 @@ export default function LandingPage() {
       {/* Header */}
       <header className="border-b border-[var(--border)]">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-accent" />
-            <span className="text-xl font-semibold">X Content Partner</span>
-          </div>
+          <Image
+            src="/logo.svg"
+            alt="ThreadSmith"
+            width={180}
+            height={40}
+            className="h-9 w-auto"
+            priority
+          />
         </div>
       </header>
 
@@ -18,12 +23,12 @@ export default function LandingPage() {
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-20">
         <div className="max-w-2xl text-center space-y-8">
           <h1 className="text-4xl sm:text-5xl font-bold leading-tight">
-            Turn your research into
-            <span className="text-accent"> optimized X content</span>
+            Your ideas,
+            <span className="text-accent"> expertly threaded</span>
           </h1>
           <p className="text-lg text-[var(--muted)] max-w-xl mx-auto">
-            Upload your notes, chat with AI to generate tweets, threads, and articles,
-            then schedule everything from one place.
+            Turn your research into engaging X content while keeping your authentic voice.
+            Upload notes, generate optimized content with AI, and schedule everything from one place.
           </p>
 
           <div className="w-full max-w-sm mx-auto">
@@ -59,7 +64,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-[var(--border)] py-6">
         <div className="max-w-6xl mx-auto px-6 text-center text-sm text-[var(--muted)]">
-          Built for researchers who want to share their work on X
+          ThreadSmith - Built for researchers who want to share their work on X
         </div>
       </footer>
     </div>

@@ -1,4 +1,4 @@
-# X Content Partner
+# ThreadSmith
 
 ## Project Overview
 A web app that helps researchers turn their notes into optimized X/Twitter content. Users upload research files (.docx, .md, .txt), chat with AI to generate tweets/threads/articles, then organize content in a calendar/scheduler.
