@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 64" width="320" height="64">
   <defs>
-    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#FBBF24"/>
-      <stop offset="50%" style="stop-color:#F59E0B"/>
-      <stop offset="100%" style="stop-color:#D97706"/>
+    <linearGradient id="sandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D4C4A8"/>
+      <stop offset="50%" style="stop-color:#C9B896"/>
+      <stop offset="100%" style="stop-color:#8B7355"/>
     </linearGradient>
     <linearGradient id="threadGradient" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" style="stop-color:#F3F4F6"/>
@@ -21,8 +21,8 @@
     <!-- Right disc -->
     <ellipse cx="24" cy="24" rx="6" ry="24" fill="#78716C" transform="translate(0,0)"/>
 
-    <!-- Spool body (gold) -->
-    <rect x="8" y="8" width="32" height="32" rx="2" fill="url(#goldGradient)"/>
+    <!-- Spool body (sand) -->
+    <rect x="8" y="8" width="32" height="32" rx="2" fill="url(#sandGradient)"/>
 
     <!-- Thread wrapped around spool -->
     <rect x="10" y="10" width="28" height="28" rx="14" fill="url(#threadGradient)"/>
@@ -46,5 +46,5 @@
 
   <!-- Wordmark -->
   <text x="72" y="42" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="28" font-weight="600" fill="#E5E7EB">Thread</text>
-  <text x="165" y="42" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="28" font-weight="700" fill="#F59E0B">Smith</text>
+  <text x="165" y="42" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="28" font-weight="700" fill="#C9B896">Smith</text>
 </svg>

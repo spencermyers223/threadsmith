@@ -2,9 +2,10 @@
 
 :root {
   /* Primary Colors */
-  --ts-gold: #F59E0B;
-  --ts-gold-hover: #FBBF24;
-  --ts-gold-active: #D97706;
+  --ts-sand: #C9B896;
+  --ts-sand-hover: #D4C4A8;
+  --ts-sand-muted: #8B7355;
+  --ts-sand-alt: #A8967A;
   
   --ts-night: #09090B;
   --ts-silver: #E5E7EB;
@@ -18,7 +19,7 @@
   --ts-success: #22C55E;
   --ts-error: #EF4444;
   --ts-info: #3B82F6;
-  --ts-warning: #F59E0B;
+  --ts-warning: #C9B896;
   
   /* Text Colors */
   --ts-text-primary: #E5E7EB;
@@ -33,7 +34,7 @@
   
   /* Border Colors */
   --ts-border: #27272A;
-  --ts-border-focus: #F59E0B;
+  --ts-border-focus: #C9B896;
   
   /* Spacing */
   --ts-radius-sm: 4px;
@@ -59,7 +60,7 @@
   theme: {
     extend: {
       colors: {
-        'ts-gold': '#F59E0B',
+        'ts-sand': '#C9B896',
         'ts-night': '#09090B',
         'ts-silver': '#E5E7EB',
         'ts-warm-gray': '#78716C',

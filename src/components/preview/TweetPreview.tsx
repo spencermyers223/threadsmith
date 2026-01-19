@@ -16,7 +16,7 @@ export function TweetPreview({ content }: TweetPreviewProps) {
 
   const getCounterColor = () => {
     if (charCount > maxChars) return 'text-red-400'
-    if (charCount >= 250) return 'text-yellow-400'
+    if (charCount >= 250) return 'text-sand'
     return 'text-green-400'
   }
 
@@ -44,7 +44,7 @@ export function TweetPreview({ content }: TweetPreviewProps) {
 
       {/* Warnings */}
       {hasLink && (
-        <div className="flex items-center gap-2 text-yellow-400 text-sm p-3 bg-yellow-400/10 rounded-lg">
+        <div className="flex items-center gap-2 text-sand text-sm p-3 bg-sand/10 rounded-lg">
           <LinkIcon className="w-4 h-4" />
           <span>External link detected. Consider moving to a reply for better reach.</span>
         </div>

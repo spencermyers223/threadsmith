@@ -11,13 +11,13 @@ import { FilePreviewModal } from '@/components/files/FilePreviewModal'
 
 // Available folder colors
 const FOLDER_COLORS = [
-  { name: 'yellow', label: 'Yellow', class: 'text-yellow-400', bg: 'bg-yellow-400' },
+  { name: 'sand', label: 'Sand', class: 'text-sand', bg: 'bg-sand' },
   { name: 'blue', label: 'Blue', class: 'text-blue-400', bg: 'bg-blue-400' },
   { name: 'green', label: 'Green', class: 'text-green-400', bg: 'bg-green-400' },
   { name: 'red', label: 'Red', class: 'text-red-400', bg: 'bg-red-400' },
   { name: 'purple', label: 'Purple', class: 'text-purple-400', bg: 'bg-purple-400' },
   { name: 'pink', label: 'Pink', class: 'text-pink-400', bg: 'bg-pink-400' },
-  { name: 'orange', label: 'Orange', class: 'text-orange-400', bg: 'bg-orange-400' },
+  { name: 'tan', label: 'Tan', class: 'text-sand-alt', bg: 'bg-sand-alt' },
   { name: 'cyan', label: 'Cyan', class: 'text-cyan-400', bg: 'bg-cyan-400' },
   { name: 'gray', label: 'Gray', class: 'text-gray-400', bg: 'bg-gray-400' },
 ] as const
@@ -322,7 +322,7 @@ export function Sidebar({ userId, currentConversationId, onSelectConversation, o
 
   const getFolderColorClass = (colorName: string) => {
     const color = FOLDER_COLORS.find(c => c.name === colorName)
-    return color?.class || 'text-yellow-400'
+    return color?.class || 'text-sand'
   }
 
   const handleMoveFile = async (fileId: string, folderId: string | null) => {
@@ -730,7 +730,7 @@ export function Sidebar({ userId, currentConversationId, onSelectConversation, o
                   {/* New folder input */}
                   {showNewFolderInput && (
                     <li className="flex items-center gap-2 px-2 py-2">
-                      <Folder className="w-4 h-4 text-yellow-400" />
+                      <Folder className="w-4 h-4 text-sand" />
                       <input
                         ref={newFolderInputRef}
                         type="text"

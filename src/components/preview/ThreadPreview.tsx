@@ -1,7 +1,6 @@
 'use client'
 
 import { Plus, X, AlertCircle, Link as LinkIcon, ImageIcon } from 'lucide-react'
-import { ProfileHeader } from './ProfileHeader'
 
 export interface ThreadTweet {
   id: string
@@ -12,17 +11,16 @@ interface ThreadPreviewProps {
   tweets: ThreadTweet[]
   onAddTweet?: () => void
   onDeleteTweet?: (id: string) => void
-  onUpdateTweet?: (id: string, content: string) => void
 }
 
-export function ThreadPreview({ tweets, onAddTweet, onDeleteTweet, onUpdateTweet }: ThreadPreviewProps) {
+export function ThreadPreview({ tweets, onAddTweet, onDeleteTweet }: ThreadPreviewProps) {
   const maxChars = 280
   const hasOverLimit = tweets.some(t => t.content.length > maxChars)
   const hasLink = tweets.some(t => /(https?:\/\/[^\s]+)/.test(t.content))
 
   const getCounterColor = (length: number) => {
     if (length > maxChars) return 'text-red-400'
-    if (length >= 250) return 'text-yellow-400'
+    if (length >= 250) return 'text-sand'
     return 'text-green-400'
   }
 
@@ -119,12 +117,12 @@ export function ThreadPreview({ tweets, onAddTweet, onDeleteTweet, onUpdateTweet
           {tweets.length} {tweets.length === 1 ? 'tweet' : 'tweets'} in thread
         </span>
         {tweets.length > 0 && tweets.length < 5 && (
-          <span className="text-yellow-400">
+          <span className="text-sand">
             Consider adding more value (optimal: 5-15 tweets)
           </span>
         )}
         {tweets.length > 15 && (
-          <span className="text-yellow-400">
+          <span className="text-sand">
             Thread may be too long (optimal: 5-15 tweets)
           </span>
         )}
@@ -132,7 +130,7 @@ export function ThreadPreview({ tweets, onAddTweet, onDeleteTweet, onUpdateTweet
 
       {/* Warnings */}
       {hasLink && (
-        <div className="flex items-center gap-2 text-yellow-400 text-sm p-3 bg-yellow-400/10 rounded-lg">
+        <div className="flex items-center gap-2 text-sand text-sm p-3 bg-sand/10 rounded-lg">
           <LinkIcon className="w-4 h-4" />
           <span>External link detected. Consider moving to a reply for better reach.</span>
         </div>

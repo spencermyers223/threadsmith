@@ -76,7 +76,7 @@ export function ArticlePreview({ content, headline }: ArticlePreviewProps) {
 
       {/* Warnings */}
       {warning && (
-        <div className="flex items-center gap-2 text-yellow-400 text-sm p-3 bg-yellow-400/10 rounded-lg">
+        <div className="flex items-center gap-2 text-sand text-sm p-3 bg-sand/10 rounded-lg">
           <AlertTriangle className="w-4 h-4 flex-shrink-0" />
           <span>{warning.message}</span>
         </div>

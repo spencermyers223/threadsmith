@@ -78,7 +78,7 @@ export function ThreadEditor({ tweets, onTweetsChange }: ThreadEditorProps) {
 
   const getCharCountColor = (length: number) => {
     if (length > 280) return 'text-red-400'
-    if (length >= 250) return 'text-yellow-400'
+    if (length >= 250) return 'text-sand'
     return 'text-[var(--muted)]'
   }
 

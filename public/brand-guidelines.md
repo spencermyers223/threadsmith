@@ -15,7 +15,7 @@ ThreadSmith is a content crafting tool that helps researchers and thought leader
 The ThreadSmith logo combines a thread spool icon with the wordmark. The spool represents the crafting of content, while the trailing thread symbolizes the continuous flow of ideas.
 
 ### Logo Variations
-- **Primary (Full Color):** For dark backgrounds - gold accent with silver/white elements
+- **Primary (Full Color):** For dark backgrounds - sand accent with silver/white elements
 - **White:** Single color for dark backgrounds
 - **Dark:** Single color for light backgrounds
 - **Icon Only:** For app icons, favicons, and small applications
@@ -41,7 +41,7 @@ Maintain clear space around the logo equal to the height of the "T" in ThreadSmi
 
 | Color | Name | Hex | RGB | Usage |
 |-------|------|-----|-----|-------|
-| ![#F59E0B](https://via.placeholder.com/20/F59E0B/F59E0B) | Gold | `#F59E0B` | 245, 158, 11 | Primary accent, CTAs, highlights |
+| ![#C9B896](https://via.placeholder.com/20/C9B896/C9B896) | Sand | `#C9B896` | 201, 184, 150 | Primary accent, CTAs, highlights |
 | ![#09090B](https://via.placeholder.com/20/09090B/09090B) | Night | `#09090B` | 9, 9, 11 | Primary background |
 | ![#E5E7EB](https://via.placeholder.com/20/E5E7EB/E5E7EB) | Silver | `#E5E7EB` | 229, 231, 235 | Primary text, thread element |
 
@@ -94,7 +94,7 @@ Maintain clear space around the logo equal to the height of the "T" in ThreadSmi
 Use Lucide icons throughout the application for consistency.
 - Stroke width: 1.5px (default)
 - Size: 20px for inline, 24px for standalone
-- Color: Match surrounding text or use Gold for emphasis
+- Color: Match surrounding text or use Sand for emphasis
 
 ---
 
@@ -103,7 +103,7 @@ Use Lucide icons throughout the application for consistency.
 ### Buttons
 
 **Primary Button**
-- Background: Gold (#F59E0B)
+- Background: Sand (#C9B896)
 - Text: Night (#09090B)
 - Border radius: 8px
 - Padding: 12px 24px
@@ -126,7 +126,7 @@ Use Lucide icons throughout the application for consistency.
 - Background: Night (#09090B)
 - Border: 1px solid Zinc (#27272A)
 - Border radius: 8px
-- Focus: Border Gold (#F59E0B)
+- Focus: Border Sand (#C9B896)
 
 ---
 

@@ -4,10 +4,10 @@
       <stop offset="0%" style="stop-color:#18181B"/>
       <stop offset="100%" style="stop-color:#09090B"/>
     </linearGradient>
-    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#FBBF24"/>
-      <stop offset="50%" style="stop-color:#F59E0B"/>
-      <stop offset="100%" style="stop-color:#D97706"/>
+    <linearGradient id="sandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D4C4A8"/>
+      <stop offset="50%" style="stop-color:#C9B896"/>
+      <stop offset="100%" style="stop-color:#8B7355"/>
     </linearGradient>
     <linearGradient id="threadGrad" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" style="stop-color:#F3F4F6"/>
@@ -15,8 +15,8 @@
       <stop offset="100%" style="stop-color:#D1D5DB"/>
     </linearGradient>
     <linearGradient id="buttonGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#FBBF24"/>
-      <stop offset="100%" style="stop-color:#F59E0B"/>
+      <stop offset="0%" style="stop-color:#D4C4A8"/>
+      <stop offset="100%" style="stop-color:#C9B896"/>
     </linearGradient>
   </defs>
 
@@ -24,16 +24,16 @@
   <rect width="1200" height="630" fill="url(#bgGrad)"/>
 
   <!-- Decorative glow circles -->
-  <circle cx="100" cy="100" r="200" fill="#F59E0B" opacity="0.03"/>
-  <circle cx="1100" cy="530" r="250" fill="#F59E0B" opacity="0.03"/>
-  <circle cx="600" cy="315" r="400" fill="#F59E0B" opacity="0.02"/>
+  <circle cx="100" cy="100" r="200" fill="#C9B896" opacity="0.03"/>
+  <circle cx="1100" cy="530" r="250" fill="#C9B896" opacity="0.03"/>
+  <circle cx="600" cy="315" r="400" fill="#C9B896" opacity="0.02"/>
 
   <!-- Logo Section -->
   <g transform="translate(600, 240)">
     <!-- Spool Icon -->
     <g transform="translate(-200, 0)">
-      <!-- Spool body (gold) -->
-      <rect x="-30" y="-48" width="60" height="96" rx="3" fill="url(#goldGrad)"/>
+      <!-- Spool body (sand) -->
+      <rect x="-30" y="-48" width="60" height="96" rx="3" fill="url(#sandGrad)"/>
 
       <!-- Thread wrapped around spool -->
       <rect x="-40" y="-33" width="80" height="66" rx="33" fill="url(#threadGrad)"/>
@@ -68,7 +68,7 @@
           font-size="72"
           font-weight="700"
           letter-spacing="-2"
-          fill="#F59E0B">Smith</text>
+          fill="#C9B896">Smith</text>
   </g>
 
   <!-- Tagline -->

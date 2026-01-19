@@ -22,10 +22,11 @@ const config: Config = {
           50: '#18181B',
           100: '#27272A',
         },
-        gold: {
-          DEFAULT: '#F59E0B',
-          light: '#FBBF24',
-          dark: '#D97706',
+        sand: {
+          DEFAULT: '#C9B896',
+          hover: '#D4C4A8',
+          muted: '#8B7355',
+          alt: '#A8967A',
         },
         silver: {
           DEFAULT: '#E5E7EB',
@@ -50,7 +51,7 @@ const config: Config = {
       boxShadow: {
         'soft': '0 2px 8px rgba(0, 0, 0, 0.3)',
         'card': '0 1px 3px rgba(0, 0, 0, 0.4)',
-        'glow': '0 0 20px rgba(245, 158, 11, 0.15)',
+        'glow': '0 0 20px rgba(201, 184, 150, 0.15)',
       },
     },
   },

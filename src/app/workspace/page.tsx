@@ -385,7 +385,7 @@ export default function WorkspacePage() {
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                {hasUnsavedChanges && <span className="w-2 h-2 bg-yellow-400 rounded-full" />}
+                {hasUnsavedChanges && <span className="w-2 h-2 bg-sand rounded-full" />}
                 Save Draft
               </>
             )}

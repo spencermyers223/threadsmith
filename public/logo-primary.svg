@@ -4,7 +4,7 @@
   <!-- Spool Icon -->
   <g transform="translate(50, 60)">
     <!-- Spool core - refined cylinder -->
-    <rect x="-18" y="-28" width="36" height="56" fill="#F59E0B" rx="1"/>
+    <rect x="-18" y="-28" width="36" height="56" fill="#C9B896" rx="1"/>
     
     <!-- Thread wrapped around - clean gradient effect -->
     <rect x="-22" y="-18" width="44" height="36" fill="#E5E7EB" rx="2"/>
@@ -25,7 +25,7 @@
     <path d="M 22 0 
              C 38 -5, 42 10, 38 22
              C 34 34, 45 38, 52 35"
-          stroke="#F59E0B" 
+          stroke="#C9B896"
           stroke-width="3" 
           fill="none"
           stroke-linecap="round"/>
@@ -38,6 +38,6 @@
         font-weight="600"
         letter-spacing="-0.5"
         fill="#E5E7EB">
-    Thread<tspan fill="#F59E0B">Smith</tspan>
+    Thread<tspan fill="#C9B896">Smith</tspan>
   </text>
 </svg>
