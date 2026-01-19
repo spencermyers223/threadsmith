@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Bell, Moon, Sun, User, Check, AlertCircle, LogOut } from 'lucide-react'
 import Link from 'next/link'
+import { useTheme } from '@/components/providers/ThemeProvider'
 
 interface Settings {
   notifications: boolean
@@ -14,10 +15,8 @@ interface Settings {
 export default function SettingsPage() {
   const router = useRouter()
   const supabase = createClient()
-  const [settings, setSettings] = useState<Settings>({
-    notifications: true,
-    theme: 'dark',
-  })
+  const { theme, setTheme } = useTheme()
+  const [notifications, setNotifications] = useState(true)
   const [email, setEmail] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -36,22 +35,18 @@ export default function SettingsPage() {
       .single()
 
     if (profile?.settings) {
-      setSettings(profile.settings as Settings)
+      const settings = profile.settings as Settings
+      setNotifications(settings.notifications)
+      // Sync theme from DB if it differs from localStorage
+      if (settings.theme && settings.theme !== theme) {
+        setTheme(settings.theme)
+      }
     }
-  }, [supabase])
+  }, [supabase, theme, setTheme])
 
   useEffect(() => {
     loadSettings()
   }, [loadSettings])
-
-  useEffect(() => {
-    // Apply theme
-    if (settings.theme === 'light') {
-      document.documentElement.classList.add('light')
-    } else {
-      document.documentElement.classList.remove('light')
-    }
-  }, [settings.theme])
 
   const handleSave = async () => {
     setSaving(true)
@@ -60,6 +55,11 @@ export default function SettingsPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
+
+      const settings: Settings = {
+        notifications,
+        theme,
+      }
 
       const { error: updateError } = await supabase
         .from('profiles')
@@ -84,17 +84,11 @@ export default function SettingsPage() {
   }
 
   const toggleTheme = () => {
-    setSettings(prev => ({
-      ...prev,
-      theme: prev.theme === 'dark' ? 'light' : 'dark',
-    }))
+    setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
   const toggleNotifications = () => {
-    setSettings(prev => ({
-      ...prev,
-      notifications: !prev.notifications,
-    }))
+    setNotifications(prev => !prev)
   }
 
   return (
@@ -141,7 +135,7 @@ export default function SettingsPage() {
         <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--background)]">
             <h2 className="font-semibold flex items-center gap-2">
-              {settings.theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
               Appearance
             </h2>
           </div>
@@ -150,18 +144,18 @@ export default function SettingsPage() {
               <div>
                 <p className="font-medium">Theme</p>
                 <p className="text-sm text-[var(--muted)]">
-                  {settings.theme === 'dark' ? 'Dark mode' : 'Light mode'}
+                  {theme === 'dark' ? 'Dark mode' : 'Light mode'}
                 </p>
               </div>
               <button
                 onClick={toggleTheme}
                 className={`relative w-12 h-6 rounded-full transition-colors ${
-                  settings.theme === 'light' ? 'bg-accent' : 'bg-[var(--border)]'
+                  theme === 'light' ? 'bg-accent' : 'bg-[var(--border)]'
                 }`}
               >
                 <div
                   className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                    settings.theme === 'light' ? 'translate-x-7' : 'translate-x-1'
+                    theme === 'light' ? 'translate-x-7' : 'translate-x-1'
                   }`}
                 />
               </button>
@@ -188,12 +182,12 @@ export default function SettingsPage() {
               <button
                 onClick={toggleNotifications}
                 className={`relative w-12 h-6 rounded-full transition-colors ${
-                  settings.notifications ? 'bg-accent' : 'bg-[var(--border)]'
+                  notifications ? 'bg-accent' : 'bg-[var(--border)]'
                 }`}
               >
                 <div
                   className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                    settings.notifications ? 'translate-x-7' : 'translate-x-1'
+                    notifications ? 'translate-x-7' : 'translate-x-1'
                   }`}
                 />
               </button>
@@ -206,7 +200,7 @@ export default function SettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-6 py-2.5 bg-accent hover:bg-accent-hover disabled:opacity-50 text-white rounded-lg transition-colors"
+            className="flex items-center gap-2 px-6 py-2.5 bg-accent hover:bg-accent-hover disabled:opacity-50 text-[var(--accent-text)] rounded-lg transition-colors font-medium"
           >
             {saved ? (
               <>
@@ -215,7 +209,7 @@ export default function SettingsPage() {
               </>
             ) : saving ? (
               <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                 Saving...
               </>
             ) : (
