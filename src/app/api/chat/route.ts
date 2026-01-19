@@ -55,6 +55,26 @@ Just output the actual tweet/thread/article text. Nothing else.
 
 Remember: The user will copy your output directly to X. Give them ONLY what they would actually post.`
 
+// Patterns to detect folder references in user messages
+const FOLDER_PATTERNS = [
+  /(?:use|using|from|reference|with|in)\s+(?:my\s+)?["']?([^"'\n]+?)["']?\s+folder/i,
+  /(?:my\s+)?["']?([^"'\n]+?)["']?\s+folder\s+(?:content|files|notes|research)/i,
+  /folder\s+(?:called|named)\s+["']?([^"'\n]+?)["']?/i,
+  /["']([^"'\n]+?)["']\s+folder/i,
+]
+
+// Extract folder name from message if referenced
+function extractFolderReference(message: string): string | null {
+  for (const pattern of FOLDER_PATTERNS) {
+    const match = message.match(pattern)
+    if (match && match[1]) {
+      // Clean up the folder name
+      return match[1].trim().replace(/\s+/g, ' ')
+    }
+  }
+  return null
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -69,9 +89,51 @@ export async function POST(request: NextRequest) {
   try {
     const { message, contentType, useAllFiles, selectedFileIds } = await request.json()
 
-    // Build context from files if needed
+    // Check for folder reference in the message
+    const folderReference = extractFolderReference(message)
     let fileContext = ''
-    if (useAllFiles || (selectedFileIds && selectedFileIds.length > 0)) {
+    let folderError = ''
+
+    if (folderReference) {
+      // User mentioned a specific folder - find it by name (case-insensitive)
+      const { data: folders } = await supabase
+        .from('folders')
+        .select('id, name')
+        .eq('user_id', user.id)
+        .ilike('name', folderReference)
+
+      if (folders && folders.length > 0) {
+        const folder = folders[0]
+
+        // Get all files in this folder
+        const { data: files } = await supabase
+          .from('files')
+          .select('name, content')
+          .eq('user_id', user.id)
+          .eq('folder_id', folder.id)
+
+        if (files && files.length > 0) {
+          fileContext = `\n\n<user_research_notes folder="${folder.name}">\n` +
+            files.map(f => `### ${f.name}\n${f.content}`).join('\n\n') +
+            '\n</user_research_notes>\n'
+        } else {
+          folderError = `I found your "${folder.name}" folder, but it doesn't contain any files yet. Please add some files to this folder first.`
+        }
+      } else {
+        // Folder not found - get list of available folders to help user
+        const { data: availableFolders } = await supabase
+          .from('folders')
+          .select('name')
+          .eq('user_id', user.id)
+
+        const folderList = availableFolders && availableFolders.length > 0
+          ? `\n\nYour available folders are: ${availableFolders.map(f => `"${f.name}"`).join(', ')}`
+          : '\n\nYou don\'t have any folders created yet. Create a folder in the sidebar and add files to it.'
+
+        folderError = `I couldn't find a folder called "${folderReference}".${folderList}`
+      }
+    } else if (useAllFiles || (selectedFileIds && selectedFileIds.length > 0)) {
+      // Original logic for useAllFiles or selected files
       const query = supabase
         .from('files')
         .select('name, content')
@@ -88,6 +150,27 @@ export async function POST(request: NextRequest) {
           files.map(f => `### ${f.name}\n${f.content}`).join('\n\n') +
           '\n</user_research_notes>\n'
       }
+    }
+
+    // If there's a folder error, return it as an assistant message
+    if (folderError) {
+      const encoder = new TextEncoder()
+      const errorStream = new ReadableStream({
+        start(controller) {
+          const data = JSON.stringify({ content: folderError })
+          controller.enqueue(encoder.encode(`data: ${data}\n\n`))
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+          controller.close()
+        },
+      })
+
+      return new Response(errorStream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      })
     }
 
     const userPrompt = `Content type: ${contentType.toUpperCase()}
