@@ -39,6 +39,93 @@ interface ContentCalendarProps {
   onSelectPost: (post: Post) => void
 }
 
+function getContentPreview(content: Record<string, unknown>, type: string): string {
+  try {
+    // Handle different content structures
+    if (typeof content === 'string') {
+      return stripHtml(content)
+    }
+
+    // Thread content: array of tweets
+    if (type === 'thread' && Array.isArray(content.tweets)) {
+      const tweets = content.tweets as Array<{ text?: string; content?: string }>
+      const firstTweet = tweets[0]
+      if (firstTweet) {
+        const text = firstTweet.text || firstTweet.content || ''
+        return stripHtml(text) + (tweets.length > 1 ? ` ... (+${tweets.length - 1} more)` : '')
+      }
+    }
+
+    // Tweet or article: text/content/html field
+    if (content.text) return stripHtml(content.text as string)
+    if (content.content) return stripHtml(content.content as string)
+    if (content.html) return stripHtml(content.html as string)
+
+    // Fallback: stringify and strip
+    return stripHtml(JSON.stringify(content))
+  } catch {
+    return 'No preview available'
+  }
+}
+
+function stripHtml(html: string): string {
+  // Remove HTML tags and decode entities
+  const text = html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  // Truncate if too long
+  return text.length > 200 ? text.substring(0, 200) + '...' : text
+}
+
+// Custom Event Component with Tooltip
+function EventWithTooltip({ event }: { event: CalendarEvent }) {
+  const [showTooltip, setShowTooltip] = useState(false)
+  const post = event.resource
+
+  return (
+    <div
+      className="relative h-full"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      <span className="block truncate">{event.title}</span>
+
+      {showTooltip && (
+        <div className="absolute left-0 top-full mt-1 z-[9999] w-72 p-3 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-xl">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-medium text-accent capitalize">{post.type}</span>
+            <span className={`text-xs px-1.5 py-0.5 rounded ${
+              post.status === 'draft' ? 'bg-gray-500/20 text-gray-400' :
+              post.status === 'scheduled' ? 'bg-blue-500/20 text-blue-400' :
+              'bg-green-500/20 text-green-400'
+            }`}>
+              {post.status}
+            </span>
+          </div>
+          <p className="text-sm font-medium text-[var(--foreground)] mb-1">
+            {post.title || `Untitled ${post.type}`}
+          </p>
+          <p className="text-xs text-[var(--muted)] whitespace-pre-wrap">
+            {getContentPreview(post.content, post.type)}
+          </p>
+          {post.scheduled_time && (
+            <p className="text-xs text-[var(--muted)] mt-2">
+              Scheduled: {post.scheduled_time}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function ContentCalendar({ onSelectPost }: ContentCalendarProps) {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
@@ -108,6 +195,10 @@ export function ContentCalendar({ onSelectPost }: ContentCalendarProps) {
     onSelectPost(event.resource)
   }
 
+  const components = {
+    event: EventWithTooltip,
+  }
+
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -170,9 +261,16 @@ export function ContentCalendar({ onSelectPost }: ContentCalendarProps) {
         }
         .calendar-dark .rbc-event {
           cursor: pointer;
+          overflow: visible !important;
         }
         .calendar-dark .rbc-event:hover {
           opacity: 1 !important;
+        }
+        .calendar-dark .rbc-row-segment {
+          overflow: visible !important;
+        }
+        .calendar-dark .rbc-month-row {
+          overflow: visible !important;
         }
       `}</style>
       <Calendar
@@ -187,6 +285,7 @@ export function ContentCalendar({ onSelectPost }: ContentCalendarProps) {
         onNavigate={handleNavigate}
         eventPropGetter={eventStyleGetter}
         onSelectEvent={handleSelectEvent}
+        components={components}
         selectable
         popup
       />

@@ -21,10 +21,56 @@ interface ContentListProps {
 
 type FilterStatus = 'all' | 'draft' | 'scheduled' | 'posted'
 
+function getContentPreview(content: Record<string, unknown>, type: string): string {
+  try {
+    // Handle different content structures
+    if (typeof content === 'string') {
+      return stripHtml(content)
+    }
+
+    // Thread content: array of tweets
+    if (type === 'thread' && Array.isArray(content.tweets)) {
+      const tweets = content.tweets as Array<{ text?: string; content?: string }>
+      const firstTweet = tweets[0]
+      if (firstTweet) {
+        const text = firstTweet.text || firstTweet.content || ''
+        return stripHtml(text) + (tweets.length > 1 ? ` ... (+${tweets.length - 1} more)` : '')
+      }
+    }
+
+    // Tweet or article: text/content/html field
+    if (content.text) return stripHtml(content.text as string)
+    if (content.content) return stripHtml(content.content as string)
+    if (content.html) return stripHtml(content.html as string)
+
+    // Fallback: stringify and strip
+    return stripHtml(JSON.stringify(content))
+  } catch {
+    return 'No preview available'
+  }
+}
+
+function stripHtml(html: string): string {
+  // Remove HTML tags and decode entities
+  const text = html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  // Truncate if too long
+  return text.length > 300 ? text.substring(0, 300) + '...' : text
+}
+
 export function ContentList({ onSelectPost }: ContentListProps) {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<FilterStatus>('all')
+  const [hoveredPostId, setHoveredPostId] = useState<string | null>(null)
 
   const fetchPosts = useCallback(async () => {
     const url = filter === 'all' ? '/api/posts' : `/api/posts?status=${filter}`
@@ -132,7 +178,9 @@ export function ContentList({ onSelectPost }: ContentListProps) {
               <div
                 key={post.id}
                 onClick={() => onSelectPost(post)}
-                className="p-4 bg-[var(--card)] border border-[var(--border)] rounded-lg hover:border-accent/50 cursor-pointer transition-colors group"
+                onMouseEnter={() => setHoveredPostId(post.id)}
+                onMouseLeave={() => setHoveredPostId(null)}
+                className="relative p-4 bg-[var(--card)] border border-[var(--border)] rounded-lg hover:border-accent/50 cursor-pointer transition-colors group"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
@@ -183,6 +231,15 @@ export function ContentList({ onSelectPost }: ContentListProps) {
                     </button>
                   </div>
                 </div>
+
+                {/* Content Preview Tooltip */}
+                {hoveredPostId === post.id && (
+                  <div className="absolute left-0 right-0 top-full mt-2 z-50 p-3 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg max-w-lg">
+                    <p className="text-sm text-[var(--foreground)] whitespace-pre-wrap">
+                      {getContentPreview(post.content, post.type)}
+                    </p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
