@@ -1,0 +1,105 @@
+'use client'
+
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+import { Sparkles, Settings, LogOut } from 'lucide-react'
+import Link from 'next/link'
+import { useState, useRef, useEffect } from 'react'
+import type { User } from '@supabase/supabase-js'
+
+interface HeaderProps {
+  user: User
+}
+
+export function Header({ user }: HeaderProps) {
+  const router = useRouter()
+  const [showMenu, setShowMenu] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/')
+    router.refresh()
+  }
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  return (
+    <header className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4">
+      <Link href="/dashboard" className="flex items-center gap-2">
+        <Sparkles className="w-5 h-5 text-accent" />
+        <span className="font-semibold">X Content Partner</span>
+      </Link>
+
+      <nav className="flex items-center gap-2">
+        <Link
+          href="/dashboard"
+          className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
+        >
+          Chat
+        </Link>
+        <Link
+          href="/workspace"
+          className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
+        >
+          Workspace
+        </Link>
+        <Link
+          href="/calendar"
+          className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
+        >
+          Calendar
+        </Link>
+        <Link
+          href="/settings"
+          className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
+        >
+          Settings
+        </Link>
+      </nav>
+
+      <div className="relative" ref={menuRef}>
+        <button
+          onClick={() => setShowMenu(!showMenu)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[var(--card)] transition-colors"
+        >
+          <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-white text-sm font-medium">
+            {user.email?.[0].toUpperCase()}
+          </div>
+        </button>
+
+        {showMenu && (
+          <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg py-1 z-50">
+            <div className="px-4 py-2 border-b border-[var(--border)]">
+              <p className="text-sm font-medium truncate">{user.email}</p>
+            </div>
+            <Link
+              href="/settings"
+              className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-[var(--border)] transition-colors"
+              onClick={() => setShowMenu(false)}
+            >
+              <Settings className="w-4 h-4" />
+              Settings
+            </Link>
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-[var(--border)] transition-colors text-red-400"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign out
+            </button>
+          </div>
+        )}
+      </div>
+    </header>
+  )
+}
