@@ -1,104 +1,134 @@
 'use client'
 
-import { AlertCircle, ImageIcon, Link as LinkIcon } from 'lucide-react'
+import { Plus, X, AlertCircle, Link as LinkIcon, ImageIcon } from 'lucide-react'
+import { ProfileHeader } from './ProfileHeader'
 
-interface ThreadPreviewProps {
+export interface ThreadTweet {
+  id: string
   content: string
 }
 
-export function ThreadPreview({ content }: ThreadPreviewProps) {
-  const plainText = stripHtml(content)
+interface ThreadPreviewProps {
+  tweets: ThreadTweet[]
+  onAddTweet?: () => void
+  onDeleteTweet?: (id: string) => void
+  onUpdateTweet?: (id: string, content: string) => void
+}
 
-  // Split content into tweets by double newlines or numbered patterns
-  const tweets = parseThreadTweets(plainText)
+export function ThreadPreview({ tweets, onAddTweet, onDeleteTweet, onUpdateTweet }: ThreadPreviewProps) {
   const maxChars = 280
+  const hasOverLimit = tweets.some(t => t.content.length > maxChars)
+  const hasLink = tweets.some(t => /(https?:\/\/[^\s]+)/.test(t.content))
 
-  const hasLink = /(https?:\/\/[^\s]+)/.test(plainText)
+  const getCounterColor = (length: number) => {
+    if (length > maxChars) return 'text-red-400'
+    if (length >= 250) return 'text-yellow-400'
+    return 'text-green-400'
+  }
 
   return (
     <div className="space-y-4">
-      {/* Thread Preview */}
-      <div className="space-y-0">
+      {/* Thread Preview Card */}
+      <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
         {tweets.length === 0 ? (
-          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4">
-            <p className="text-[var(--muted)] text-center">
-              Start typing your thread...
-            </p>
+          <div className="p-6 text-center text-[var(--muted)]">
+            Start typing your thread...
           </div>
         ) : (
-          tweets.map((tweet, index) => (
-            <div
-              key={index}
-              className="bg-[var(--card)] border border-[var(--border)] first:rounded-t-xl last:rounded-b-xl -mt-px p-4"
-            >
-              <div className="flex items-start gap-3">
-                {/* Thread Line */}
-                <div className="flex flex-col items-center">
-                  <div className="w-10 h-10 rounded-full bg-accent flex-shrink-0 flex items-center justify-center text-white font-bold">
-                    {index + 1}
-                  </div>
-                  {index < tweets.length - 1 && (
-                    <div className="w-0.5 flex-1 bg-[var(--border)] mt-2" />
-                  )}
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-bold">Your Name</span>
-                    <span className="text-[var(--muted)]">@yourhandle</span>
-                  </div>
-                  <div className="whitespace-pre-wrap break-words mb-2">
-                    {tweet.text}
-                  </div>
-
-                  {/* Character count */}
-                  <div className="flex items-center justify-between text-sm">
-                    <span
-                      className={`font-mono ${
-                        tweet.text.length > maxChars
-                          ? 'text-red-400'
-                          : tweet.text.length > maxChars * 0.9
-                          ? 'text-yellow-400'
-                          : 'text-[var(--muted)]'
-                      }`}
-                    >
-                      {tweet.text.length}/{maxChars}
-                    </span>
-
-                    {/* Image placement suggestion */}
-                    {(index + 1) % 4 === 0 && index < tweets.length - 1 && (
-                      <span className="flex items-center gap-1 text-accent text-xs">
-                        <ImageIcon className="w-3 h-3" aria-hidden="true" />
-                        Consider adding an image here
-                      </span>
+          <div className="divide-y divide-[var(--border)]">
+            {tweets.map((tweet, index) => (
+              <div key={tweet.id} className="p-4 relative group">
+                <div className="flex gap-3">
+                  {/* Avatar and Thread Connector */}
+                  <div className="flex flex-col items-center flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">{index + 1}</span>
+                    </div>
+                    {index < tweets.length - 1 && (
+                      <div className="w-0.5 flex-1 bg-accent/30 mt-2 min-h-[20px]" />
                     )}
                   </div>
+
+                  {/* Tweet Content */}
+                  <div className="flex-1 min-w-0">
+                    {/* Profile info on first tweet only */}
+                    {index === 0 && (
+                      <div className="mb-2">
+                        <div className="font-bold text-[var(--foreground)]">Your Name</div>
+                        <div className="text-sm text-[var(--muted)]">@yourhandle</div>
+                      </div>
+                    )}
+
+                    {/* Tweet number for subsequent tweets */}
+                    {index > 0 && (
+                      <div className="text-xs text-[var(--muted)] mb-1">{index + 1}/</div>
+                    )}
+
+                    {/* Tweet Text */}
+                    <div className="whitespace-pre-wrap break-words text-[var(--foreground)] min-h-[24px]">
+                      {tweet.content || <span className="text-[var(--muted)]">Tweet {index + 1}...</span>}
+                    </div>
+
+                    {/* Tweet Footer */}
+                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-[var(--border)]/50">
+                      <span className={`text-sm font-mono ${getCounterColor(tweet.content.length)}`}>
+                        {tweet.content.length}/280
+                      </span>
+
+                      {/* Image suggestion every 3-4 tweets */}
+                      {(index + 1) % 4 === 0 && index < tweets.length - 1 && (
+                        <span className="flex items-center gap-1 text-accent text-xs">
+                          <ImageIcon className="w-3 h-3" />
+                          Add image here
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Delete button (not on first tweet) */}
+                  {index > 0 && onDeleteTweet && (
+                    <button
+                      onClick={() => onDeleteTweet(tweet.id)}
+                      className="absolute top-2 right-2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-500/20 text-[var(--muted)] hover:text-red-400 transition-all"
+                      title="Delete tweet"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
+        )}
+
+        {/* Add Tweet Button */}
+        {onAddTweet && (
+          <button
+            onClick={onAddTweet}
+            className="w-full p-3 flex items-center justify-center gap-2 text-sm text-[var(--muted)] hover:text-accent hover:bg-[var(--card-hover)] transition-colors border-t border-[var(--border)]"
+          >
+            <Plus className="w-4 h-4" />
+            Add Tweet
+          </button>
         )}
       </div>
 
       {/* Thread Stats */}
-      {tweets.length > 0 && (
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-[var(--muted)]">
-            {tweets.length} tweets in thread
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-[var(--muted)]">
+          {tweets.length} {tweets.length === 1 ? 'tweet' : 'tweets'} in thread
+        </span>
+        {tweets.length > 0 && tweets.length < 5 && (
+          <span className="text-yellow-400">
+            Consider adding more value (optimal: 5-15 tweets)
           </span>
-          {tweets.length < 5 && (
-            <span className="text-yellow-400">
-              Consider adding more value (optimal: 5-15 tweets)
-            </span>
-          )}
-          {tweets.length > 15 && (
-            <span className="text-yellow-400">
-              Thread may be too long (optimal: 5-15 tweets)
-            </span>
-          )}
-        </div>
-      )}
+        )}
+        {tweets.length > 15 && (
+          <span className="text-yellow-400">
+            Thread may be too long (optimal: 5-15 tweets)
+          </span>
+        )}
+      </div>
 
       {/* Warnings */}
       {hasLink && (
@@ -108,8 +138,7 @@ export function ThreadPreview({ content }: ThreadPreviewProps) {
         </div>
       )}
 
-      {/* Over limit warnings */}
-      {tweets.some(t => t.text.length > maxChars) && (
+      {hasOverLimit && (
         <div className="flex items-center gap-2 text-red-400 text-sm p-3 bg-red-400/10 rounded-lg">
           <AlertCircle className="w-4 h-4" />
           <span>Some tweets exceed the 280 character limit. Please shorten them.</span>
@@ -119,30 +148,33 @@ export function ThreadPreview({ content }: ThreadPreviewProps) {
   )
 }
 
-function stripHtml(html: string): string {
-  const tmp = document.createElement('div')
-  tmp.innerHTML = html
-  return tmp.textContent || tmp.innerText || ''
-}
-
-function parseThreadTweets(text: string): { text: string }[] {
-  if (!text.trim()) return []
+// Legacy support: Convert HTML content to tweets array
+export function parseThreadFromContent(content: string): ThreadTweet[] {
+  const plainText = stripHtml(content)
+  if (!plainText.trim()) return [{ id: '1', content: '' }]
 
   // Try to split by numbered patterns (1/, 2/, etc. or 1. 2. etc.)
   const numberedPattern = /(?:^|\n)(?:\d+[.\/]\s*)/g
-  const parts = text.split(numberedPattern).filter(Boolean)
+  const parts = plainText.split(numberedPattern).filter(Boolean)
 
   if (parts.length > 1) {
-    return parts.map(p => ({ text: p.trim() }))
+    return parts.map((p, i) => ({ id: String(i + 1), content: p.trim() }))
   }
 
   // Fall back to splitting by double newlines
-  const paragraphs = text.split(/\n\n+/).filter(Boolean)
+  const paragraphs = plainText.split(/\n\n+/).filter(Boolean)
 
   if (paragraphs.length > 1) {
-    return paragraphs.map(p => ({ text: p.trim() }))
+    return paragraphs.map((p, i) => ({ id: String(i + 1), content: p.trim() }))
   }
 
   // If still single block, return as one tweet
-  return [{ text: text.trim() }]
+  return [{ id: '1', content: plainText.trim() }]
+}
+
+function stripHtml(html: string): string {
+  if (typeof document === 'undefined') return html.replace(/<[^>]*>/g, '')
+  const tmp = document.createElement('div')
+  tmp.innerHTML = html
+  return tmp.textContent || tmp.innerText || ''
 }

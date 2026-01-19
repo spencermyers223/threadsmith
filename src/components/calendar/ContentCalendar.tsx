@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar'
 import { format, parse, startOfWeek, getDay, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns'
+import { CheckCircle } from 'lucide-react'
 import { enUS } from 'date-fns/locale'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 
@@ -47,12 +48,13 @@ function getContentPreview(content: Record<string, unknown>, type: string): stri
       return stripHtml(content)
     }
 
-    // Thread content: array of tweets
+    // Thread content: array of tweets (new format with id and content)
     if (type === 'thread' && Array.isArray(content.tweets)) {
-      const tweets = content.tweets as Array<{ text?: string; content?: string }>
+      const tweets = content.tweets as Array<{ id?: string; text?: string; content?: string }>
       const firstTweet = tweets[0]
       if (firstTweet) {
-        const text = firstTweet.text || firstTweet.content || ''
+        // Support both old format (text) and new format (content)
+        const text = firstTweet.content || firstTweet.text || ''
         return stripHtml(text) + (tweets.length > 1 ? ` ... (+${tweets.length - 1} more)` : '')
       }
     }
@@ -86,7 +88,7 @@ function stripHtml(html: string): string {
 }
 
 // Custom Event Component with Tooltip using Portal
-function EventWithTooltip({ event }: { event: CalendarEvent }) {
+function EventWithTooltip({ event, onMarkAsPosted }: { event: CalendarEvent; onMarkAsPosted?: (id: string) => void }) {
   const [showTooltip, setShowTooltip] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 })
   const eventRef = useRef<HTMLDivElement>(null)
@@ -108,6 +110,12 @@ function EventWithTooltip({ event }: { event: CalendarEvent }) {
     setShowTooltip(false)
   }
 
+  const handleMarkAsPosted = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onMarkAsPosted?.(post.id)
+    setShowTooltip(false)
+  }
+
   return (
     <div
       ref={eventRef}
@@ -119,12 +127,14 @@ function EventWithTooltip({ event }: { event: CalendarEvent }) {
 
       {showTooltip && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed w-72 p-3 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-xl pointer-events-none"
+          className="fixed w-72 p-3 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-xl"
           style={{
             top: tooltipPosition.top,
             left: tooltipPosition.left,
             zIndex: 9999,
           }}
+          onMouseEnter={() => setShowTooltip(true)}
+          onMouseLeave={() => setShowTooltip(false)}
         >
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs font-medium text-accent capitalize">{post.type}</span>
@@ -146,6 +156,15 @@ function EventWithTooltip({ event }: { event: CalendarEvent }) {
             <p className="text-xs text-[var(--muted)] mt-2">
               Scheduled: {post.scheduled_time}
             </p>
+          )}
+          {post.status === 'scheduled' && (
+            <button
+              onClick={handleMarkAsPosted}
+              className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors"
+            >
+              <CheckCircle className="w-3.5 h-3.5" />
+              Mark as Posted
+            </button>
           )}
         </div>,
         document.body
@@ -223,8 +242,22 @@ export function ContentCalendar({ onSelectPost }: ContentCalendarProps) {
     onSelectPost(event.resource)
   }
 
+  const handleMarkAsPosted = async (id: string) => {
+    const res = await fetch(`/api/posts/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'posted' }),
+    })
+    if (res.ok) {
+      const updatedPost = await res.json()
+      setPosts(posts.map(p => p.id === id ? updatedPost : p))
+    }
+  }
+
   const components = {
-    event: EventWithTooltip,
+    event: (props: { event: CalendarEvent }) => (
+      <EventWithTooltip event={props.event} onMarkAsPosted={handleMarkAsPosted} />
+    ),
   }
 
   if (loading) {

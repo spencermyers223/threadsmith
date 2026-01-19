@@ -1,73 +1,90 @@
 'use client'
 
-import { Link as LinkIcon } from 'lucide-react'
+import { Link as LinkIcon, AlertTriangle } from 'lucide-react'
+import { ProfileHeader } from './ProfileHeader'
 
 interface ArticlePreviewProps {
   content: string
+  headline?: string
 }
 
-export function ArticlePreview({ content }: ArticlePreviewProps) {
+export function ArticlePreview({ content, headline }: ArticlePreviewProps) {
   const plainText = stripHtml(content)
   const wordCount = plainText.trim().split(/\s+/).filter(Boolean).length
   const charCount = plainText.length
+  const readTime = Math.max(1, Math.ceil(wordCount / 200))
 
   const hasLink = /(https?:\/\/[^\s]+)/.test(plainText)
 
-  // Optimal article length is 1000-2000 words
-  const getWordCountStatus = () => {
-    if (wordCount < 500) return { color: 'text-yellow-400', message: 'Article may be too short (aim for 1000-2000 words)' }
-    if (wordCount < 1000) return { color: 'text-yellow-400', message: 'Consider adding more depth (optimal: 1000-2000 words)' }
-    if (wordCount <= 2000) return { color: 'text-green-400', message: 'Optimal length' }
-    if (wordCount <= 3000) return { color: 'text-yellow-400', message: 'Article is getting long - consider splitting' }
-    return { color: 'text-red-400', message: 'Article may be too long for engagement' }
+  const getWordCountWarning = () => {
+    if (wordCount < 500) {
+      return { type: 'warning', message: 'Article may be too short (aim for 1000-2000 words)' }
+    }
+    if (wordCount > 3000) {
+      return { type: 'warning', message: 'Consider breaking into a thread' }
+    }
+    return null
   }
 
-  const wordStatus = getWordCountStatus()
+  const warning = getWordCountWarning()
 
   return (
     <div className="space-y-4">
-      {/* Article Preview */}
+      {/* Article Preview Card */}
       <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
-        {/* Article Header */}
-        <div className="p-6 border-b border-[var(--border)]">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-accent" />
-            <div>
-              <div className="font-bold">Your Name</div>
-              <div className="text-sm text-[var(--muted)]">@yourhandle</div>
-            </div>
-          </div>
+        {/* Profile Section */}
+        <div className="p-4 border-b border-[var(--border)]">
+          <ProfileHeader size="lg" />
         </div>
 
         {/* Article Content */}
-        <div className="p-6">
-          <div
-            className="prose max-w-none"
-            dangerouslySetInnerHTML={{ __html: content || '<p class="text-[var(--muted)]">Start writing your article...</p>' }}
-          />
-        </div>
-      </div>
+        <div className="p-4">
+          {/* Headline */}
+          <h1 className="text-xl font-bold text-[var(--foreground)] mb-4">
+            {headline || <span className="text-[var(--muted)]">Your headline...</span>}
+          </h1>
 
-      {/* Stats */}
-      <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-4">
-          <span className="text-[var(--muted)]">
-            {wordCount} words
-          </span>
-          <span className="text-[var(--muted)]">
-            {charCount} characters
-          </span>
-          <span className="text-[var(--muted)]">
-            ~{Math.ceil(wordCount / 200)} min read
-          </span>
+          {/* Body Preview */}
+          <div className="prose prose-sm max-w-none text-[var(--foreground)]">
+            {plainText ? (
+              <div className="whitespace-pre-wrap break-words">
+                {plainText.length > 500
+                  ? plainText.slice(0, 500) + '...'
+                  : plainText}
+              </div>
+            ) : (
+              <p className="text-[var(--muted)]">Start writing your article...</p>
+            )}
+          </div>
         </div>
-        <span className={wordStatus.color}>{wordStatus.message}</span>
+
+        {/* Stats Row */}
+        <div className="px-4 py-3 border-t border-[var(--border)] bg-[var(--background)]">
+          <div className="flex items-center gap-6 text-sm">
+            <span className="text-[var(--muted)]">
+              <span className="font-medium text-[var(--foreground)]">{wordCount}</span> words
+            </span>
+            <span className="text-[var(--muted)]">
+              <span className="font-medium text-[var(--foreground)]">{charCount}</span> characters
+            </span>
+            <span className="text-[var(--muted)]">
+              ~<span className="font-medium text-[var(--foreground)]">{readTime}</span> min read
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Warnings */}
+      {warning && (
+        <div className="flex items-center gap-2 text-yellow-400 text-sm p-3 bg-yellow-400/10 rounded-lg">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+          <span>{warning.message}</span>
+        </div>
+      )}
+
       {hasLink && (
         <div className="flex items-center gap-2 text-blue-400 text-sm p-3 bg-blue-400/10 rounded-lg">
-          <LinkIcon className="w-4 h-4" />
+          <LinkIcon className="w-4 h-4 flex-shrink-0" />
           <span>External links in articles are acceptable but may still affect reach.</span>
         </div>
       )}
@@ -76,6 +93,7 @@ export function ArticlePreview({ content }: ArticlePreviewProps) {
 }
 
 function stripHtml(html: string): string {
+  if (typeof document === 'undefined') return html.replace(/<[^>]*>/g, '')
   const tmp = document.createElement('div')
   tmp.innerHTML = html
   return tmp.textContent || tmp.innerText || ''

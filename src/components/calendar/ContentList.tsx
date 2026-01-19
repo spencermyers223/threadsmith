@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { format } from 'date-fns'
-import { FileText, MessageSquare, Newspaper, Trash2, Edit, Calendar as CalendarIcon, Clock } from 'lucide-react'
+import { FileText, MessageSquare, Newspaper, Trash2, Edit, Calendar as CalendarIcon, Clock, CheckCircle } from 'lucide-react'
 
 interface Post {
   id: string
@@ -28,12 +28,13 @@ function getContentPreview(content: Record<string, unknown>, type: string): stri
       return stripHtml(content)
     }
 
-    // Thread content: array of tweets
+    // Thread content: array of tweets (new format with id and content)
     if (type === 'thread' && Array.isArray(content.tweets)) {
-      const tweets = content.tweets as Array<{ text?: string; content?: string }>
+      const tweets = content.tweets as Array<{ id?: string; text?: string; content?: string }>
       const firstTweet = tweets[0]
       if (firstTweet) {
-        const text = firstTweet.text || firstTweet.content || ''
+        // Support both old format (text) and new format (content)
+        const text = firstTweet.content || firstTweet.text || ''
         return stripHtml(text) + (tweets.length > 1 ? ` ... (+${tweets.length - 1} more)` : '')
       }
     }
@@ -107,6 +108,19 @@ export function ContentList({ onSelectPost }: ContentListProps) {
 
     await fetch(`/api/posts/${id}`, { method: 'DELETE' })
     setPosts(posts.filter(p => p.id !== id))
+  }
+
+  const handleMarkAsPosted = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const res = await fetch(`/api/posts/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'posted' }),
+    })
+    if (res.ok) {
+      const updatedPost = await res.json()
+      setPosts(posts.map(p => p.id === id ? updatedPost : p))
+    }
   }
 
   const getTypeIcon = (type: string) => {
@@ -212,6 +226,15 @@ export function ContentList({ onSelectPost }: ContentListProps) {
                   </div>
 
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {post.status === 'scheduled' && (
+                      <button
+                        onClick={(e) => handleMarkAsPosted(post.id, e)}
+                        className="p-2 rounded hover:bg-green-500/20 text-[var(--muted)] hover:text-green-400 transition-colors"
+                        title="Mark as Posted"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation()

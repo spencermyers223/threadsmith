@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { TiptapEditor } from '@/components/workspace/TiptapEditor'
+import { ThreadEditor } from '@/components/workspace/ThreadEditor'
 import { TweetPreview } from '@/components/preview/TweetPreview'
-import { ThreadPreview } from '@/components/preview/ThreadPreview'
+import { ThreadPreview, parseThreadFromContent } from '@/components/preview/ThreadPreview'
+import type { ThreadTweet } from '@/components/preview/ThreadPreview'
 import { ArticlePreview } from '@/components/preview/ArticlePreview'
 import { ScheduleModal } from '@/components/workspace/ScheduleModal'
 import { DraftsSidebar } from '@/components/workspace/DraftsSidebar'
@@ -17,15 +19,19 @@ interface Draft {
   id: string
   title: string
   type: ContentType
-  content: { html: string }
+  content: { html?: string; tweets?: ThreadTweet[] }
   status: string
   updated_at: string
 }
 
 export default function WorkspacePage() {
+  // Content state
   const [content, setContent] = useState('')
+  const [threadTweets, setThreadTweets] = useState<ThreadTweet[]>([{ id: '1', content: '' }])
   const [title, setTitle] = useState('')
   const [contentType, setContentType] = useState<ContentType>('tweet')
+
+  // UI state
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -33,7 +39,9 @@ export default function WorkspacePage() {
   const [postId, setPostId] = useState<string | null>(null)
   const [draftsRefreshTrigger, setDraftsRefreshTrigger] = useState(0)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+
   const lastSavedContent = useRef<string>('')
+  const lastSavedTweets = useRef<ThreadTweet[]>([])
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null)
 
   // Load content from localStorage
@@ -46,7 +54,16 @@ export default function WorkspacePage() {
         setPostId(post.id)
         setTitle(post.title || '')
         setContentType(post.type || 'tweet')
-        setContent(post.content?.html || '')
+
+        if (post.type === 'thread' && post.content?.tweets) {
+          setThreadTweets(post.content.tweets)
+        } else if (post.type === 'thread' && post.content?.html) {
+          // Legacy: parse from HTML
+          setThreadTweets(parseThreadFromContent(post.content.html))
+        } else {
+          setContent(post.content?.html || '')
+        }
+
         localStorage.removeItem('edit-post')
         return
       } catch {}
@@ -59,20 +76,51 @@ export default function WorkspacePage() {
         const data = JSON.parse(stored)
         // Only load if recent (within 5 minutes)
         if (Date.now() - data.timestamp < 5 * 60 * 1000) {
-          // Convert markdown to HTML for Tiptap editor
           const htmlContent = markdownToHtml(data.content)
-          setContent(htmlContent)
-          setContentType(data.contentType || 'tweet')
+          const type = data.contentType || 'tweet'
+          setContentType(type)
+
+          if (type === 'thread') {
+            setThreadTweets(parseThreadFromContent(htmlContent))
+          } else {
+            setContent(htmlContent)
+          }
         }
         localStorage.removeItem('workspace-content')
       } catch {}
     }
   }, [])
 
+  // Get current content based on mode
+  const getCurrentContent = useCallback(() => {
+    if (contentType === 'thread') {
+      return { tweets: threadTweets }
+    }
+    return { html: content }
+  }, [contentType, content, threadTweets])
+
+  // Check if content is empty
+  const isContentEmpty = useCallback(() => {
+    if (contentType === 'thread') {
+      return threadTweets.every(t => !t.content.trim())
+    }
+    return !content.trim()
+  }, [contentType, content, threadTweets])
+
   const handleSaveDraft = useCallback(async (isAutoSave = false) => {
-    // Don't auto-save if no content or content hasn't changed
-    if (isAutoSave && (!content.trim() || content === lastSavedContent.current)) {
+    if (isAutoSave && isContentEmpty()) {
       return
+    }
+
+    // Check if content has changed
+    if (isAutoSave) {
+      if (contentType === 'thread') {
+        const currentJson = JSON.stringify(threadTweets)
+        const savedJson = JSON.stringify(lastSavedTweets.current)
+        if (currentJson === savedJson) return
+      } else {
+        if (content === lastSavedContent.current) return
+      }
     }
 
     setSaving(true)
@@ -86,7 +134,7 @@ export default function WorkspacePage() {
           id: postId,
           type: contentType,
           title: title || `Untitled ${contentType}`,
-          content: { html: content },
+          content: getCurrentContent(),
           status: 'draft',
         }),
       })
@@ -95,7 +143,13 @@ export default function WorkspacePage() {
 
       const data = await res.json()
       setPostId(data.id)
-      lastSavedContent.current = content
+
+      if (contentType === 'thread') {
+        lastSavedTweets.current = [...threadTweets]
+      } else {
+        lastSavedContent.current = content
+      }
+
       setHasUnsavedChanges(false)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
@@ -107,7 +161,7 @@ export default function WorkspacePage() {
     } finally {
       setSaving(false)
     }
-  }, [content, contentType, postId, title])
+  }, [content, contentType, postId, title, threadTweets, getCurrentContent, isContentEmpty])
 
   // Track content changes
   const handleContentChange = useCallback((newContent: string) => {
@@ -117,9 +171,18 @@ export default function WorkspacePage() {
     }
   }, [])
 
+  const handleThreadChange = useCallback((newTweets: ThreadTweet[]) => {
+    setThreadTweets(newTweets)
+    const currentJson = JSON.stringify(newTweets)
+    const savedJson = JSON.stringify(lastSavedTweets.current)
+    if (currentJson !== savedJson) {
+      setHasUnsavedChanges(true)
+    }
+  }, [])
+
   // Auto-save every 30 seconds if there are changes
   useEffect(() => {
-    if (hasUnsavedChanges && content.trim()) {
+    if (hasUnsavedChanges && !isContentEmpty()) {
       autoSaveTimer.current = setTimeout(() => {
         handleSaveDraft(true)
       }, 30000)
@@ -130,15 +193,26 @@ export default function WorkspacePage() {
         clearTimeout(autoSaveTimer.current)
       }
     }
-  }, [hasUnsavedChanges, content, handleSaveDraft])
+  }, [hasUnsavedChanges, handleSaveDraft, isContentEmpty])
 
   // Handle selecting a draft from sidebar
   const handleSelectDraft = useCallback((draft: Draft) => {
     setPostId(draft.id)
     setTitle(draft.title || '')
     setContentType(draft.type)
-    setContent(draft.content?.html || '')
-    lastSavedContent.current = draft.content?.html || ''
+
+    if (draft.type === 'thread' && draft.content?.tweets) {
+      setThreadTweets(draft.content.tweets)
+      lastSavedTweets.current = draft.content.tweets
+    } else if (draft.type === 'thread' && draft.content?.html) {
+      const tweets = parseThreadFromContent(draft.content.html)
+      setThreadTweets(tweets)
+      lastSavedTweets.current = tweets
+    } else {
+      setContent(draft.content?.html || '')
+      lastSavedContent.current = draft.content?.html || ''
+    }
+
     setHasUnsavedChanges(false)
   }, [])
 
@@ -147,10 +221,36 @@ export default function WorkspacePage() {
     setPostId(null)
     setTitle('')
     setContent('')
+    setThreadTweets([{ id: '1', content: '' }])
     setContentType('tweet')
     lastSavedContent.current = ''
+    lastSavedTweets.current = []
     setHasUnsavedChanges(false)
   }, [])
+
+  // Handle content type change
+  const handleContentTypeChange = useCallback((type: ContentType) => {
+    if (type === contentType) return
+
+    // Convert content when switching modes
+    if (type === 'thread' && contentType !== 'thread') {
+      // Convert current content to thread
+      if (content.trim()) {
+        setThreadTweets(parseThreadFromContent(content))
+      } else {
+        setThreadTweets([{ id: '1', content: '' }])
+      }
+    } else if (type !== 'thread' && contentType === 'thread') {
+      // Convert thread to single content
+      const combinedContent = threadTweets
+        .map((t, i) => `${i + 1}/ ${t.content}`)
+        .join('\n\n')
+      setContent(combinedContent)
+    }
+
+    setContentType(type)
+    setHasUnsavedChanges(true)
+  }, [contentType, content, threadTweets])
 
   const handleSchedule = async (date: string, time: string | null) => {
     setSaving(true)
@@ -164,7 +264,7 @@ export default function WorkspacePage() {
           id: postId,
           type: contentType,
           title: title || `Untitled ${contentType}`,
-          content: { html: content },
+          content: getCurrentContent(),
           status: 'scheduled',
           scheduled_date: date,
           scheduled_time: time,
@@ -185,14 +285,46 @@ export default function WorkspacePage() {
     }
   }
 
+  // Thread preview handlers
+  const handleAddTweet = useCallback(() => {
+    const newId = String(Date.now())
+    setThreadTweets(prev => [...prev, { id: newId, content: '' }])
+    setHasUnsavedChanges(true)
+  }, [])
+
+  const handleDeleteTweet = useCallback((id: string) => {
+    if (threadTweets.length <= 1) return
+    setThreadTweets(prev => prev.filter(t => t.id !== id))
+    setHasUnsavedChanges(true)
+  }, [threadTweets.length])
+
+  const renderEditor = () => {
+    if (contentType === 'thread') {
+      return (
+        <ThreadEditor
+          tweets={threadTweets}
+          onTweetsChange={handleThreadChange}
+        />
+      )
+    }
+
+    return <TiptapEditor content={content} onChange={handleContentChange} />
+  }
+
   const renderPreview = () => {
     switch (contentType) {
       case 'tweet':
         return <TweetPreview content={content} />
       case 'thread':
-        return <ThreadPreview content={content} />
+        return (
+          <ThreadPreview
+            tweets={threadTweets}
+            onAddTweet={handleAddTweet}
+            onDeleteTweet={handleDeleteTweet}
+          />
+        )
       case 'article':
-        return <ArticlePreview content={content} />
+        return <ArticlePreview content={content} headline={title} />
     }
   }
 
@@ -212,7 +344,7 @@ export default function WorkspacePage() {
             type="text"
             value={title}
             onChange={e => setTitle(e.target.value)}
-            placeholder="Untitled post..."
+            placeholder={contentType === 'article' ? 'Article headline...' : 'Untitled post...'}
             className="bg-transparent border-none text-lg font-medium focus:outline-none"
           />
         </div>
@@ -223,7 +355,7 @@ export default function WorkspacePage() {
             {(['tweet', 'thread', 'article'] as ContentType[]).map(type => (
               <button
                 key={type}
-                onClick={() => setContentType(type)}
+                onClick={() => handleContentTypeChange(type)}
                 className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                   contentType === type
                     ? 'bg-accent text-white'
@@ -237,7 +369,7 @@ export default function WorkspacePage() {
 
           <button
             onClick={() => handleSaveDraft(false)}
-            disabled={saving || !content.trim()}
+            disabled={saving || isContentEmpty()}
             className="flex items-center gap-2 px-4 py-2 bg-[var(--card)] hover:bg-[var(--border)] disabled:opacity-50 rounded-lg transition-colors"
           >
             {saving ? (
@@ -261,7 +393,7 @@ export default function WorkspacePage() {
 
           <button
             onClick={() => setShowScheduleModal(true)}
-            disabled={saving || !content.trim()}
+            disabled={saving || isContentEmpty()}
             className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover disabled:opacity-50 text-white rounded-lg transition-colors"
           >
             <Calendar className="w-4 h-4" />
@@ -290,7 +422,7 @@ export default function WorkspacePage() {
 
         {/* Editor */}
         <div className="flex-1 p-4 overflow-y-auto">
-          <TiptapEditor content={content} onChange={handleContentChange} />
+          {renderEditor()}
         </div>
 
         {/* Preview */}
