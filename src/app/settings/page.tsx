@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Bell, Moon, Sun, User, Check, AlertCircle, LogOut } from 'lucide-react'
@@ -21,32 +21,33 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const hasLoadedRef = useRef(false)
 
-  const loadSettings = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+  // Load settings only once on mount
+  useEffect(() => {
+    if (hasLoadedRef.current) return
+    hasLoadedRef.current = true
 
-    setEmail(user.email || '')
+    async function loadSettings() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('settings')
-      .eq('id', user.id)
-      .single()
+      setEmail(user.email || '')
 
-    if (profile?.settings) {
-      const settings = profile.settings as Settings
-      setNotifications(settings.notifications)
-      // Sync theme from DB if it differs from localStorage
-      if (settings.theme && settings.theme !== theme) {
-        setTheme(settings.theme)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('settings')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.settings) {
+        const settings = profile.settings as Settings
+        setNotifications(settings.notifications ?? true)
       }
     }
-  }, [supabase, theme, setTheme])
 
-  useEffect(() => {
     loadSettings()
-  }, [loadSettings])
+  }, [supabase])
 
   const handleSave = async () => {
     setSaving(true)
