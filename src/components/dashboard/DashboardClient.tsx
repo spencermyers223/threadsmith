@@ -46,6 +46,7 @@ export function DashboardClient({ userId, files }: DashboardClientProps) {
               files={files}
               conversationId={currentConversationId}
               onConversationSaved={handleConversationSaved}
+              onConversationReset={() => setCurrentConversationId(null)}
               onRefreshRef={(fn) => { chatRefreshRef.current = fn }}
             />
           </div>

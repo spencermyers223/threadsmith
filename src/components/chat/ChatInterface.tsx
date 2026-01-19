@@ -299,6 +299,7 @@ interface ChatInterfaceProps {
   files?: FileInfo[]
   conversationId?: string | null
   onConversationSaved?: (conversationId: string) => void
+  onConversationReset?: () => void
   onRefreshRef?: (fn: () => void) => void
 }
 
@@ -306,6 +307,7 @@ export function ChatInterface({
   files: initialFiles = [],
   conversationId,
   onConversationSaved,
+  onConversationReset,
   onRefreshRef
 }: ChatInterfaceProps) {
   const [files, setFiles] = useState<FileInfo[]>(initialFiles)
@@ -633,6 +635,7 @@ export function ChatInterface({
     setWritingAssistantMode(false)
     setMessages([])
     setCurrentConvId(null)
+    onConversationReset?.()
   }
 
   const getAttachLabel = () => {
