@@ -325,8 +325,24 @@ export function ChatInterface({
   const [isGenerating, setIsGenerating] = useState(false)
   const [showContentTypeDropdown, setShowContentTypeDropdown] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const activeTextareaRef = useRef<HTMLTextAreaElement>(null)
   const router = useRouter()
+
+  // Auto-resize textarea
+  const adjustTextareaHeight = (textarea: HTMLTextAreaElement | null) => {
+    if (!textarea) return
+    textarea.style.height = 'auto'
+    const maxHeight = 180 // approximately 6 rows
+    textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit(e as unknown as React.FormEvent)
+    }
+  }
 
   const userMessageCount = messages.filter(m => m.role === 'user').length
   const hasMessages = messages.length > 0
@@ -473,6 +489,9 @@ export function ChatInterface({
 
     const userMessage = input.trim()
     setInput('')
+    // Reset textarea height
+    if (textareaRef.current) textareaRef.current.style.height = '56px'
+    if (activeTextareaRef.current) activeTextareaRef.current.style.height = '56px'
     const newUserMessage: Message = { role: 'user', content: userMessage }
     const updatedMessages = [...messages, newUserMessage]
     setMessages(updatedMessages)
@@ -660,13 +679,18 @@ export function ChatInterface({
         {/* Floating Input */}
         <div className="w-full max-w-2xl animate-fade-in-up">
           <form onSubmit={handleSubmit} className="relative">
-            <input
-              ref={inputRef}
-              type="text"
+            <textarea
+              ref={textareaRef}
               value={input}
-              onChange={e => setInput(e.target.value)}
+              onChange={e => {
+                setInput(e.target.value)
+                adjustTextareaHeight(e.target)
+              }}
+              onKeyDown={handleKeyDown}
               placeholder="Describe what you want to create..."
-              className="w-full px-5 py-4 pr-14 bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-float focus:outline-none focus:border-accent input-glow text-[var(--foreground)] placeholder:text-[var(--muted)] text-base"
+              rows={1}
+              className="w-full px-5 py-4 pr-14 bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-float focus:outline-none focus:border-accent input-glow text-[var(--foreground)] placeholder:text-[var(--muted)] text-base resize-none overflow-y-auto"
+              style={{ minHeight: '56px', maxHeight: '180px' }}
               disabled={isStreaming}
             />
             <button
@@ -861,16 +885,22 @@ export function ChatInterface({
       <div className="border-t border-[var(--border-subtle)] bg-[var(--background)]">
         <div className="max-w-3xl mx-auto px-6 py-4">
           <form onSubmit={handleSubmit} className="relative">
-            <input
-              type="text"
+            <textarea
+              ref={activeTextareaRef}
               value={input}
-              onChange={e => setInput(e.target.value)}
+              onChange={e => {
+                setInput(e.target.value)
+                adjustTextareaHeight(e.target)
+              }}
+              onKeyDown={handleKeyDown}
               placeholder={
                 writingAssistantMode
                   ? 'Share your thoughts...'
                   : 'Describe what you want to create...'
               }
-              className="w-full px-5 py-4 pr-14 bg-[var(--card)] border border-[var(--border)] rounded-2xl focus:outline-none focus:border-accent input-glow text-[var(--foreground)] placeholder:text-[var(--muted)] text-base"
+              rows={1}
+              className="w-full px-5 py-4 pr-14 bg-[var(--card)] border border-[var(--border)] rounded-2xl focus:outline-none focus:border-accent input-glow text-[var(--foreground)] placeholder:text-[var(--muted)] text-base resize-none overflow-y-auto"
+              style={{ minHeight: '56px', maxHeight: '180px' }}
               disabled={isStreaming}
             />
             <button
