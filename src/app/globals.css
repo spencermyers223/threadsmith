@@ -4,33 +4,46 @@
 
 :root {
   /* ThreadSmith Night Writer Theme (Dark Mode - Default) */
-  --background: #09090B;
+  /* Warmer, more inviting dark palette */
+  --background: #0F0F0F;
+  --background-secondary: #121212;
   --foreground: #E5E7EB;
-  --border: #27272A;
+  --foreground-muted: #A1A1AA;
+  --border: #2A2A2A;
+  --border-subtle: #1F1F1F;
   --muted: #78716C;
-  --card: #18181B;
-  --card-hover: #27272A;
+  --card: #1A1A1A;
+  --card-hover: #242424;
   --accent: #F59E0B;
   --accent-hover: #D97706;
-  --accent-text: #09090B;
+  --accent-text: #0F0F0F;
+  --accent-subtle: rgba(245, 158, 11, 0.1);
 
   /* Semantic colors */
   --success: #22C55E;
   --error: #EF4444;
   --info: #3B82F6;
+
+  /* Spacing */
+  --sidebar-collapsed: 56px;
+  --sidebar-expanded: 280px;
 }
 
 /* Light Mode */
 .light {
   --background: #FAFAFA;
+  --background-secondary: #F5F5F5;
   --foreground: #18181B;
+  --foreground-muted: #71717A;
   --border: #E4E4E7;
+  --border-subtle: #EBEBEB;
   --muted: #71717A;
   --card: #FFFFFF;
   --card-hover: #F4F4F5;
   --accent: #F59E0B;
   --accent-hover: #D97706;
   --accent-text: #FFFFFF;
+  --accent-subtle: rgba(245, 158, 11, 0.08);
 }
 
 * {
@@ -147,4 +160,71 @@ body {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* Message animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.2s ease-out forwards;
+}
+
+/* Collapsible sidebar styles */
+.sidebar-collapsed {
+  width: var(--sidebar-collapsed);
+}
+
+.sidebar-expanded {
+  width: var(--sidebar-expanded);
+}
+
+/* Input glow effect */
+.input-glow:focus {
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+
+/* Floating card shadow */
+.shadow-float {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.light .shadow-float {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
 }

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   FileText, Upload, Trash2, ChevronRight, ChevronDown, FileType, File,
-  MessageSquare, Plus, Folder, FolderOpen, MoreHorizontal, Pencil, Palette
+  MessageSquare, Plus, Folder, FolderOpen, MoreHorizontal, Pencil, Palette, X, FolderPlus
 } from 'lucide-react'
 import { FileUploadModal } from '@/components/files/FileUploadModal'
 import { FilePreviewModal } from '@/components/files/FilePreviewModal'
@@ -43,6 +43,7 @@ interface Conversation {
   title: string
   messages: Array<{ role: string; content: string }>
   updated_at: string
+  writing_assistant_mode?: boolean
 }
 
 interface SidebarProps {
@@ -53,6 +54,26 @@ interface SidebarProps {
   onRefreshRef?: (fn: () => void) => void
 }
 
+// Tooltip component for collapsed state
+function Tooltip({ children, label }: { children: React.ReactNode; label: string }) {
+  const [show, setShow] = useState(false)
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      {children}
+      {show && (
+        <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50 px-2 py-1 text-sm bg-[var(--card)] border border-[var(--border)] rounded-md shadow-lg whitespace-nowrap animate-fade-in">
+          {label}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function Sidebar({ userId, currentConversationId, onSelectConversation, onConversationsChange, onRefreshRef }: SidebarProps) {
   const [files, setFiles] = useState<FileRecord[]>([])
   const [folders, setFolders] = useState<FolderRecord[]>([])
@@ -61,7 +82,7 @@ export function Sidebar({ userId, currentConversationId, onSelectConversation, o
   const [loadingConversations, setLoadingConversations] = useState(true)
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [selectedFile, setSelectedFile] = useState<FileRecord | null>(null)
-  const [collapsed, setCollapsed] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const [draggedFileId, setDraggedFileId] = useState<string | null>(null)
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null)
@@ -71,8 +92,10 @@ export function Sidebar({ userId, currentConversationId, onSelectConversation, o
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null)
   const [editingFolderName, setEditingFolderName] = useState('')
+  const [activeSection, setActiveSection] = useState<'conversations' | 'files'>('conversations')
   const newFolderInputRef = useRef<HTMLInputElement>(null)
   const editFolderInputRef = useRef<HTMLInputElement>(null)
+  const sidebarRef = useRef<HTMLDivElement>(null)
 
   const supabase = createClient()
 
@@ -150,6 +173,17 @@ export function Sidebar({ userId, currentConversationId, onSelectConversation, o
     }
   }, [contextMenu])
 
+  // Close sidebar when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (isExpanded && sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
+        setIsExpanded(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isExpanded])
+
   const handleDeleteConversation = async (convId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     if (!confirm('Delete this conversation?')) return
@@ -169,6 +203,7 @@ export function Sidebar({ userId, currentConversationId, onSelectConversation, o
 
   const handleNewChat = () => {
     onSelectConversation?.(null)
+    setIsExpanded(false)
   }
 
   const handleDeleteFile = async (fileId: string, e: React.MouseEvent) => {
@@ -249,7 +284,6 @@ export function Sidebar({ userId, currentConversationId, onSelectConversation, o
       const res = await fetch(`/api/folders/${folderId}`, { method: 'DELETE' })
       if (res.ok) {
         setFolders(folders.filter(f => f.id !== folderId))
-        // Update files to remove folder_id for files in deleted folder
         setFiles(files.map(f => f.folder_id === folderId ? { ...f, folder_id: null } : f))
         setExpandedFolders(prev => {
           const next = new Set(prev)
@@ -386,7 +420,7 @@ export function Sidebar({ userId, currentConversationId, onSelectConversation, o
         onDragStart={(e) => handleDragStart(e, file.id)}
         onDragEnd={handleDragEnd}
         onClick={() => setSelectedFile(file)}
-        className={`w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-[var(--card)] transition-colors text-left group ${
+        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[var(--card-hover)] transition-colors text-left group ${
           draggedFileId === file.id ? 'opacity-50' : ''
         }`}
       >
@@ -410,8 +444,8 @@ export function Sidebar({ userId, currentConversationId, onSelectConversation, o
     return (
       <li key={folder.id}>
         <div
-          className={`flex items-center gap-1 px-2 py-1.5 rounded-md transition-colors cursor-pointer group ${
-            isDragOver ? 'bg-accent/20 ring-1 ring-accent' : 'hover:bg-[var(--card)]'
+          className={`flex items-center gap-1 px-2 py-2 rounded-lg transition-colors cursor-pointer group ${
+            isDragOver ? 'bg-accent/20 ring-1 ring-accent' : 'hover:bg-[var(--card-hover)]'
           }`}
           onClick={() => toggleFolder(folder.id)}
           onContextMenu={(e) => handleContextMenu(e, folder.id)}
@@ -465,7 +499,7 @@ export function Sidebar({ userId, currentConversationId, onSelectConversation, o
           </button>
         </div>
         {isExpanded && (
-          <ul className="ml-4 mt-1 space-y-1 border-l border-[var(--border)] pl-2">
+          <ul className="ml-4 mt-1 space-y-0.5 border-l border-[var(--border)] pl-2">
             {folderFiles.length === 0 ? (
               <li className="text-xs text-[var(--muted)] py-1 px-2">Empty folder</li>
             ) : (
@@ -477,160 +511,258 @@ export function Sidebar({ userId, currentConversationId, onSelectConversation, o
     )
   }
 
-  if (collapsed) {
+  // Collapsed sidebar (icon rail)
+  if (!isExpanded) {
     return (
-      <div className="w-12 border-r border-[var(--border)] flex flex-col items-center py-4">
-        <button
-          onClick={() => setCollapsed(false)}
-          className="p-2 rounded-md hover:bg-[var(--card)] transition-colors"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
+      <div className="w-14 border-r border-[var(--border-subtle)] bg-[var(--background)] flex flex-col items-center py-4 gap-2">
+        <Tooltip label="New Chat">
+          <button
+            onClick={handleNewChat}
+            className="p-3 rounded-xl hover:bg-[var(--card)] transition-all duration-150"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+        </Tooltip>
+
+        <div className="w-8 h-px bg-[var(--border)] my-2" />
+
+        <Tooltip label="Conversations">
+          <button
+            onClick={() => {
+              setActiveSection('conversations')
+              setIsExpanded(true)
+            }}
+            className="p-3 rounded-xl hover:bg-[var(--card)] transition-all duration-150"
+          >
+            <MessageSquare className="w-5 h-5" />
+          </button>
+        </Tooltip>
+
+        <Tooltip label="Files">
+          <button
+            onClick={() => {
+              setActiveSection('files')
+              setIsExpanded(true)
+            }}
+            className="p-3 rounded-xl hover:bg-[var(--card)] transition-all duration-150"
+          >
+            <Folder className="w-5 h-5" />
+          </button>
+        </Tooltip>
+
+        <div className="flex-1" />
+
+        <Tooltip label="Upload File">
+          <button
+            onClick={() => setShowUploadModal(true)}
+            className="p-3 rounded-xl hover:bg-[var(--card)] transition-all duration-150"
+          >
+            <Upload className="w-5 h-5" />
+          </button>
+        </Tooltip>
+
+        {showUploadModal && (
+          <FileUploadModal
+            onClose={() => setShowUploadModal(false)}
+            onUploadComplete={() => {
+              fetchFiles()
+              setShowUploadModal(false)
+            }}
+          />
+        )}
+
+        {selectedFile && (
+          <FilePreviewModal
+            file={selectedFile}
+            onClose={() => setSelectedFile(null)}
+          />
+        )}
       </div>
     )
   }
 
+  // Expanded sidebar
   return (
     <>
-      <aside className="w-64 border-r border-[var(--border)] flex flex-col">
-        {/* Conversations Section */}
+      <aside
+        ref={sidebarRef}
+        className="w-72 border-r border-[var(--border)] bg-[var(--background-secondary)] flex flex-col animate-slide-in-left"
+      >
+        {/* Header with close button */}
         <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
-          <h2 className="font-semibold text-sm">Conversations</h2>
+          <h2 className="font-semibold">
+            {activeSection === 'conversations' ? 'Conversations' : 'Files'}
+          </h2>
           <div className="flex items-center gap-1">
-            <button
-              onClick={handleNewChat}
-              className="p-1.5 rounded-md hover:bg-[var(--card)] transition-colors"
-              title="New chat"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setCollapsed(true)}
-              className="p-1.5 rounded-md hover:bg-[var(--card)] transition-colors"
-              title="Collapse sidebar"
-            >
-              <ChevronRight className="w-4 h-4 rotate-180" />
-            </button>
-          </div>
-        </div>
-
-        <div className="overflow-y-auto p-2 max-h-[40%]">
-          {loadingConversations ? (
-            <div className="flex items-center justify-center py-4">
-              <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : conversations.length === 0 ? (
-            <div className="text-center py-4 text-sm text-[var(--muted)]">
-              <MessageSquare className="w-6 h-6 mx-auto mb-2 opacity-50" />
-              <p>No conversations yet</p>
-            </div>
-          ) : (
-            <ul className="space-y-1">
-              {conversations.map((conv) => (
-                <li key={conv.id}>
-                  <button
-                    onClick={() => onSelectConversation?.(conv.id)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-md transition-colors text-left group ${
-                      currentConversationId === conv.id
-                        ? 'bg-accent/20 text-accent'
-                        : 'hover:bg-[var(--card)]'
-                    }`}
-                  >
-                    <MessageSquare className="w-4 h-4 flex-shrink-0" />
-                    <span className="flex-1 truncate text-sm">{conv.title}</span>
-                    <button
-                      onClick={(e) => handleDeleteConversation(conv.id, e)}
-                      className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 text-red-400 transition-all"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* Files Section */}
-        <div className="p-4 border-y border-[var(--border)] flex items-center justify-between">
-          <h2 className="font-semibold text-sm">Files</h2>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setShowNewFolderInput(true)}
-              className="p-1.5 rounded-md hover:bg-[var(--card)] transition-colors"
-              title="New folder"
-            >
-              <Folder className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className="p-1.5 rounded-md hover:bg-[var(--card)] transition-colors"
-              title="Upload file"
-            >
-              <Upload className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        <div
-          className={`flex-1 overflow-y-auto p-2 ${
-            dragOverTarget === 'root' ? 'bg-accent/10' : ''
-          }`}
-          onDragOver={(e) => handleDragOver(e, 'root')}
-          onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, null)}
-        >
-          {loadingFiles ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : files.length === 0 && folders.length === 0 ? (
-            <div className="text-center py-8 text-sm text-[var(--muted)]">
-              <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>No files yet</p>
+            {activeSection === 'conversations' && (
               <button
-                onClick={() => setShowUploadModal(true)}
-                className="mt-2 text-accent hover:underline"
+                onClick={handleNewChat}
+                className="p-2 rounded-lg hover:bg-[var(--card)] transition-colors"
+                title="New chat"
               >
-                Upload your first file
+                <Plus className="w-4 h-4" />
               </button>
+            )}
+            {activeSection === 'files' && (
+              <>
+                <button
+                  onClick={() => setShowNewFolderInput(true)}
+                  className="p-2 rounded-lg hover:bg-[var(--card)] transition-colors"
+                  title="New folder"
+                >
+                  <FolderPlus className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setShowUploadModal(true)}
+                  className="p-2 rounded-lg hover:bg-[var(--card)] transition-colors"
+                  title="Upload file"
+                >
+                  <Upload className="w-4 h-4" />
+                </button>
+              </>
+            )}
+            <button
+              onClick={() => setIsExpanded(false)}
+              className="p-2 rounded-lg hover:bg-[var(--card)] transition-colors"
+              title="Close sidebar"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Section tabs */}
+        <div className="flex border-b border-[var(--border)]">
+          <button
+            onClick={() => setActiveSection('conversations')}
+            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+              activeSection === 'conversations'
+                ? 'text-accent border-b-2 border-accent'
+                : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+            }`}
+          >
+            Chats
+          </button>
+          <button
+            onClick={() => setActiveSection('files')}
+            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+              activeSection === 'files'
+                ? 'text-accent border-b-2 border-accent'
+                : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+            }`}
+          >
+            Files
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
+          {activeSection === 'conversations' ? (
+            <div className="p-2">
+              {loadingConversations ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : conversations.length === 0 ? (
+                <div className="text-center py-8 text-sm text-[var(--muted)]">
+                  <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>No conversations yet</p>
+                  <p className="text-xs mt-1">Start chatting to create one</p>
+                </div>
+              ) : (
+                <ul className="space-y-1">
+                  {conversations.map((conv) => (
+                    <li key={conv.id}>
+                      <button
+                        onClick={() => {
+                          onSelectConversation?.(conv.id)
+                          setIsExpanded(false)
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg transition-colors text-left group ${
+                          currentConversationId === conv.id
+                            ? 'bg-accent/15 text-accent'
+                            : 'hover:bg-[var(--card)]'
+                        }`}
+                      >
+                        <MessageSquare className="w-4 h-4 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <span className="block truncate text-sm">{conv.title}</span>
+                          {conv.writing_assistant_mode && (
+                            <span className="text-xs text-accent/70">Writing Assistant</span>
+                          )}
+                        </div>
+                        <button
+                          onClick={(e) => handleDeleteConversation(conv.id, e)}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 text-red-400 transition-all"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           ) : (
-            <ul className="space-y-1">
-              {/* New folder input */}
-              {showNewFolderInput && (
-                <li className="flex items-center gap-2 px-2 py-1.5">
-                  <Folder className="w-4 h-4 text-yellow-400" />
-                  <input
-                    ref={newFolderInputRef}
-                    type="text"
-                    value={newFolderName}
-                    onChange={(e) => setNewFolderName(e.target.value)}
-                    onBlur={handleCreateFolder}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleCreateFolder()
-                      if (e.key === 'Escape') {
-                        setShowNewFolderInput(false)
-                        setNewFolderName('')
-                      }
-                    }}
-                    placeholder="Folder name"
-                    className="flex-1 bg-[var(--card)] px-2 py-1 rounded text-sm outline-none border border-accent"
-                  />
-                </li>
-              )}
+            <div
+              className={`p-2 min-h-full ${dragOverTarget === 'root' ? 'bg-accent/10' : ''}`}
+              onDragOver={(e) => handleDragOver(e, 'root')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, null)}
+            >
+              {loadingFiles ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : files.length === 0 && folders.length === 0 ? (
+                <div className="text-center py-8 text-sm text-[var(--muted)]">
+                  <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>No files yet</p>
+                  <button
+                    onClick={() => setShowUploadModal(true)}
+                    className="mt-2 text-accent hover:underline"
+                  >
+                    Upload your first file
+                  </button>
+                </div>
+              ) : (
+                <ul className="space-y-1">
+                  {/* New folder input */}
+                  {showNewFolderInput && (
+                    <li className="flex items-center gap-2 px-2 py-2">
+                      <Folder className="w-4 h-4 text-yellow-400" />
+                      <input
+                        ref={newFolderInputRef}
+                        type="text"
+                        value={newFolderName}
+                        onChange={(e) => setNewFolderName(e.target.value)}
+                        onBlur={handleCreateFolder}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleCreateFolder()
+                          if (e.key === 'Escape') {
+                            setShowNewFolderInput(false)
+                            setNewFolderName('')
+                          }
+                        }}
+                        placeholder="Folder name"
+                        className="flex-1 bg-[var(--card)] px-2 py-1 rounded text-sm outline-none border border-accent"
+                      />
+                    </li>
+                  )}
 
-              {/* Folders */}
-              {folders.map(renderFolder)}
+                  {/* Folders */}
+                  {folders.map(renderFolder)}
 
-              {/* Root-level files */}
-              {rootFiles.length > 0 && folders.length > 0 && (
-                <li className="pt-2 mt-2 border-t border-[var(--border)]">
-                  <span className="text-xs text-[var(--muted)] px-2">Unfiled</span>
-                </li>
+                  {/* Root-level files */}
+                  {rootFiles.length > 0 && folders.length > 0 && (
+                    <li className="pt-2 mt-2 border-t border-[var(--border)]">
+                      <span className="text-xs text-[var(--muted)] px-2">Unfiled</span>
+                    </li>
+                  )}
+                  {rootFiles.map(renderFile)}
+                </ul>
               )}
-              {rootFiles.map(renderFile)}
-            </ul>
+            </div>
           )}
         </div>
       </aside>
@@ -638,7 +770,7 @@ export function Sidebar({ userId, currentConversationId, onSelectConversation, o
       {/* Context Menu */}
       {contextMenu && (
         <div
-          className="fixed bg-[var(--card)] border border-[var(--border)] rounded-md shadow-lg py-1 z-50"
+          className="fixed bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg py-1 z-50"
           style={{ top: contextMenu.y, left: contextMenu.x }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -669,7 +801,7 @@ export function Sidebar({ userId, currentConversationId, onSelectConversation, o
               <ChevronRight className="w-3 h-3 ml-auto" />
             </button>
             {showColorPicker && (
-              <div className="absolute left-full top-0 ml-1 bg-[var(--card)] border border-[var(--border)] rounded-md shadow-lg p-2 min-w-[140px]">
+              <div className="absolute left-full top-0 ml-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg p-2 min-w-[140px]">
                 <div className="grid grid-cols-3 gap-1">
                   {FOLDER_COLORS.map((color) => {
                     const currentFolder = folders.find(f => f.id === contextMenu.folderId)
