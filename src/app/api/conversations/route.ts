@@ -12,7 +12,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from('conversations')
-    .select('id, messages, created_at, updated_at')
+    .select('id, messages, writing_assistant_mode, created_at, updated_at')
     .eq('user_id', user.id)
     .order('updated_at', { ascending: false })
 
@@ -23,11 +23,17 @@ export async function GET() {
   // Add a title based on the first user message
   const conversationsWithTitle = data?.map(conv => {
     const messages = conv.messages as Array<{ role: string; content: string }>
+    const isWritingAssistant = conv.writing_assistant_mode === true
     const firstUserMessage = messages?.find(m => m.role === 'user')
-    const title = firstUserMessage?.content?.slice(0, 50) || 'New conversation'
+
+    // For writing assistant convos, use a different default title
+    const defaultTitle = isWritingAssistant ? 'Writing Session' : 'New conversation'
+    const title = firstUserMessage?.content?.slice(0, 50) || defaultTitle
+
     return {
       ...conv,
-      title: title + (firstUserMessage?.content && firstUserMessage.content.length > 50 ? '...' : '')
+      title: title + (firstUserMessage?.content && firstUserMessage.content.length > 50 ? '...' : ''),
+      writing_assistant_mode: isWritingAssistant
     }
   })
 
@@ -44,16 +50,23 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { conversationId, messages } = await request.json()
+    const { conversationId, messages, writing_assistant_mode } = await request.json()
 
     if (conversationId) {
       // Update existing conversation
+      const updateData: Record<string, unknown> = {
+        messages,
+        updated_at: new Date().toISOString()
+      }
+
+      // Only include writing_assistant_mode if explicitly set
+      if (typeof writing_assistant_mode === 'boolean') {
+        updateData.writing_assistant_mode = writing_assistant_mode
+      }
+
       const { data, error } = await supabase
         .from('conversations')
-        .update({
-          messages,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', conversationId)
         .eq('user_id', user.id)
         .select()
@@ -66,12 +79,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(data)
     } else {
       // Create new conversation
+      const insertData: Record<string, unknown> = {
+        user_id: user.id,
+        messages
+      }
+
+      // Only include writing_assistant_mode if explicitly set
+      if (typeof writing_assistant_mode === 'boolean') {
+        insertData.writing_assistant_mode = writing_assistant_mode
+      }
+
       const { data, error } = await supabase
         .from('conversations')
-        .insert({
-          user_id: user.id,
-          messages
-        })
+        .insert(insertData)
         .select()
         .single()
 
