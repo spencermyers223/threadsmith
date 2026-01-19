@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar'
 import { format, parse, startOfWeek, getDay, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns'
 import { enUS } from 'date-fns/locale'
@@ -84,21 +85,47 @@ function stripHtml(html: string): string {
   return text.length > 200 ? text.substring(0, 200) + '...' : text
 }
 
-// Custom Event Component with Tooltip
+// Custom Event Component with Tooltip using Portal
 function EventWithTooltip({ event }: { event: CalendarEvent }) {
   const [showTooltip, setShowTooltip] = useState(false)
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 })
+  const eventRef = useRef<HTMLDivElement>(null)
   const post = event.resource
+
+  const handleMouseEnter = () => {
+    if (eventRef.current) {
+      const rect = eventRef.current.getBoundingClientRect()
+      // Position tooltip below the event, accounting for scroll
+      setTooltipPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+      })
+    }
+    setShowTooltip(true)
+  }
+
+  const handleMouseLeave = () => {
+    setShowTooltip(false)
+  }
 
   return (
     <div
-      className="relative h-full"
-      onMouseEnter={() => setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
+      ref={eventRef}
+      className="h-full"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <span className="block truncate">{event.title}</span>
 
-      {showTooltip && (
-        <div className="absolute left-0 top-full mt-1 z-[9999] w-72 p-3 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-xl">
+      {showTooltip && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed w-72 p-3 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-xl pointer-events-none"
+          style={{
+            top: tooltipPosition.top,
+            left: tooltipPosition.left,
+            zIndex: 9999,
+          }}
+        >
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs font-medium text-accent capitalize">{post.type}</span>
             <span className={`text-xs px-1.5 py-0.5 rounded ${
@@ -120,7 +147,8 @@ function EventWithTooltip({ event }: { event: CalendarEvent }) {
               Scheduled: {post.scheduled_time}
             </p>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

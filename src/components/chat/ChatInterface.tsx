@@ -613,7 +613,7 @@ export function ChatInterface({
                 ? 'Generate thread ideas about...'
                 : 'Generate article ideas about...'
             }
-            className="flex-1 px-4 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+            className="flex-1 px-4 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-[var(--foreground)] placeholder:text-[var(--muted)]"
             disabled={isStreaming}
           />
           <button

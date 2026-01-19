@@ -29,7 +29,7 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
     },
     editorProps: {
       attributes: {
-        class: 'prose max-w-none focus:outline-none min-h-[300px] p-4',
+        class: 'prose max-w-none focus:outline-none min-h-[300px] p-4 text-[var(--foreground)] bg-[var(--background)]',
       },
     },
   })
