@@ -70,7 +70,7 @@ function parseOptionsIntoCards(content: string): { hasOptions: boolean; sections
   // Pattern to match "Option 1:", "**Option 1:**", "## Option 1", etc.
   const optionPattern = /(?:^|\n)(?:#{1,3}\s*)?(?:\*{1,2})?Option\s+(\d+)(?:\*{0,2})?:?/gi
 
-  const matches = [...content.matchAll(optionPattern)]
+  const matches = Array.from(content.matchAll(optionPattern))
 
   if (matches.length === 0) {
     return { hasOptions: false, sections: [{ type: 'intro', content }] }
