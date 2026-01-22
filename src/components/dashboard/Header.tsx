@@ -36,7 +36,7 @@ export function Header({ user }: HeaderProps) {
 
   return (
     <header className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4">
-      <Link href="/dashboard" className="flex items-center">
+      <Link href="/generate" className="flex items-center">
         <Image
           src="/logo.svg"
           alt="ThreadSmith"
@@ -53,12 +53,6 @@ export function Header({ user }: HeaderProps) {
           className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
         >
           Generate
-        </Link>
-        <Link
-          href="/dashboard"
-          className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
-        >
-          Chat
         </Link>
         <Link
           href="/workspace"

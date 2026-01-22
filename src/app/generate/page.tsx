@@ -12,13 +12,12 @@ import {
   Send,
   Calendar,
   Tag,
-  Folder,
   Check,
   AlertCircle,
   PenLine,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { FilesSidebar } from '@/components/generate/FilesSidebar'
+import { FilesSidebar, FileRecord } from '@/components/generate/FilesSidebar'
 
 // Types
 type Length = 'punchy' | 'standard' | 'developed' | 'thread'
@@ -29,12 +28,6 @@ interface GeneratedPost {
   content: string
   archetype: 'scroll_stopper' | 'debate_starter' | 'viral_catalyst'
   characterCount: number
-}
-
-interface SelectedFile {
-  id: string
-  name: string
-  content: string | null
 }
 
 // Archetype styling
@@ -231,13 +224,15 @@ export default function GeneratePage() {
   const [length, setLength] = useState<Length>('standard')
   const [tone, setTone] = useState<Tone>('casual')
   const [postType, setPostType] = useState<PostType>('all')
-  const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null)
+  const [selectedFile, setSelectedFile] = useState<FileRecord | null>(null)
+
+  // Sidebar state
+  const [sidebarExpanded, setSidebarExpanded] = useState(false)
 
   // UI state
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [posts, setPosts] = useState<GeneratedPost[]>([])
-  const [showFilesSidebar, setShowFilesSidebar] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [editingPostIndex, setEditingPostIndex] = useState<number | null>(null)
 
@@ -275,11 +270,8 @@ export default function GeneratePage() {
     }
   }
 
-  const handleFileSelect = (file: SelectedFile | null) => {
+  const handleFileSelect = (file: FileRecord | null) => {
     setSelectedFile(file)
-    if (file) {
-      setShowFilesSidebar(false)
-    }
   }
 
   const handlePostNow = (content: string) => {
@@ -344,170 +336,172 @@ export default function GeneratePage() {
   }
 
   return (
-    <div className="min-h-full bg-[var(--background)]">
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Generate Posts</h1>
-          <p className="text-[var(--muted)]">
-            Create algorithm-optimized content in seconds
-          </p>
-        </div>
-
-        {/* Main Input Section */}
-        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 mb-6">
-          {/* Topic Input */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-[var(--foreground-muted)]">
-                Topic
-              </label>
-              <span className={`text-xs font-mono ${
-                topic.length > 280 ? 'text-red-400' : 'text-[var(--muted)]'
-              }`}>
-                {topic.length}/280
-              </span>
-            </div>
-            <textarea
-              value={topic}
-              onChange={(e) => setTopic(e.target.value.slice(0, 280))}
-              placeholder="What do you want to post about?"
-              className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-4 py-3 text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:border-accent input-glow resize-none"
-              rows={3}
-            />
-          </div>
-
-          {/* File Source Button */}
-          <div className="mb-6">
-            {selectedFile ? (
-              <div className="flex items-center gap-2 px-4 py-2 bg-accent/10 border border-accent/30 rounded-lg">
-                <FileText className="w-4 h-4 text-accent" />
-                <span className="flex-1 truncate text-sm">
-                  <span className="text-[var(--muted)]">Using: </span>
-                  <span className="text-accent font-medium">{selectedFile.name}</span>
-                </span>
-                <button
-                  onClick={() => setShowFilesSidebar(true)}
-                  className="p-1 hover:bg-[var(--border)] rounded text-[var(--muted)] hover:text-[var(--foreground)]"
-                  title="Change file"
-                >
-                  <Folder className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={clearFileSelection}
-                  className="p-1 hover:bg-[var(--border)] rounded text-[var(--muted)] hover:text-red-400"
-                  title="Remove file"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowFilesSidebar(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg hover:border-[var(--muted)] transition-colors text-sm text-[var(--muted)]"
-              >
-                <Folder className="w-4 h-4" />
-                Or generate from your files
-                <span className="ml-auto text-xs bg-[var(--card)] px-2 py-0.5 rounded">Browse</span>
-              </button>
-            )}
-          </div>
-
-          {/* Controls */}
-          <div className="space-y-6">
-            <ToggleGroup
-              label="Length"
-              value={length}
-              onChange={setLength}
-              options={[
-                { value: 'punchy', label: 'Punchy', description: 'Under 140 characters' },
-                { value: 'standard', label: 'Standard', description: '140-200 characters' },
-                { value: 'developed', label: 'Developed', description: '200-280 characters' },
-                { value: 'thread', label: 'Thread', description: 'Multi-tweet thread' },
-              ]}
-            />
-
-            <ToggleGroup
-              label="Tone"
-              value={tone}
-              onChange={setTone}
-              options={[
-                { value: 'casual', label: 'Casual', description: 'Friendly and conversational' },
-                { value: 'educational', label: 'Educational', description: 'Informative and teaching' },
-                { value: 'hot_take', label: 'Hot Take', description: 'Bold and provocative' },
-                { value: 'professional', label: 'Professional', description: 'Polished and authoritative' },
-              ]}
-            />
-
-            <ToggleGroup
-              label="Post Type"
-              value={postType}
-              onChange={setPostType}
-              options={[
-                { value: 'scroll_stopper', label: 'Scroll Stopper', description: 'Pattern-interrupt hooks' },
-                { value: 'debate_starter', label: 'Debate Starter', description: 'Reply-generating takes' },
-                { value: 'viral_catalyst', label: 'Viral Catalyst', description: 'Shareable insights' },
-                { value: 'all', label: 'Generate All', description: 'One of each type' },
-              ]}
-            />
-          </div>
-        </div>
-
-        {/* Generate Button */}
-        <button
-          onClick={handleGenerate}
-          disabled={!topic.trim() || isLoading}
-          className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-accent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed text-[var(--accent-text)] rounded-xl font-semibold text-lg transition-colors mb-8"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-5 h-5" />
-              Generate Posts
-            </>
-          )}
-        </button>
-
-        {/* Error Display */}
-        {error && (
-          <div className="mb-8 flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <p>{error}</p>
-          </div>
-        )}
-
-        {/* Generated Posts */}
-        {posts.length > 0 && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Generated Posts</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {posts.map((post, index) => (
-                <PostCard
-                  key={index}
-                  post={post}
-                  onPostNow={() => handlePostNow(post.content)}
-                  onAddToCalendar={handleAddToCalendar}
-                  onAddTags={handleAddTags}
-                  onEditInWorkspace={() => handleEditInWorkspace(post, index)}
-                  isEditingInWorkspace={editingPostIndex === index}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Files Sidebar */}
+    <div className="min-h-full bg-[var(--background)] flex">
+      {/* Collapsible Files Sidebar */}
       <FilesSidebar
-        isOpen={showFilesSidebar}
-        onClose={() => setShowFilesSidebar(false)}
+        isExpanded={sidebarExpanded}
+        onToggleExpanded={() => setSidebarExpanded(!sidebarExpanded)}
         selectedFileId={selectedFile?.id || null}
-        onSelectFile={(file) => handleFileSelect(file ? { id: file.id, name: file.name, content: file.content } : null)}
+        onSelectFile={handleFileSelect}
       />
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold mb-2">Generate Posts</h1>
+            <p className="text-[var(--muted)]">
+              Create algorithm-optimized content in seconds
+            </p>
+          </div>
+
+          {/* Main Input Section */}
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 mb-6">
+            {/* Topic Input */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-[var(--foreground-muted)]">
+                  Topic
+                </label>
+                <span className={`text-xs font-mono ${
+                  topic.length > 280 ? 'text-red-400' : 'text-[var(--muted)]'
+                }`}>
+                  {topic.length}/280
+                </span>
+              </div>
+              <textarea
+                value={topic}
+                onChange={(e) => setTopic(e.target.value.slice(0, 280))}
+                placeholder="What do you want to post about?"
+                className="w-full bg-[var(--background)] border border-[var(--border)] rounded-lg px-4 py-3 text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:border-accent input-glow resize-none"
+                rows={3}
+              />
+            </div>
+
+            {/* File Source Display */}
+            <div className="mb-6">
+              {selectedFile ? (
+                <div className="flex items-center gap-2 px-4 py-2 bg-accent/10 border border-accent/30 rounded-lg">
+                  <FileText className="w-4 h-4 text-accent" />
+                  <span className="flex-1 truncate text-sm">
+                    <span className="text-[var(--muted)]">Using: </span>
+                    <span className="text-accent font-medium">{selectedFile.name}</span>
+                  </span>
+                  <button
+                    onClick={() => setSidebarExpanded(true)}
+                    className="px-2 py-1 text-xs bg-[var(--card)] hover:bg-[var(--border)] rounded transition-colors"
+                  >
+                    Change
+                  </button>
+                  <button
+                    onClick={clearFileSelection}
+                    className="p-1 hover:bg-[var(--border)] rounded text-[var(--muted)] hover:text-red-400"
+                    title="Remove file"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setSidebarExpanded(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg hover:border-[var(--muted)] transition-colors text-sm text-[var(--muted)] w-full"
+                >
+                  <FileText className="w-4 h-4" />
+                  Or generate from your files
+                  <span className="ml-auto text-xs bg-[var(--card)] px-2 py-0.5 rounded">Browse</span>
+                </button>
+              )}
+            </div>
+
+            {/* Controls */}
+            <div className="space-y-6">
+              <ToggleGroup
+                label="Length"
+                value={length}
+                onChange={setLength}
+                options={[
+                  { value: 'punchy', label: 'Punchy', description: 'Under 140 characters' },
+                  { value: 'standard', label: 'Standard', description: '140-200 characters' },
+                  { value: 'developed', label: 'Developed', description: '200-280 characters' },
+                  { value: 'thread', label: 'Thread', description: 'Multi-tweet thread' },
+                ]}
+              />
+
+              <ToggleGroup
+                label="Tone"
+                value={tone}
+                onChange={setTone}
+                options={[
+                  { value: 'casual', label: 'Casual', description: 'Friendly and conversational' },
+                  { value: 'educational', label: 'Educational', description: 'Informative and teaching' },
+                  { value: 'hot_take', label: 'Hot Take', description: 'Bold and provocative' },
+                  { value: 'professional', label: 'Professional', description: 'Polished and authoritative' },
+                ]}
+              />
+
+              <ToggleGroup
+                label="Post Type"
+                value={postType}
+                onChange={setPostType}
+                options={[
+                  { value: 'scroll_stopper', label: 'Scroll Stopper', description: 'Pattern-interrupt hooks' },
+                  { value: 'debate_starter', label: 'Debate Starter', description: 'Reply-generating takes' },
+                  { value: 'viral_catalyst', label: 'Viral Catalyst', description: 'Shareable insights' },
+                  { value: 'all', label: 'Generate All', description: 'One of each type' },
+                ]}
+              />
+            </div>
+          </div>
+
+          {/* Generate Button */}
+          <button
+            onClick={handleGenerate}
+            disabled={!topic.trim() || isLoading}
+            className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-accent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed text-[var(--accent-text)] rounded-xl font-semibold text-lg transition-colors mb-8"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-5 h-5" />
+                Generate Posts
+              </>
+            )}
+          </button>
+
+          {/* Error Display */}
+          {error && (
+            <div className="mb-8 flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <p>{error}</p>
+            </div>
+          )}
+
+          {/* Generated Posts */}
+          {posts.length > 0 && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold">Generated Posts</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {posts.map((post, index) => (
+                  <PostCard
+                    key={index}
+                    post={post}
+                    onPostNow={() => handlePostNow(post.content)}
+                    onAddToCalendar={handleAddToCalendar}
+                    onAddTags={handleAddTags}
+                    onEditInWorkspace={() => handleEditInWorkspace(post, index)}
+                    isEditingInWorkspace={editingPostIndex === index}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Toast */}
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
