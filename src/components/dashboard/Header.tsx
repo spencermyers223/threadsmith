@@ -49,6 +49,12 @@ export function Header({ user }: HeaderProps) {
 
       <nav className="flex items-center gap-2">
         <Link
+          href="/profile/setup"
+          className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
+        >
+          Customize
+        </Link>
+        <Link
           href="/generate"
           className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
         >

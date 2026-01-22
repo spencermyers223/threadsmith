@@ -13,6 +13,8 @@ export async function GET() {
   try {
     const result = await checkCanGenerate(supabase, user.id)
 
+    console.log('[usage API] checkCanGenerate result:', result)
+
     // Get subscription details if subscribed
     let subscription = null
     if (result.isSubscribed) {
@@ -26,13 +28,17 @@ export async function GET() {
       subscription = data
     }
 
-    return NextResponse.json({
+    const response = {
       canGenerate: result.canGenerate,
       remaining: result.remaining,
       isSubscribed: result.isSubscribed,
       freeLimit: getFreeLimit(),
       subscription,
-    })
+    }
+
+    console.log('[usage API] returning:', response)
+
+    return NextResponse.json(response)
   } catch (err) {
     console.error('Usage check error:', err)
     return NextResponse.json(

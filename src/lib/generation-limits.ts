@@ -39,6 +39,9 @@ export async function checkCanGenerate(
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId)
 
+  console.log('[generation-limits] checkCanGenerate for user:', userId)
+  console.log('[generation-limits] count query result:', { count, error })
+
   if (error) {
     console.error('Error checking generation usage:', error)
     // Default to allowing generation if there's an error
@@ -51,6 +54,8 @@ export async function checkCanGenerate(
 
   const usedCount = count || 0
   const remaining = FREE_GENERATION_LIMIT - usedCount
+
+  console.log('[generation-limits] usedCount:', usedCount, 'remaining:', remaining)
 
   return {
     canGenerate: remaining > 0,
@@ -70,13 +75,18 @@ export async function recordGeneration(
   generationId: string,
   sourceType: SourceType
 ): Promise<void> {
-  const { error } = await supabase
+  console.log('[generation-limits] recordGeneration called:', { userId, generationId, sourceType })
+
+  const { data, error } = await supabase
     .from('generation_usage')
     .insert({
       user_id: userId,
       generation_id: generationId,
       source_type: sourceType,
     })
+    .select()
+
+  console.log('[generation-limits] recordGeneration result:', { data, error })
 
   if (error) {
     console.error('Error recording generation:', error)

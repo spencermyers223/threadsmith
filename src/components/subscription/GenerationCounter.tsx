@@ -4,10 +4,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { Loader2 } from 'lucide-react'
 
 interface UsageData {
+  canGenerate: boolean
   remaining: number
-  limit: number
-  isPaid: boolean
-  isLifetime: boolean
+  isSubscribed: boolean
+  freeLimit: number
+  subscription?: {
+    status: string
+    plan_type: string
+  } | null
 }
 
 interface GenerationCounterProps {
@@ -26,7 +30,7 @@ export function GenerationCounter({ onLimitReached }: GenerationCounterProps) {
         setUsage(data)
 
         // Trigger callback if limit reached
-        if (!data.isPaid && data.remaining <= 0 && onLimitReached) {
+        if (!data.isSubscribed && data.remaining <= 0 && onLimitReached) {
           onLimitReached()
         }
       }
@@ -65,10 +69,11 @@ export function GenerationCounter({ onLimitReached }: GenerationCounterProps) {
   }
 
   // Paid user - show unlimited
-  if (usage.isPaid) {
+  if (usage.isSubscribed) {
+    const isLifetime = usage.subscription?.status === 'lifetime'
     return (
       <span className="text-sm text-accent font-medium">
-        {usage.isLifetime ? 'Lifetime' : 'Pro'} — Unlimited generations
+        {isLifetime ? 'Lifetime' : 'Pro'} — Unlimited generations
       </span>
     )
   }
@@ -81,7 +86,7 @@ export function GenerationCounter({ onLimitReached }: GenerationCounterProps) {
     <span className={`text-sm font-medium ${
       isEmpty ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-[var(--muted)]'
     }`}>
-      {usage.remaining} / {usage.limit} free generations
+      {usage.remaining} / {usage.freeLimit} free generations
     </span>
   )
 }
