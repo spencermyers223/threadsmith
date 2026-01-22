@@ -19,15 +19,16 @@ const stepTitles = [
 ]
 
 // Niche-specific placeholder examples for content goal
+// Keys must match Niche type values (use hyphens, not underscores)
 const goalPlaceholders: Record<string, string> = {
-  'web3_crypto': "I'm a crypto researcher growing my X following with insights on new protocols and DeFi trends",
-  'finance_investing': "I share market analysis and investment insights to build credibility as a financial advisor",
-  'saas_tech': "I'm a founder building in public, sharing our startup journey to attract customers and investors",
-  'marketing_agency': "I help brands grow on social media and share case studies to attract new clients",
-  'fitness_health': "I'm a personal trainer sharing workout tips and transformations to grow my online coaching business",
-  'creator_economy': "I teach creators how to monetize their audience and build sustainable income streams",
-  'ecommerce_dtc': "I share e-commerce growth strategies to establish myself as a thought leader in DTC",
-  'career_jobs': "I post career advice and job search tips to build my personal brand as a recruiter",
+  'web3-crypto': "I'm a crypto researcher growing my X following with insights on new protocols and DeFi trends",
+  'finance-investing': "I share market analysis and investment insights to build credibility as a financial advisor",
+  'saas-tech': "I'm a founder building in public, sharing our startup journey to attract customers and investors",
+  'marketing-agency': "I help brands grow on social media and share case studies to attract new clients",
+  'fitness-health': "I'm a personal trainer sharing workout tips and transformations to grow my online coaching business",
+  'creator-economy': "I teach creators how to monetize their audience and build sustainable income streams",
+  'ecommerce-dtc': "I share e-commerce growth strategies to establish myself as a thought leader in DTC",
+  'career-job-advice': "I post career advice and job search tips to build my personal brand as a recruiter",
   'sports': "I share sports analysis and hot takes to grow my following as a sports commentator",
   'news': "I break down current events with unique perspectives to become a trusted news source",
   'other': "I want to grow my X following by sharing valuable content consistently",
