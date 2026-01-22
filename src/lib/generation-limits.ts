@@ -64,7 +64,7 @@ export async function checkCanGenerate(
   }
 }
 
-export type SourceType = 'topic' | 'file'
+export type SourceType = 'manual' | 'file_based'
 
 /**
  * Record a generation in the usage table

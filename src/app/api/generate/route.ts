@@ -300,7 +300,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Record the generation (only counts against limit for free users)
-    const sourceType: SourceType = sourceFileId ? 'file' : 'topic'
+    const sourceType: SourceType = sourceFileId ? 'file_based' : 'manual'
     await recordGeneration(supabase, user.id, generationId, sourceType)
 
     // Re-check remaining after recording
