@@ -15,6 +15,7 @@ import {
   Check,
   AlertCircle,
   PenLine,
+  Crown,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { FilesSidebar, FileRecord } from '@/components/generate/FilesSidebar'
@@ -359,9 +360,15 @@ export default function GeneratePage() {
         <div className="max-w-4xl mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <div />
+            <div className="flex items-center justify-between mb-6">
               <GenerationCounter onLimitReached={() => setShowUpgradeModal(true)} />
+              <button
+                onClick={() => setShowUpgradeModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-[var(--accent-text)] rounded-lg font-medium text-sm transition-colors"
+              >
+                <Crown className="w-4 h-4" />
+                Upgrade to Pro
+              </button>
             </div>
             <div className="text-center">
               <h1 className="text-3xl font-bold mb-2">Generate Posts</h1>

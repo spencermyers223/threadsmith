@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Sparkles, Check, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 interface UsageData {
   remaining: number
@@ -53,9 +53,9 @@ export function GenerationCounter({ onLimitReached }: GenerationCounterProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--card)] border border-[var(--border)] rounded-lg">
-        <Loader2 className="w-4 h-4 animate-spin text-[var(--muted)]" />
-        <span className="text-sm text-[var(--muted)]">Loading...</span>
+      <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        <span>Loading...</span>
       </div>
     )
   }
@@ -67,44 +67,21 @@ export function GenerationCounter({ onLimitReached }: GenerationCounterProps) {
   // Paid user - show unlimited
   if (usage.isPaid) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/10 border border-accent/30 rounded-lg">
-        <Check className="w-4 h-4 text-accent" />
-        <span className="text-sm font-medium text-accent">
-          {usage.isLifetime ? 'Lifetime' : 'Pro'} - Unlimited
-        </span>
-      </div>
+      <span className="text-sm text-accent font-medium">
+        {usage.isLifetime ? 'Lifetime' : 'Pro'} — Unlimited generations
+      </span>
     )
   }
 
   // Free user - show remaining count
-  const percentage = (usage.remaining / usage.limit) * 100
   const isLow = usage.remaining <= 2
   const isEmpty = usage.remaining <= 0
 
   return (
-    <div className={`flex items-center gap-3 px-3 py-1.5 bg-[var(--card)] border rounded-lg ${
-      isEmpty ? 'border-red-500/50' : isLow ? 'border-amber-500/50' : 'border-[var(--border)]'
+    <span className={`text-sm font-medium ${
+      isEmpty ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-[var(--muted)]'
     }`}>
-      <Sparkles className={`w-4 h-4 ${
-        isEmpty ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-[var(--muted)]'
-      }`} />
-      <div className="flex items-center gap-2">
-        <span className={`text-sm font-medium ${
-          isEmpty ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-[var(--foreground)]'
-        }`}>
-          {usage.remaining} / {usage.limit}
-        </span>
-        <span className="text-xs text-[var(--muted)]">generations</span>
-      </div>
-      {/* Progress bar */}
-      <div className="w-16 h-1.5 bg-[var(--border)] rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all ${
-            isEmpty ? 'bg-red-400' : isLow ? 'bg-amber-400' : 'bg-accent'
-          }`}
-          style={{ width: `${Math.max(0, percentage)}%` }}
-        />
-      </div>
-    </div>
+      {usage.remaining} / {usage.limit} free generations
+    </span>
   )
 }

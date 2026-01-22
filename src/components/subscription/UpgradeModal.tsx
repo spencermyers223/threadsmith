@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { X, AlertCircle } from 'lucide-react'
-import { PricingCards, PlanType } from './PricingCards'
+import { X, Sparkles, Zap, Loader2 } from 'lucide-react'
+
+type PlanType = 'monthly' | 'lifetime'
 
 interface UpgradeModalProps {
   isOpen: boolean
@@ -32,8 +33,6 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
       }
 
       const { url } = await res.json()
-
-      // Redirect to Stripe Checkout
       window.location.href = url
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
@@ -53,7 +52,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl bg-[var(--background)] border border-[var(--border)] rounded-2xl shadow-float animate-fade-in-up overflow-hidden">
+      <div className="relative w-full max-w-lg bg-[var(--background)] border border-[var(--border)] rounded-2xl shadow-float animate-fade-in-up overflow-hidden">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -66,35 +65,80 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
         <div className="p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent/20 mb-4">
-              <AlertCircle className="w-8 h-8 text-accent" />
-            </div>
             <h2 className="text-2xl font-bold mb-2">
-              You&apos;ve used all your free generations!
+              Upgrade to Pro
             </h2>
-            <p className="text-[var(--muted)] max-w-md mx-auto">
-              Upgrade to keep creating content that grows your audience
+            <p className="text-[var(--muted)]">
+              Unlock unlimited generations
             </p>
           </div>
 
           {/* Error display */}
           {error && (
-            <div className="mb-6 flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <p>{error}</p>
+            <div className="mb-6 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm text-center">
+              {error}
             </div>
           )}
 
-          {/* Pricing cards */}
-          <PricingCards
-            onSelectPlan={handleSelectPlan}
-            loading={loading}
-            loadingPlan={loadingPlan}
-          />
+          {/* Pricing options */}
+          <div className="space-y-4">
+            {/* Monthly */}
+            <button
+              onClick={() => handleSelectPlan('monthly')}
+              disabled={loading}
+              className="w-full p-4 bg-[var(--card)] border border-[var(--border)] rounded-xl hover:border-[var(--muted)] transition-all text-left flex items-center gap-4 disabled:opacity-50"
+            >
+              <div className="p-2 rounded-lg bg-blue-500/20">
+                <Zap className="w-5 h-5 text-blue-400" />
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold">Monthly</div>
+                <div className="text-sm text-[var(--muted)]">Cancel anytime</div>
+              </div>
+              <div className="text-right">
+                {loadingPlan === 'monthly' ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <div className="font-bold">$9.99</div>
+                    <div className="text-xs text-[var(--muted)]">/month</div>
+                  </>
+                )}
+              </div>
+            </button>
 
-          {/* Footer note */}
+            {/* Lifetime */}
+            <button
+              onClick={() => handleSelectPlan('lifetime')}
+              disabled={loading}
+              className="w-full p-4 bg-accent/10 border border-accent/30 rounded-xl hover:bg-accent/20 transition-all text-left flex items-center gap-4 disabled:opacity-50 relative"
+            >
+              <div className="absolute -top-2 right-4 px-2 py-0.5 bg-accent text-[var(--accent-text)] text-xs font-medium rounded-full">
+                Best value
+              </div>
+              <div className="p-2 rounded-lg bg-accent/20">
+                <Sparkles className="w-5 h-5 text-accent" />
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold">Lifetime</div>
+                <div className="text-sm text-[var(--muted)]">Pay once, use forever</div>
+              </div>
+              <div className="text-right">
+                {loadingPlan === 'lifetime' ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <div className="font-bold text-accent">$99.99</div>
+                    <div className="text-xs text-[var(--muted)]">one-time</div>
+                  </>
+                )}
+              </div>
+            </button>
+          </div>
+
+          {/* Footer */}
           <p className="text-center text-xs text-[var(--muted)] mt-6">
-            Secure payment powered by Stripe. Cancel anytime.
+            Secure payment via Stripe
           </p>
         </div>
       </div>
