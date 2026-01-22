@@ -12,12 +12,13 @@ import {
   Send,
   Calendar,
   Tag,
-  ExternalLink,
+  Folder,
   Check,
   AlertCircle,
   PenLine,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { FilesSidebar } from '@/components/generate/FilesSidebar'
 
 // Types
 type Length = 'punchy' | 'standard' | 'developed' | 'thread'
@@ -30,9 +31,10 @@ interface GeneratedPost {
   characterCount: number
 }
 
-interface FileInfo {
+interface SelectedFile {
   id: string
   name: string
+  content: string | null
 }
 
 // Archetype styling
@@ -84,53 +86,6 @@ function ToggleGroup<T extends string>({
             {option.label}
           </button>
         ))}
-      </div>
-    </div>
-  )
-}
-
-// File Selector Modal
-function FileSelectorModal({
-  files,
-  onSelect,
-  onClose,
-}: {
-  files: FileInfo[]
-  onSelect: (fileId: string) => void
-  onClose: () => void
-}) {
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg w-full max-w-md">
-        <div className="flex items-center justify-between p-4 border-b border-[var(--border)]">
-          <h2 className="font-semibold">Select a File</h2>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-md hover:bg-[var(--card)] transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-4 max-h-80 overflow-y-auto">
-          {files.length === 0 ? (
-            <p className="text-center text-[var(--muted)] py-8">
-              No files uploaded yet. Upload files in the Dashboard to use them here.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {files.map((file) => (
-                <button
-                  key={file.id}
-                  onClick={() => onSelect(file.id)}
-                  className="w-full flex items-center gap-3 p-3 rounded-lg bg-[var(--card)] border border-[var(--border)] hover:border-[var(--muted)] transition-colors text-left"
-                >
-                  <FileText className="w-5 h-5 text-[var(--muted)]" />
-                  <span className="truncate">{file.name}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   )
@@ -276,33 +231,15 @@ export default function GeneratePage() {
   const [length, setLength] = useState<Length>('standard')
   const [tone, setTone] = useState<Tone>('casual')
   const [postType, setPostType] = useState<PostType>('all')
-  const [sourceFileId, setSourceFileId] = useState<string | null>(null)
-  const [selectedFileName, setSelectedFileName] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<SelectedFile | null>(null)
 
   // UI state
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [posts, setPosts] = useState<GeneratedPost[]>([])
-  const [showFileModal, setShowFileModal] = useState(false)
-  const [files, setFiles] = useState<FileInfo[]>([])
+  const [showFilesSidebar, setShowFilesSidebar] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [editingPostIndex, setEditingPostIndex] = useState<number | null>(null)
-
-  // Fetch user's files on mount
-  useEffect(() => {
-    async function fetchFiles() {
-      try {
-        const res = await fetch('/api/files')
-        if (res.ok) {
-          const data = await res.json()
-          setFiles(data.map((f: { id: string; name: string }) => ({ id: f.id, name: f.name })))
-        }
-      } catch {
-        // Silently fail - files are optional
-      }
-    }
-    fetchFiles()
-  }, [])
 
   const handleGenerate = async () => {
     if (!topic.trim()) return
@@ -320,7 +257,7 @@ export default function GeneratePage() {
           length,
           tone,
           postType,
-          sourceFileId: sourceFileId || undefined,
+          sourceFileId: selectedFile?.id || undefined,
         }),
       })
 
@@ -338,11 +275,11 @@ export default function GeneratePage() {
     }
   }
 
-  const handleFileSelect = (fileId: string) => {
-    const file = files.find((f) => f.id === fileId)
-    setSourceFileId(fileId)
-    setSelectedFileName(file?.name || null)
-    setShowFileModal(false)
+  const handleFileSelect = (file: SelectedFile | null) => {
+    setSelectedFile(file)
+    if (file) {
+      setShowFilesSidebar(false)
+    }
   }
 
   const handlePostNow = (content: string) => {
@@ -403,8 +340,7 @@ export default function GeneratePage() {
   }
 
   const clearFileSelection = () => {
-    setSourceFileId(null)
-    setSelectedFileName(null)
+    setSelectedFile(null)
   }
 
   return (
@@ -443,25 +379,36 @@ export default function GeneratePage() {
 
           {/* File Source Button */}
           <div className="mb-6">
-            {selectedFileName ? (
-              <div className="flex items-center gap-2 px-4 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg">
+            {selectedFile ? (
+              <div className="flex items-center gap-2 px-4 py-2 bg-accent/10 border border-accent/30 rounded-lg">
                 <FileText className="w-4 h-4 text-accent" />
-                <span className="flex-1 truncate text-sm">Using: {selectedFileName}</span>
+                <span className="flex-1 truncate text-sm">
+                  <span className="text-[var(--muted)]">Using: </span>
+                  <span className="text-accent font-medium">{selectedFile.name}</span>
+                </span>
+                <button
+                  onClick={() => setShowFilesSidebar(true)}
+                  className="p-1 hover:bg-[var(--border)] rounded text-[var(--muted)] hover:text-[var(--foreground)]"
+                  title="Change file"
+                >
+                  <Folder className="w-4 h-4" />
+                </button>
                 <button
                   onClick={clearFileSelection}
-                  className="p-1 hover:bg-[var(--border)] rounded"
+                  className="p-1 hover:bg-[var(--border)] rounded text-[var(--muted)] hover:text-red-400"
+                  title="Remove file"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             ) : (
               <button
-                onClick={() => setShowFileModal(true)}
+                onClick={() => setShowFilesSidebar(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg hover:border-[var(--muted)] transition-colors text-sm text-[var(--muted)]"
               >
-                <FileText className="w-4 h-4" />
+                <Folder className="w-4 h-4" />
                 Or generate from your files
-                <ExternalLink className="w-3 h-3 ml-auto" />
+                <span className="ml-auto text-xs bg-[var(--card)] px-2 py-0.5 rounded">Browse</span>
               </button>
             )}
           </div>
@@ -554,14 +501,13 @@ export default function GeneratePage() {
         )}
       </div>
 
-      {/* File Selector Modal */}
-      {showFileModal && (
-        <FileSelectorModal
-          files={files}
-          onSelect={handleFileSelect}
-          onClose={() => setShowFileModal(false)}
-        />
-      )}
+      {/* Files Sidebar */}
+      <FilesSidebar
+        isOpen={showFilesSidebar}
+        onClose={() => setShowFilesSidebar(false)}
+        selectedFileId={selectedFile?.id || null}
+        onSelectFile={(file) => handleFileSelect(file ? { id: file.id, name: file.name, content: file.content } : null)}
+      />
 
       {/* Toast */}
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
