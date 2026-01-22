@@ -1,12 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Loader2, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { NicheSelector, VoiceStyleSelector, AdmiredAccountsInput } from '@/components/profile'
+import { NicheSelector, AdmiredAccountsInput } from '@/components/profile'
 import type { Niche } from '@/components/profile/NicheSelector'
-import type { VoiceStyle } from '@/components/profile/VoiceStyleSelector'
 
 const TOTAL_STEPS = 5
 
@@ -14,12 +13,39 @@ const stepTitles = [
   'Your Niche',
   'Your Content Goal',
   'Target Audience',
-  'Voice Style',
+  'Posting Schedule',
   'Accounts You Admire',
 ]
 
+// Time slots for posting preferences
+const TIME_SLOTS = [
+  { id: 'early_morning', label: 'Early Morning', time: '6-9 AM', value: '07:00' },
+  { id: 'late_morning', label: 'Late Morning', time: '9 AM-12 PM', value: '10:00' },
+  { id: 'afternoon', label: 'Afternoon', time: '12-3 PM', value: '13:00' },
+  { id: 'late_afternoon', label: 'Late Afternoon', time: '3-6 PM', value: '16:00' },
+  { id: 'evening', label: 'Evening', time: '6-9 PM', value: '19:00' },
+  { id: 'night', label: 'Night', time: '9 PM-12 AM', value: '22:00' },
+]
+
+// Common timezones
+const TIMEZONES = [
+  { value: 'America/New_York', label: 'Eastern Time (ET)' },
+  { value: 'America/Chicago', label: 'Central Time (CT)' },
+  { value: 'America/Denver', label: 'Mountain Time (MT)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
+  { value: 'America/Anchorage', label: 'Alaska Time (AKT)' },
+  { value: 'Pacific/Honolulu', label: 'Hawaii Time (HT)' },
+  { value: 'Europe/London', label: 'London (GMT/BST)' },
+  { value: 'Europe/Paris', label: 'Central European (CET)' },
+  { value: 'Europe/Berlin', label: 'Berlin (CET)' },
+  { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
+  { value: 'Asia/Shanghai', label: 'Shanghai (CST)' },
+  { value: 'Asia/Singapore', label: 'Singapore (SGT)' },
+  { value: 'Asia/Dubai', label: 'Dubai (GST)' },
+  { value: 'Australia/Sydney', label: 'Sydney (AEST)' },
+]
+
 // Niche-specific placeholder examples for content goal
-// Keys must match Niche type values (use hyphens, not underscores)
 const goalPlaceholders: Record<string, string> = {
   'web3-crypto': "I'm a crypto researcher growing my X following with insights on new protocols and DeFi trends",
   'finance-investing': "I share market analysis and investment insights to build credibility as a financial advisor",
@@ -34,6 +60,20 @@ const goalPlaceholders: Record<string, string> = {
   'other': "I want to grow my X following by sharing valuable content consistently",
 }
 
+function detectTimezone(): string {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+    // Check if it's in our list
+    if (TIMEZONES.some(t => t.value === tz)) {
+      return tz
+    }
+    // Default to ET if not found
+    return 'America/New_York'
+  } catch {
+    return 'America/New_York'
+  }
+}
+
 export default function ProfileSetupPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
@@ -44,8 +84,25 @@ export default function ProfileSetupPage() {
   const [niche, setNiche] = useState<Niche | null>(null)
   const [contentGoal, setContentGoal] = useState('')
   const [targetAudience, setTargetAudience] = useState('')
-  const [voiceStyle, setVoiceStyle] = useState<VoiceStyle | null>(null)
   const [admiredAccounts, setAdmiredAccounts] = useState<string[]>([])
+
+  // Posting schedule state
+  const [postsPerDay, setPostsPerDay] = useState(2)
+  const [preferredTimes, setPreferredTimes] = useState<string[]>(['late_morning', 'evening'])
+  const [timezone, setTimezone] = useState('America/New_York')
+
+  // Auto-detect timezone on mount
+  useEffect(() => {
+    setTimezone(detectTimezone())
+  }, [])
+
+  const togglePreferredTime = (timeId: string) => {
+    setPreferredTimes(prev =>
+      prev.includes(timeId)
+        ? prev.filter(t => t !== timeId)
+        : [...prev, timeId]
+    )
+  }
 
   const canProceed = () => {
     switch (currentStep) {
@@ -56,7 +113,7 @@ export default function ProfileSetupPage() {
       case 3:
         return targetAudience.trim().length > 0
       case 4:
-        return voiceStyle !== null
+        return preferredTimes.length > 0
       case 5:
         return true // Admired accounts are optional
       default:
@@ -94,6 +151,11 @@ export default function ProfileSetupPage() {
         throw new Error('Not authenticated')
       }
 
+      // Convert preferred time IDs to actual time values
+      const preferredTimeValues = preferredTimes
+        .map(id => TIME_SLOTS.find(slot => slot.id === id)?.value)
+        .filter(Boolean) as string[]
+
       const { error: upsertError } = await supabase
         .from('content_profiles')
         .upsert({
@@ -101,8 +163,10 @@ export default function ProfileSetupPage() {
           niche,
           content_goal: contentGoal.trim(),
           target_audience: targetAudience.trim(),
-          voice_style: voiceStyle,
           admired_accounts: admiredAccounts,
+          posts_per_day: postsPerDay,
+          preferred_times: preferredTimeValues,
+          timezone,
           updated_at: new Date().toISOString(),
         }, {
           onConflict: 'user_id'
@@ -180,10 +244,105 @@ export default function ProfileSetupPage() {
 
       case 4:
         return (
-          <VoiceStyleSelector
-            selectedStyle={voiceStyle}
-            onSelect={setVoiceStyle}
-          />
+          <div className="space-y-6">
+            {/* Posts per day */}
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-[var(--foreground)]">
+                Target posts per day
+              </label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => setPostsPerDay(num)}
+                    className={`
+                      flex-1 py-3 rounded-lg text-sm font-medium transition-all
+                      ${postsPerDay === num
+                        ? 'bg-[var(--accent)] text-[var(--background)]'
+                        : 'bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] hover:border-[var(--accent)]'
+                      }
+                    `}
+                  >
+                    {num === 5 ? '5+' : num}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Preferred posting times */}
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-[var(--foreground)]">
+                Best times to post
+              </label>
+              <p className="text-xs text-[var(--muted)]">
+                Select all time slots that work for you
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {TIME_SLOTS.map((slot) => {
+                  const isSelected = preferredTimes.includes(slot.id)
+                  return (
+                    <button
+                      key={slot.id}
+                      onClick={() => togglePreferredTime(slot.id)}
+                      className={`
+                        flex items-center gap-3 p-3 rounded-lg text-left transition-all
+                        ${isSelected
+                          ? 'bg-[var(--accent)]/15 border border-[var(--accent)] text-[var(--foreground)]'
+                          : 'bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] hover:border-[var(--muted)]'
+                        }
+                      `}
+                    >
+                      <div className={`
+                        w-5 h-5 rounded border-2 flex items-center justify-center
+                        ${isSelected
+                          ? 'bg-[var(--accent)] border-[var(--accent)]'
+                          : 'border-[var(--muted)]'
+                        }
+                      `}>
+                        {isSelected && <Check size={14} className="text-[var(--background)]" />}
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium">{slot.label}</div>
+                        <div className="text-xs text-[var(--muted)]">{slot.time}</div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Timezone */}
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-[var(--foreground)]">
+                Your timezone
+              </label>
+              <div className="relative">
+                <Clock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+                <select
+                  value={timezone}
+                  onChange={(e) => setTimezone(e.target.value)}
+                  className="
+                    w-full pl-10 pr-4 py-3 rounded-lg appearance-none
+                    bg-[var(--background)] border border-[var(--border)]
+                    text-[var(--foreground)]
+                    focus:outline-none focus:border-[var(--accent)]
+                    transition-colors duration-150
+                  "
+                >
+                  {TIMEZONES.map((tz) => (
+                    <option key={tz.value} value={tz.value}>
+                      {tz.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
         )
 
       case 5:
@@ -286,7 +445,7 @@ export default function ProfileSetupPage() {
               {stepTitles[currentStep - 1]}
             </h2>
             <p className="text-sm text-[var(--muted)]">
-              Step {currentStep} of {TOTAL_STEPS}
+              {currentStep === 4 ? 'How often do you want to post?' : `Step ${currentStep} of ${TOTAL_STEPS}`}
             </p>
           </div>
 

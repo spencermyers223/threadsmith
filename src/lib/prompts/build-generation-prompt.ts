@@ -16,6 +16,7 @@ export type Tone = 'professional' | 'casual' | 'bold' | 'educational' | 'inspira
 
 export interface UserProfile {
   niche?: string;
+  contentGoal?: string;
   voiceStyle?: string;
   admiredAccounts?: string[];
   targetAudience?: string;
@@ -175,22 +176,44 @@ ${LENGTH_GUIDELINES[length][contentType]}
     systemPrompt += `
 ## USER PROFILE CONTEXT
 
-Use this information to personalize the content:
+You are generating content for a specific creator. Use this context to personalize every post:
 `;
     if (userProfile.niche) {
-      systemPrompt += `- Niche/Industry: ${userProfile.niche}\n`;
+      systemPrompt += `
+**Niche/Industry:** ${userProfile.niche}
+- All content should be relevant to this space
+- Use terminology and references that resonate with this community
+`;
+    }
+    if (userProfile.contentGoal) {
+      systemPrompt += `
+**Creator's Goal:** ${userProfile.contentGoal}
+- Every post should help the creator achieve this goal
+- Content should position them appropriately for their objectives
+`;
+    }
+    if (userProfile.targetAudience) {
+      systemPrompt += `
+**Target Audience:** ${userProfile.targetAudience}
+- Write as if speaking directly to this audience
+- Use language, examples, and references they'll connect with
+- Address their pain points and interests
+`;
+    }
+    if (userProfile.admiredAccounts?.length) {
+      systemPrompt += `
+**Style Inspiration - Accounts They Admire:** ${userProfile.admiredAccounts.join(', ')}
+- Study the posting style of these accounts and mirror their approach
+- Match their tone, energy, and content structure
+- The generated posts should feel like they could naturally appear alongside content from these accounts
+- Adopt similar hook patterns, pacing, and engagement tactics they use
+`;
     }
     if (userProfile.voiceStyle) {
       systemPrompt += `- Voice Style: ${userProfile.voiceStyle}\n`;
     }
-    if (userProfile.targetAudience) {
-      systemPrompt += `- Target Audience: ${userProfile.targetAudience}\n`;
-    }
     if (userProfile.personalBrand) {
       systemPrompt += `- Personal Brand: ${userProfile.personalBrand}\n`;
-    }
-    if (userProfile.admiredAccounts?.length) {
-      systemPrompt += `- Accounts they admire (for style reference): ${userProfile.admiredAccounts.join(', ')}\n`;
     }
   }
 
@@ -201,7 +224,10 @@ Use this information to personalize the content:
 2. For each option, explain WHY it should perform well (algorithm reasoning)
 3. Include character count for tweets
 4. Warn about any algorithm red flags (external links, engagement bait, etc.)
-5. Match the user's voice and style based on their profile
+5. CRITICAL: Every post must be personalized to the user's profile:
+   - Content must align with their niche and speak to their target audience
+   - Posts should help achieve their stated content goal
+   - Mirror the style and tone of their admired accounts
 
 Format your response as:
 

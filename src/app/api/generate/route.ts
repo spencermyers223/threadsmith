@@ -223,17 +223,16 @@ export async function POST(request: NextRequest) {
     let userProfile: UserProfile | undefined
     const { data: profileData } = await supabase
       .from('content_profiles')
-      .select('niche, voice_style, admired_accounts, target_audience, personal_brand')
+      .select('niche, content_goal, admired_accounts, target_audience')
       .eq('user_id', user.id)
       .single()
 
     if (profileData) {
       userProfile = {
         niche: profileData.niche || undefined,
-        voiceStyle: profileData.voice_style || undefined,
+        contentGoal: profileData.content_goal || undefined,
         admiredAccounts: profileData.admired_accounts || undefined,
         targetAudience: profileData.target_audience || undefined,
-        personalBrand: profileData.personal_brand || undefined,
       }
     }
 
