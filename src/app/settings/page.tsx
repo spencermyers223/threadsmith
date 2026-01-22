@@ -97,7 +97,7 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <Link
-          href="/dashboard"
+          href="/generate"
           className="p-2 rounded-md hover:bg-[var(--card)] transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />

@@ -47,9 +47,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // Redirect authenticated users away from landing page to dashboard
+  // Redirect authenticated users away from landing page to generate
   if (request.nextUrl.pathname === '/' && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return NextResponse.redirect(new URL('/generate', request.url))
   }
 
   return response

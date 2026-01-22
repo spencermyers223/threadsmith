@@ -63,7 +63,7 @@ export default function ProfileSetupPage() {
   }
 
   const handleSkip = () => {
-    router.push('/dashboard')
+    router.push('/generate')
   }
 
   const handleComplete = async () => {
@@ -96,7 +96,7 @@ export default function ProfileSetupPage() {
         throw upsertError
       }
 
-      router.push('/dashboard')
+      router.push('/generate')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save profile')
     } finally {
