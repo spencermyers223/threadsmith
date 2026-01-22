@@ -18,6 +18,21 @@ const stepTitles = [
   'Accounts You Admire',
 ]
 
+// Niche-specific placeholder examples for content goal
+const goalPlaceholders: Record<string, string> = {
+  'web3_crypto': "I am a researcher attempting to grow my X following with consistent posts about new crypto protocols",
+  'finance_investing': "I share market analysis and investment insights to build credibility as a financial advisor",
+  'saas_tech': "I'm a founder building in public, sharing our startup journey to attract customers and investors",
+  'marketing_agency': "I help brands grow on social media and share case studies to attract new clients",
+  'fitness_health': "I'm a personal trainer sharing workout tips and transformations to grow my online coaching business",
+  'creator_economy': "I teach creators how to monetize their audience and build sustainable income streams",
+  'ecommerce_dtc': "I share e-commerce growth strategies to establish myself as a thought leader in DTC",
+  'career_jobs': "I post career advice and job search tips to build my personal brand as a recruiter",
+  'sports': "I share sports analysis and hot takes to grow my following as a sports commentator",
+  'news': "I break down current events with unique perspectives to become a trusted news source",
+  'other': "I want to grow my X following by sharing valuable content consistently",
+}
+
 export default function ProfileSetupPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
@@ -115,6 +130,7 @@ export default function ProfileSetupPage() {
         )
 
       case 2:
+        const placeholder = niche ? goalPlaceholders[niche] || goalPlaceholders['other'] : goalPlaceholders['other']
         return (
           <div className="space-y-3">
             <label className="block text-sm font-medium text-[var(--foreground)]">
@@ -123,7 +139,7 @@ export default function ProfileSetupPage() {
             <textarea
               value={contentGoal}
               onChange={(e) => setContentGoal(e.target.value.slice(0, 500))}
-              placeholder="e.g., 'I am a researcher attempting to grow my X following with consistent posts about new crypto protocols'"
+              placeholder={placeholder}
               rows={5}
               className="
                 w-full px-4 py-3 rounded-lg resize-none

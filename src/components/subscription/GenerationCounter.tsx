@@ -72,7 +72,7 @@ export function GenerationCounter({ onLimitReached }: GenerationCounterProps) {
   if (usage.isSubscribed) {
     const isLifetime = usage.subscription?.status === 'lifetime'
     return (
-      <span className="text-sm text-accent font-medium">
+      <span className="text-lg font-medium text-accent">
         {isLifetime ? 'Lifetime' : 'Pro'} — Unlimited generations
       </span>
     )
@@ -82,11 +82,22 @@ export function GenerationCounter({ onLimitReached }: GenerationCounterProps) {
   const isLow = usage.remaining <= 2
   const isEmpty = usage.remaining <= 0
 
+  // No generations remaining
+  if (isEmpty) {
+    return (
+      <span className="text-lg font-medium text-red-400">
+        No generations remaining
+      </span>
+    )
+  }
+
+  // Has generations remaining
   return (
-    <span className={`text-sm font-medium ${
-      isEmpty ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-[var(--muted)]'
-    }`}>
-      {usage.remaining} / {usage.freeLimit} free generations
+    <span className="text-lg font-medium text-[var(--foreground)]">
+      <span className={`text-xl font-bold ${isLow ? 'text-amber-400' : 'text-accent'}`}>
+        {usage.remaining}
+      </span>
+      {' '}free generation{usage.remaining !== 1 ? 's' : ''} remaining
     </span>
   )
 }
