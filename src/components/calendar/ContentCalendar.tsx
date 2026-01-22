@@ -94,7 +94,7 @@ function stripHtml(html: string): string {
 }
 
 // Custom Event Component with Tooltip using Portal
-function EventWithTooltip({ event, onMarkAsPosted, allTags }: { event: CalendarEvent; onMarkAsPosted?: (id: string) => void; allTags: Tag[] }) {
+function EventWithTooltip({ event, onMarkAsPosted }: { event: CalendarEvent; onMarkAsPosted?: (id: string) => void }) {
   const [showTooltip, setShowTooltip] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 })
   const eventRef = useRef<HTMLDivElement>(null)
@@ -201,23 +201,6 @@ export function ContentCalendar({ onSelectPost, filters }: ContentCalendarProps)
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [allTags, setAllTags] = useState<Tag[]>([])
-
-  // Fetch all tags for display
-  useEffect(() => {
-    const fetchTags = async () => {
-      try {
-        const res = await fetch('/api/tags')
-        if (res.ok) {
-          const data = await res.json()
-          setAllTags(data.tags || [])
-        }
-      } catch {
-        console.error('Failed to fetch tags')
-      }
-    }
-    fetchTags()
-  }, [])
 
   const fetchPosts = useCallback(async () => {
     const start = format(startOfMonth(subMonths(currentDate, 1)), 'yyyy-MM-dd')
@@ -319,7 +302,7 @@ export function ContentCalendar({ onSelectPost, filters }: ContentCalendarProps)
 
   const components = {
     event: (props: { event: CalendarEvent }) => (
-      <EventWithTooltip event={props.event} onMarkAsPosted={handleMarkAsPosted} allTags={allTags} />
+      <EventWithTooltip event={props.event} onMarkAsPosted={handleMarkAsPosted} />
     ),
   }
 

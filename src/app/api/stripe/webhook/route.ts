@@ -3,9 +3,17 @@ import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import Stripe from 'stripe'
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+if (!webhookSecret) {
+  console.error('STRIPE_WEBHOOK_SECRET is not configured')
+}
 
 export async function POST(request: NextRequest) {
+  if (!webhookSecret) {
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
+  }
+
   const body = await request.text()
   const signature = request.headers.get('stripe-signature')
 
@@ -16,7 +24,8 @@ export async function POST(request: NextRequest) {
   let event: Stripe.Event
 
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+    // webhookSecret is guaranteed to be defined here due to early return above
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret as string)
   } catch (err) {
     console.error('Webhook signature verification failed:', err)
     return NextResponse.json(

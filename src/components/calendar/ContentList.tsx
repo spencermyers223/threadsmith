@@ -78,23 +78,6 @@ export function ContentList({ onSelectPost, filters }: ContentListProps) {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [hoveredPostId, setHoveredPostId] = useState<string | null>(null)
-  const [allTags, setAllTags] = useState<Tag[]>([])
-
-  // Fetch all tags for display
-  useEffect(() => {
-    const fetchTags = async () => {
-      try {
-        const res = await fetch('/api/tags')
-        if (res.ok) {
-          const data = await res.json()
-          setAllTags(data.tags || [])
-        }
-      } catch {
-        console.error('Failed to fetch tags')
-      }
-    }
-    fetchTags()
-  }, [])
 
   // Helper to get tag objects from post
   const getPostTags = (post: Post): Tag[] => {
