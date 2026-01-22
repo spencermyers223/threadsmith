@@ -3,20 +3,25 @@
 import { useState, useEffect, useCallback } from 'react'
 import { format } from 'date-fns'
 import { FileText, MessageSquare, Newspaper, Trash2, Edit, Calendar as CalendarIcon, Clock, CheckCircle } from 'lucide-react'
+import PostTypeIcon, { GenerationType } from './PostTypeIcon'
+import type { CalendarFilterState } from './CalendarFilters'
 
 interface Post {
   id: string
   type: 'tweet' | 'thread' | 'article'
+  generation_type?: GenerationType
   title: string
   content: Record<string, unknown>
   status: 'draft' | 'scheduled' | 'posted'
   scheduled_date: string | null
   scheduled_time: string | null
   created_at: string
+  tag_ids?: string[]
 }
 
 interface ContentListProps {
   onSelectPost: (post: Post) => void
+  filters?: CalendarFilterState
 }
 
 type FilterStatus = 'all' | 'draft' | 'scheduled' | 'posted'
@@ -67,11 +72,30 @@ function stripHtml(html: string): string {
   return text.length > 300 ? text.substring(0, 300) + '...' : text
 }
 
-export function ContentList({ onSelectPost }: ContentListProps) {
+export function ContentList({ onSelectPost, filters }: ContentListProps) {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [hoveredPostId, setHoveredPostId] = useState<string | null>(null)
+
+  // Apply external filters (post types and tags)
+  const filteredPosts = posts.filter(post => {
+    // Filter by generation type
+    if (filters?.postTypes && filters.postTypes.length > 0) {
+      if (!post.generation_type || !filters.postTypes.includes(post.generation_type)) {
+        return false
+      }
+    }
+
+    // Filter by tags
+    if (filters?.tagIds && filters.tagIds.length > 0) {
+      if (!post.tag_ids || !filters.tagIds.some(tagId => post.tag_ids?.includes(tagId))) {
+        return false
+      }
+    }
+
+    return true
+  })
 
   const fetchPosts = useCallback(async () => {
     const url = filter === 'all' ? '/api/posts' : `/api/posts?status=${filter}`
@@ -180,15 +204,20 @@ export function ContentList({ onSelectPost }: ContentListProps) {
 
       {/* List */}
       <div className="flex-1 overflow-y-auto">
-        {posts.length === 0 ? (
+        {filteredPosts.length === 0 ? (
           <div className="text-center py-12 text-[var(--muted)]">
             <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>No posts found</p>
-            <p className="text-sm mt-1">Create content in the workspace to see it here</p>
+            <p className="text-sm mt-1">
+              {posts.length > 0 && (filters?.postTypes?.length || filters?.tagIds?.length)
+                ? 'Try adjusting your filters'
+                : 'Create content in the workspace to see it here'
+              }
+            </p>
           </div>
         ) : (
           <div className="space-y-2">
-            {posts.map(post => (
+            {filteredPosts.map(post => (
               <div
                 key={post.id}
                 onClick={() => onSelectPost(post)}
@@ -199,6 +228,9 @@ export function ContentList({ onSelectPost }: ContentListProps) {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
+                      {post.generation_type && (
+                        <PostTypeIcon type={post.generation_type} size="sm" />
+                      )}
                       <span className="text-[var(--muted)]">{getTypeIcon(post.type)}</span>
                       <h3 className="font-medium truncate">
                         {post.title || `Untitled ${post.type}`}

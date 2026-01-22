@@ -7,6 +7,8 @@ import { format, parse, startOfWeek, getDay, startOfMonth, endOfMonth, addMonths
 import { CheckCircle } from 'lucide-react'
 import { enUS } from 'date-fns/locale'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
+import PostTypeIcon, { GenerationType } from './PostTypeIcon'
+import type { CalendarFilterState } from './CalendarFilters'
 
 const locales = { 'en-US': enUS }
 
@@ -21,12 +23,14 @@ const localizer = dateFnsLocalizer({
 interface Post {
   id: string
   type: 'tweet' | 'thread' | 'article'
+  generation_type?: GenerationType
   title: string
   content: Record<string, unknown>
   status: 'draft' | 'scheduled' | 'posted'
   scheduled_date: string | null
   scheduled_time: string | null
   created_at: string
+  tag_ids?: string[]
 }
 
 interface CalendarEvent {
@@ -39,6 +43,7 @@ interface CalendarEvent {
 
 interface ContentCalendarProps {
   onSelectPost: (post: Post) => void
+  filters?: CalendarFilterState
 }
 
 function getContentPreview(content: Record<string, unknown>, type: string): string {
@@ -123,7 +128,12 @@ function EventWithTooltip({ event, onMarkAsPosted }: { event: CalendarEvent; onM
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <span className="block truncate">{event.title}</span>
+      <div className="flex items-center gap-1">
+        {post.generation_type && (
+          <PostTypeIcon type={post.generation_type} size="sm" />
+        )}
+        <span className="block truncate">{event.title}</span>
+      </div>
 
       {showTooltip && typeof document !== 'undefined' && createPortal(
         <div
@@ -136,7 +146,10 @@ function EventWithTooltip({ event, onMarkAsPosted }: { event: CalendarEvent; onM
           onMouseEnter={() => setShowTooltip(true)}
           onMouseLeave={() => setShowTooltip(false)}
         >
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            {post.generation_type && (
+              <PostTypeIcon type={post.generation_type} size="sm" />
+            )}
             <span className="text-xs font-medium text-accent capitalize">{post.type}</span>
             <span className={`text-xs px-1.5 py-0.5 rounded ${
               post.status === 'draft' ? 'bg-gray-500/20 text-gray-400' :
@@ -173,7 +186,7 @@ function EventWithTooltip({ event, onMarkAsPosted }: { event: CalendarEvent; onM
   )
 }
 
-export function ContentCalendar({ onSelectPost }: ContentCalendarProps) {
+export function ContentCalendar({ onSelectPost, filters }: ContentCalendarProps) {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -194,8 +207,29 @@ export function ContentCalendar({ onSelectPost }: ContentCalendarProps) {
     fetchPosts()
   }, [fetchPosts])
 
-  const events: CalendarEvent[] = posts
-    .filter(p => p.scheduled_date)
+  // Apply filters to posts
+  const filteredPosts = posts.filter(post => {
+    // Must have scheduled date to show on calendar
+    if (!post.scheduled_date) return false
+
+    // Filter by generation type
+    if (filters?.postTypes && filters.postTypes.length > 0) {
+      if (!post.generation_type || !filters.postTypes.includes(post.generation_type)) {
+        return false
+      }
+    }
+
+    // Filter by tags
+    if (filters?.tagIds && filters.tagIds.length > 0) {
+      if (!post.tag_ids || !filters.tagIds.some(tagId => post.tag_ids?.includes(tagId))) {
+        return false
+      }
+    }
+
+    return true
+  })
+
+  const events: CalendarEvent[] = filteredPosts
     .map(post => {
       const dateStr = post.scheduled_date!
       const timeStr = post.scheduled_time || '09:00'

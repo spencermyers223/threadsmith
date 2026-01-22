@@ -10,10 +10,12 @@ import { ArticlePreview } from '@/components/preview/ArticlePreview'
 import { ScheduleModal } from '@/components/workspace/ScheduleModal'
 import { DraftsSidebar } from '@/components/workspace/DraftsSidebar'
 import { Save, Calendar, ArrowLeft, Check, AlertCircle } from 'lucide-react'
+import PostTypeIcon from '@/components/calendar/PostTypeIcon'
 import Link from 'next/link'
 import { markdownToHtml } from '@/lib/markdown'
 
 type ContentType = 'tweet' | 'thread' | 'article'
+type GenerationType = 'scroll_stopper' | 'debate_starter' | 'viral_catalyst'
 
 interface Draft {
   id: string
@@ -22,6 +24,7 @@ interface Draft {
   content: { html?: string; tweets?: ThreadTweet[] }
   status: string
   updated_at: string
+  generation_type?: GenerationType
 }
 
 export default function WorkspacePage() {
@@ -30,6 +33,7 @@ export default function WorkspacePage() {
   const [threadTweets, setThreadTweets] = useState<ThreadTweet[]>([{ id: '1', content: '' }])
   const [title, setTitle] = useState('')
   const [contentType, setContentType] = useState<ContentType>('tweet')
+  const [generationType, setGenerationType] = useState<GenerationType | null>(null)
 
   // UI state
   const [showScheduleModal, setShowScheduleModal] = useState(false)
@@ -46,7 +50,7 @@ export default function WorkspacePage() {
 
   // Load content from localStorage
   useEffect(() => {
-    // Check for post to edit (from calendar/list)
+    // Check for post to edit (from calendar/list or generate page)
     const editPost = localStorage.getItem('edit-post')
     if (editPost) {
       try {
@@ -54,6 +58,7 @@ export default function WorkspacePage() {
         setPostId(post.id)
         setTitle(post.title || '')
         setContentType(post.type || 'tweet')
+        setGenerationType(post.generation_type || null)
 
         if (post.type === 'thread' && post.content?.tweets) {
           setThreadTweets(post.content.tweets)
@@ -136,6 +141,7 @@ export default function WorkspacePage() {
           title: title || `Untitled ${contentType}`,
           content: getCurrentContent(),
           status: 'draft',
+          generation_type: generationType,
         }),
       })
 
@@ -200,6 +206,7 @@ export default function WorkspacePage() {
     setPostId(draft.id)
     setTitle(draft.title || '')
     setContentType(draft.type)
+    setGenerationType(draft.generation_type || null)
 
     if (draft.type === 'thread' && draft.content?.tweets) {
       setThreadTweets(draft.content.tweets)
@@ -223,6 +230,7 @@ export default function WorkspacePage() {
     setContent('')
     setThreadTweets([{ id: '1', content: '' }])
     setContentType('tweet')
+    setGenerationType(null)
     lastSavedContent.current = ''
     lastSavedTweets.current = []
     setHasUnsavedChanges(false)
@@ -268,6 +276,7 @@ export default function WorkspacePage() {
           status: 'scheduled',
           scheduled_date: date,
           scheduled_time: time,
+          generation_type: generationType,
         }),
       })
 
@@ -339,6 +348,10 @@ export default function WorkspacePage() {
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
+
+          {generationType && (
+            <PostTypeIcon type={generationType} size="md" />
+          )}
 
           <input
             type="text"
