@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url)
   const status = searchParams.get('status')
-  const archetype = searchParams.get('archetype')
+  const generationType = searchParams.get('generation_type') || searchParams.get('archetype')
   const tagId = searchParams.get('tagId')
   const startDate = searchParams.get('startDate')
   const endDate = searchParams.get('endDate')
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
 
     if (status) query = query.eq('status', status)
-    if (archetype) query = query.eq('archetype', archetype)
+    if (generationType) query = query.eq('generation_type', generationType)
     if (startDate) query = query.gte('scheduled_date', startDate)
     if (endDate) query = query.lte('scheduled_date', endDate)
 
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
     .order('created_at', { ascending: false })
 
   if (status) query = query.eq('status', status)
-  if (archetype) query = query.eq('archetype', archetype)
+  if (generationType) query = query.eq('generation_type', generationType)
   if (startDate) query = query.gte('scheduled_date', startDate)
   if (endDate) query = query.lte('scheduled_date', endDate)
 
@@ -126,6 +126,7 @@ export async function POST(request: NextRequest) {
       type,
       title,
       archetype,
+      generation_type,
       status = 'draft',
       scheduled_date,
       scheduled_time,
@@ -138,6 +139,9 @@ export async function POST(request: NextRequest) {
     const finalScheduledDate = scheduled_date || scheduledDate || null
     const finalScheduledTime = scheduled_time || scheduledTime || null
 
+    // Support both archetype and generation_type field names
+    const finalGenerationType = archetype || generation_type || null
+
     // Validate type
     if (type && !['tweet', 'thread', 'article'].includes(type)) {
       return NextResponse.json({ error: 'Invalid content type' }, { status: 400 })
@@ -148,10 +152,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }
 
-    // Validate archetype
+    // Validate generation_type/archetype
     const validArchetypes = ['scroll_stopper', 'debate_starter', 'viral_catalyst']
-    if (archetype && !validArchetypes.includes(archetype)) {
-      return NextResponse.json({ error: 'Invalid archetype' }, { status: 400 })
+    if (finalGenerationType && !validArchetypes.includes(finalGenerationType)) {
+      return NextResponse.json({ error: 'Invalid generation type' }, { status: 400 })
     }
 
     const postData = {
@@ -159,7 +163,7 @@ export async function POST(request: NextRequest) {
       content,
       type: type || 'tweet',
       title: title || null,
-      archetype: archetype || null,
+      generation_type: finalGenerationType,
       status,
       scheduled_date: finalScheduledDate,
       scheduled_time: finalScheduledTime,

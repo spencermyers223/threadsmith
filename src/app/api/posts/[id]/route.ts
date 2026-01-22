@@ -70,6 +70,7 @@ export async function PUT(
       type,
       title,
       archetype,
+      generation_type,
       status,
       scheduled_date,
       scheduled_time,
@@ -82,6 +83,9 @@ export async function PUT(
     const finalScheduledDate = scheduled_date ?? scheduledDate
     const finalScheduledTime = scheduled_time ?? scheduledTime
 
+    // Support both archetype and generation_type field names
+    const finalGenerationType = archetype ?? generation_type
+
     // Validate type if provided
     if (type && !['tweet', 'thread', 'article'].includes(type)) {
       return NextResponse.json({ error: 'Invalid content type' }, { status: 400 })
@@ -92,10 +96,10 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }
 
-    // Validate archetype if provided
+    // Validate generation_type if provided
     const validArchetypes = ['scroll_stopper', 'debate_starter', 'viral_catalyst']
-    if (archetype && !validArchetypes.includes(archetype)) {
-      return NextResponse.json({ error: 'Invalid archetype' }, { status: 400 })
+    if (finalGenerationType && !validArchetypes.includes(finalGenerationType)) {
+      return NextResponse.json({ error: 'Invalid generation type' }, { status: 400 })
     }
 
     // Build update object with only provided fields
@@ -106,7 +110,7 @@ export async function PUT(
     if (content !== undefined) updateData.content = content
     if (type !== undefined) updateData.type = type
     if (title !== undefined) updateData.title = title
-    if (archetype !== undefined) updateData.archetype = archetype
+    if (finalGenerationType !== undefined) updateData.generation_type = finalGenerationType
     if (status !== undefined) updateData.status = status
     if (finalScheduledDate !== undefined) updateData.scheduled_date = finalScheduledDate || null
     if (finalScheduledTime !== undefined) updateData.scheduled_time = finalScheduledTime || null
