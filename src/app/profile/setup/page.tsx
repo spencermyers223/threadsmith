@@ -20,7 +20,7 @@ const stepTitles = [
 
 // Niche-specific placeholder examples for content goal
 const goalPlaceholders: Record<string, string> = {
-  'web3_crypto': "I am a researcher attempting to grow my X following with consistent posts about new crypto protocols",
+  'web3_crypto': "I'm a crypto researcher growing my X following with insights on new protocols and DeFi trends",
   'finance_investing': "I share market analysis and investment insights to build credibility as a financial advisor",
   'saas_tech': "I'm a founder building in public, sharing our startup journey to attract customers and investors",
   'marketing_agency': "I help brands grow on social media and share case studies to attract new clients",
