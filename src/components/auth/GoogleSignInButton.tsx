@@ -2,7 +2,11 @@
 
 import { createClient } from '@/lib/supabase/client'
 
-export function GoogleSignInButton() {
+interface GoogleSignInButtonProps {
+  variant?: 'default' | 'prominent'
+}
+
+export function GoogleSignInButton({ variant = 'default' }: GoogleSignInButtonProps) {
   const handleSignIn = async () => {
     const supabase = createClient()
 
@@ -14,12 +18,18 @@ export function GoogleSignInButton() {
     })
   }
 
+  const baseStyles = "flex items-center justify-center gap-3 w-full font-medium transition-all focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+
+  const variantStyles = variant === 'prominent'
+    ? "px-8 py-4 bg-sand hover:bg-sand-alt text-neutral-900 rounded-xl text-lg focus:ring-sand shadow-lg hover:shadow-xl"
+    : "px-6 py-3 bg-white text-neutral-900 rounded-lg hover:bg-cream-100 focus:ring-accent"
+
   return (
     <button
       onClick={handleSignIn}
-      className="flex items-center justify-center gap-3 w-full px-6 py-3 bg-white text-[var(--foreground)] rounded-lg font-medium transition-all hover:bg-cream-100 focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+      className={`${baseStyles} ${variantStyles}`}
     >
-      <svg className="w-5 h-5" viewBox="0 0 24 24">
+      <svg className={variant === 'prominent' ? "w-6 h-6" : "w-5 h-5"} viewBox="0 0 24 24">
         <path
           fill="#4285F4"
           d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
