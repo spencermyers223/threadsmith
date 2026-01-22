@@ -17,7 +17,6 @@ interface Post {
   scheduled_date: string | null
   scheduled_time: string | null
   created_at: string
-  tag_ids?: string[]
   tags?: Tag[]
 }
 
@@ -97,11 +96,9 @@ export function ContentList({ onSelectPost, filters }: ContentListProps) {
     fetchTags()
   }, [])
 
-  // Helper to get tag objects from tag_ids
+  // Helper to get tag objects from post
   const getPostTags = (post: Post): Tag[] => {
-    if (post.tags && post.tags.length > 0) return post.tags
-    if (!post.tag_ids || post.tag_ids.length === 0) return []
-    return allTags.filter(t => post.tag_ids?.includes(t.id))
+    return post.tags || []
   }
 
   // Apply external filters (post types and tags)
@@ -113,9 +110,10 @@ export function ContentList({ onSelectPost, filters }: ContentListProps) {
       }
     }
 
-    // Filter by tags
+    // Filter by tags - check post.tags array (tag objects with id property)
     if (filters?.tagIds && filters.tagIds.length > 0) {
-      if (!post.tag_ids || !filters.tagIds.some(tagId => post.tag_ids?.includes(tagId))) {
+      const postTagIds = post.tags?.map(t => t.id) || []
+      if (postTagIds.length === 0 || !filters.tagIds.some(tagId => postTagIds.includes(tagId))) {
         return false
       }
     }

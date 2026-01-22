@@ -31,7 +31,6 @@ interface Post {
   scheduled_date: string | null
   scheduled_time: string | null
   created_at: string
-  tag_ids?: string[]
   tags?: Tag[]
 }
 
@@ -102,9 +101,7 @@ function EventWithTooltip({ event, onMarkAsPosted, allTags }: { event: CalendarE
   const post = event.resource
 
   // Get tags for this post
-  const postTags = post.tags && post.tags.length > 0
-    ? post.tags
-    : allTags.filter(t => post.tag_ids?.includes(t.id))
+  const postTags = post.tags || []
 
   const handleMouseEnter = () => {
     if (eventRef.current) {
@@ -250,9 +247,10 @@ export function ContentCalendar({ onSelectPost, filters }: ContentCalendarProps)
       }
     }
 
-    // Filter by tags
+    // Filter by tags - check post.tags array (tag objects with id property)
     if (filters?.tagIds && filters.tagIds.length > 0) {
-      if (!post.tag_ids || !filters.tagIds.some(tagId => post.tag_ids?.includes(tagId))) {
+      const postTagIds = post.tags?.map(t => t.id) || []
+      if (postTagIds.length === 0 || !filters.tagIds.some(tagId => postTagIds.includes(tagId))) {
         return false
       }
     }
