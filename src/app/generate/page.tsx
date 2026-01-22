@@ -18,6 +18,8 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { FilesSidebar, FileRecord } from '@/components/generate/FilesSidebar'
+import { GenerationCounter } from '@/components/subscription/GenerationCounter'
+import { UpgradeModal } from '@/components/subscription/UpgradeModal'
 
 // Types
 type Length = 'punchy' | 'standard' | 'developed' | 'thread'
@@ -235,6 +237,7 @@ export default function GeneratePage() {
   const [posts, setPosts] = useState<GeneratedPost[]>([])
   const [toast, setToast] = useState<string | null>(null)
   const [editingPostIndex, setEditingPostIndex] = useState<number | null>(null)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
   const handleGenerate = async () => {
     if (!topic.trim()) return
@@ -263,6 +266,12 @@ export default function GeneratePage() {
 
       const data = await res.json()
       setPosts(data.posts)
+
+      // Refresh the generation counter
+      const refreshFn = (window as unknown as { refreshGenerationCounter?: () => void }).refreshGenerationCounter
+      if (refreshFn) {
+        refreshFn()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -349,11 +358,17 @@ export default function GeneratePage() {
       <div className="flex-1 overflow-auto">
         <div className="max-w-4xl mx-auto px-4 py-8">
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">Generate Posts</h1>
-            <p className="text-[var(--muted)]">
-              Create algorithm-optimized content in seconds
-            </p>
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div />
+              <GenerationCounter onLimitReached={() => setShowUpgradeModal(true)} />
+            </div>
+            <div className="text-center">
+              <h1 className="text-3xl font-bold mb-2">Generate Posts</h1>
+              <p className="text-[var(--muted)]">
+                Create algorithm-optimized content in seconds
+              </p>
+            </div>
           </div>
 
           {/* Main Input Section */}
@@ -505,6 +520,12 @@ export default function GeneratePage() {
 
       {/* Toast */}
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      />
     </div>
   )
 }

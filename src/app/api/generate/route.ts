@@ -9,6 +9,7 @@ import {
   type Tone,
   type UserProfile,
 } from '@/lib/prompts/build-generation-prompt'
+import { checkCanGenerate, recordGeneration, type SourceType } from '@/lib/generation-limits'
 
 const anthropic = new Anthropic()
 
@@ -34,6 +35,7 @@ interface GeneratedPost {
 interface GenerateResponse {
   posts: GeneratedPost[]
   generationId: string
+  remaining: number // -1 means unlimited
 }
 
 // Map input length to our ContentLength type
@@ -188,6 +190,20 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Check generation limits first
+    const limitCheck = await checkCanGenerate(supabase, user.id)
+    if (!limitCheck.canGenerate) {
+      return NextResponse.json(
+        {
+          error: 'Generation limit reached',
+          code: 'LIMIT_REACHED',
+          remaining: 0,
+          isSubscribed: limitCheck.isSubscribed,
+        },
+        { status: 403 }
+      )
+    }
+
     const body: GenerateRequest = await request.json()
     const { topic, length, tone, postType, sourceFileId } = body
 
@@ -283,9 +299,17 @@ export async function POST(request: NextRequest) {
       allPosts = allPosts.slice(0, 3)
     }
 
+    // Record the generation (only counts against limit for free users)
+    const sourceType: SourceType = sourceFileId ? 'file' : 'topic'
+    await recordGeneration(supabase, user.id, generationId, sourceType)
+
+    // Re-check remaining after recording
+    const updatedLimits = await checkCanGenerate(supabase, user.id)
+
     const response: GenerateResponse = {
       posts: allPosts,
       generationId,
+      remaining: updatedLimits.remaining,
     }
 
     return NextResponse.json(response)
