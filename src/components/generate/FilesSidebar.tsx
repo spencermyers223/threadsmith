@@ -260,6 +260,14 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
   }
 
   const handleChangeFolderColor = async (folderId: string, color: string) => {
+    // Optimistic update - change UI immediately
+    const previousFolders = [...folders]
+    setFolders(folders.map(f => f.id === folderId ? { ...f, color } : f))
+
+    // Close menus immediately for responsive feel
+    setContextMenu(null)
+    setShowColorPicker(false)
+
     try {
       const res = await fetch(`/api/folders/${folderId}`, {
         method: 'PATCH',
@@ -267,20 +275,17 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
         body: JSON.stringify({ color }),
       })
 
-      if (res.ok) {
-        const updatedFolder = await res.json()
-        setFolders(folders.map(f => f.id === folderId ? updatedFolder : f))
-      } else {
+      if (!res.ok) {
+        // Revert on error
+        setFolders(previousFolders)
         const errorData = await res.json()
         console.error('Failed to change folder color:', errorData)
-        alert(`Failed to change color: ${errorData.error || 'Unknown error'}`)
       }
     } catch (err) {
+      // Revert on error
+      setFolders(previousFolders)
       console.error('Failed to change folder color:', err)
-      alert('Failed to change folder color.')
     }
-    setContextMenu(null)
-    setShowColorPicker(false)
   }
 
   const getFolderColorClass = (colorName: string) => {
@@ -688,20 +693,23 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
             <Pencil className="w-4 h-4" />
             Rename
           </button>
-          <div
-            className="relative group/color"
-            onMouseEnter={() => setShowColorPicker(true)}
-            onMouseLeave={() => setShowColorPicker(false)}
-          >
+          <div className="relative">
             <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowColorPicker(!showColorPicker)
+              }}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--background)] transition-colors"
             >
               <Palette className="w-4 h-4" />
               Color
-              <ChevronRight className="w-3 h-3 ml-auto" />
+              <ChevronRight className={`w-3 h-3 ml-auto transition-transform ${showColorPicker ? 'rotate-90' : ''}`} />
             </button>
             {showColorPicker && (
-              <div className="absolute left-full top-0 ml-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg p-2 min-w-[140px]">
+              <div
+                className="absolute left-full top-0 ml-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg p-2 min-w-[140px]"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="grid grid-cols-3 gap-1">
                   {FOLDER_COLORS.map((color) => {
                     const currentFolder = folders.find(f => f.id === contextMenu.folderId)
@@ -709,7 +717,10 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
                     return (
                       <button
                         key={color.name}
-                        onClick={() => handleChangeFolderColor(contextMenu.folderId, color.name)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleChangeFolderColor(contextMenu.folderId, color.name)
+                        }}
                         className={`w-8 h-8 rounded-md flex items-center justify-center transition-all hover:scale-110 ${
                           isSelected ? 'ring-2 ring-white ring-offset-1 ring-offset-[var(--card)]' : ''
                         }`}

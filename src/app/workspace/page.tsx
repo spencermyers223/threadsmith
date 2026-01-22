@@ -9,10 +9,12 @@ import type { ThreadTweet } from '@/components/preview/ThreadPreview'
 import { ArticlePreview } from '@/components/preview/ArticlePreview'
 import { ScheduleModal } from '@/components/workspace/ScheduleModal'
 import { DraftsSidebar } from '@/components/workspace/DraftsSidebar'
-import { Save, Calendar, ArrowLeft, Check, AlertCircle } from 'lucide-react'
+import { Save, Calendar, ArrowLeft, Check, AlertCircle, Tag } from 'lucide-react'
 import PostTypeIcon from '@/components/calendar/PostTypeIcon'
 import Link from 'next/link'
 import { markdownToHtml } from '@/lib/markdown'
+import TagSelector from '@/components/tags/TagSelector'
+import TagBadge, { Tag as TagType } from '@/components/tags/TagBadge'
 
 type ContentType = 'tweet' | 'thread' | 'article'
 type GenerationType = 'scroll_stopper' | 'debate_starter' | 'viral_catalyst'
@@ -25,6 +27,7 @@ interface Draft {
   status: string
   updated_at: string
   generation_type?: GenerationType
+  tags?: TagType[]
 }
 
 export default function WorkspacePage() {
@@ -44,9 +47,54 @@ export default function WorkspacePage() {
   const [draftsRefreshTrigger, setDraftsRefreshTrigger] = useState(0)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
+  // Tags state
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
+  const [tags, setTags] = useState<TagType[]>([])
+  const [showTagSelector, setShowTagSelector] = useState(false)
+
   const lastSavedContent = useRef<string>('')
   const lastSavedTweets = useRef<ThreadTweet[]>([])
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null)
+
+  // Fetch tags for a post
+  const fetchPostTags = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/posts/${id}/tags`)
+      if (res.ok) {
+        const data = await res.json()
+        setTags(data.tags || [])
+        setSelectedTagIds(data.tags?.map((t: TagType) => t.id) || [])
+      }
+    } catch {
+      console.error('Failed to fetch post tags')
+    }
+  }, [])
+
+  // Fetch all available tags to display selected ones
+  const [allTags, setAllTags] = useState<TagType[]>([])
+
+  useEffect(() => {
+    const fetchAllTags = async () => {
+      try {
+        const res = await fetch('/api/tags')
+        if (res.ok) {
+          const data = await res.json()
+          setAllTags(data.tags || [])
+        }
+      } catch {
+        console.error('Failed to fetch all tags')
+      }
+    }
+    fetchAllTags()
+  }, [])
+
+  // Update displayed tags when selectedTagIds changes
+  useEffect(() => {
+    if (allTags.length > 0) {
+      const selectedTags = allTags.filter(t => selectedTagIds.includes(t.id))
+      setTags(selectedTags)
+    }
+  }, [selectedTagIds, allTags])
 
   // Load content from localStorage
   useEffect(() => {
@@ -67,6 +115,11 @@ export default function WorkspacePage() {
           setThreadTweets(parseThreadFromContent(post.content.html))
         } else {
           setContent(post.content?.html || '')
+        }
+
+        // Fetch tags for this post
+        if (post.id) {
+          fetchPostTags(post.id)
         }
 
         localStorage.removeItem('edit-post')
@@ -94,7 +147,7 @@ export default function WorkspacePage() {
         localStorage.removeItem('workspace-content')
       } catch {}
     }
-  }, [])
+  }, [fetchPostTags])
 
   // Get current content based on mode
   const getCurrentContent = useCallback(() => {
@@ -142,6 +195,7 @@ export default function WorkspacePage() {
           content: getCurrentContent(),
           status: 'draft',
           generation_type: generationType,
+          tagIds: selectedTagIds,
         }),
       })
 
@@ -149,6 +203,11 @@ export default function WorkspacePage() {
 
       const data = await res.json()
       setPostId(data.id)
+
+      // Update tags from response
+      if (data.tags) {
+        setTags(data.tags)
+      }
 
       if (contentType === 'thread') {
         lastSavedTweets.current = [...threadTweets]
@@ -167,7 +226,7 @@ export default function WorkspacePage() {
     } finally {
       setSaving(false)
     }
-  }, [content, contentType, generationType, postId, title, threadTweets, getCurrentContent, isContentEmpty])
+  }, [content, contentType, generationType, postId, title, threadTweets, getCurrentContent, isContentEmpty, selectedTagIds])
 
   // Track content changes
   const handleContentChange = useCallback((newContent: string) => {
@@ -220,8 +279,11 @@ export default function WorkspacePage() {
       lastSavedContent.current = draft.content?.html || ''
     }
 
+    // Fetch tags for this draft
+    fetchPostTags(draft.id)
+
     setHasUnsavedChanges(false)
-  }, [])
+  }, [fetchPostTags])
 
   // Handle creating a new draft
   const handleNewDraft = useCallback(() => {
@@ -231,6 +293,8 @@ export default function WorkspacePage() {
     setThreadTweets([{ id: '1', content: '' }])
     setContentType('tweet')
     setGenerationType(null)
+    setSelectedTagIds([])
+    setTags([])
     lastSavedContent.current = ''
     lastSavedTweets.current = []
     setHasUnsavedChanges(false)
@@ -277,6 +341,7 @@ export default function WorkspacePage() {
           scheduled_date: date,
           scheduled_time: time,
           generation_type: generationType,
+          tagIds: selectedTagIds,
         }),
       })
 
@@ -436,6 +501,48 @@ export default function WorkspacePage() {
         {/* Editor */}
         <div className="flex-1 p-4 overflow-y-auto">
           {renderEditor()}
+
+          {/* Tags Section */}
+          <div className="mt-6 pt-6 border-t border-[var(--border)]">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-medium text-[var(--muted)] uppercase tracking-wider flex items-center gap-2">
+                <Tag className="w-4 h-4" />
+                Tags
+              </h4>
+              <button
+                onClick={() => setShowTagSelector(!showTagSelector)}
+                className="text-sm text-accent hover:text-accent-hover transition-colors"
+              >
+                {showTagSelector ? 'Done' : 'Edit Tags'}
+              </button>
+            </div>
+
+            {/* Display current tags */}
+            {tags.length > 0 && !showTagSelector && (
+              <div className="flex flex-wrap gap-2">
+                {tags.map(tag => (
+                  <TagBadge key={tag.id} tag={tag} size="sm" />
+                ))}
+              </div>
+            )}
+
+            {tags.length === 0 && !showTagSelector && (
+              <p className="text-sm text-[var(--muted)]">No tags added yet</p>
+            )}
+
+            {/* Tag Selector */}
+            {showTagSelector && (
+              <div className="mt-2">
+                <TagSelector
+                  selectedTagIds={selectedTagIds}
+                  onChange={(ids) => {
+                    setSelectedTagIds(ids)
+                    setHasUnsavedChanges(true)
+                  }}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Preview */}

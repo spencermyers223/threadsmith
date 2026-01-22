@@ -9,6 +9,7 @@ import { enUS } from 'date-fns/locale'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import PostTypeIcon, { GenerationType } from './PostTypeIcon'
 import type { CalendarFilterState } from './CalendarFilters'
+import TagBadge, { Tag } from '@/components/tags/TagBadge'
 
 const locales = { 'en-US': enUS }
 
@@ -31,6 +32,7 @@ interface Post {
   scheduled_time: string | null
   created_at: string
   tag_ids?: string[]
+  tags?: Tag[]
 }
 
 interface CalendarEvent {
@@ -93,11 +95,16 @@ function stripHtml(html: string): string {
 }
 
 // Custom Event Component with Tooltip using Portal
-function EventWithTooltip({ event, onMarkAsPosted }: { event: CalendarEvent; onMarkAsPosted?: (id: string) => void }) {
+function EventWithTooltip({ event, onMarkAsPosted, allTags }: { event: CalendarEvent; onMarkAsPosted?: (id: string) => void; allTags: Tag[] }) {
   const [showTooltip, setShowTooltip] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 })
   const eventRef = useRef<HTMLDivElement>(null)
   const post = event.resource
+
+  // Get tags for this post
+  const postTags = post.tags && post.tags.length > 0
+    ? post.tags
+    : allTags.filter(t => post.tag_ids?.includes(t.id))
 
   const handleMouseEnter = () => {
     if (eventRef.current) {
@@ -170,6 +177,13 @@ function EventWithTooltip({ event, onMarkAsPosted }: { event: CalendarEvent; onM
               Scheduled: {post.scheduled_time}
             </p>
           )}
+          {postTags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {postTags.map(tag => (
+                <TagBadge key={tag.id} tag={tag} size="sm" />
+              ))}
+            </div>
+          )}
           {post.status === 'scheduled' && (
             <button
               onClick={handleMarkAsPosted}
@@ -190,6 +204,23 @@ export function ContentCalendar({ onSelectPost, filters }: ContentCalendarProps)
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [allTags, setAllTags] = useState<Tag[]>([])
+
+  // Fetch all tags for display
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const res = await fetch('/api/tags')
+        if (res.ok) {
+          const data = await res.json()
+          setAllTags(data.tags || [])
+        }
+      } catch {
+        console.error('Failed to fetch tags')
+      }
+    }
+    fetchTags()
+  }, [])
 
   const fetchPosts = useCallback(async () => {
     const start = format(startOfMonth(subMonths(currentDate, 1)), 'yyyy-MM-dd')
@@ -290,7 +321,7 @@ export function ContentCalendar({ onSelectPost, filters }: ContentCalendarProps)
 
   const components = {
     event: (props: { event: CalendarEvent }) => (
-      <EventWithTooltip event={props.event} onMarkAsPosted={handleMarkAsPosted} />
+      <EventWithTooltip event={props.event} onMarkAsPosted={handleMarkAsPosted} allTags={allTags} />
     ),
   }
 

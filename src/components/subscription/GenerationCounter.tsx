@@ -14,11 +14,7 @@ interface UsageData {
   } | null
 }
 
-interface GenerationCounterProps {
-  onLimitReached?: () => void
-}
-
-export function GenerationCounter({ onLimitReached }: GenerationCounterProps) {
+export function GenerationCounter() {
   const [usage, setUsage] = useState<UsageData | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -28,18 +24,13 @@ export function GenerationCounter({ onLimitReached }: GenerationCounterProps) {
       if (res.ok) {
         const data = await res.json()
         setUsage(data)
-
-        // Trigger callback if limit reached
-        if (!data.isSubscribed && data.remaining <= 0 && onLimitReached) {
-          onLimitReached()
-        }
       }
     } catch (err) {
       console.error('Failed to fetch usage:', err)
     } finally {
       setLoading(false)
     }
-  }, [onLimitReached])
+  }, [])
 
   useEffect(() => {
     fetchUsage()

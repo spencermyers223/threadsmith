@@ -5,6 +5,7 @@ import { format } from 'date-fns'
 import { FileText, MessageSquare, Newspaper, Trash2, Edit, Calendar as CalendarIcon, Clock, CheckCircle } from 'lucide-react'
 import PostTypeIcon, { GenerationType } from './PostTypeIcon'
 import type { CalendarFilterState } from './CalendarFilters'
+import TagBadge, { Tag } from '@/components/tags/TagBadge'
 
 interface Post {
   id: string
@@ -17,6 +18,7 @@ interface Post {
   scheduled_time: string | null
   created_at: string
   tag_ids?: string[]
+  tags?: Tag[]
 }
 
 interface ContentListProps {
@@ -77,6 +79,30 @@ export function ContentList({ onSelectPost, filters }: ContentListProps) {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [hoveredPostId, setHoveredPostId] = useState<string | null>(null)
+  const [allTags, setAllTags] = useState<Tag[]>([])
+
+  // Fetch all tags for display
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const res = await fetch('/api/tags')
+        if (res.ok) {
+          const data = await res.json()
+          setAllTags(data.tags || [])
+        }
+      } catch {
+        console.error('Failed to fetch tags')
+      }
+    }
+    fetchTags()
+  }, [])
+
+  // Helper to get tag objects from tag_ids
+  const getPostTags = (post: Post): Tag[] => {
+    if (post.tags && post.tags.length > 0) return post.tags
+    if (!post.tag_ids || post.tag_ids.length === 0) return []
+    return allTags.filter(t => post.tag_ids?.includes(t.id))
+  }
 
   // Apply external filters (post types and tags)
   const filteredPosts = posts.filter(post => {
@@ -255,6 +281,15 @@ export function ContentList({ onSelectPost, filters }: ContentListProps) {
                         Created {format(new Date(post.created_at), 'MMM d, yyyy')}
                       </span>
                     </div>
+
+                    {/* Tags */}
+                    {getPostTags(post).length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {getPostTags(post).map(tag => (
+                          <TagBadge key={tag.id} tag={tag} size="sm" />
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

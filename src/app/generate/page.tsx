@@ -21,6 +21,8 @@ import { useRouter } from 'next/navigation'
 import { FilesSidebar, FileRecord } from '@/components/generate/FilesSidebar'
 import { GenerationCounter } from '@/components/subscription/GenerationCounter'
 import { UpgradeModal } from '@/components/subscription/UpgradeModal'
+import TagSelector from '@/components/tags/TagSelector'
+import TagBadge, { Tag as TagType } from '@/components/tags/TagBadge'
 
 // Types
 type Length = 'punchy' | 'standard' | 'developed' | 'thread'
@@ -31,6 +33,8 @@ interface GeneratedPost {
   content: string
   archetype: 'scroll_stopper' | 'debate_starter' | 'viral_catalyst'
   characterCount: number
+  savedPostId?: string
+  tags?: TagType[]
 }
 
 // Archetype styling
@@ -135,10 +139,20 @@ function PostCard({
     <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden flex flex-col animate-fade-in-up">
       {/* Header with archetype badge */}
       <div className="p-4 border-b border-[var(--border)]">
-        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${style.color}`}>
-          <Icon className="w-3.5 h-3.5" />
-          {style.label}
+        <div className="flex items-center justify-between">
+          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${style.color}`}>
+            <Icon className="w-3.5 h-3.5" />
+            {style.label}
+          </div>
         </div>
+        {/* Display tags if any */}
+        {post.tags && post.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {post.tags.map(tag => (
+              <TagBadge key={tag.id} tag={tag} size="sm" />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -240,6 +254,11 @@ export default function GeneratePage() {
   const [editingPostIndex, setEditingPostIndex] = useState<number | null>(null)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
+  // Tag modal state
+  const [tagModalIndex, setTagModalIndex] = useState<number | null>(null)
+  const [tagModalSelectedIds, setTagModalSelectedIds] = useState<string[]>([])
+  const [savingTags, setSavingTags] = useState(false)
+
   const handleGenerate = async () => {
     if (!topic.trim()) return
 
@@ -248,6 +267,17 @@ export default function GeneratePage() {
     setPosts([])
 
     try {
+      // Check if user can generate before making the request
+      const usageRes = await fetch('/api/subscription/usage')
+      if (usageRes.ok) {
+        const usageData = await usageRes.json()
+        if (!usageData.canGenerate) {
+          setIsLoading(false)
+          setShowUpgradeModal(true)
+          return
+        }
+      }
+
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -293,8 +323,91 @@ export default function GeneratePage() {
     setToast('Coming soon: Add to Calendar')
   }
 
-  const handleAddTags = () => {
-    setToast('Coming soon: Add Tags')
+  const handleAddTags = async (post: GeneratedPost, index: number) => {
+    // If post not saved yet, save it first
+    let savedPostId = post.savedPostId
+    if (!savedPostId) {
+      try {
+        const contentType = length === 'thread' ? 'thread' : 'tweet'
+        const res = await fetch('/api/posts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: contentType,
+            title: topic.slice(0, 50) || 'Generated post',
+            content: contentType === 'thread'
+              ? { tweets: post.content.split('\n\n').filter(t => t.trim()).map((text, i) => ({ id: String(i + 1), content: text })) }
+              : { html: `<p>${post.content.replace(/\n/g, '</p><p>')}</p>` },
+            status: 'draft',
+            generation_type: post.archetype,
+          }),
+        })
+
+        if (!res.ok) throw new Error('Failed to save post')
+        const savedPost = await res.json()
+        savedPostId = savedPost.id
+
+        // Update the post in state with the saved ID
+        setPosts(prev => prev.map((p, i) => i === index ? { ...p, savedPostId } : p))
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to save post')
+        return
+      }
+    }
+
+    // Open tag modal with current tags
+    setTagModalIndex(index)
+    setTagModalSelectedIds(post.tags?.map(t => t.id) || [])
+  }
+
+  const handleSaveTags = async () => {
+    if (tagModalIndex === null) return
+
+    const post = posts[tagModalIndex]
+    if (!post.savedPostId) return
+
+    setSavingTags(true)
+    try {
+      // Get current tags for this post
+      const currentTagIds = post.tags?.map(t => t.id) || []
+
+      // Find tags to add and remove
+      const tagsToAdd = tagModalSelectedIds.filter(id => !currentTagIds.includes(id))
+      const tagsToRemove = currentTagIds.filter(id => !tagModalSelectedIds.includes(id))
+
+      // Add new tags
+      for (const tagId of tagsToAdd) {
+        await fetch(`/api/posts/${post.savedPostId}/tags`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tagId }),
+        })
+      }
+
+      // Remove tags
+      for (const tagId of tagsToRemove) {
+        await fetch(`/api/posts/${post.savedPostId}/tags?tagId=${tagId}`, {
+          method: 'DELETE',
+        })
+      }
+
+      // Fetch updated tags for display
+      const tagsRes = await fetch(`/api/posts/${post.savedPostId}/tags`)
+      const tagsData = await tagsRes.json()
+      const updatedTags = tagsData.tags || []
+
+      // Update post in state
+      setPosts(prev => prev.map((p, i) =>
+        i === tagModalIndex ? { ...p, tags: updatedTags } : p
+      ))
+
+      setTagModalIndex(null)
+      setToast('Tags updated!')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save tags')
+    } finally {
+      setSavingTags(false)
+    }
   }
 
   const handleEditInWorkspace = async (post: GeneratedPost, index: number) => {
@@ -361,7 +474,7 @@ export default function GeneratePage() {
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
-              <GenerationCounter onLimitReached={() => setShowUpgradeModal(true)} />
+              <GenerationCounter />
               <button
                 onClick={() => setShowUpgradeModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-[var(--accent-text)] rounded-lg font-medium text-sm transition-colors"
@@ -514,7 +627,7 @@ export default function GeneratePage() {
                     post={post}
                     onPostNow={() => handlePostNow(post.content)}
                     onAddToCalendar={handleAddToCalendar}
-                    onAddTags={handleAddTags}
+                    onAddTags={() => handleAddTags(post, index)}
                     onEditInWorkspace={() => handleEditInWorkspace(post, index)}
                     isEditingInWorkspace={editingPostIndex === index}
                   />
@@ -533,6 +646,51 @@ export default function GeneratePage() {
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
       />
+
+      {/* Tag Selector Modal */}
+      {tagModalIndex !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 w-full max-w-md mx-4 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Add Tags</h3>
+              <button
+                onClick={() => setTagModalIndex(null)}
+                className="p-2 hover:bg-[var(--border)] rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <TagSelector
+              selectedTagIds={tagModalSelectedIds}
+              onChange={setTagModalSelectedIds}
+            />
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setTagModalIndex(null)}
+                className="flex-1 px-4 py-2 bg-[var(--border)] hover:bg-[var(--muted)]/30 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveTags}
+                disabled={savingTags}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-[var(--accent-text)] rounded-lg transition-colors disabled:opacity-50"
+              >
+                {savingTags ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Tags'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
