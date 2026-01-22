@@ -17,7 +17,8 @@
       "Bash(git branch:*)",
       "Bash(git remote add:*)",
       "Bash(git push:*)",
-      "Bash(ls -la \"C:\\\\Users\\\\spenc\\\\OneDrive\\\\Nomad\\\\x-content-partner\\\\src\\\\components\"\" | grep -E \"^d \")"
+      "Bash(ls -la \"C:\\\\Users\\\\spenc\\\\OneDrive\\\\Nomad\\\\x-content-partner\\\\src\\\\components\"\" | grep -E \"^d \")",
+      "Bash(npm run build:*)"
     ]
   }
 }

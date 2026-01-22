@@ -167,7 +167,7 @@ export default function WorkspacePage() {
     } finally {
       setSaving(false)
     }
-  }, [content, contentType, postId, title, threadTweets, getCurrentContent, isContentEmpty])
+  }, [content, contentType, generationType, postId, title, threadTweets, getCurrentContent, isContentEmpty])
 
   // Track content changes
   const handleContentChange = useCallback((newContent: string) => {

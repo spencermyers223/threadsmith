@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { ChevronDown, Check, Plus, X, Loader2 } from 'lucide-react'
+import { ChevronDown, Check, Plus, Loader2 } from 'lucide-react'
 import TagBadge, { Tag } from './TagBadge'
 
 const COLOR_PRESETS = [
