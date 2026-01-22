@@ -70,7 +70,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
               <AlertCircle className="w-8 h-8 text-accent" />
             </div>
             <h2 className="text-2xl font-bold mb-2">
-              You've used all your free generations!
+              You&apos;ve used all your free generations!
             </h2>
             <p className="text-[var(--muted)] max-w-md mx-auto">
               Upgrade to keep creating content that grows your audience

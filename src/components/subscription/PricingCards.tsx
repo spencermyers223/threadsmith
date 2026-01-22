@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { Check, Sparkles, Zap, Loader2 } from 'lucide-react'
 
 export type PlanType = 'monthly' | 'lifetime'

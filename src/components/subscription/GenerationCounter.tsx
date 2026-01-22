@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Sparkles, Check, Loader2 } from 'lucide-react'
 
 interface UsageData {
@@ -18,7 +18,7 @@ export function GenerationCounter({ onLimitReached }: GenerationCounterProps) {
   const [usage, setUsage] = useState<UsageData | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const fetchUsage = async () => {
+  const fetchUsage = useCallback(async () => {
     try {
       const res = await fetch('/api/subscription/usage')
       if (res.ok) {
@@ -35,11 +35,11 @@ export function GenerationCounter({ onLimitReached }: GenerationCounterProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [onLimitReached])
 
   useEffect(() => {
     fetchUsage()
-  }, [])
+  }, [fetchUsage])
 
   // Expose refresh function
   useEffect(() => {
@@ -49,7 +49,7 @@ export function GenerationCounter({ onLimitReached }: GenerationCounterProps) {
       // @ts-expect-error - cleanup
       delete window.refreshGenerationCounter
     }
-  }, [])
+  }, [fetchUsage])
 
   if (loading) {
     return (

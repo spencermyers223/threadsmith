@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -92,7 +91,6 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 }
 
 export default function PricingPage() {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [loadingPlan, setLoadingPlan] = useState<PlanType | null>(null)
   const [error, setError] = useState<string | null>(null)
