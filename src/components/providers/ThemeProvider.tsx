@@ -31,7 +31,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   useEffect(() => {
     setMounted(true)
     // Read theme from localStorage on mount
-    const savedTheme = localStorage.getItem('threadsmith-theme') as Theme | null
+    const savedTheme = localStorage.getItem('xthread-theme') as Theme | null
     if (savedTheme) {
       setThemeState(savedTheme)
       applyTheme(savedTheme)
@@ -48,7 +48,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme)
-    localStorage.setItem('threadsmith-theme', newTheme)
+    localStorage.setItem('xthread-theme', newTheme)
     applyTheme(newTheme)
   }
 

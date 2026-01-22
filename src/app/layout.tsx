@@ -15,22 +15,22 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "ThreadSmith",
-  description: "Your ideas, expertly threaded. Turn your research into engaging X content while keeping your authentic voice.",
+  title: "xthread",
+  description: "Grow your X audience with algorithm-optimized content. Generate viral posts in seconds with AI-powered Scroll Stoppers, Debate Starters, and Viral Catalysts.",
   icons: {
     icon: "/favicon.svg",
     apple: "/icon-512.svg",
   },
   openGraph: {
-    title: "ThreadSmith",
-    description: "Your ideas, expertly threaded. Turn your research into engaging X content while keeping your authentic voice.",
+    title: "xthread - Grow Your X Audience",
+    description: "Generate viral posts in seconds. Our AI creates Scroll Stoppers, Debate Starters, and Viral Catalysts designed to maximize engagement.",
     images: ["/og-image.svg"],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ThreadSmith",
-    description: "Your ideas, expertly threaded. Turn your research into engaging X content while keeping your authentic voice.",
+    title: "xthread - Grow Your X Audience",
+    description: "Generate viral posts in seconds. Our AI creates Scroll Stoppers, Debate Starters, and Viral Catalysts designed to maximize engagement.",
     images: ["/og-image.svg"],
   },
 };
@@ -48,7 +48,7 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var theme = localStorage.getItem('threadsmith-theme');
+                  var theme = localStorage.getItem('xthread-theme');
                   if (theme === 'light') {
                     document.documentElement.classList.add('light');
                   }
