@@ -19,7 +19,7 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json(tags)
+  return NextResponse.json({ tags })
 }
 
 export async function POST(request: NextRequest) {
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       throw error
     }
 
-    return NextResponse.json(tag, { status: 201 })
+    return NextResponse.json({ tag }, { status: 201 })
   } catch (err) {
     console.error('Tags API error:', err)
     return NextResponse.json(

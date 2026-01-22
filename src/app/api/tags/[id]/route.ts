@@ -25,7 +25,7 @@ export async function GET(
     return NextResponse.json({ error: 'Tag not found' }, { status: 404 })
   }
 
-  return NextResponse.json(tag)
+  return NextResponse.json({ tag })
 }
 
 export async function PUT(
@@ -91,7 +91,7 @@ export async function PUT(
       throw error
     }
 
-    return NextResponse.json(tag)
+    return NextResponse.json({ tag })
   } catch (err) {
     console.error('Tags API error:', err)
     return NextResponse.json(
@@ -99,6 +99,14 @@ export async function PUT(
       { status: 500 }
     )
   }
+}
+
+// PATCH is an alias for PUT
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return PUT(request, { params })
 }
 
 export async function DELETE(
