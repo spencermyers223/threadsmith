@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState, useCallback } from 'react'
 import { FilesSidebar, FileRecord } from '@/components/generate/FilesSidebar'
 import WriteMode from '@/components/creator-hub/WriteMode'
 import GenerateMode from '@/components/creator-hub/GenerateMode'
@@ -18,19 +17,6 @@ export default function CreatorHubPage() {
   // Handle file selection for generate mode
   const handleFileSelect = (file: FileRecord | null) => {
     setSelectedFile(file)
-  }
-
-  // Handle opening a file in write mode
-  const handleOpenInWriteMode = (file: FileRecord) => {
-    setEditingFile(file)
-    setMode('write')
-    setSidebarExpanded(false)
-  }
-
-  // Handle creating a new note
-  const handleCreateNewNote = () => {
-    setEditingFile(null) // Clear editing file to create new
-    setMode('write')
   }
 
   // Handle saving file (callback from WriteMode)
@@ -100,7 +86,6 @@ export default function CreatorHubPage() {
             <WriteMode
               editingFile={editingFile}
               onFileSaved={handleFileSaved}
-              onCreateNew={handleCreateNewNote}
             />
           ) : (
             <GenerateMode

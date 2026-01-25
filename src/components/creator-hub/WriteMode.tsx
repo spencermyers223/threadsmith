@@ -15,10 +15,9 @@ import type { FileRecord } from '@/components/generate/FilesSidebar'
 interface WriteModeProps {
   editingFile: FileRecord | null
   onFileSaved: (file: FileRecord) => void
-  onCreateNew: () => void
 }
 
-export default function WriteMode({ editingFile, onFileSaved, onCreateNew }: WriteModeProps) {
+export default function WriteMode({ editingFile, onFileSaved }: WriteModeProps) {
   const [title, setTitle] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)

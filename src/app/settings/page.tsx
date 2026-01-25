@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Bell, Moon, Sun, User, Check, AlertCircle, LogOut,
-  Target, Mic, Users, Loader2, Plus, X, ChevronDown, ChevronUp
+  Target, Mic, Users, Plus, X, ChevronDown, ChevronUp
 } from 'lucide-react'
 import Link from 'next/link'
 import { useTheme } from '@/components/providers/ThemeProvider'
