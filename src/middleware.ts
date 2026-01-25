@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protected routes - redirect to login if not authenticated
-  const protectedPaths = ['/dashboard', '/workspace', '/settings', '/profile', '/generate', '/calendar']
+  const protectedPaths = ['/dashboard', '/workspace', '/settings', '/profile', '/generate', '/calendar', '/creator-hub']
   const isProtectedPath = protectedPaths.some(path =>
     request.nextUrl.pathname.startsWith(path)
   )
@@ -47,9 +47,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // Redirect authenticated users away from landing page to generate
+  // Redirect authenticated users away from landing page to creator-hub
   if (request.nextUrl.pathname === '/' && user) {
-    return NextResponse.redirect(new URL('/generate', request.url))
+    return NextResponse.redirect(new URL('/creator-hub', request.url))
+  }
+
+  // Redirect old /generate route to /creator-hub
+  if (request.nextUrl.pathname === '/generate' && user) {
+    return NextResponse.redirect(new URL('/creator-hub', request.url))
   }
 
   return response

@@ -136,7 +136,7 @@ export default function ProfileSetupPage() {
   }
 
   const handleSkip = () => {
-    router.push('/generate')
+    router.push('/creator-hub')
   }
 
   const handleComplete = async () => {
@@ -176,7 +176,7 @@ export default function ProfileSetupPage() {
         throw upsertError
       }
 
-      router.push('/generate')
+      router.push('/creator-hub')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save profile')
     } finally {
