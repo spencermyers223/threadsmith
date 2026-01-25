@@ -408,7 +408,7 @@ export default function WorkspacePage() {
       <div className="border-b border-[var(--border)] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link
-            href="/generate"
+            href="/creator-hub"
             className="p-2 rounded-md hover:bg-[var(--card)] transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
