@@ -106,15 +106,73 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const [savingIndex, setSavingIndex] = useState<number | null>(null)
   const [currentThreadIndex, setCurrentThreadIndex] = useState(0)
+  const [isSubscribed, setIsSubscribed] = useState(false)
 
   const selectedPostTypeData = POST_TYPES.find(pt => pt.id === selectedPostType)
+
+  // Helper function to parse thread content into individual tweets
+  const parseThreadContent = (content: string): { number: string; text: string; charCount: number }[] => {
+    // Try to split by numbered patterns like "1/7", "2/7" etc.
+    const numberedPattern = /(\d+\/\d+)/g
+    const parts = content.split(numberedPattern).filter(part => part.trim())
+
+    const tweets: { number: string; text: string; charCount: number }[] = []
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i].trim()
+      // Check if this part is a number pattern
+      if (/^\d+\/\d+$/.test(part)) {
+        // Next part is the tweet content
+        const nextPart = parts[i + 1]?.trim() || ''
+        if (nextPart) {
+          tweets.push({ number: part, text: nextPart, charCount: nextPart.length })
+          i++ // Skip the content part since we've processed it
+        }
+      }
+    }
+
+    // If no numbered pattern found, fall back to double newline splitting
+    if (tweets.length === 0) {
+      const fallbackTweets = content.split('\n\n').filter(t => t.trim())
+      return fallbackTweets.map((text, index) => ({
+        number: `${index + 1}/${fallbackTweets.length}`,
+        text: text.trim(),
+        charCount: text.trim().length
+      }))
+    }
+
+    return tweets
+  }
 
   // Thread types that should use carousel display
   const isThreadType = selectedPostType === 'alpha_thread' || selectedPostType === 'protocol_breakdown'
 
+  // Check subscription status on mount
+  useEffect(() => {
+    const checkSubscription = async () => {
+      try {
+        const res = await fetch('/api/subscription/usage')
+        if (res.ok) {
+          const data = await res.json()
+          setIsSubscribed(data.isSubscribed)
+        }
+      } catch (err) {
+        console.error('Failed to check subscription:', err)
+      }
+    }
+    checkSubscription()
+  }, [])
+
   // Reset carousel index when posts change or post type changes
   useEffect(() => {
     setCurrentThreadIndex(0)
+  }, [selectedPostType])
+
+  // Auto-select Thread length for thread-based post types
+  useEffect(() => {
+    if (selectedPostType === 'alpha_thread' || selectedPostType === 'protocol_breakdown') {
+      setSelectedLength('thread')
+    }
   }, [selectedPostType])
 
   const handleGenerate = async () => {
@@ -271,13 +329,15 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
         {/* Header with Generation Counter */}
         <div className="flex items-center justify-between mb-6">
           <GenerationCounter />
-          <button
-            onClick={() => setShowUpgradeModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-[var(--background)] rounded-lg font-medium text-sm transition-colors"
-          >
-            <Crown size={16} />
-            Upgrade to Pro
-          </button>
+          {!isSubscribed && (
+            <button
+              onClick={() => setShowUpgradeModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-[var(--background)] rounded-lg font-medium text-sm transition-colors"
+            >
+              <Crown size={16} />
+              Upgrade to Pro
+            </button>
+          )}
         </div>
 
         {/* Main Content Card */}
@@ -481,89 +541,114 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
                 </div>
 
                 {/* Single Thread Display */}
-                {posts[currentThreadIndex] && (
-                  <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
-                    {/* Header */}
-                    <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
-                      <div className={`
-                        inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium
-                        ${selectedPostTypeData?.bgColor} ${selectedPostTypeData?.borderColor} border
-                        ${selectedPostTypeData?.color}
-                      `}>
-                        {selectedPostTypeData?.icon && <selectedPostTypeData.icon size={14} />}
-                        {selectedPostTypeData?.label}
-                      </div>
-                      <span className="text-sm text-[var(--muted)]">
-                        Thread ({posts[currentThreadIndex].content.split('\n\n').filter(t => t.trim()).length} tweets)
-                      </span>
-                    </div>
-
-                    {/* Content - Thread Preview */}
-                    <div className="p-4 space-y-3 max-h-[400px] overflow-y-auto">
-                      {posts[currentThreadIndex].content.split('\n\n').filter(t => t.trim()).map((tweet, tweetIndex) => (
-                        <div key={tweetIndex} className="flex gap-3">
-                          <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[var(--accent)]/20 flex items-center justify-center text-xs font-bold text-[var(--accent)]">
-                            {tweetIndex + 1}
-                          </div>
-                          <p className="text-[var(--foreground)] text-sm leading-relaxed flex-1">
-                            {tweet}
-                          </p>
+                {posts[currentThreadIndex] && (() => {
+                  const parsedTweets = parseThreadContent(posts[currentThreadIndex].content)
+                  return (
+                    <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
+                      {/* Header */}
+                      <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
+                        <div className={`
+                          inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium
+                          ${selectedPostTypeData?.bgColor} ${selectedPostTypeData?.borderColor} border
+                          ${selectedPostTypeData?.color}
+                        `}>
+                          {selectedPostTypeData?.icon && <selectedPostTypeData.icon size={14} />}
+                          {selectedPostTypeData?.label}
                         </div>
-                      ))}
-                    </div>
+                        <span className="text-sm text-[var(--muted)]">
+                          Thread ({parsedTweets.length} tweets)
+                        </span>
+                      </div>
 
-                    {/* Footer */}
-                    <div className="p-4 border-t border-[var(--border)] space-y-3">
-                      {/* Editing Tools */}
-                      <EditingTools
-                        content={posts[currentThreadIndex].content}
-                        onContentChange={(newContent) => {
-                          setPosts(prev => prev.map((p, i) =>
-                            i === currentThreadIndex
-                              ? { ...p, content: newContent, characterCount: newContent.length }
-                              : p
-                          ))
-                        }}
-                        isThread={true}
-                      />
+                      {/* Content - Thread Preview with Individual Tweet Cards */}
+                      <div className="p-4 space-y-4 max-h-[500px] overflow-y-auto">
+                        {parsedTweets.map((tweet, tweetIndex) => (
+                          <div
+                            key={tweetIndex}
+                            className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4"
+                          >
+                            {/* Tweet Header with number badge and char count */}
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 bg-[var(--accent)]/20 text-[var(--accent)] text-xs font-bold rounded">
+                                  {tweet.number}
+                                </span>
+                              </div>
+                              <span className={`text-xs font-mono ${
+                                tweet.charCount > 280
+                                  ? 'text-red-400'
+                                  : tweet.charCount > 250
+                                    ? 'text-amber-400'
+                                    : 'text-[var(--muted)]'
+                              }`}>
+                                {tweet.charCount}/280
+                              </span>
+                            </div>
+                            {/* Tweet Content with proper line breaks */}
+                            <div className="text-[var(--foreground)] text-sm leading-relaxed whitespace-pre-wrap">
+                              {tweet.text.split('\n').map((line, lineIndex) => (
+                                <div key={lineIndex} className={lineIndex > 0 ? 'mt-1' : ''}>
+                                  {line}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
 
-                      {/* Actions */}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleCopy(posts[currentThreadIndex].content, currentThreadIndex)}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--border)] hover:bg-[var(--muted)]/30 rounded-lg font-medium text-sm transition-colors"
-                        >
-                          {copiedIndex === currentThreadIndex ? (
-                            <Check size={14} className="text-emerald-400" />
-                          ) : (
-                            <Copy size={14} />
-                          )}
-                          Copy Thread
-                        </button>
-                        <button
-                          onClick={() => handleEditInWorkspace(posts[currentThreadIndex])}
-                          disabled={savingIndex === currentThreadIndex}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--border)] hover:bg-[var(--muted)]/30 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
-                        >
-                          {savingIndex === currentThreadIndex ? (
-                            <Loader2 size={14} className="animate-spin" />
-                          ) : (
-                            <PenLine size={14} />
-                          )}
-                          Edit in Workspace
-                        </button>
-                        <button
-                          onClick={() => handleAddToCalendar(posts[currentThreadIndex])}
-                          disabled={savingIndex === currentThreadIndex}
-                          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--accent)] hover:opacity-90 text-[var(--background)] rounded-lg font-medium text-sm transition-opacity disabled:opacity-50"
-                        >
-                          <Calendar size={14} />
-                          Schedule
-                        </button>
+                      {/* Footer */}
+                      <div className="p-4 border-t border-[var(--border)] space-y-3">
+                        {/* Editing Tools */}
+                        <EditingTools
+                          content={posts[currentThreadIndex].content}
+                          onContentChange={(newContent) => {
+                            setPosts(prev => prev.map((p, i) =>
+                              i === currentThreadIndex
+                                ? { ...p, content: newContent, characterCount: newContent.length }
+                                : p
+                            ))
+                          }}
+                          isThread={true}
+                        />
+
+                        {/* Actions */}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleCopy(posts[currentThreadIndex].content, currentThreadIndex)}
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--border)] hover:bg-[var(--muted)]/30 rounded-lg font-medium text-sm transition-colors"
+                          >
+                            {copiedIndex === currentThreadIndex ? (
+                              <Check size={14} className="text-emerald-400" />
+                            ) : (
+                              <Copy size={14} />
+                            )}
+                            Copy Thread
+                          </button>
+                          <button
+                            onClick={() => handleEditInWorkspace(posts[currentThreadIndex])}
+                            disabled={savingIndex === currentThreadIndex}
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--border)] hover:bg-[var(--muted)]/30 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
+                          >
+                            {savingIndex === currentThreadIndex ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              <PenLine size={14} />
+                            )}
+                            Edit in Workspace
+                          </button>
+                          <button
+                            onClick={() => handleAddToCalendar(posts[currentThreadIndex])}
+                            disabled={savingIndex === currentThreadIndex}
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--accent)] hover:opacity-90 text-[var(--background)] rounded-lg font-medium text-sm transition-opacity disabled:opacity-50"
+                          >
+                            <Calendar size={14} />
+                            Schedule
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )
+                })()}
 
                 {/* Thumbnail Navigation */}
                 <div className="flex justify-center gap-2">

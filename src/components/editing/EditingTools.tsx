@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import {
   Wand2, Zap, Sparkles, ListTree, BarChart3, Loader2,
-  ChevronDown, AlertTriangle
+  AlertTriangle, MessageCircle, Flame, X
 } from 'lucide-react'
 
 interface EditingToolsProps {
@@ -12,51 +12,81 @@ interface EditingToolsProps {
   isThread?: boolean
 }
 
-type ToolId = 'add_hook' | 'humanize' | 'sharpen' | 'make_thread' | 'algorithm_check'
+type ToolId = 'add_hook' | 'humanize' | 'sharpen' | 'add_question' | 'make_spicy' | 'make_thread' | 'algorithm_check'
 
 interface Tool {
   id: ToolId
   label: string
+  shortLabel: string
   description: string
   icon: typeof Wand2
   color: string
+  hoverBg: string
 }
 
 const TOOLS: Tool[] = [
   {
     id: 'add_hook',
     label: 'Add Hook',
+    shortLabel: 'Hook',
     description: 'Add a scroll-stopping opening line',
     icon: Zap,
     color: 'text-amber-400',
+    hoverBg: 'hover:bg-amber-500/10 hover:border-amber-500/30',
   },
   {
     id: 'humanize',
     label: 'Humanize',
+    shortLabel: 'Humanize',
     description: 'Make it sound more natural and authentic',
     icon: Sparkles,
     color: 'text-pink-400',
+    hoverBg: 'hover:bg-pink-500/10 hover:border-pink-500/30',
   },
   {
     id: 'sharpen',
-    label: 'Sharpen',
+    label: 'Shorten',
+    shortLabel: 'Shorten',
     description: 'Make it more punchy and concise',
     icon: Wand2,
     color: 'text-cyan-400',
+    hoverBg: 'hover:bg-cyan-500/10 hover:border-cyan-500/30',
+  },
+  {
+    id: 'add_question',
+    label: 'Add Question',
+    shortLabel: 'Question',
+    description: 'Add an engaging question to drive replies',
+    icon: MessageCircle,
+    color: 'text-blue-400',
+    hoverBg: 'hover:bg-blue-500/10 hover:border-blue-500/30',
+  },
+  {
+    id: 'make_spicy',
+    label: 'Make Spicier',
+    shortLabel: 'Spicier',
+    description: 'Add more edge and provocative takes',
+    icon: Flame,
+    color: 'text-orange-400',
+    hoverBg: 'hover:bg-orange-500/10 hover:border-orange-500/30',
   },
   {
     id: 'make_thread',
-    label: 'Make Thread',
+    label: 'Expand to Thread',
+    shortLabel: 'Thread',
     description: 'Expand into a multi-tweet thread',
     icon: ListTree,
     color: 'text-purple-400',
+    hoverBg: 'hover:bg-purple-500/10 hover:border-purple-500/30',
   },
   {
     id: 'algorithm_check',
-    label: 'Algorithm Check',
+    label: 'Check Score',
+    shortLabel: 'Score',
     description: 'Score against X algorithm factors',
     icon: BarChart3,
     color: 'text-emerald-400',
+    hoverBg: 'hover:bg-emerald-500/10 hover:border-emerald-500/30',
   },
 ]
 
@@ -71,7 +101,6 @@ interface AlgorithmScore {
 }
 
 export default function EditingTools({ content, onContentChange, isThread = false }: EditingToolsProps) {
-  const [isOpen, setIsOpen] = useState(false)
   const [activeTool, setActiveTool] = useState<ToolId | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [algorithmScore, setAlgorithmScore] = useState<AlgorithmScore | null>(null)
@@ -82,14 +111,20 @@ export default function EditingTools({ content, onContentChange, isThread = fals
 
     setActiveTool(toolId)
     setError(null)
-    setAlgorithmScore(null)
 
     if (toolId === 'algorithm_check') {
+      // Toggle algorithm check - if already showing, hide it
+      if (algorithmScore) {
+        setAlgorithmScore(null)
+        setActiveTool(null)
+        return
+      }
       // Local algorithm check - no API needed
       performAlgorithmCheck()
       return
     }
 
+    setAlgorithmScore(null)
     setIsLoading(true)
 
     try {
@@ -211,113 +246,123 @@ export default function EditingTools({ content, onContentChange, isThread = fals
     return 'bg-red-500/20'
   }
 
+  // Filter tools based on context
+  const visibleTools = TOOLS.filter(tool => {
+    // Hide "Make Thread" if already a thread
+    if (tool.id === 'make_thread' && isThread) return false
+    return true
+  })
+
   return (
-    <div className="relative">
-      {/* Trigger Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--card)] border border-[var(--border)] hover:border-[var(--muted)] transition-colors text-sm"
-      >
-        <Wand2 size={16} className="text-[var(--accent)]" />
-        <span>Editing Tools</span>
-        <ChevronDown size={14} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
+    <div className="space-y-3">
+      {/* Horizontal Button Row */}
+      <div className="flex flex-wrap gap-2">
+        {visibleTools.map((tool) => {
+          const Icon = tool.icon
+          const isActive = activeTool === tool.id
+          const isScoreActive = tool.id === 'algorithm_check' && algorithmScore
 
-      {/* Dropdown */}
-      {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-72 bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-lg z-50 overflow-hidden">
-          {/* Tools List */}
-          <div className="p-2">
-            {TOOLS.map((tool) => {
-              const Icon = tool.icon
-              const isActive = activeTool === tool.id
+          return (
+            <button
+              key={tool.id}
+              onClick={() => handleToolClick(tool.id)}
+              disabled={isLoading && activeTool !== tool.id}
+              title={tool.description}
+              className={`
+                flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+                bg-[var(--background)] border border-[var(--border)]
+                transition-all duration-150
+                ${tool.hoverBg}
+                ${isActive ? `${tool.color} border-current` : ''}
+                ${isScoreActive ? 'bg-emerald-500/10 border-emerald-500/30' : ''}
+                disabled:opacity-50 disabled:cursor-not-allowed
+              `}
+            >
+              {isActive && isLoading ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Icon size={14} className={isActive || isScoreActive ? tool.color : 'text-[var(--muted)]'} />
+              )}
+              <span className={isActive || isScoreActive ? tool.color : ''}>
+                {tool.shortLabel}
+              </span>
+              {isScoreActive && algorithmScore && (
+                <span className={`ml-1 px-1.5 py-0.5 rounded text-xs font-bold ${getScoreBg(algorithmScore.overall)} ${getScoreColor(algorithmScore.overall)}`}>
+                  {algorithmScore.overall}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
 
-              // Hide "Make Thread" if already a thread
-              if (tool.id === 'make_thread' && isThread) return null
+      {/* Error Display */}
+      {error && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+          <AlertTriangle size={14} className="flex-shrink-0" />
+          <span className="flex-1">{error}</span>
+          <button onClick={() => setError(null)} className="p-0.5 hover:bg-red-500/20 rounded">
+            <X size={12} />
+          </button>
+        </div>
+      )}
 
-              return (
-                <button
-                  key={tool.id}
-                  onClick={() => handleToolClick(tool.id)}
-                  disabled={isLoading}
-                  className={`
-                    w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors
-                    ${isActive ? 'bg-[var(--accent)]/10' : 'hover:bg-[var(--background)]'}
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                  `}
-                >
-                  <div className={`p-2 rounded-lg bg-[var(--background)] ${tool.color}`}>
-                    {isActive && isLoading ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                      <Icon size={16} />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{tool.label}</div>
-                    <div className="text-xs text-[var(--muted)] truncate">{tool.description}</div>
-                  </div>
-                  {isActive && !isLoading && tool.id === 'algorithm_check' && algorithmScore && (
-                    <div className={`px-2 py-1 rounded-full text-xs font-bold ${getScoreBg(algorithmScore.overall)} ${getScoreColor(algorithmScore.overall)}`}>
-                      {algorithmScore.overall}
-                    </div>
-                  )}
-                </button>
-              )
-            })}
+      {/* Algorithm Score Display */}
+      {algorithmScore && (
+        <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4 space-y-4">
+          {/* Header with close button */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BarChart3 size={16} className="text-emerald-400" />
+              <span className="font-medium text-sm">Algorithm Score</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`px-3 py-1 rounded-full text-sm font-bold ${getScoreBg(algorithmScore.overall)} ${getScoreColor(algorithmScore.overall)}`}>
+                {algorithmScore.overall}/100
+              </div>
+              <button
+                onClick={() => {
+                  setAlgorithmScore(null)
+                  setActiveTool(null)
+                }}
+                className="p-1 hover:bg-[var(--border)] rounded transition-colors"
+              >
+                <X size={14} className="text-[var(--muted)]" />
+              </button>
+            </div>
           </div>
 
-          {/* Error Display */}
-          {error && (
-            <div className="px-4 py-3 bg-red-500/10 border-t border-[var(--border)] text-red-400 text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* Algorithm Score Display */}
-          {algorithmScore && (
-            <div className="border-t border-[var(--border)] p-4 space-y-4">
-              {/* Overall Score */}
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Algorithm Score</span>
-                <div className={`px-3 py-1 rounded-full text-lg font-bold ${getScoreBg(algorithmScore.overall)} ${getScoreColor(algorithmScore.overall)}`}>
-                  {algorithmScore.overall}/100
+          {/* Factor Breakdown */}
+          <div className="space-y-2">
+            {algorithmScore.factors.map((factor) => (
+              <div key={factor.name} className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[var(--muted)]">{factor.name}</span>
+                  <span className={getScoreColor(factor.score)}>{factor.score}</span>
                 </div>
-              </div>
-
-              {/* Factor Breakdown */}
-              <div className="space-y-2">
-                {algorithmScore.factors.map((factor) => (
-                  <div key={factor.name} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-[var(--muted)]">{factor.name}</span>
-                      <span className={getScoreColor(factor.score)}>{factor.score}</span>
-                    </div>
-                    <div className="h-1.5 bg-[var(--background)] rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          factor.score >= 80 ? 'bg-emerald-500' :
-                          factor.score >= 60 ? 'bg-amber-500' : 'bg-red-500'
-                        }`}
-                        style={{ width: `${factor.score}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-[var(--muted)]">{factor.tip}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Warnings */}
-              {algorithmScore.warnings.length > 0 && (
-                <div className="space-y-2 pt-2 border-t border-[var(--border)]">
-                  {algorithmScore.warnings.map((warning, i) => (
-                    <div key={i} className="flex items-start gap-2 text-amber-400 text-sm">
-                      <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
-                      <span>{warning}</span>
-                    </div>
-                  ))}
+                <div className="h-1 bg-[var(--card)] rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      factor.score >= 80 ? 'bg-emerald-500' :
+                      factor.score >= 60 ? 'bg-amber-500' : 'bg-red-500'
+                    }`}
+                    style={{ width: `${factor.score}%` }}
+                  />
                 </div>
-              )}
+                <p className="text-xs text-[var(--muted)]">{factor.tip}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Warnings */}
+          {algorithmScore.warnings.length > 0 && (
+            <div className="space-y-2 pt-2 border-t border-[var(--border)]">
+              {algorithmScore.warnings.map((warning, i) => (
+                <div key={i} className="flex items-start gap-2 text-amber-400 text-xs">
+                  <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
+                  <span>{warning}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>

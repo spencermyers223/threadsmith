@@ -43,6 +43,8 @@ interface FilesSidebarProps {
   onToggleExpanded: () => void
   selectedFileId: string | null
   onSelectFile: (file: FileRecord | null) => void
+  onEditFile?: (file: FileRecord) => void
+  refreshTrigger?: number
 }
 
 // Tooltip component for collapsed state
@@ -65,7 +67,7 @@ function Tooltip({ children, label }: { children: React.ReactNode; label: string
   )
 }
 
-export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onSelectFile }: FilesSidebarProps) {
+export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onSelectFile, onEditFile, refreshTrigger }: FilesSidebarProps) {
   const [files, setFiles] = useState<FileRecord[]>([])
   const [folders, setFolders] = useState<FolderRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -122,6 +124,13 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
     fetchFolders()
   }, [fetchFiles, fetchFolders])
 
+  // Refresh files when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      fetchFiles()
+    }
+  }, [refreshTrigger, fetchFiles])
+
   useEffect(() => {
     if (showNewFolderInput && newFolderInputRef.current) {
       newFolderInputRef.current.focus()
@@ -147,22 +156,21 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
     }
   }, [contextMenu])
 
-  // Close sidebar when clicking outside (only when expanded)
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (isExpanded && sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
-        onToggleExpanded()
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isExpanded, onToggleExpanded])
+  // Sidebar toggle is now explicit via the collapse/expand button only
+  // No click-outside-to-close behavior
 
   const handleSelectFile = (file: FileRecord) => {
     if (selectedFileId === file.id) {
       onSelectFile(null)
     } else {
       onSelectFile(file)
+    }
+  }
+
+  const handleEditFile = (file: FileRecord, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onEditFile) {
+      onEditFile(file)
     }
   }
 
@@ -391,7 +399,7 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
           onDragStart={(e) => handleDragStart(e, file.id)}
           onDragEnd={handleDragEnd}
           onClick={() => handleSelectFile(file)}
-          onDoubleClick={() => setPreviewFile(file)}
+          onDoubleClick={() => onEditFile ? onEditFile(file) : setPreviewFile(file)}
           className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-left group ${
             draggedFileId === file.id ? 'opacity-50' : ''
           } ${
@@ -406,12 +414,23 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
             getFileIcon(file.file_type)
           )}
           <span className="flex-1 truncate text-sm">{file.name}</span>
-          <button
-            onClick={(e) => handleDeleteFile(file.id, e)}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 text-red-400 transition-all"
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
+          <div className="flex items-center gap-0.5">
+            {onEditFile && (
+              <button
+                onClick={(e) => handleEditFile(file, e)}
+                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[var(--card)] text-[var(--muted)] hover:text-[var(--foreground)] transition-all"
+                title="Edit in Write mode"
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+            )}
+            <button
+              onClick={(e) => handleDeleteFile(file.id, e)}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 text-red-400 transition-all"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
         </button>
       </li>
     )
@@ -667,7 +686,7 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
         {/* Footer */}
         <div className="p-4 border-t border-[var(--border)]">
           <p className="text-xs text-[var(--muted)]">
-            Click to select a file as source. Double-click to preview.
+            Click to select. Double-click to edit. Use pencil icon to open in Write mode.
           </p>
         </div>
       </aside>

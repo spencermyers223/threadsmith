@@ -138,6 +138,45 @@ THREAD STRUCTURE:
 4-7/ Main points with examples
 8-9/ Implications or takeaways
 10/ Summary + question for replies`,
+
+  add_question: `You are an expert at adding engagement-driving questions to X/Twitter content. Your task is to add a compelling question that encourages replies.
+
+RULES:
+- Add ONE question to the end of the content
+- The question should invite discussion and replies
+- Make it specific, not generic
+- It should relate directly to the content
+- Keep the rest of the content intact
+- Return ONLY the modified content, nothing else
+
+QUESTION PATTERNS THAT DRIVE REPLIES:
+- "What's your experience with [topic]?"
+- "Do you agree, or am I off base here?"
+- "What am I missing?"
+- "Has anyone else noticed this?"
+- "Curious - what would you do differently?"
+- "Hot take or obvious truth?"
+- "Which camp are you in?"`,
+
+  make_spicy: `You are an expert at adding edge and personality to social media content. Your task is to make the content more provocative and attention-grabbing.
+
+RULES:
+- Keep the core message but add more edge
+- Be bold and opinionated, not rude or offensive
+- Challenge conventional wisdom
+- Add contrarian angles where appropriate
+- Use stronger language and bolder claims
+- Make it memorable and quotable
+- Return ONLY the modified content, nothing else
+
+WAYS TO ADD SPICE:
+- Turn soft opinions into bold claims
+- Challenge "everybody knows" assumptions
+- Add "uncomfortable truth" framing
+- Use more direct, punchy language
+- Name what others are afraid to say
+- Add stakes ("This is costing you...")
+- Create us vs them dynamics ("Most people do X. Winners do Y.")`,
 }
 
 export async function POST(request: NextRequest) {

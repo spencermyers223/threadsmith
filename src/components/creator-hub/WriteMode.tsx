@@ -8,20 +8,22 @@ import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import {
   Save, Loader2, Bold, Italic, List, ListOrdered, Link as LinkIcon,
-  Heading1, Heading2, Quote, Undo, Redo, FileText
+  Heading1, Heading2, Quote, Undo, Redo, FileText, FilePlus, Check
 } from 'lucide-react'
 import type { FileRecord } from '@/components/generate/FilesSidebar'
 
 interface WriteModeProps {
   editingFile: FileRecord | null
   onFileSaved: (file: FileRecord) => void
+  onNewFile: () => void
 }
 
-export default function WriteMode({ editingFile, onFileSaved }: WriteModeProps) {
+export default function WriteMode({ editingFile, onFileSaved, onNewFile }: WriteModeProps) {
   const [title, setTitle] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false)
 
   const supabase = createClient()
 
@@ -119,6 +121,9 @@ export default function WriteMode({ editingFile, onFileSaved }: WriteModeProps) 
 
       setLastSaved(new Date())
       setHasUnsavedChanges(false)
+      // Show success toast
+      setShowSaveSuccess(true)
+      setTimeout(() => setShowSaveSuccess(false), 2000)
     } catch (err) {
       console.error('Save error:', err)
       alert(err instanceof Error ? err.message : 'Failed to save')
@@ -146,6 +151,26 @@ export default function WriteMode({ editingFile, onFileSaved }: WriteModeProps) 
     }
   }
 
+  const handleNewFile = () => {
+    // Confirm if there are unsaved changes
+    if (hasUnsavedChanges) {
+      if (!confirm('You have unsaved changes. Start a new file anyway?')) {
+        return
+      }
+    }
+    // Clear everything
+    setTitle('')
+    editor?.commands.setContent('')
+    setHasUnsavedChanges(false)
+    setLastSaved(null)
+    onNewFile()
+    // Focus the title input
+    setTimeout(() => {
+      const titleInput = document.querySelector('input[placeholder="Untitled Note"]') as HTMLInputElement
+      titleInput?.focus()
+    }, 100)
+  }
+
   if (!editor) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -155,10 +180,30 @@ export default function WriteMode({ editingFile, onFileSaved }: WriteModeProps) 
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col relative">
+      {/* Success Toast */}
+      {showSaveSuccess && (
+        <div className="absolute top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-500/30 text-green-400 rounded-lg text-sm animate-fade-in">
+          <Check size={16} />
+          File saved successfully
+        </div>
+      )}
+
       {/* Title and Save Bar */}
       <div className="border-b border-[var(--border)] bg-[var(--background)]">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-4">
+          {/* New File Button */}
+          <button
+            onClick={handleNewFile}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-[var(--border)] hover:bg-[var(--card)] transition-colors"
+            title="New File"
+          >
+            <FilePlus size={16} />
+            <span className="hidden sm:inline">New</span>
+          </button>
+
+          <div className="w-px h-6 bg-[var(--border)]" />
+
           <FileText size={20} className="text-[var(--muted)] flex-shrink-0" />
           <input
             type="text"
@@ -171,6 +216,11 @@ export default function WriteMode({ editingFile, onFileSaved }: WriteModeProps) 
             className="flex-1 text-lg font-semibold bg-transparent border-none outline-none placeholder:text-[var(--muted)]"
           />
           <div className="flex items-center gap-3">
+            {editingFile && (
+              <span className="text-xs text-[var(--muted)] bg-[var(--card)] px-2 py-1 rounded">
+                Editing
+              </span>
+            )}
             {lastSaved && !hasUnsavedChanges && (
               <span className="text-xs text-[var(--muted)]">
                 Saved {lastSaved.toLocaleTimeString()}
@@ -181,7 +231,7 @@ export default function WriteMode({ editingFile, onFileSaved }: WriteModeProps) 
             )}
             <button
               onClick={handleSave}
-              disabled={isSaving || !hasUnsavedChanges}
+              disabled={isSaving}
               className="
                 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
                 bg-[var(--accent)] text-[var(--background)]

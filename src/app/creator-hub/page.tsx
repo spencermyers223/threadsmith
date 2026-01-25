@@ -13,16 +13,30 @@ export default function CreatorHubPage() {
   const [sidebarExpanded, setSidebarExpanded] = useState(true)
   const [selectedFile, setSelectedFile] = useState<FileRecord | null>(null)
   const [editingFile, setEditingFile] = useState<FileRecord | null>(null)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   // Handle file selection for generate mode
   const handleFileSelect = (file: FileRecord | null) => {
     setSelectedFile(file)
   }
 
+  // Handle editing a file (open in Write mode)
+  const handleEditFile = useCallback((file: FileRecord) => {
+    setEditingFile(file)
+    setMode('write')
+  }, [])
+
+  // Handle creating a new file (clear editor)
+  const handleNewFile = useCallback(() => {
+    setEditingFile(null)
+  }, [])
+
   // Handle saving file (callback from WriteMode)
   const handleFileSaved = useCallback((file: FileRecord) => {
     setEditingFile(file)
     setSelectedFile(file)
+    // Trigger sidebar refresh
+    setRefreshTrigger(prev => prev + 1)
   }, [])
 
   return (
@@ -33,6 +47,8 @@ export default function CreatorHubPage() {
         onToggleExpanded={() => setSidebarExpanded(!sidebarExpanded)}
         selectedFileId={selectedFile?.id || null}
         onSelectFile={handleFileSelect}
+        onEditFile={handleEditFile}
+        refreshTrigger={refreshTrigger}
       />
 
       {/* Main Content Area */}
@@ -86,6 +102,7 @@ export default function CreatorHubPage() {
             <WriteMode
               editingFile={editingFile}
               onFileSaved={handleFileSaved}
+              onNewFile={handleNewFile}
             />
           ) : (
             <GenerateMode
