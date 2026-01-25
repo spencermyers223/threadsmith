@@ -106,7 +106,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const [savingIndex, setSavingIndex] = useState<number | null>(null)
   const [currentThreadIndex, setCurrentThreadIndex] = useState(0)
-  const [isSubscribed, setIsSubscribed] = useState(false)
+  const [isSubscribed, setIsSubscribed] = useState<boolean | null>(null)
 
   const selectedPostTypeData = POST_TYPES.find(pt => pt.id === selectedPostType)
 
@@ -194,16 +194,8 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
         }
       }
 
-      // Map post type to API format
-      const postTypeMapping: Record<string, string> = {
-        alpha_thread: 'viral_catalyst',
-        market_take: 'scroll_stopper',
-        hot_take: 'debate_starter',
-        on_chain_insight: 'viral_catalyst',
-        protocol_breakdown: 'viral_catalyst',
-        build_in_public: 'scroll_stopper',
-      }
-
+      // Pass the CT-native post type directly to the API
+      // The API now supports both legacy archetypes and CT-native post types
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -211,7 +203,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
           topic: topic.trim(),
           length: selectedLength,
           tone: 'casual',
-          postType: postTypeMapping[selectedPostType] || 'scroll_stopper',
+          postType: selectedPostType, // Pass the actual post type (e.g., 'build_in_public', 'market_take', etc.)
           sourceFileId: selectedFile?.id || undefined,
         }),
       })
@@ -329,7 +321,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
         {/* Header with Generation Counter */}
         <div className="flex items-center justify-between mb-6">
           <GenerationCounter />
-          {!isSubscribed && (
+          {isSubscribed === false && (
             <button
               onClick={() => setShowUpgradeModal(true)}
               className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent)]/90 text-[var(--background)] rounded-lg font-medium text-sm transition-colors"

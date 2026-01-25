@@ -10,13 +10,38 @@ import {
   type UserProfile,
 } from '@/lib/prompts/build-generation-prompt'
 import { checkCanGenerate, recordGeneration, type SourceType } from '@/lib/generation-limits'
+// Import CT-native post type prompts
+import {
+  marketTakePrompt,
+  hotTakePrompt,
+  onChainInsightPrompt,
+  alphaThreadPrompt,
+  protocolBreakdownPrompt,
+  buildInPublicPrompt,
+  type UserVoiceProfile,
+} from '@/lib/prompts'
 
 const anthropic = new Anthropic()
 
-// Input types from API
+// Input types from API - extended to support CT-native post types
 type InputLength = 'punchy' | 'standard' | 'developed' | 'thread'
 type InputTone = 'casual' | 'educational' | 'hot_take' | 'professional'
-type InputPostType = 'scroll_stopper' | 'debate_starter' | 'viral_catalyst' | 'all'
+// Legacy archetypes + CT-native post types
+type InputPostType =
+  | 'scroll_stopper' | 'debate_starter' | 'viral_catalyst' | 'all'  // Legacy
+  | 'market_take' | 'hot_take' | 'on_chain_insight' | 'alpha_thread' | 'protocol_breakdown' | 'build_in_public'  // CT-native
+
+// CT-native post types list for detection
+const CT_NATIVE_POST_TYPES = [
+  'market_take',
+  'hot_take',
+  'on_chain_insight',
+  'alpha_thread',
+  'protocol_breakdown',
+  'build_in_public',
+] as const
+
+type CTNativePostType = typeof CT_NATIVE_POST_TYPES[number]
 
 interface GenerateRequest {
   topic: string
@@ -29,6 +54,7 @@ interface GenerateRequest {
 interface GeneratedPost {
   content: string
   archetype: 'scroll_stopper' | 'debate_starter' | 'viral_catalyst'
+  postType?: CTNativePostType
   characterCount: number
 }
 
@@ -36,6 +62,11 @@ interface GenerateResponse {
   posts: GeneratedPost[]
   generationId: string
   remaining: number // -1 means unlimited
+}
+
+// Check if post type is CT-native
+function isCTNativePostType(postType: InputPostType): postType is CTNativePostType {
+  return CT_NATIVE_POST_TYPES.includes(postType as CTNativePostType)
 }
 
 // Map input length to our ContentLength type
@@ -70,7 +101,7 @@ function mapTone(tone: InputTone): Tone {
   }
 }
 
-// Map input post type to our Archetype type
+// Map input post type to our Archetype type (legacy)
 function mapArchetype(postType: InputPostType): Archetype {
   switch (postType) {
     case 'scroll_stopper':
@@ -103,28 +134,35 @@ function archetypeToOutput(archetype: Archetype): 'scroll_stopper' | 'debate_sta
 // Parse Claude's response to extract individual posts
 function parseGeneratedPosts(
   response: string,
-  archetype: Archetype
+  archetype: Archetype,
+  postType?: CTNativePostType
 ): GeneratedPost[] {
   const posts: GeneratedPost[] = []
 
-  // Match patterns like "**Option 1:**" or "**Option 1: Title**"
-  const optionRegex = /\*\*Option\s+(\d+)(?::\s*[^*]*)?\*\*\s*([\s\S]*?)(?=\*\*Option\s+\d+|$|\*Why|\*Recommendation)/gi
+  // Match patterns like "**Option 1:**" or "**Option 1: Title**" or "**Option 1**"
+  const optionRegex = /\*\*Option\s+(\d+)(?::\s*[^*]*)?\*\*\s*([\s\S]*?)(?=\*\*Option\s+\d+|$|\*Why|\*Recommendation|---)/gi
 
   let match
   while ((match = optionRegex.exec(response)) !== null) {
     const content = match[2].trim()
     if (content) {
-      // Clean up the content - remove trailing asterisks and whitespace
+      // Clean up the content - remove trailing asterisks, whitespace, and metadata
       const cleanContent = content
         .replace(/\n\n\*\*?$/g, '')
         .replace(/\n\*Character count.*$/gi, '')
         .replace(/\n\*Why this works.*$/gi, '')
+        .replace(/\n\*Hook Analysis.*$/gi, '')
+        .replace(/\n\*Algorithm Score.*$/gi, '')
+        .replace(/\n\*Reply Potential.*$/gi, '')
+        .replace(/\n\*Conversation hook.*$/gi, '')
+        .replace(/---\s*$/g, '')
         .trim()
 
       if (cleanContent.length > 0) {
         posts.push({
           content: cleanContent,
           archetype: archetypeToOutput(archetype),
+          postType,
           characterCount: cleanContent.length,
         })
       }
@@ -137,6 +175,7 @@ function parseGeneratedPosts(
     posts.push({
       content: cleanResponse,
       archetype: archetypeToOutput(archetype),
+      postType,
       characterCount: cleanResponse.length,
     })
   }
@@ -144,7 +183,119 @@ function parseGeneratedPosts(
   return posts
 }
 
-// Generate content for a specific archetype
+// Convert UserProfile to UserVoiceProfile for CT-native prompts
+function toUserVoiceProfile(userProfile: UserProfile | undefined): UserVoiceProfile | undefined {
+  if (!userProfile) return undefined
+  return {
+    niche: userProfile.niche,
+    contentGoal: userProfile.contentGoal,
+    voiceStyle: userProfile.voiceStyle,
+    admiredAccounts: userProfile.admiredAccounts,
+    targetAudience: userProfile.targetAudience,
+    personalBrand: userProfile.personalBrand,
+  }
+}
+
+// Generate content using CT-native post type prompts
+async function generateForCTNativePostType(
+  topic: string,
+  postType: CTNativePostType,
+  userProfile: UserProfile | undefined,
+  additionalContext: string | undefined
+): Promise<GeneratedPost[]> {
+  const voiceProfile = toUserVoiceProfile(userProfile)
+  let systemPrompt: string
+  let userPrompt: string
+
+  // Select the appropriate prompt builder based on post type
+  switch (postType) {
+    case 'market_take': {
+      const context = voiceProfile?.niche ? { niche: voiceProfile.niche } : undefined
+      systemPrompt = marketTakePrompt(context)
+      userPrompt = `Create a market take about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}`
+      break
+    }
+    case 'hot_take': {
+      const context = voiceProfile?.niche ? { niche: voiceProfile.niche } : undefined
+      systemPrompt = hotTakePrompt(context)
+      userPrompt = `Create a hot take about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}`
+      break
+    }
+    case 'on_chain_insight': {
+      const context = voiceProfile?.niche ? { niche: voiceProfile.niche } : undefined
+      systemPrompt = onChainInsightPrompt(context)
+      userPrompt = `Create an on-chain insight about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}`
+      break
+    }
+    case 'alpha_thread': {
+      const result = alphaThreadPrompt({
+        topic,
+        userContext: voiceProfile ? {
+          niche: voiceProfile.niche,
+          targetAudience: voiceProfile.targetAudience,
+        } : undefined,
+        additionalNotes: additionalContext,
+      })
+      systemPrompt = result.systemPrompt
+      userPrompt = result.userPrompt
+      break
+    }
+    case 'protocol_breakdown': {
+      const result = protocolBreakdownPrompt({
+        topic,
+        userContext: voiceProfile ? {
+          niche: voiceProfile.niche,
+          targetAudience: voiceProfile.targetAudience,
+        } : undefined,
+        additionalNotes: additionalContext,
+      })
+      systemPrompt = result.systemPrompt
+      userPrompt = result.userPrompt
+      break
+    }
+    case 'build_in_public': {
+      const result = buildInPublicPrompt({
+        topic,
+        userProfile: voiceProfile,
+        additionalContext,
+        length: 'single', // Default to single tweet for build-in-public
+      })
+      systemPrompt = result.systemPrompt
+      userPrompt = result.userPrompt
+      break
+    }
+    default: {
+      throw new Error(`Unknown CT-native post type: ${postType}`)
+    }
+  }
+
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 4096,
+    system: systemPrompt,
+    messages: [{ role: 'user', content: userPrompt }],
+  })
+
+  // Extract text content from response
+  const textContent = response.content
+    .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+    .map(block => block.text)
+    .join('\n')
+
+  // Map CT-native post type to legacy archetype for compatibility
+  const archetypeMapping: Record<CTNativePostType, Archetype> = {
+    market_take: 'scroll-stopper',
+    hot_take: 'debate-starter',
+    on_chain_insight: 'viral-catalyst',
+    alpha_thread: 'viral-catalyst',
+    protocol_breakdown: 'viral-catalyst',
+    build_in_public: 'scroll-stopper',
+  }
+
+  return parseGeneratedPosts(textContent, archetypeMapping[postType], postType)
+}
+
+// Generate content for a specific archetype (legacy)
 async function generateForArchetype(
   topic: string,
   archetype: Archetype,
@@ -211,8 +362,8 @@ export async function POST(request: NextRequest) {
     if (!topic || topic.trim().length === 0) {
       return NextResponse.json({ error: 'Topic is required' }, { status: 400 })
     }
-    if (topic.length > 280) {
-      return NextResponse.json({ error: 'Topic must be 280 characters or less' }, { status: 400 })
+    if (topic.length > 500) {
+      return NextResponse.json({ error: 'Topic must be 500 characters or less' }, { status: 400 })
     }
 
     // Map input values to our types
@@ -256,8 +407,19 @@ export async function POST(request: NextRequest) {
 
     let allPosts: GeneratedPost[] = []
 
-    if (postType === 'all') {
-      // Generate one post of each archetype in parallel
+    // Check if using CT-native post types or legacy archetypes
+    if (isCTNativePostType(postType)) {
+      // Use CT-native post type prompts
+      allPosts = await generateForCTNativePostType(
+        topic,
+        postType,
+        userProfile,
+        additionalContext
+      )
+      // Limit to 3 posts
+      allPosts = allPosts.slice(0, 3)
+    } else if (postType === 'all') {
+      // Generate one post of each archetype in parallel (legacy)
       const archetypes: Archetype[] = ['scroll-stopper', 'debate-starter', 'viral-catalyst']
 
       const results = await Promise.all(
@@ -282,7 +444,7 @@ export async function POST(request: NextRequest) {
 
       allPosts = results.flat()
     } else {
-      // Generate 3 variations of the specific archetype
+      // Generate 3 variations of the specific archetype (legacy)
       const archetype = mapArchetype(postType)
       allPosts = await generateForArchetype(
         topic,

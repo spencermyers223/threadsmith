@@ -55,13 +55,47 @@ export default function WriteMode({ editingFile, onFileSaved, onNewFile }: Write
     },
   })
 
+  // Convert plain text with line breaks to proper HTML for Tiptap
+  const convertTextToHtml = (text: string): string => {
+    if (!text) return ''
+
+    // Split by line breaks and filter out empty lines at start/end
+    const lines = text.split('\n')
+
+    // Convert each line to a paragraph, preserving empty lines as empty paragraphs
+    const htmlParagraphs = lines.map(line => {
+      const trimmedLine = line.trim()
+      if (!trimmedLine) {
+        // Empty line becomes an empty paragraph (creates visual spacing)
+        return '<p></p>'
+      }
+      // Check for bullet points (-, *, or numbered lists)
+      if (/^[-*]\s/.test(trimmedLine)) {
+        return `<p>${trimmedLine}</p>`
+      }
+      if (/^\d+\.\s/.test(trimmedLine)) {
+        return `<p>${trimmedLine}</p>`
+      }
+      // Check for headers (# markdown style)
+      if (/^#{1,3}\s/.test(trimmedLine)) {
+        const level = trimmedLine.match(/^(#{1,3})/)?.[1].length || 1
+        const headerText = trimmedLine.replace(/^#{1,3}\s/, '')
+        return `<h${level}>${headerText}</h${level}>`
+      }
+      return `<p>${trimmedLine}</p>`
+    })
+
+    return htmlParagraphs.join('')
+  }
+
   // Load file content when editingFile changes
   useEffect(() => {
     if (editingFile) {
       setTitle(editingFile.name || '')
       // Content is stored as plain text or markdown
       const content = editingFile.content || ''
-      editor?.commands.setContent(content ? `<p>${content.replace(/\n/g, '</p><p>')}</p>` : '')
+      const htmlContent = convertTextToHtml(content)
+      editor?.commands.setContent(htmlContent)
       setHasUnsavedChanges(false)
     } else {
       // New file
