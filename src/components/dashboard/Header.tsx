@@ -35,22 +35,16 @@ export function Header({ user }: HeaderProps) {
 
   return (
     <header className="h-14 border-b border-[var(--border)] flex items-center justify-between px-4">
-      <Link href="/generate" className="flex items-center">
+      <Link href="/creator-hub" className="flex items-center">
         <span className="text-xl font-bold text-sand">xthread</span>
       </Link>
 
       <nav className="flex items-center gap-2">
         <Link
-          href="/profile/setup"
+          href="/creator-hub"
           className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
         >
-          Customize
-        </Link>
-        <Link
-          href="/generate"
-          className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
-        >
-          Generate
+          Creator Hub
         </Link>
         <Link
           href="/workspace"

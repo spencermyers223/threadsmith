@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { Header } from '@/components/dashboard/Header'
 import OnboardingCheck from '@/components/onboarding/OnboardingCheck'
 
-export default async function GenerateLayout({
+export default async function CreatorHubLayout({
   children,
 }: {
   children: React.ReactNode
@@ -19,7 +19,7 @@ export default async function GenerateLayout({
     <OnboardingCheck>
       <div className="h-screen flex flex-col">
         <Header user={user} />
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-hidden">
           {children}
         </main>
       </div>

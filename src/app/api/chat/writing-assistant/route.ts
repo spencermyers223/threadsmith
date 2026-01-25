@@ -66,6 +66,80 @@ interface Message {
   content: string
 }
 
+// Editing tool prompts
+const EDITING_PROMPTS: Record<string, string> = {
+  add_hook: `You are an expert at writing scroll-stopping hooks for X/Twitter. Your task is to add a powerful opening line to the given content.
+
+RULES:
+- Add ONE hook line at the very beginning
+- The hook should make people STOP scrolling
+- Use patterns like: counterintuitive statements, bold claims, "Most people think X, but Y", numbers/data, direct challenges
+- Keep the rest of the content intact
+- Do NOT add quotes around the hook
+- Return ONLY the modified content, nothing else
+
+HOOK PATTERNS THAT WORK:
+- "Most people have this completely backwards..."
+- "[Number]% of people get this wrong about [topic]"
+- "Hot take: [bold statement]"
+- "The [industry/topic] doesn't want you to know this..."
+- "I spent [time] studying [topic]. Here's what I found:"
+- "Stop doing [common thing]. Here's why:"`,
+
+  humanize: `You are an expert at making social media content sound natural and authentic. Your task is to rewrite the content to sound more human and less AI-generated.
+
+RULES:
+- Remove corporate/formal language
+- Add natural speech patterns (contractions, casual tone)
+- Keep the same core message and length
+- Sound like a real person talking to friends
+- Avoid buzzwords and jargon
+- Return ONLY the modified content, nothing else
+
+THINGS TO FIX:
+- "Utilize" → "use"
+- "In order to" → "to"
+- Overly perfect grammar → natural speech
+- Generic statements → specific observations
+- Passive voice → active voice`,
+
+  sharpen: `You are an expert at making social media content punchy and concise. Your task is to tighten up the given content.
+
+RULES:
+- Cut unnecessary words ruthlessly
+- Each word must earn its place
+- Keep the core message intact
+- Make every sentence punchy
+- Aim for 20-30% shorter if possible
+- Return ONLY the modified content, nothing else
+
+THINGS TO CUT:
+- "I think that" → just state it
+- "It's important to note" → just say it
+- "In my opinion" → implied
+- Filler phrases and hedging
+- Redundant adjectives`,
+
+  make_thread: `You are an expert at turning content into engaging X/Twitter threads. Your task is to expand the given content into a numbered thread.
+
+RULES:
+- Create 5-10 numbered tweets (1/, 2/, etc.)
+- First tweet is the HOOK - must stop scrolls
+- Each tweet should be under 280 characters
+- Each tweet should stand alone (people see them in isolation)
+- Build a narrative arc: hook → context → main points → takeaway
+- End with a call to action or question
+- Suggest [IMAGE] placement every 3-4 tweets
+- Return ONLY the thread content, nothing else
+
+THREAD STRUCTURE:
+1/ Scroll-stopping hook
+2-3/ Context and why this matters
+4-7/ Main points with examples
+8-9/ Implications or takeaways
+10/ Summary + question for replies`,
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -78,7 +152,39 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { messages, isStart } = await request.json() as {
+    const body = await request.json()
+
+    // Handle editing tool requests
+    if (body.action && body.content) {
+      const { content, action } = body as { content: string; action: string; isThread?: boolean }
+
+      const editingPrompt = EDITING_PROMPTS[action]
+      if (!editingPrompt) {
+        return new Response(JSON.stringify({ error: 'Unknown action' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+
+      const response = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2048,
+        system: editingPrompt,
+        messages: [{ role: 'user', content: `Here is the content to modify:\n\n${content}` }],
+      })
+
+      const textContent = response.content
+        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+        .map(block => block.text)
+        .join('\n')
+
+      return new Response(JSON.stringify({ content: textContent.trim() }), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Handle conversation mode
+    const { messages, isStart } = body as {
       messages: Message[]
       isStart?: boolean
     }

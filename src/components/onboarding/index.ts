@@ -1,0 +1,5 @@
+export { default as OnboardingModal } from './OnboardingModal'
+export { default as PainDiscoverySteps } from './PainDiscoverySteps'
+export { default as ProfileSetupSteps } from './ProfileSetupSteps'
+export { default as FirstWinStep } from './FirstWinStep'
+export type { OnboardingData } from './OnboardingModal'
