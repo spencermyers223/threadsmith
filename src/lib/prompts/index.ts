@@ -11,7 +11,9 @@ export {
   CT_VOICE,
   OUTPUT_FORMAT_RULES,
   buildUserContext,
+  buildUserContextSection,
   type UserVoiceProfile,
+  type TonePreferences,
 } from './shared';
 
 // ============================================

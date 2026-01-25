@@ -4,6 +4,8 @@
  * Structure: Hook → Context → Evidence → Insight → Action → CTA
  */
 
+import { buildUserContextSection, type UserVoiceProfile } from './shared';
+
 export interface AlphaThreadUserContext {
   niche?: string;
   tonePreferences?: {
@@ -18,6 +20,17 @@ export interface AlphaThreadOptions {
   topic: string;
   userContext?: AlphaThreadUserContext;
   additionalNotes?: string;
+}
+
+/**
+ * Convert AlphaThreadUserContext to UserVoiceProfile for shared function
+ */
+function toUserVoiceProfile(userContext: AlphaThreadUserContext): UserVoiceProfile {
+  return {
+    niche: userContext.niche,
+    targetAudience: userContext.targetAudience,
+    tonePreferences: userContext.tonePreferences,
+  };
 }
 
 /**
@@ -110,7 +123,7 @@ These rules are NON-NEGOTIABLE:
 - Tweets 2-6: Maximum 250 chars each
 - Final tweet: Include room for hashtags (aim for 220 chars + hashtags)
 
-${userContext ? buildUserContextSection(userContext) : ''}
+${userContext ? buildUserContextSection(toUserVoiceProfile(userContext)) : ''}
 
 ## OUTPUT FORMAT
 
@@ -161,41 +174,6 @@ Remember:
   return { systemPrompt, userPrompt };
 }
 
-/**
- * Build user context section for personalization
- */
-function buildUserContextSection(userContext: AlphaThreadUserContext): string {
-  let section = `## USER CONTEXT (Personalize content to this profile)\n`;
-
-  if (userContext.niche) {
-    section += `
-**Niche:** ${userContext.niche}
-- Use terminology native to this space
-- Reference relevant protocols, trends, narratives
-- Speak to what this community cares about
-`;
-  }
-
-  if (userContext.targetAudience) {
-    section += `
-**Target Audience:** ${userContext.targetAudience}
-- Calibrate technical depth appropriately
-- Address their specific pain points and interests
-`;
-  }
-
-  if (userContext.tonePreferences) {
-    const { confidence, technicalDepth, personality } = userContext.tonePreferences;
-    section += `
-**Tone Calibration:**
-- Confidence Level: ${confidence} ${confidence === 'measured' ? '(hedging acceptable)' : confidence === 'bold' ? '(strong stances, minimal hedging)' : '(clear but not aggressive)'}
-- Technical Depth: ${technicalDepth} ${technicalDepth === 'accessible' ? '(explain jargon)' : technicalDepth === 'deep' ? '(assume familiarity)' : '(some jargon OK)'}
-- Personality: ${personality} ${personality === 'irreverent' ? '(CT humor welcome)' : personality === 'witty' ? '(clever observations)' : '(straightforward)'}
-`;
-  }
-
-  return section;
-}
 
 /**
  * Alpha thread hook patterns for reference and suggestions

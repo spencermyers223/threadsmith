@@ -15,6 +15,21 @@ export interface UserVoiceProfile {
   formalityLevel?: number; // 0 = casual, 100 = formal
   technicalLevel?: number; // 0 = simple, 100 = deep technical
   humorLevel?: number; // 0 = serious, 100 = playful
+  // Extended tone preferences for specialized prompts (alpha-thread, protocol-breakdown)
+  tonePreferences?: TonePreferences;
+}
+
+/**
+ * Extended tone preferences for specialized content types
+ */
+export interface TonePreferences {
+  // Alpha thread preferences
+  confidence?: 'measured' | 'confident' | 'bold';
+  technicalDepth?: 'accessible' | 'intermediate' | 'deep' | 'beginner-friendly' | 'advanced';
+  personality?: 'serious' | 'witty' | 'irreverent';
+  // Protocol breakdown preferences
+  style?: 'teacher' | 'analyst' | 'builder';
+  honesty?: 'diplomatic' | 'balanced' | 'brutally-honest';
 }
 
 /**
@@ -122,6 +137,124 @@ These terms should appear where appropriate (not forced):
 - Pressure tactics
 `;
 
+// ============================================
+// Helper functions for building context sections
+// ============================================
+
+function buildNicheSection(niche: string): string {
+  return `
+**Niche/Industry:** ${niche}
+- Content should be relevant to this space
+- Use terminology and references that resonate with this community
+`;
+}
+
+function buildContentGoalSection(contentGoal: string): string {
+  return `
+**Creator's Goal:** ${contentGoal}
+- Every post should help achieve this goal
+- Content should position them appropriately
+`;
+}
+
+function buildTargetAudienceSection(targetAudience: string): string {
+  return `
+**Target Audience:** ${targetAudience}
+- Write as if speaking directly to this audience
+- Use language, examples, and references they'll connect with
+`;
+}
+
+function buildAdmiredAccountsSection(admiredAccounts: string[]): string {
+  return `
+**Style Inspiration - Accounts They Admire:** ${admiredAccounts.join(', ')}
+- Mirror their posting style, tone, and energy
+- Match their hook patterns and engagement tactics
+- Posts should feel like they could appear alongside their content
+`;
+}
+
+function buildToneSlidersSection(profile: UserVoiceProfile): string {
+  const hasToneSliders = profile.formalityLevel !== undefined ||
+    profile.technicalLevel !== undefined ||
+    profile.humorLevel !== undefined;
+
+  if (!hasToneSliders) return '';
+
+  let section = `
+**Tone Calibration:**
+`;
+  if (profile.formalityLevel !== undefined) {
+    const formality = profile.formalityLevel < 33 ? 'casual and conversational' :
+      profile.formalityLevel > 66 ? 'professional and polished' : 'balanced';
+    section += `- Formality: ${formality}\n`;
+  }
+  if (profile.technicalLevel !== undefined) {
+    const technical = profile.technicalLevel < 33 ? 'simple and accessible' :
+      profile.technicalLevel > 66 ? 'deep technical detail' : 'moderate technical depth';
+    section += `- Technical Depth: ${technical}\n`;
+  }
+  if (profile.humorLevel !== undefined) {
+    const humor = profile.humorLevel < 33 ? 'serious and focused' :
+      profile.humorLevel > 66 ? 'playful with humor' : 'occasional light touches';
+    section += `- Humor: ${humor}\n`;
+  }
+  return section;
+}
+
+/**
+ * Build tone preferences section for specialized content types (alpha-thread, protocol-breakdown)
+ */
+function buildTonePreferencesSection(tonePreferences: TonePreferences): string {
+  if (!tonePreferences || Object.keys(tonePreferences).length === 0) return '';
+
+  const { confidence, technicalDepth, personality, style, honesty } = tonePreferences;
+  let section = `
+**Tone Calibration:**
+`;
+
+  if (confidence) {
+    const desc = confidence === 'measured' ? '(hedging acceptable)' :
+      confidence === 'bold' ? '(strong stances, minimal hedging)' : '(clear but not aggressive)';
+    section += `- Confidence Level: ${confidence} ${desc}\n`;
+  }
+
+  if (technicalDepth) {
+    const desc = technicalDepth === 'accessible' || technicalDepth === 'beginner-friendly'
+      ? '(explain jargon)'
+      : technicalDepth === 'deep' || technicalDepth === 'advanced'
+        ? '(assume familiarity)'
+        : '(some jargon OK)';
+    section += `- Technical Depth: ${technicalDepth} ${desc}\n`;
+  }
+
+  if (personality) {
+    const desc = personality === 'irreverent' ? '(CT humor welcome)' :
+      personality === 'witty' ? '(clever observations)' : '(straightforward)';
+    section += `- Personality: ${personality} ${desc}\n`;
+  }
+
+  if (style) {
+    const desc = style === 'teacher' ? '(patient, thorough, builds understanding)' :
+      style === 'analyst' ? '(data-driven, implications-focused)' :
+        '(practical, how things actually work in production)';
+    section += `- Style: ${style} ${desc}\n`;
+  }
+
+  if (honesty) {
+    const desc = honesty === 'brutally-honest' ? '(call out issues directly, no sugarcoating)' :
+      honesty === 'diplomatic' ? '(acknowledge issues but frame constructively)' :
+        '(straightforward about pros and cons)';
+    section += `- Honesty Level: ${honesty} ${desc}\n`;
+  }
+
+  return section;
+}
+
+// ============================================
+// Main context building functions
+// ============================================
+
 /**
  * Build user context from voice profile settings
  * Injects personalization based on user's profile data
@@ -138,73 +271,72 @@ Content should be personalized to this specific creator:
 `;
 
   if (profile.niche) {
-    context += `
-**Niche/Industry:** ${profile.niche}
-- Content should be relevant to this space
-- Use terminology and references that resonate with this community
-`;
+    context += buildNicheSection(profile.niche);
   }
-
   if (profile.contentGoal) {
-    context += `
-**Creator's Goal:** ${profile.contentGoal}
-- Every post should help achieve this goal
-- Content should position them appropriately
-`;
+    context += buildContentGoalSection(profile.contentGoal);
   }
-
   if (profile.targetAudience) {
-    context += `
-**Target Audience:** ${profile.targetAudience}
-- Write as if speaking directly to this audience
-- Use language, examples, and references they'll connect with
-`;
+    context += buildTargetAudienceSection(profile.targetAudience);
   }
-
   if (profile.admiredAccounts?.length) {
-    context += `
-**Style Inspiration - Accounts They Admire:** ${profile.admiredAccounts.join(', ')}
-- Mirror their posting style, tone, and energy
-- Match their hook patterns and engagement tactics
-- Posts should feel like they could appear alongside their content
-`;
+    context += buildAdmiredAccountsSection(profile.admiredAccounts);
   }
-
   if (profile.voiceStyle) {
     context += `
 **Voice Style:** ${profile.voiceStyle}
 `;
   }
-
   if (profile.personalBrand) {
     context += `
 **Personal Brand:** ${profile.personalBrand}
 `;
   }
 
-  // Handle tone sliders if provided
-  if (profile.formalityLevel !== undefined || profile.technicalLevel !== undefined || profile.humorLevel !== undefined) {
-    context += `
-**Tone Calibration:**
-`;
-    if (profile.formalityLevel !== undefined) {
-      const formality = profile.formalityLevel < 33 ? 'casual and conversational' :
-        profile.formalityLevel > 66 ? 'professional and polished' : 'balanced';
-      context += `- Formality: ${formality}\n`;
-    }
-    if (profile.technicalLevel !== undefined) {
-      const technical = profile.technicalLevel < 33 ? 'simple and accessible' :
-        profile.technicalLevel > 66 ? 'deep technical detail' : 'moderate technical depth';
-      context += `- Technical Depth: ${technical}\n`;
-    }
-    if (profile.humorLevel !== undefined) {
-      const humor = profile.humorLevel < 33 ? 'serious and focused' :
-        profile.humorLevel > 66 ? 'playful with humor' : 'occasional light touches';
-      context += `- Humor: ${humor}\n`;
-    }
+  // Handle tone sliders (numeric 0-100 scale)
+  context += buildToneSlidersSection(profile);
+
+  // Handle tone preferences (structured object for specialized prompts)
+  if (profile.tonePreferences) {
+    context += buildTonePreferencesSection(profile.tonePreferences);
   }
 
   return context;
+}
+
+/**
+ * Build user context section for specialized prompts (alpha-thread, protocol-breakdown)
+ * This is an alias with a clearer name for those contexts
+ */
+export function buildUserContextSection(profile: UserVoiceProfile): string {
+  if (!profile || Object.keys(profile).length === 0) {
+    return '';
+  }
+
+  let section = `## USER CONTEXT (Personalize content to this profile)\n`;
+
+  if (profile.niche) {
+    section += `
+**Niche:** ${profile.niche}
+- Use terminology native to this space
+- Reference relevant protocols, trends, narratives
+- Speak to what this community cares about
+`;
+  }
+
+  if (profile.targetAudience) {
+    section += `
+**Target Audience:** ${profile.targetAudience}
+- Calibrate technical depth appropriately
+- Address their specific pain points and interests
+`;
+  }
+
+  if (profile.tonePreferences) {
+    section += buildTonePreferencesSection(profile.tonePreferences);
+  }
+
+  return section;
 }
 
 /**

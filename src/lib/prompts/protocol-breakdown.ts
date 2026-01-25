@@ -4,6 +4,8 @@
  * Structure: Why care → How it works → Key mechanics → Risks → Implications
  */
 
+import { buildUserContextSection, type UserVoiceProfile } from './shared';
+
 export interface ProtocolBreakdownUserContext {
   niche?: string;
   tonePreferences?: {
@@ -18,6 +20,17 @@ export interface ProtocolBreakdownOptions {
   topic: string;
   userContext?: ProtocolBreakdownUserContext;
   additionalNotes?: string;
+}
+
+/**
+ * Convert ProtocolBreakdownUserContext to UserVoiceProfile for shared function
+ */
+function toUserVoiceProfile(userContext: ProtocolBreakdownUserContext): UserVoiceProfile {
+  return {
+    niche: userContext.niche,
+    targetAudience: userContext.targetAudience,
+    tonePreferences: userContext.tonePreferences,
+  };
 }
 
 /**
@@ -118,7 +131,7 @@ These rules are NON-NEGOTIABLE:
 - Tweets 2-9: Maximum 250 chars each
 - Final tweet: Include room for hashtags (aim for 220 chars + hashtags)
 
-${userContext ? buildUserContextSection(userContext) : ''}
+${userContext ? buildUserContextSection(toUserVoiceProfile(userContext)) : ''}
 
 ## OUTPUT FORMAT
 
@@ -182,59 +195,6 @@ Remember:
   return { systemPrompt, userPrompt };
 }
 
-/**
- * Build user context section for personalization
- */
-function buildUserContextSection(userContext: ProtocolBreakdownUserContext): string {
-  let section = `## USER CONTEXT (Personalize content to this profile)\n`;
-
-  if (userContext.niche) {
-    section += `
-**Niche:** ${userContext.niche}
-- Frame the protocol through this lens
-- Connect to relevant trends in this space
-- Use examples from this ecosystem
-`;
-  }
-
-  if (userContext.targetAudience) {
-    section += `
-**Target Audience:** ${userContext.targetAudience}
-- Calibrate explanations to their knowledge level
-- Address what THEY care about, not generic interest
-`;
-  }
-
-  if (userContext.tonePreferences) {
-    const { technicalDepth, style, honesty } = userContext.tonePreferences;
-    section += `
-**Tone Calibration:**
-- Technical Depth: ${technicalDepth} ${
-      technicalDepth === 'beginner-friendly'
-        ? '(explain all jargon, use analogies)'
-        : technicalDepth === 'advanced'
-        ? '(assume familiarity, go deeper)'
-        : '(some jargon OK, explain key terms)'
-    }
-- Style: ${style} ${
-      style === 'teacher'
-        ? '(patient, thorough, builds understanding)'
-        : style === 'analyst'
-        ? '(data-driven, implications-focused)'
-        : '(practical, how things actually work in production)'
-    }
-- Honesty Level: ${honesty} ${
-      honesty === 'brutally-honest'
-        ? '(call out issues directly, no sugarcoating)'
-        : honesty === 'diplomatic'
-        ? '(acknowledge issues but frame constructively)'
-        : '(straightforward about pros and cons)'
-    }
-`;
-  }
-
-  return section;
-}
 
 /**
  * Protocol breakdown hook patterns for reference and suggestions

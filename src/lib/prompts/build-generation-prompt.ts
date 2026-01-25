@@ -7,6 +7,7 @@ import { ALGORITHM_KNOWLEDGE, ALGORITHM_WARNINGS, HOOK_PATTERNS } from './algori
 import { SCROLL_STOPPER_PROMPT, SCROLL_STOPPER_HOOKS } from './scroll-stopper';
 import { DEBATE_STARTER_PROMPT, DEBATE_STARTER_HOOKS } from './debate-starter';
 import { VIRAL_CATALYST_PROMPT, VIRAL_CATALYST_HOOKS } from './viral-catalyst';
+import { buildUserContext, type UserVoiceProfile } from './shared';
 
 // Types
 export type Archetype = 'scroll-stopper' | 'debate-starter' | 'viral-catalyst' | 'balanced';
@@ -152,12 +153,15 @@ CONTENT TYPE: Long-form Article
 };
 
 /**
- * Build the system prompt based on archetype and profile
+ * Build the base system prompt with algorithm knowledge, archetype, tone, and content type
  */
-function buildSystemPrompt(options: GenerationOptions): string {
-  const { archetype, tone, contentType, length, userProfile } = options;
-
-  let systemPrompt = `You are an expert X/Twitter content strategist. Your job is to help users create high-performing content optimized for the X algorithm.
+function buildBaseSystemPrompt(
+  archetype: Archetype,
+  tone: Tone,
+  contentType: ContentType,
+  length: ContentLength
+): string {
+  return `You are an expert X/Twitter content strategist. Your job is to help users create high-performing content optimized for the X algorithm.
 
 ${ALGORITHM_KNOWLEDGE}
 
@@ -170,54 +174,13 @@ ${CONTENT_TYPE_INSTRUCTIONS[contentType]}
 LENGTH: ${length.toUpperCase()}
 ${LENGTH_GUIDELINES[length][contentType]}
 `;
+}
 
-  // Add user profile context if provided
-  if (userProfile) {
-    systemPrompt += `
-## USER PROFILE CONTEXT
-
-You are generating content for a specific creator. Use this context to personalize every post:
-`;
-    if (userProfile.niche) {
-      systemPrompt += `
-**Niche/Industry:** ${userProfile.niche}
-- All content should be relevant to this space
-- Use terminology and references that resonate with this community
-`;
-    }
-    if (userProfile.contentGoal) {
-      systemPrompt += `
-**Creator's Goal:** ${userProfile.contentGoal}
-- Every post should help the creator achieve this goal
-- Content should position them appropriately for their objectives
-`;
-    }
-    if (userProfile.targetAudience) {
-      systemPrompt += `
-**Target Audience:** ${userProfile.targetAudience}
-- Write as if speaking directly to this audience
-- Use language, examples, and references they'll connect with
-- Address their pain points and interests
-`;
-    }
-    if (userProfile.admiredAccounts?.length) {
-      systemPrompt += `
-**Style Inspiration - Accounts They Admire:** ${userProfile.admiredAccounts.join(', ')}
-- Study the posting style of these accounts and mirror their approach
-- Match their tone, energy, and content structure
-- The generated posts should feel like they could naturally appear alongside content from these accounts
-- Adopt similar hook patterns, pacing, and engagement tactics they use
-`;
-    }
-    if (userProfile.voiceStyle) {
-      systemPrompt += `- Voice Style: ${userProfile.voiceStyle}\n`;
-    }
-    if (userProfile.personalBrand) {
-      systemPrompt += `- Personal Brand: ${userProfile.personalBrand}\n`;
-    }
-  }
-
-  systemPrompt += `
+/**
+ * Build the output requirements section
+ */
+function buildOutputRequirements(): string {
+  return `
 ## OUTPUT REQUIREMENTS
 
 1. Generate 3 distinct options for the user to choose from
@@ -245,6 +208,35 @@ Format your response as:
 
 **Recommendation:** [Which option and why]
 `;
+}
+
+/**
+ * Convert UserProfile to UserVoiceProfile for shared function compatibility
+ */
+function toUserVoiceProfile(userProfile: UserProfile): UserVoiceProfile {
+  return {
+    niche: userProfile.niche,
+    contentGoal: userProfile.contentGoal,
+    voiceStyle: userProfile.voiceStyle,
+    admiredAccounts: userProfile.admiredAccounts,
+    targetAudience: userProfile.targetAudience,
+    personalBrand: userProfile.personalBrand,
+  };
+}
+
+/**
+ * Build the system prompt based on archetype and profile
+ */
+function buildSystemPrompt(options: GenerationOptions): string {
+  const { archetype, tone, contentType, length, userProfile } = options;
+
+  let systemPrompt = buildBaseSystemPrompt(archetype, tone, contentType, length);
+
+  if (userProfile) {
+    systemPrompt += buildUserContext(toUserVoiceProfile(userProfile));
+  }
+
+  systemPrompt += buildOutputRequirements();
 
   return systemPrompt;
 }
