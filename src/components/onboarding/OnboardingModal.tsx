@@ -175,12 +175,15 @@ export default function OnboardingModal({ isOpen, onComplete }: OnboardingModalP
         })
 
       if (upsertError) {
-        throw upsertError
+        console.error('Supabase upsert error:', upsertError)
+        throw new Error(`Supabase error: ${upsertError.message} (code: ${upsertError.code}, details: ${upsertError.details})`)
       }
 
       onComplete()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save profile')
+      console.error('Save profile error:', err)
+      const errorMessage = err instanceof Error ? err.message : JSON.stringify(err)
+      setError(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
