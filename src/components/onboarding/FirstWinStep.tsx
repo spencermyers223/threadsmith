@@ -42,15 +42,16 @@ export default function FirstWinStep({
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  // Get suggestion based on niche
-  const suggestion = NICHE_POST_SUGGESTIONS[data.primaryNiche] || {
+  // Get suggestion based on first selected niche
+  const primaryNiche = data.primaryNiches[0] || ''
+  const suggestion = NICHE_POST_SUGGESTIONS[primaryNiche] || {
     type: 'market_take',
     topic: 'Your unique perspective on the current crypto market',
   }
 
-  // Set defaults if not already set
-  if (!data.firstPostTopic) {
-    updateData({ firstPostTopic: suggestion.topic, firstPostType: suggestion.type })
+  // Set default post type if not already set (but don't pre-fill topic - use placeholder)
+  if (!data.firstPostType) {
+    updateData({ firstPostType: suggestion.type })
   }
 
   const handleGenerate = async () => {
@@ -137,7 +138,7 @@ export default function FirstWinStep({
           "
         />
         <p className="text-xs text-[var(--muted)]">
-          Based on your {data.primaryNiche ? `${data.primaryNiche} niche` : 'profile'}, we suggest starting with a {POST_TYPE_LABELS[suggestion.type]?.toLowerCase()}.
+          Based on your {primaryNiche ? `${primaryNiche} niche` : 'profile'}, we suggest starting with a {POST_TYPE_LABELS[suggestion.type]?.toLowerCase()}.
         </p>
       </div>
 

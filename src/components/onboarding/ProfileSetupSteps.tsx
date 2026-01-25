@@ -48,12 +48,21 @@ export default function ProfileSetupSteps({
 }: ProfileSetupStepsProps) {
   const [accountInput, setAccountInput] = useState('')
 
-  const toggleSecondaryInterest = (id: string) => {
-    const current = data.secondaryInterests
+  const toggleNiche = (id: string) => {
+    const current = data.primaryNiches
     if (current.includes(id)) {
-      updateData({ secondaryInterests: current.filter(s => s !== id) })
+      updateData({ primaryNiches: current.filter(s => s !== id) })
     } else {
-      updateData({ secondaryInterests: [...current, id] })
+      updateData({ primaryNiches: [...current, id] })
+    }
+  }
+
+  const toggleGoal = (id: string) => {
+    const current = data.primaryGoals
+    if (current.includes(id)) {
+      updateData({ primaryGoals: current.filter(s => s !== id) })
+    } else {
+      updateData({ primaryGoals: [...current, id] })
     }
   }
 
@@ -69,7 +78,7 @@ export default function ProfileSetupSteps({
     updateData({ admiredAccounts: data.admiredAccounts.filter(a => a !== handle) })
   }
 
-  // Step 4: Niche selection
+  // Step 4: Niche selection (multi-select)
   if (step === 4) {
     return (
       <div className="space-y-8">
@@ -82,18 +91,18 @@ export default function ProfileSetupSteps({
           </p>
         </div>
 
-        {/* Primary niche */}
+        {/* Primary niches - multi-select */}
         <div className="space-y-4">
           <label className="block text-sm font-medium text-[var(--foreground)]">
-            Primary focus (select one)
+            Select all that apply
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {PRIMARY_NICHES.map((niche) => {
-              const isSelected = data.primaryNiche === niche.id
+              const isSelected = data.primaryNiches.includes(niche.id)
               return (
                 <button
                   key={niche.id}
-                  onClick={() => updateData({ primaryNiche: niche.id })}
+                  onClick={() => toggleNiche(niche.id)}
                   className={`
                     flex items-center gap-3 p-4 rounded-xl text-left transition-all
                     ${isSelected
@@ -104,42 +113,19 @@ export default function ProfileSetupSteps({
                 >
                   <div
                     className={`
-                      w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0
-                      ${isSelected ? 'border-[var(--accent)]' : 'border-[var(--muted)]'}
+                      w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0
+                      ${isSelected ? 'border-[var(--accent)] bg-[var(--accent)]' : 'border-[var(--muted)]'}
                     `}
                   >
-                    {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />}
+                    {isSelected && (
+                      <svg className="w-3 h-3 text-[var(--background)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
                   </div>
                   <span className="text-sm font-medium text-[var(--foreground)]">
                     {niche.label}
                   </span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Secondary interests */}
-        <div className="space-y-4">
-          <label className="block text-sm font-medium text-[var(--foreground)]">
-            Secondary interests (optional, multi-select)
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {PRIMARY_NICHES.filter(n => n.id !== data.primaryNiche).map((niche) => {
-              const isSelected = data.secondaryInterests.includes(niche.id)
-              return (
-                <button
-                  key={niche.id}
-                  onClick={() => toggleSecondaryInterest(niche.id)}
-                  className={`
-                    px-4 py-2 rounded-full text-sm transition-all
-                    ${isSelected
-                      ? 'bg-[var(--accent)]/20 border border-[var(--accent)] text-[var(--accent)]'
-                      : 'bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)] hover:border-[var(--muted)]'
-                    }
-                  `}
-                >
-                  {niche.label}
                 </button>
               )
             })}
@@ -169,7 +155,7 @@ export default function ProfileSetupSteps({
     )
   }
 
-  // Step 5: Voice learning
+  // Step 5: Voice learning (simplified)
   if (step === 5) {
     return (
       <div className="space-y-8">
@@ -182,41 +168,15 @@ export default function ProfileSetupSteps({
           </p>
         </div>
 
-        {/* Voice examples */}
-        <div className="space-y-3">
-          <label className="block text-sm font-medium text-[var(--foreground)]">
-            Option A: Paste 5-10 of your best tweets
-          </label>
-          <textarea
-            value={data.voiceExamples}
-            onChange={(e) => updateData({ voiceExamples: e.target.value })}
-            placeholder="Paste your tweets here, one per line or separated by blank lines..."
-            rows={6}
-            className="
-              w-full px-4 py-3 rounded-xl resize-none
-              bg-[var(--card)] border border-[var(--border)]
-              text-[var(--foreground)] placeholder-[var(--muted)]
-              focus:outline-none focus:border-[var(--accent)]
-              transition-colors duration-150
-            "
-          />
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="flex-1 h-px bg-[var(--border)]" />
-          <span className="text-sm text-[var(--muted)]">OR</span>
-          <div className="flex-1 h-px bg-[var(--border)]" />
-        </div>
-
         {/* Voice description */}
         <div className="space-y-3">
           <label className="block text-sm font-medium text-[var(--foreground)]">
-            Option B: Describe your style in words
+            Describe your style or the style you want to emulate
           </label>
           <textarea
             value={data.voiceDescription}
             onChange={(e) => updateData({ voiceDescription: e.target.value })}
-            placeholder="e.g., I write with technical depth but keep it accessible. I use data to back up my points. I'm skeptical but not cynical..."
+            placeholder="e.g., I want to sound confident and data-driven, but approachable and not too technical..."
             rows={4}
             className="
               w-full px-4 py-3 rounded-xl resize-none
@@ -286,31 +246,31 @@ export default function ProfileSetupSteps({
     )
   }
 
-  // Step 6: Goals
+  // Step 6: Goals (multi-select)
   if (step === 6) {
     return (
       <div className="space-y-8">
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-[var(--foreground)] mb-2">
-            What&apos;s your goal?
+            What are your goals?
           </h2>
           <p className="text-[var(--muted)]">
             This shapes the type of content we generate for you
           </p>
         </div>
 
-        {/* Primary goal */}
+        {/* Goals - multi-select */}
         <div className="space-y-4">
           <label className="block text-sm font-medium text-[var(--foreground)]">
-            Primary goal
+            Select all that apply
           </label>
           <div className="space-y-3">
             {GOALS.map((goal) => {
-              const isSelected = data.primaryGoal === goal.id
+              const isSelected = data.primaryGoals.includes(goal.id)
               return (
                 <button
                   key={goal.id}
-                  onClick={() => updateData({ primaryGoal: goal.id })}
+                  onClick={() => toggleGoal(goal.id)}
                   className={`
                     w-full flex items-center gap-4 p-4 rounded-xl text-left transition-all
                     ${isSelected
@@ -321,11 +281,15 @@ export default function ProfileSetupSteps({
                 >
                   <div
                     className={`
-                      w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0
-                      ${isSelected ? 'border-[var(--accent)]' : 'border-[var(--muted)]'}
+                      w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0
+                      ${isSelected ? 'border-[var(--accent)] bg-[var(--accent)]' : 'border-[var(--muted)]'}
                     `}
                   >
-                    {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />}
+                    {isSelected && (
+                      <svg className="w-3 h-3 text-[var(--background)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
                   </div>
                   <div>
                     <span className="font-medium text-[var(--foreground)]">{goal.label}</span>
@@ -467,35 +431,6 @@ export default function ProfileSetupSteps({
           </div>
         )}
 
-        {/* Suggestions */}
-        <div className="p-4 rounded-xl bg-[var(--card)] border border-[var(--border)]">
-          <p className="text-sm text-[var(--muted)] mb-3">
-            Popular CT accounts for inspiration:
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {['cobie', 'AltcoinPsycho', 'DegenSpartan', 'inversebrah', 'loomdart', 'bllofish'].map((handle) => (
-              <button
-                key={handle}
-                onClick={() => {
-                  if (!data.admiredAccounts.includes(handle)) {
-                    updateData({ admiredAccounts: [...data.admiredAccounts, handle] })
-                  }
-                }}
-                disabled={data.admiredAccounts.includes(handle)}
-                className="
-                  px-3 py-1.5 rounded-lg text-sm
-                  bg-[var(--background)] border border-[var(--border)]
-                  text-[var(--muted)] hover:text-[var(--foreground)]
-                  hover:border-[var(--muted)]
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                  transition-colors duration-150
-                "
-              >
-                @{handle}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     )
   }

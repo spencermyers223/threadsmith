@@ -13,7 +13,7 @@ const TOTAL_STEPS = 8
 
 // Phase definitions
 const PHASES = [
-  { name: 'Pain Discovery', steps: [1, 2, 3] },
+  { name: 'About You', steps: [1, 2, 3] },
   { name: 'Profile Setup', steps: [4, 5, 6, 7] },
   { name: 'First Win', steps: [8] },
 ]
@@ -25,7 +25,7 @@ export interface OnboardingData {
   timeSpent: string
 
   // Phase 2: Profile Setup
-  primaryNiche: string
+  primaryNiches: string[]  // Changed to multi-select
   secondaryInterests: string[]
   specificProtocols: string
   voiceExamples: string
@@ -33,7 +33,7 @@ export interface OnboardingData {
   toneFormalCasual: number
   toneHedgedDirect: number
   toneSeriousPlayful: number
-  primaryGoal: string
+  primaryGoals: string[]  // Changed to multi-select
   contentFrequency: string
   admiredAccounts: string[]
   targetAudience: string
@@ -48,7 +48,7 @@ const initialData: OnboardingData = {
   struggles: [],
   growthStage: '',
   timeSpent: '',
-  primaryNiche: '',
+  primaryNiches: [],
   secondaryInterests: [],
   specificProtocols: '',
   voiceExamples: '',
@@ -56,7 +56,7 @@ const initialData: OnboardingData = {
   toneFormalCasual: 3,
   toneHedgedDirect: 3,
   toneSeriousPlayful: 3,
-  primaryGoal: '',
+  primaryGoals: [],
   contentFrequency: '',
   admiredAccounts: [],
   targetAudience: '',
@@ -102,11 +102,11 @@ export default function OnboardingModal({ isOpen, onComplete }: OnboardingModalP
       case 3:
         return data.timeSpent !== ''
       case 4:
-        return data.primaryNiche !== ''
+        return data.primaryNiches.length > 0
       case 5:
-        return data.voiceExamples.trim() !== '' || data.voiceDescription.trim() !== ''
+        return true // Voice description and sliders are optional
       case 6:
-        return data.primaryGoal !== '' && data.contentFrequency !== ''
+        return data.primaryGoals.length > 0 && data.contentFrequency !== ''
       case 7:
         return true // Admired accounts are optional
       case 8:
@@ -152,8 +152,9 @@ export default function OnboardingModal({ isOpen, onComplete }: OnboardingModalP
           growth_stage: data.growthStage,
           time_spent: data.timeSpent,
           // Profile Setup
-          primary_niche: data.primaryNiche,
-          niche: data.primaryNiche, // Keep for backwards compatibility
+          primary_niches: data.primaryNiches,
+          primary_niche: data.primaryNiches[0] || '', // Keep for backwards compatibility
+          niche: data.primaryNiches[0] || '', // Keep for backwards compatibility
           secondary_interests: data.secondaryInterests,
           specific_protocols: data.specificProtocols,
           voice_examples: data.voiceExamples,
@@ -161,8 +162,9 @@ export default function OnboardingModal({ isOpen, onComplete }: OnboardingModalP
           tone_formal_casual: data.toneFormalCasual,
           tone_hedged_direct: data.toneHedgedDirect,
           tone_serious_playful: data.toneSeriousPlayful,
-          primary_goal: data.primaryGoal,
-          content_goal: data.primaryGoal, // Keep for backwards compatibility
+          primary_goals: data.primaryGoals,
+          primary_goal: data.primaryGoals[0] || '', // Keep for backwards compatibility
+          content_goal: data.primaryGoals[0] || '', // Keep for backwards compatibility
           content_frequency: data.contentFrequency,
           admired_accounts: data.admiredAccounts,
           target_audience: data.targetAudience,
@@ -328,7 +330,11 @@ export default function OnboardingModal({ isOpen, onComplete }: OnboardingModalP
 
       {/* Navigation footer */}
       <footer className="fixed bottom-0 left-0 right-0 bg-[var(--background)] border-t border-[var(--border)] px-6 py-4">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
+        <div className="max-w-2xl mx-auto">
+          <p className="text-center text-xs text-[var(--muted)] mb-3">
+            You can always update these in Settings later
+          </p>
+          <div className="flex items-center justify-between">
           <button
             onClick={handleBack}
             disabled={currentStep === 1}
@@ -381,6 +387,7 @@ export default function OnboardingModal({ isOpen, onComplete }: OnboardingModalP
               )}
             </button>
           )}
+          </div>
         </div>
       </footer>
     </div>
