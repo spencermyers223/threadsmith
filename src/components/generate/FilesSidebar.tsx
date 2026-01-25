@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
-  FileText, Upload, Trash2, ChevronRight, ChevronDown, FileType, File,
-  Folder, FolderOpen, MoreHorizontal, Pencil, Palette, X, FolderPlus, Check
+  FileText, Upload, Trash2, ChevronRight, ChevronDown, ChevronLeft, FileType, File,
+  Folder, FolderOpen, MoreHorizontal, Pencil, Palette, FolderPlus, Check, Plus, X
 } from 'lucide-react'
 import { FileUploadModal } from '@/components/files/FileUploadModal'
 import { FilePreviewModal } from '@/components/files/FilePreviewModal'
@@ -158,21 +158,6 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
 
   // Sidebar toggle is now explicit via the collapse/expand button only
   // No click-outside-to-close behavior
-
-  const handleSelectFile = (file: FileRecord) => {
-    if (selectedFileId === file.id) {
-      onSelectFile(null)
-    } else {
-      onSelectFile(file)
-    }
-  }
-
-  const handleEditFile = (file: FileRecord, e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (onEditFile) {
-      onEditFile(file)
-    }
-  }
 
   const handleDeleteFile = async (fileId: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -389,6 +374,11 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
 
   const rootFiles = getFilesInFolder(null)
 
+  const handleAddToGenerate = (file: FileRecord, e: React.MouseEvent) => {
+    e.stopPropagation()
+    onSelectFile(file)
+  }
+
   const renderFile = (file: FileRecord) => {
     const isSelected = selectedFileId === file.id
 
@@ -398,8 +388,7 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
           draggable
           onDragStart={(e) => handleDragStart(e, file.id)}
           onDragEnd={handleDragEnd}
-          onClick={() => handleSelectFile(file)}
-          onDoubleClick={() => onEditFile ? onEditFile(file) : setPreviewFile(file)}
+          onClick={() => onEditFile ? onEditFile(file) : setPreviewFile(file)}
           className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-left group ${
             draggedFileId === file.id ? 'opacity-50' : ''
           } ${
@@ -415,15 +404,17 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
           )}
           <span className="flex-1 truncate text-sm">{file.name}</span>
           <div className="flex items-center gap-0.5">
-            {onEditFile && (
-              <button
-                onClick={(e) => handleEditFile(file, e)}
-                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[var(--card)] text-[var(--muted)] hover:text-[var(--foreground)] transition-all"
-                title="Edit in Write mode"
-              >
-                <Pencil className="w-3 h-3" />
-              </button>
-            )}
+            <button
+              onClick={(e) => handleAddToGenerate(file, e)}
+              className={`p-1 rounded transition-all ${
+                isSelected
+                  ? 'bg-accent/20 text-accent'
+                  : 'opacity-0 group-hover:opacity-100 hover:bg-accent/20 text-[var(--muted)] hover:text-accent'
+              }`}
+              title="Add to generate prompt"
+            >
+              <Plus className="w-3 h-3" />
+            </button>
             <button
               onClick={(e) => handleDeleteFile(file.id, e)}
               className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 text-red-400 transition-all"
@@ -515,12 +506,12 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
   if (!isExpanded) {
     return (
       <div className="w-14 border-r border-[var(--border-subtle)] bg-[var(--background)] flex flex-col items-center py-4 gap-2">
-        <Tooltip label="Files">
+        <Tooltip label="Expand sidebar">
           <button
             onClick={onToggleExpanded}
             className="p-3 rounded-xl hover:bg-[var(--card)] transition-all duration-150"
           >
-            <Folder className="w-5 h-5" />
+            <ChevronRight className="w-5 h-5" />
           </button>
         </Tooltip>
 
@@ -597,9 +588,9 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
             <button
               onClick={onToggleExpanded}
               className="p-2 rounded-lg hover:bg-[var(--card)] transition-colors"
-              title="Close sidebar"
+              title="Collapse sidebar"
             >
-              <X className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -686,7 +677,7 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
         {/* Footer */}
         <div className="p-4 border-t border-[var(--border)]">
           <p className="text-xs text-[var(--muted)]">
-            Click to select. Double-click to edit. Use pencil icon to open in Write mode.
+            Click file to edit. Click + to add to generate prompt.
           </p>
         </div>
       </aside>
