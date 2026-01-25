@@ -151,10 +151,10 @@ export default function OnboardingModal({ isOpen, onComplete }: OnboardingModalP
           struggles: data.struggles,
           growth_stage: data.growthStage,
           time_spent: data.timeSpent,
-          // Profile Setup
-          primary_niches: data.primaryNiches,
-          primary_niche: data.primaryNiches[0] || '', // Keep for backwards compatibility
-          niche: data.primaryNiches[0] || '', // Keep for backwards compatibility
+          // Profile Setup - save first selection to singular columns for compatibility
+          // After running migration 003, arrays will also be saved
+          primary_niche: data.primaryNiches[0] || '',
+          niche: data.primaryNiches[0] || '',
           secondary_interests: data.secondaryInterests,
           specific_protocols: data.specificProtocols,
           voice_examples: data.voiceExamples,
@@ -162,9 +162,8 @@ export default function OnboardingModal({ isOpen, onComplete }: OnboardingModalP
           tone_formal_casual: data.toneFormalCasual,
           tone_hedged_direct: data.toneHedgedDirect,
           tone_serious_playful: data.toneSeriousPlayful,
-          primary_goals: data.primaryGoals,
-          primary_goal: data.primaryGoals[0] || '', // Keep for backwards compatibility
-          content_goal: data.primaryGoals[0] || '', // Keep for backwards compatibility
+          primary_goal: data.primaryGoals[0] || '',
+          content_goal: data.primaryGoals[0] || '',
           content_frequency: data.contentFrequency,
           admired_accounts: data.admiredAccounts,
           target_audience: data.targetAudience,
