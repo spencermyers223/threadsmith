@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { X, ArrowLeft, ArrowRight, Loader2, Check, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Loader2, Check, Sparkles } from 'lucide-react'
 
 // Step components
 import PainDiscoverySteps from './PainDiscoverySteps'
@@ -222,8 +222,6 @@ export default function OnboardingModal({ isOpen, onComplete }: OnboardingModalP
             {PHASES.map((phase, index) => {
               const isActive = index === currentPhaseIndex
               const isCompleted = index < currentPhaseIndex
-              const phaseFirstStep = phase.steps[0]
-              const phaseLastStep = phase.steps[phase.steps.length - 1]
 
               return (
                 <div key={phase.name} className="flex items-center flex-1">

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import {
   Wand2, Zap, Sparkles, ListTree, BarChart3, Loader2,
-  ChevronDown, Check, AlertTriangle, Info
+  ChevronDown, AlertTriangle
 } from 'lucide-react'
 
 interface EditingToolsProps {

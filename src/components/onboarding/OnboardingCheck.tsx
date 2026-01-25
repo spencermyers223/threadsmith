@@ -12,7 +12,6 @@ interface OnboardingCheckProps {
 export default function OnboardingCheck({ children }: OnboardingCheckProps) {
   const router = useRouter()
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
     checkOnboardingStatus()
@@ -24,7 +23,6 @@ export default function OnboardingCheck({ children }: OnboardingCheckProps) {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) {
-        setIsChecking(false)
         return
       }
 
@@ -42,8 +40,6 @@ export default function OnboardingCheck({ children }: OnboardingCheckProps) {
     } catch (error) {
       // If there's an error (e.g., table doesn't exist yet), don't block the user
       console.error('Error checking onboarding status:', error)
-    } finally {
-      setIsChecking(false)
     }
   }
 

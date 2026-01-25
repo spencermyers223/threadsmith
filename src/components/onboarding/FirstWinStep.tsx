@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Sparkles, Loader2, Copy, Check, Calendar, RefreshCw } from 'lucide-react'
+import { Sparkles, Loader2, Copy, Check, RefreshCw } from 'lucide-react'
 import type { OnboardingData } from './OnboardingModal'
 
 // Post type suggestions based on niche
