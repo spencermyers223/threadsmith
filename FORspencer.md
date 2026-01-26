@@ -1000,3 +1000,66 @@ Two bugs, two lessons:
 Both bugs came from **format mismatches** - code expecting one format but receiving another. The fix is always the same: understand what you're receiving, and handle it appropriately.
 
 ---
+
+## Update: Thread Display & Length Variation Fixes
+
+### Bug Fix 1: Thread Tweet Display Styling
+
+**The Problem:**
+Tweets in generated threads were displayed as plain text blocks with minimal visual separation - they looked like paragraphs, not actual tweets.
+
+**The Fix:**
+Updated `GenerateMode.tsx` to render each tweet as an X/Twitter-style card:
+- Profile avatar placeholder (shows tweet number in a gradient circle)
+- "Preview" label with tweet number badge (e.g., "Tweet 1/7")
+- Tweet content with proper typography (15px, 1.4 line-height)
+- Footer with engagement icon placeholders (reply, repost, like) using lucide-react
+- Character count badge with color coding (green/amber/red)
+- Rounded corners (rounded-2xl), subtle shadow, hover effects
+- Proper spacing between tweets in a thread
+
+**The Lesson:**
+UI polish matters for user trust. When you're building a tool to help people create content for a platform, your previews should look like that platform. Users need to visualize how their content will appear.
+
+### Bug Fix 2: Thread Length Variation
+
+**The Problem:**
+All 3 generated thread options had the same number of tweets (always 6 for alpha threads, always 10 for protocol breakdowns). Users wanted natural variation to choose between concise vs. comprehensive versions.
+
+**The Root Cause:**
+The prompt OUTPUT FORMAT sections specified rigid tweet structures:
+- alpha-thread.ts: Always tweets 1-6
+- protocol-breakdown.ts: Always tweets 1-10
+
+**The Fix:**
+Updated both prompt files to explicitly request different lengths per variation:
+
+**alpha-thread.ts:**
+- Variation 1: CONCISE (5-6 tweets) - punchy, high-impact
+- Variation 2: STANDARD (7-8 tweets) - balanced depth
+- Variation 3: COMPREHENSIVE (9-11 tweets) - full deep-dive
+
+**protocol-breakdown.ts:**
+- Variation 1: QUICK EXPLAINER (6-7 tweets) - essentials only
+- Variation 2: STANDARD BREAKDOWN (8-10 tweets) - balanced education
+- Variation 3: COMPREHENSIVE DEEP-DIVE (11-14 tweets) - full context
+
+Also updated the "Thread Performance" sections to match these new ranges to avoid conflicting guidance.
+
+**The Lesson:**
+When working with AI prompts, your OUTPUT FORMAT is a contract. If you specify rigid structure, you get rigid output. If you want variation, you must explicitly request it and explain what kind of variation you want.
+
+### Code Review Findings
+
+The code review caught several issues that were fixed:
+1. Hardcoded "Your Name" / "@handle" placeholders - Changed to "Preview" label
+2. Inline SVGs for icons - Replaced with lucide-react components (MessageCircle, Repeat2, Heart)
+3. Inconsistent length guidance - Updated "Thread Performance" sections to match OUTPUT FORMAT ranges
+4. Added aria-hidden to decorative engagement icons for accessibility
+
+### Files Changed
+- `src/components/creator-hub/GenerateMode.tsx` - Tweet display styling
+- `src/lib/prompts/alpha-thread.ts` - Variable length prompts
+- `src/lib/prompts/protocol-breakdown.ts` - Variable length prompts
+
+---

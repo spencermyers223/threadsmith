@@ -62,7 +62,7 @@ These rules are NON-NEGOTIABLE:
 
 **Thread Performance:**
 - Threads generate 40-60% more impressions than single tweets
-- Optimal length: 5-10 tweets for protocol breakdowns
+- Optimal length: 6-14 tweets depending on topic complexity
 - Each tweet must stand alone (gets surfaced individually)
 - Progressive complexity keeps readers engaged
 
@@ -135,32 +135,32 @@ ${userContext ? buildUserContextSection(toUserVoiceProfile(userContext)) : ''}
 
 ## OUTPUT FORMAT
 
-Generate 3 DISTINCT variations with DIFFERENT ANGLES/HOOKS.
+Generate 3 DISTINCT variations with DIFFERENT ANGLES/HOOKS AND DIFFERENT LENGTHS.
 
-For each variation:
+**CRITICAL: Each variation MUST have a different number of tweets:**
+- Variation 1: QUICK EXPLAINER (6-7 tweets) - essential concepts only, for time-strapped readers
+- Variation 2: STANDARD BREAKDOWN (8-10 tweets) - balanced education with key risks
+- Variation 3: COMPREHENSIVE DEEP-DIVE (11-14 tweets) - full context, multiple risks, nuanced implications
 
-**Variation [1/2/3]: [Angle Description]**
+Let the topic complexity determine natural length. Don't pad simple topics or truncate complex ones artificially.
+
+For each variation, use this flexible structure:
+
+**Variation [1/2/3]: [Angle Description] ([X] tweets)**
 
 1/ [Hook - why care NOW - include char count]
 
 2/ [Simple explanation - include char count]
 
-3/ [Simple explanation continued - include char count]
+[Continue with as many tweets as this variation needs, covering:]
+- Simple explanation (1-2 tweets)
+- How it works / mechanics (2-4 tweets depending on complexity)
+- Risks (1-3 tweets - at least one risk tweet is REQUIRED for credibility)
+- Implications (1-2 tweets)
 
-4/ [How it works - include char count]
+[Suggest: Add diagram/image here] - place this note where most helpful
 
-5/ [Key mechanics - include char count]
-[Suggest: Add diagram/image here]
-
-6/ [Mechanics continued - include char count]
-
-7/ [Risk #1 - include char count]
-
-8/ [Risk #2 or more nuance - include char count]
-
-9/ [Implications - include char count]
-
-10/ [CTA + hashtags - include char count]
+[Final tweet]/ [CTA + hashtags - include char count]
 
 *Hook Analysis:* [Why this makes them care NOW]
 *Educational Flow:* [How the complexity progresses]
@@ -171,14 +171,12 @@ For each variation:
 
 After all 3 variations, provide:
 
-**Recommendation:** [Which variation and why]
+**Recommendation:** [Which variation and why - consider topic complexity and audience]
 
 **Angle Breakdown:**
-- Variation 1: [Hook approach, e.g., "current event tie-in"]
-- Variation 2: [Hook approach, e.g., "portfolio impact angle"]
-- Variation 3: [Hook approach, e.g., "misconception correction"]
-
-**Adaptation Notes:** [How to adjust length - which tweets to cut for 5-7, which to expand for 10+]`;
+- Variation 1 ([X] tweets): [Hook approach, e.g., "current event tie-in"]
+- Variation 2 ([X] tweets): [Hook approach, e.g., "portfolio impact angle"]
+- Variation 3 ([X] tweets): [Hook approach, e.g., "misconception correction"]`;
 
   const userPrompt = `Create a protocol breakdown thread about: ${topic}
 

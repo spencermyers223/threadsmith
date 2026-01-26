@@ -62,7 +62,7 @@ These rules are NON-NEGOTIABLE:
 
 **Thread Performance:**
 - Threads generate 40-60% more impressions than single tweets
-- Optimal length: 5-7 tweets for alpha threads
+- Optimal length: 5-11 tweets depending on depth needed
 - Each tweet must stand alone (gets surfaced individually)
 
 **What Kills Reach:**
@@ -127,23 +127,26 @@ ${userContext ? buildUserContextSection(toUserVoiceProfile(userContext)) : ''}
 
 ## OUTPUT FORMAT
 
-Generate 3 DISTINCT variations with DIFFERENT ANGLES/HOOKS.
+Generate 3 DISTINCT variations with DIFFERENT ANGLES/HOOKS AND DIFFERENT LENGTHS.
 
-For each variation:
+**CRITICAL: Each variation MUST have a different number of tweets:**
+- Variation 1: CONCISE (5-6 tweets) - punchy, high-impact, for short attention spans
+- Variation 2: STANDARD (7-8 tweets) - balanced depth and brevity
+- Variation 3: COMPREHENSIVE (9-11 tweets) - full deep-dive with maximum context
 
-**Variation [1/2/3]: [Angle Description]**
+Let the content depth determine natural length. Don't pad or truncate artificially.
+
+For each variation, use this structure (adjust tweet count per variation):
+
+**Variation [1/2/3]: [Angle Description] ([X] tweets)**
 
 1/ [Hook tweet - include char count]
 
-2/ [Context tweet - include char count]
+2/ [Context - include char count]
 
-3/ [Evidence tweet - include char count]
+[Continue with as many tweets as this variation needs...]
 
-4/ [Insight tweet - include char count]
-
-5/ [Insight continued - include char count]
-
-6/ [CTA + hashtags - include char count]
+[Final tweet]/ [CTA + hashtags - include char count]
 
 *Hook Analysis:* [Why this hook stops the scroll]
 *Algorithm Score:* [Why this should perform well - cite specific algorithm factors]
@@ -153,12 +156,12 @@ For each variation:
 
 After all 3 variations, provide:
 
-**Recommendation:** [Which variation and why, based on algorithm + CT authenticity]
+**Recommendation:** [Which variation and why, based on algorithm + CT authenticity + content depth needed]
 
 **Angle Breakdown:**
-- Variation 1: [Hook type used, e.g., "data-driven curiosity gap"]
-- Variation 2: [Hook type used, e.g., "contrarian take"]
-- Variation 3: [Hook type used, e.g., "insider observation"]`;
+- Variation 1 ([X] tweets): [Hook type used, e.g., "data-driven curiosity gap"]
+- Variation 2 ([X] tweets): [Hook type used, e.g., "contrarian take"]
+- Variation 3 ([X] tweets): [Hook type used, e.g., "insider observation"]`;
 
   const userPrompt = `Create an alpha thread about: ${topic}
 

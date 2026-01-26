@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Sparkles, FileText, Loader2, X, Send, Calendar, PenLine, Check,
   Copy, RefreshCw, TrendingUp, Flame, Zap, BarChart2, Layers, Rocket,
-  Crown, AlertCircle, ChevronLeft, ChevronRight
+  Crown, AlertCircle, ChevronLeft, ChevronRight, MessageCircle, Repeat2, Heart
 } from 'lucide-react'
 import { EditingTools } from '@/components/editing'
 import { GenerationCounter } from '@/components/subscription/GenerationCounter'
@@ -573,37 +573,66 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
                         </span>
                       </div>
 
-                      {/* Content - Thread Preview with Individual Tweet Cards */}
-                      <div className="p-4 space-y-4 max-h-[500px] overflow-y-auto">
+                      {/* Content - Thread Preview with X/Twitter-style Tweet Cards */}
+                      <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto bg-[var(--background)]/50">
                         {parsedTweets.map((tweet, tweetIndex) => (
                           <div
                             key={tweetIndex}
-                            className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4"
+                            className="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow"
                           >
-                            {/* Tweet Header with number badge and char count */}
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                <span className="px-2 py-0.5 bg-[var(--accent)]/20 text-[var(--accent)] text-xs font-bold rounded">
-                                  {tweet.number}
+                            {/* Tweet Header - X/Twitter style */}
+                            <div className="flex items-start gap-3">
+                              {/* Profile Picture Placeholder */}
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent)] to-[var(--accent)]/60 flex items-center justify-center flex-shrink-0">
+                                <span className="text-[var(--background)] font-bold text-sm">
+                                  {tweet.number.split('/')[0]}
                                 </span>
                               </div>
-                              <span className={`text-xs font-mono ${
-                                tweet.charCount > 280
-                                  ? 'text-red-400'
-                                  : tweet.charCount > 250
-                                    ? 'text-amber-400'
-                                    : 'text-[var(--muted)]'
-                              }`}>
-                                {tweet.charCount}/280
-                              </span>
-                            </div>
-                            {/* Tweet Content with proper line breaks */}
-                            <div className="text-[var(--foreground)] text-sm leading-relaxed whitespace-pre-wrap">
-                              {tweet.text.split('\n').map((line, lineIndex) => (
-                                <div key={lineIndex} className={lineIndex > 0 ? 'mt-1' : ''}>
-                                  {line}
+
+                              {/* Tweet Body */}
+                              <div className="flex-1 min-w-0">
+                                {/* Author line - preview placeholder */}
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-bold text-[var(--muted)] text-sm italic">Preview</span>
+                                  <span className="text-[var(--muted)]/60 text-xs">·</span>
+                                  <span className="px-1.5 py-0.5 bg-[var(--accent)]/15 text-[var(--accent)] text-xs font-medium rounded">
+                                    Tweet {tweet.number}
+                                  </span>
                                 </div>
-                              ))}
+
+                                {/* Tweet Content */}
+                                <div className="text-[var(--foreground)] text-[15px] leading-[1.4] whitespace-pre-wrap">
+                                  {tweet.text.split('\n').map((line, lineIndex) => (
+                                    <div key={lineIndex} className={lineIndex > 0 ? 'mt-1' : ''}>
+                                      {line}
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {/* Tweet Footer - engagement icons placeholder + char count */}
+                                <div className="flex items-center justify-between mt-3 pt-2 border-t border-[var(--border)]/50">
+                                  <div className="flex items-center gap-6 text-[var(--muted)]" aria-hidden="true">
+                                    <span className="text-xs flex items-center gap-1">
+                                      <MessageCircle size={14} />
+                                    </span>
+                                    <span className="text-xs flex items-center gap-1">
+                                      <Repeat2 size={14} />
+                                    </span>
+                                    <span className="text-xs flex items-center gap-1">
+                                      <Heart size={14} />
+                                    </span>
+                                  </div>
+                                  <span className={`text-xs font-mono px-2 py-0.5 rounded ${
+                                    tweet.charCount > 280
+                                      ? 'bg-red-500/10 text-red-400'
+                                      : tweet.charCount > 250
+                                        ? 'bg-amber-500/10 text-amber-400'
+                                        : 'bg-emerald-500/10 text-emerald-400'
+                                  }`}>
+                                    {tweet.charCount}/280
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         ))}
