@@ -454,14 +454,549 @@ Before shipping code, ask:
 
 ---
 
+---
+
+## Update: The 42-Tweet Monster Bug
+
+*When your regex doesn't speak the same language as your prompts.*
+
+### The Symptom
+
+Users generating Alpha Threads or Protocol Breakdowns were seeing something horrifying: "Option 1 of 1" with **42 tweets** in a single continuous scroll. The navigation arrows? Disabled. Because there was only "one" option.
+
+But wait - the prompts clearly ask for 3 variations. And looking at the raw Claude output, there ARE 3 variations. So where did they go?
+
+### The Detective Work
+
+Let me walk you through the debugging process, because this is a classic "format mismatch" bug that happens all the time in AI applications.
+
+**Step 1: Verify the prompts are correct**
+
+Checked `alpha-thread.ts` and `protocol-breakdown.ts`. Both explicitly request:
+
+```
+Generate 3 distinct thread variations...
+
+**Variation 1:**
+[thread content]
+
+**Variation 2:**
+[thread content]
+```
+
+Prompts are fine. Claude is outputting exactly what we asked for.
+
+**Step 2: Check the parsing logic**
+
+In `/src/app/api/generate/route.ts`, there's a function called `parseGeneratedPosts()`. This is where raw Claude output becomes structured data for the UI.
+
+Here's what the parsing logic was looking for:
+
+```typescript
+// The ONLY pattern the parser knew about
+const optionMatch = line.match(/^\*\*Option\s*(\d+)[\s\S]*?\*\*/i);
+```
+
+And here's what the thread prompts were outputting:
+
+```
+**Variation 1:**
+```
+
+See the problem? The parser is looking for `**Option X**` but the threads use `**Variation X:**`. The regex literally cannot see the variations.
+
+**Step 3: Find the fallback behavior**
+
+When the regex doesn't match anything, what happens? Line 173:
+
+```typescript
+// Fallback: treat entire response as single post
+if (posts.length === 0) {
+  posts.push({
+    content: fullText.trim(),
+    metadata: {}
+  });
+}
+```
+
+So when the parser can't find any `**Option**` markers, it shrugs and says "I guess it's all one thing" and stuffs the ENTIRE response - all 3 variations, all 42 tweets - into a single post.
+
+**That's the bug.** The prompts and the parser were speaking different languages.
+
+### The Fix
+
+We updated `parseGeneratedPosts()` to understand thread formats:
+
+```typescript
+// NEW: Detect if this is a thread format
+const isThreadFormat = postType === 'alpha_thread' || postType === 'protocol_breakdown';
+
+if (isThreadFormat) {
+  // Try to parse **Variation X:** format
+  const variationRegex = /\*\*Variation\s*(\d+):\*\*/gi;
+  const variationMatches = [...fullText.matchAll(variationRegex)];
+
+  if (variationMatches.length > 0) {
+    // Split by variation markers
+    for (let i = 0; i < variationMatches.length; i++) {
+      const start = variationMatches[i].index! + variationMatches[i][0].length;
+      const end = variationMatches[i + 1]?.index ?? fullText.length;
+
+      let content = fullText.slice(start, end).trim();
+
+      // Clean up metadata lines that shouldn't be in the content
+      content = content
+        .replace(/^\*Hook Analysis:.*$/gm, '')
+        .replace(/^\*Reply Potential:.*$/gm, '')
+        .replace(/^\*Controversy Score:.*$/gm, '')
+        .trim();
+
+      posts.push({ content, metadata: {} });
+    }
+  }
+}
+
+// Fall back to **Option** format if no variations found
+if (posts.length === 0) {
+  // Original Option parsing logic...
+}
+
+// Last resort: single post fallback
+if (posts.length === 0) {
+  posts.push({ content: fullText.trim(), metadata: {} });
+}
+```
+
+**The key changes:**
+
+1. **Format detection** - Check the `postType` to know which regex to use
+2. **Variation regex** - New pattern that matches `**Variation X:**`
+3. **Metadata cleaning** - Thread prompts output analysis lines like `*Hook Analysis: This hook uses curiosity gap...` that were getting mixed into the content. We strip those.
+4. **Layered fallbacks** - Try variation format first, then option format, then single-post. This way old prompt formats still work.
+
+### The Result
+
+Before: "Option 1 of 1" with 42 tweets mashed together
+After: "Option 1 of 3" with proper navigation, each option being a clean 7-14 tweet thread
+
+### The Lesson: Format Contracts
+
+This bug teaches a critical lesson about AI applications: **your prompts and your parsers have an implicit contract.**
+
+When you write a prompt that says "format your output like THIS," you're making a promise to the parser. If the parser doesn't know about that format, you've broken the contract.
+
+**How to avoid this in the future:**
+
+1. **Document output formats explicitly** - When creating a new prompt, add a comment: `// OUTPUT FORMAT: **Variation X:**`
+
+2. **Test the full round-trip** - Don't just test that Claude outputs the right thing. Test that the parser PARSES the right thing.
+
+3. **Add format detection, not just format parsing** - The fix detects the post type first, THEN chooses the parsing strategy. This is more robust than trying one regex and hoping.
+
+4. **Keep fallbacks, but log them** - The single-post fallback is good (prevents crashes), but we should probably log when it triggers unexpectedly. If the fallback fires for a thread, something is wrong.
+
+5. **Regex is not the enemy, format drift is** - The regex was fine. The problem was that we added new prompts with a new format and forgot to update the parser. When you add a new prompt format, update the parser in the same PR.
+
+### Code Quality Note
+
+While debugging this, I also ran a code review on the entire `/src/lib/prompts/` directory. The good news: 13 prompt files, zero critical issues. The codebase is well-structured with:
+
+- Consistent TypeScript interfaces
+- Modular file organization
+- Proper separation between shared logic and specialized prompts
+- No hardcoded secrets or security issues
+
+The thread parsing bug was in the API route, not in the prompts themselves. The prompts were doing their job perfectly - it was the consumer of their output that had the mismatch.
+
+---
+
+**Commit:** `4413948` - "fix: parse thread variations correctly in generate API"
+
+---
+
 ## Final TL;DR
 
-First we built the prompt engine (parallel agents, fast shipping). Then we reviewed it (code review skill, caught duplication). Then we refactored (extracted to shared, added helpers, maintained compatibility).
+First we built the prompt engine (parallel agents, fast shipping). Then we reviewed it (code review skill, caught duplication). Then we refactored (extracted to shared, added helpers, maintained compatibility). Then we found and fixed a sneaky parsing bug where prompts and parsers weren't speaking the same language.
 
 This is the professional workflow:
 1. **Ship fast** - Get something working
 2. **Review honestly** - Find the problems
 3. **Refactor deliberately** - Fix them properly
 4. **Verify completely** - Run the build, run the tests
+5. **Debug systematically** - When bugs appear, trace the data flow end-to-end
 
 The code is now both *working* and *maintainable*. That's the goal.
+
+---
+
+## Update: The Thread Parsing Saga Continues
+
+*When you fix one regex, another one is waiting in the shadows.*
+
+### Bug Fix 1: Thread Parsing - Full Tweets Per Variation
+
+#### The Symptom
+
+After fixing the 3-variation parsing (the "42-Tweet Monster Bug" above), we had a new problem. Each variation now showed up correctly... but with only 1 tweet. The UI was displaying "Thread (1 tweets)" for threads that should have been 7-10 tweets long.
+
+We went from "all 42 tweets in one blob" to "3 options with 1 tweet each." Progress? Technically. But clearly something was still broken.
+
+#### The Detective Work
+
+Two files, two problems. Classic frontend/backend mismatch.
+
+**Problem 1: Frontend Regex (GenerateMode.tsx)**
+
+The `parseThreadContent()` function was supposed to split a thread into individual tweets. Here's what it was looking for:
+
+```typescript
+// THE BROKEN PATTERN
+const tweetPattern = /(\d+\/\d+)/;  // Looking for "1/7", "2/7", etc.
+```
+
+And here's what Claude was actually outputting:
+
+```
+1/ This is the hook tweet that grabs attention...
+
+2/ Here's the context you need to understand...
+
+3/ Now let me explain why this matters...
+```
+
+See it? Claude outputs `1/`, `2/`, `3/` - single number with a trailing slash. The regex wanted `1/7`, `2/7` - two numbers. The pattern `\d+\/\d+` requires digits on BOTH sides of the slash.
+
+When the regex didn't match, the entire thread content became "one tweet."
+
+**Problem 2: Backend Regex (route.ts)**
+
+Even before reaching the frontend, the API was cutting content short. The regex lookahead that was supposed to find where one variation ends and another begins had this:
+
+```typescript
+// THE BROKEN PATTERN
+/\*\*Variation \d+:\*\*[\s\S]*?(?=^\*\*Variation|\*\*Recommendation|$)/gm
+```
+
+The `^` anchor inside the alternation with the `m` (multiline) flag was causing issues. It was matching too early, cutting off variation content before it should.
+
+#### The Fix
+
+**Frontend Fix:**
+
+```typescript
+// BEFORE: Required two numbers (1/7)
+const tweetPattern = /(\d+\/\d+)/;
+
+// AFTER: Accepts one or two numbers (1/ or 1/7)
+const tweetPattern = /(\d+\/\d*)/;
+
+// The \d* means "zero or more digits" - so "1/" matches, and so does "1/7"
+```
+
+But wait, there's more. The original code used `.match()` which only finds the first occurrence. We switched to `.matchAll()` to find ALL tweet markers:
+
+```typescript
+// BEFORE: Only finds first tweet marker
+const match = content.match(tweetPattern);
+
+// AFTER: Finds ALL tweet markers
+const matches = [...content.matchAll(/(\d+)\/\d*/g)];
+
+// Then extract content between markers
+for (let i = 0; i < matches.length; i++) {
+  const start = matches[i].index!;
+  const end = matches[i + 1]?.index ?? content.length;
+  const tweetContent = content.slice(start, end).trim();
+  tweets.push(tweetContent);
+}
+```
+
+This pattern - "find all markers, then extract content between them" - is way more robust than trying to write one regex that captures everything.
+
+**Backend Fix:**
+
+Simplified the lookahead with clearer stop markers:
+
+```typescript
+// BEFORE: Complex lookahead with anchors
+(?=^\*\*Variation|\*\*Recommendation|$)
+
+// AFTER: Simpler stop markers
+(?=\*\*Variation \d|\*\*Recommendation|\*\*Angle Breakdown|$)
+```
+
+We also added `**Angle Breakdown**` as a stop marker because some thread prompts include that section after the variations.
+
+#### The Result
+
+Before: "Option 1 of 3" showing "Thread (1 tweets)"
+After: "Option 1 of 3" showing "Thread (7 tweets)" with full content
+
+**Commit:** `681525a`
+
+---
+
+### Bug Fix 2: Write Mode Formatting Preservation
+
+#### The Symptom
+
+This one was a sneaky data loss bug. User workflow:
+
+1. Open a file in Write mode
+2. Add bullet points and formatting
+3. Save the file
+4. Close the file
+5. Reopen the file
+6. **All formatting is gone.** Bullet points became run-on paragraphs.
+
+Content wasn't being lost - the words were all there. But the structure was destroyed. Bullets like:
+
+```
+- First point
+- Second point
+- Third point
+```
+
+Became:
+
+```
+- First point - Second point - Third point
+```
+
+#### The Root Cause (Two Problems)
+
+**Problem 1: Saving (editor.getText() vs editor.getHTML())**
+
+When saving content from the Tiptap editor, the code was using:
+
+```typescript
+// THE BROKEN WAY
+const content = editor.getText();
+```
+
+`getText()` extracts **plain text only**. All HTML structure is stripped. Bullet lists become hyphen-prefixed lines. Bold becomes plain text. The rich structure is gone.
+
+We needed:
+
+```typescript
+// THE CORRECT WAY
+const content = editor.getHTML();
+```
+
+`getHTML()` preserves the full HTML structure: `<ul><li>First point</li><li>Second point</li></ul>`.
+
+**Problem 2: Loading (convertTextToHtml() was too naive)**
+
+When loading content back into the editor, there was a function called `convertTextToHtml()`. Its job was to convert plain text (from uploaded .txt files) into HTML that Tiptap can render.
+
+Here's what it was doing:
+
+```typescript
+// THE BROKEN WAY
+function convertTextToHtml(text: string): string {
+  // Just wrap everything in <p> tags
+  return text.split('\n').map(line => `<p>${line}</p>`).join('');
+}
+```
+
+This converts:
+
+```
+- First point
+- Second point
+```
+
+Into:
+
+```html
+<p>- First point</p>
+<p>- Second point</p>
+```
+
+But Tiptap wants:
+
+```html
+<ul>
+  <li>First point</li>
+  <li>Second point</li>
+</ul>
+```
+
+When the editor renders `<p>- First point</p>`, it shows a paragraph that starts with a hyphen - not an actual bullet point. The visual result is the same, but when you edit and re-save, things get weird.
+
+#### The Fix
+
+**Step 1: Fix the saving**
+
+```typescript
+// In WriteMode.tsx - save handler
+const handleSave = async () => {
+  const content = editor.getHTML();  // Changed from getText()
+  await saveToDatabase(content);
+};
+```
+
+**Step 2: Rewrite convertTextToHtml()**
+
+The new version:
+
+1. **Detects if content is already HTML** - If it has `<p>`, `<ul>`, `<li>`, etc., pass it through unchanged
+2. **Converts markdown bullets to proper HTML lists** - `- item` becomes `<li>item</li>` wrapped in `<ul>`
+3. **Tracks list state** - Opens `<ul>` when a list starts, closes it when the list ends
+4. **Handles blockquotes** - `> text` becomes `<blockquote>text</blockquote>`
+
+```typescript
+function convertTextToHtml(text: string): string {
+  // Step 1: Detect existing HTML
+  if (/<(p|ul|ol|li|h[1-6]|blockquote|br)[\s>]/i.test(text)) {
+    return text;  // Already HTML, pass through
+  }
+
+  // Step 2: Convert plain text to HTML
+  const lines = text.split('\n');
+  let html = '';
+  let inList = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Check for bullet point
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      if (!inList) {
+        html += '<ul>';
+        inList = true;
+      }
+      html += `<li>${trimmed.slice(2)}</li>`;
+    }
+    // Check for blockquote
+    else if (trimmed.startsWith('> ')) {
+      if (inList) {
+        html += '</ul>';
+        inList = false;
+      }
+      html += `<blockquote>${trimmed.slice(2)}</blockquote>`;
+    }
+    // Regular paragraph
+    else {
+      if (inList) {
+        html += '</ul>';
+        inList = false;
+      }
+      if (trimmed) {
+        html += `<p>${trimmed}</p>`;
+      } else {
+        html += '<p></p>';  // Empty line = empty paragraph for spacing
+      }
+    }
+  }
+
+  // Close any open list
+  if (inList) {
+    html += '</ul>';
+  }
+
+  return html;
+}
+```
+
+#### The Debugging Process
+
+This bug was tricky because the data looked fine at a glance. To find it, we added console.log statements at each stage:
+
+```typescript
+// Step 1: What are we saving?
+console.log('Saving content:', editor.getHTML());  // Should be HTML
+console.log('Saving via getText:', editor.getText());  // Was this being used?
+
+// Step 2: What does Supabase have?
+// (Check directly in Supabase dashboard)
+
+// Step 3: What are we loading?
+console.log('Loaded from DB:', rawContent);
+console.log('After conversion:', convertTextToHtml(rawContent));
+console.log('Is HTML detected:', /<(p|ul|li)/.test(rawContent));
+```
+
+This revealed:
+1. We were saving with `getText()` (wrong)
+2. Supabase had plain text (consequence of #1)
+3. Loading was detecting "plain text" and converting (but poorly)
+
+The fix addressed both ends: save HTML, and when loading plain text (from old data or uploaded files), convert it properly.
+
+**Commit:** `6c6b460`
+
+---
+
+### Lesson: Rich Text Editor Contracts
+
+Rich text editors like Tiptap have an implicit contract that's easy to violate if you don't understand it:
+
+| Method | Returns | Use For |
+|--------|---------|---------|
+| `editor.getText()` | Plain text, no formatting | Copying to clipboard, character counts |
+| `editor.getHTML()` | Full HTML structure | **Persistence to database** |
+| `editor.getJSON()` | Tiptap's internal JSON format | Alternative persistence, more precise |
+
+**The Contract:**
+
+```
+Save: editor → getHTML() → database
+Load: database → setContent(html) → editor
+```
+
+If you save with `getText()` and load expecting HTML, you've broken the contract. The round-trip fails.
+
+**The Bridge Pattern:**
+
+When you need to support multiple input formats (user's plain text file, HTML from database, markdown from API), you need a conversion layer:
+
+```
+User uploads .txt file
+       ↓
+detectFormat(content)  → "plain_text" / "html" / "markdown"
+       ↓
+if plain_text: convertTextToHtml(content)
+if markdown: convertMarkdownToHtml(content)
+if html: passthrough
+       ↓
+editor.setContent(html)
+```
+
+The key insight: **detect first, then convert**. Don't assume the format. Check for HTML tags before deciding to convert.
+
+**Debugging Tip:**
+
+When a round-trip bug like this happens (save → load → different result), add logging at three points:
+
+1. What goes into the save
+2. What's actually in storage (database/file)
+3. What comes out of the load
+
+One of those three will show you where the corruption happens.
+
+---
+
+### Updated Testing Checklist
+
+After these bugs, add to your testing checklist:
+
+- [ ] Generate thread → each option shows correct tweet count (not 1)
+- [ ] Write mode → add bullets → save → close → reopen → bullets preserved
+- [ ] Upload .txt with bullets → bullets render correctly in editor
+- [ ] Edit content in Write mode → save → reload page → content identical
+- [ ] Thread navigation arrows work (not disabled)
+
+---
+
+## TL;DR for This Session
+
+Two bugs, two lessons:
+
+1. **Thread Parsing:** Your regex must match the actual output format. `\d+\/\d+` doesn't match `1/` - it needs `\d+\/\d*`. And use `matchAll()` when you need to find multiple occurrences, not `match()`.
+
+2. **Write Mode Formatting:** Rich text editors have a persistence contract. Use `getHTML()` for saving, not `getText()`. And when bridging between plain text and HTML, detect the format first, then convert properly.
+
+Both bugs came from **format mismatches** - code expecting one format but receiving another. The fix is always the same: understand what you're receiving, and handle it appropriately.
+
+---
