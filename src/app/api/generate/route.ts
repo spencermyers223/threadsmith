@@ -144,17 +144,18 @@ function parseGeneratedPosts(
 
   if (isThreadFormat) {
     // Parse thread format: **Variation 1: [Title]** followed by numbered tweets
-    // The content continues until the next **Variation** or analysis sections
-    const variationRegex = /\*\*Variation\s+(\d+)(?:\/\d+)?:\s*([^*]*)\*\*\s*([\s\S]*?)(?=\*\*Variation\s+\d+|^\*Hook Analysis|^\*Educational Flow|^\*Trust Factor|^\*Reply Potential|^\*\*Recommendation|$)/gim
+    // The content continues until the next **Variation** or **Recommendation** section
+    // Use a simpler regex that captures content until the next variation header or end markers
+    const variationRegex = /\*\*Variation\s+(\d+)(?:\/\d+)?:\s*([^*]*)\*\*\s*([\s\S]*?)(?=\*\*Variation\s+\d+|\*\*Recommendation|\*\*Angle Breakdown|$)/gi
 
     let match
     while ((match = variationRegex.exec(response)) !== null) {
       const rawContent = match[3].trim()
       if (rawContent) {
         // Extract just the tweet content (numbered lines like "1/ content")
-        // Remove analysis metadata that might be inline
+        // Remove analysis metadata that appears after each variation
         const cleanContent = rawContent
-          // Remove inline analysis lines
+          // Remove analysis/metadata lines (lines starting with *)
           .replace(/^\*Hook Analysis:.*$/gm, '')
           .replace(/^\*Educational Flow:.*$/gm, '')
           .replace(/^\*Trust Factor:.*$/gm, '')
@@ -163,11 +164,14 @@ function parseGeneratedPosts(
           .replace(/^\*Conversation hook:.*$/gm, '')
           .replace(/^\*Character count:.*$/gm, '')
           .replace(/^\*Why this works:.*$/gm, '')
+          .replace(/^\*Why they'll reply:.*$/gm, '')
           .replace(/^\[Suggest:.*\]$/gm, '') // Remove image placement suggestions
           // Remove separator lines
           .replace(/^---+\s*$/gm, '')
-          // Remove any trailing metadata section (multiple * lines at the end)
-          .replace(/(\n\*[A-Z][^:]*:[\s\S]*?)$/i, '')
+          // Remove trailing metadata block (lines starting with * at the end)
+          .replace(/(\n\*[A-Z][^\n]*)+\s*$/gi, '')
+          // Clean up extra whitespace
+          .replace(/\n{3,}/g, '\n\n')
           .trim()
 
         if (cleanContent.length > 0) {

@@ -112,26 +112,47 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
 
   // Helper function to parse thread content into individual tweets
   const parseThreadContent = (content: string): { number: string; text: string; charCount: number }[] => {
-    // Try to split by numbered patterns like "1/7", "2/7" etc.
-    const numberedPattern = /(\d+\/\d+)/g
-    const parts = content.split(numberedPattern).filter(part => part.trim())
-
     const tweets: { number: string; text: string; charCount: number }[] = []
 
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i].trim()
-      // Check if this part is a number pattern
-      if (/^\d+\/\d+$/.test(part)) {
-        // Next part is the tweet content
-        const nextPart = parts[i + 1]?.trim() || ''
-        if (nextPart) {
-          tweets.push({ number: part, text: nextPart, charCount: nextPart.length })
-          i++ // Skip the content part since we've processed it
+    // Try multiple patterns for numbered tweets:
+    // Pattern 1: "1/" or "1/6" at start of line (Claude's thread format)
+    // Pattern 2: "1." at start of line
+    // Pattern 3: Double newline separation (fallback)
+
+    // First, try to match "N/" or "N/M" patterns (e.g., "1/", "2/", "1/6", "2/6")
+    // Split by the numbered pattern, keeping the delimiter
+    const numberedPattern = /^(\d+\/\d*)\s*/gm
+    const matches = Array.from(content.matchAll(numberedPattern))
+
+    if (matches.length > 0) {
+      // Extract tweets based on position of each number marker
+      for (let i = 0; i < matches.length; i++) {
+        const match = matches[i]
+        const startPos = match.index! + match[0].length
+        const endPos = matches[i + 1]?.index ?? content.length
+
+        const tweetText = content.slice(startPos, endPos).trim()
+        // Clean up the tweet text - remove trailing metadata lines
+        const cleanText = tweetText
+          .replace(/\n\*[A-Z][\s\S]*$/, '') // Remove metadata at end
+          .replace(/\n---[\s\S]*$/, '') // Remove separators
+          .trim()
+
+        if (cleanText) {
+          const num = match[1].includes('/') && !match[1].endsWith('/')
+            ? match[1] // Already has total like "1/6"
+            : `${match[1]}${matches.length}` // Add total like "1/" -> "1/6"
+
+          tweets.push({
+            number: num,
+            text: cleanText,
+            charCount: cleanText.length
+          })
         }
       }
     }
 
-    // If no numbered pattern found, fall back to double newline splitting
+    // If no numbered pattern found, try splitting by double newlines
     if (tweets.length === 0) {
       const fallbackTweets = content.split('\n\n').filter(t => t.trim())
       return fallbackTweets.map((text, index) => ({
