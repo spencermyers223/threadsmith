@@ -56,36 +56,87 @@ export default function WriteMode({ editingFile, onFileSaved, onNewFile }: Write
   })
 
   // Convert plain text with line breaks to proper HTML for Tiptap
+  // This handles legacy plain text content and uploaded text files
   const convertTextToHtml = (text: string): string => {
     if (!text) return ''
 
-    // Split by line breaks and filter out empty lines at start/end
+    // Check if content is already HTML (saved from Tiptap)
+    // Look for common HTML tags that Tiptap would produce
+    if (/<(?:p|ul|ol|li|h[1-6]|blockquote|strong|em)[>\s]/i.test(text)) {
+      return text // Already HTML, return as-is
+    }
+
+    // Plain text conversion - parse line by line
     const lines = text.split('\n')
+    const result: string[] = []
+    let inBulletList = false
+    let inOrderedList = false
 
-    // Convert each line to a paragraph, preserving empty lines as empty paragraphs
-    const htmlParagraphs = lines.map(line => {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
       const trimmedLine = line.trim()
-      if (!trimmedLine) {
-        // Empty line becomes an empty paragraph (creates visual spacing)
-        return '<p></p>'
-      }
-      // Check for bullet points (-, *, or numbered lists)
-      if (/^[-*]\s/.test(trimmedLine)) {
-        return `<p>${trimmedLine}</p>`
-      }
-      if (/^\d+\.\s/.test(trimmedLine)) {
-        return `<p>${trimmedLine}</p>`
-      }
-      // Check for headers (# markdown style)
-      if (/^#{1,3}\s/.test(trimmedLine)) {
-        const level = trimmedLine.match(/^(#{1,3})/)?.[1].length || 1
-        const headerText = trimmedLine.replace(/^#{1,3}\s/, '')
-        return `<h${level}>${headerText}</h${level}>`
-      }
-      return `<p>${trimmedLine}</p>`
-    })
 
-    return htmlParagraphs.join('')
+      // Check for bullet point (- or *)
+      const bulletMatch = trimmedLine.match(/^[-*]\s+(.*)$/)
+      // Check for numbered list (1. 2. etc)
+      const orderedMatch = trimmedLine.match(/^\d+\.\s+(.*)$/)
+
+      if (bulletMatch) {
+        // Start bullet list if not already in one
+        if (!inBulletList) {
+          if (inOrderedList) {
+            result.push('</ol>')
+            inOrderedList = false
+          }
+          result.push('<ul>')
+          inBulletList = true
+        }
+        result.push(`<li>${bulletMatch[1]}</li>`)
+      } else if (orderedMatch) {
+        // Start ordered list if not already in one
+        if (!inOrderedList) {
+          if (inBulletList) {
+            result.push('</ul>')
+            inBulletList = false
+          }
+          result.push('<ol>')
+          inOrderedList = true
+        }
+        result.push(`<li>${orderedMatch[1]}</li>`)
+      } else {
+        // Close any open lists
+        if (inBulletList) {
+          result.push('</ul>')
+          inBulletList = false
+        }
+        if (inOrderedList) {
+          result.push('</ol>')
+          inOrderedList = false
+        }
+
+        if (!trimmedLine) {
+          // Empty line becomes an empty paragraph (creates visual spacing)
+          result.push('<p></p>')
+        } else if (/^#{1,3}\s/.test(trimmedLine)) {
+          // Check for headers (# markdown style)
+          const level = trimmedLine.match(/^(#{1,3})/)?.[1].length || 1
+          const headerText = trimmedLine.replace(/^#{1,3}\s/, '')
+          result.push(`<h${level}>${headerText}</h${level}>`)
+        } else if (/^>\s/.test(trimmedLine)) {
+          // Blockquote
+          const quoteText = trimmedLine.replace(/^>\s/, '')
+          result.push(`<blockquote><p>${quoteText}</p></blockquote>`)
+        } else {
+          result.push(`<p>${trimmedLine}</p>`)
+        }
+      }
+    }
+
+    // Close any remaining open lists
+    if (inBulletList) result.push('</ul>')
+    if (inOrderedList) result.push('</ol>')
+
+    return result.join('')
   }
 
   // Load file content when editingFile changes
@@ -118,8 +169,8 @@ export default function WriteMode({ editingFile, onFileSaved, onNewFile }: Write
       const { data: userData } = await supabase.auth.getUser()
       if (!userData.user) throw new Error('Not authenticated')
 
-      // Get plain text content
-      const content = editor.getText()
+      // Get HTML content to preserve formatting (bullet points, headers, bold, etc.)
+      const content = editor.getHTML()
 
       if (editingFile) {
         // Update existing file
