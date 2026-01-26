@@ -232,6 +232,18 @@ function PostCard({
   )
 }
 
+// Storage key for persisting state
+const GENERATE_STATE_KEY = 'generate-page-state'
+
+interface PersistedState {
+  topic: string
+  length: Length
+  tone: Tone
+  postType: PostType
+  posts: GeneratedPost[]
+  timestamp: number
+}
+
 // Main Page Component
 export default function GeneratePage() {
   const router = useRouter()
@@ -253,11 +265,53 @@ export default function GeneratePage() {
   const [toast, setToast] = useState<string | null>(null)
   const [editingPostIndex, setEditingPostIndex] = useState<number | null>(null)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [hasLoadedState, setHasLoadedState] = useState(false)
 
   // Tag modal state
   const [tagModalIndex, setTagModalIndex] = useState<number | null>(null)
   const [tagModalSelectedIds, setTagModalSelectedIds] = useState<string[]>([])
   const [savingTags, setSavingTags] = useState(false)
+
+  // Load persisted state on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(GENERATE_STATE_KEY)
+      if (saved) {
+        const state: PersistedState = JSON.parse(saved)
+        // Only restore if less than 24 hours old
+        if (Date.now() - state.timestamp < 24 * 60 * 60 * 1000) {
+          setTopic(state.topic || '')
+          setLength(state.length || 'standard')
+          setTone(state.tone || 'casual')
+          setPostType(state.postType || 'all')
+          setPosts(state.posts || [])
+        }
+      }
+    } catch {
+      // Ignore parse errors
+    }
+    setHasLoadedState(true)
+  }, [])
+
+  // Persist state when it changes
+  useEffect(() => {
+    if (!hasLoadedState) return // Don't save until we've loaded
+
+    const state: PersistedState = {
+      topic,
+      length,
+      tone,
+      postType,
+      posts,
+      timestamp: Date.now(),
+    }
+    localStorage.setItem(GENERATE_STATE_KEY, JSON.stringify(state))
+  }, [topic, length, tone, postType, posts, hasLoadedState])
+
+  // Clear persisted posts (called when generating new ones)
+  const clearPersistedPosts = () => {
+    setPosts([])
+  }
 
   const handleGenerate = async () => {
     if (!topic.trim()) return
@@ -619,7 +673,16 @@ export default function GeneratePage() {
           {/* Generated Posts */}
           {posts.length > 0 && (
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold">Generated Posts</h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Generated Posts</h2>
+                <button
+                  onClick={clearPersistedPosts}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--card)] rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                  Clear
+                </button>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {posts.map((post, index) => (
                   <PostCard
