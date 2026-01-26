@@ -139,32 +139,78 @@ function parseGeneratedPosts(
 ): GeneratedPost[] {
   const posts: GeneratedPost[] = []
 
-  // Match patterns like "**Option 1:**" or "**Option 1: Title**" or "**Option 1**"
-  const optionRegex = /\*\*Option\s+(\d+)(?::\s*[^*]*)?\*\*\s*([\s\S]*?)(?=\*\*Option\s+\d+|$|\*Why|\*Recommendation|---)/gi
+  // Check if this is a thread type that uses "Variation" format
+  const isThreadFormat = postType === 'alpha_thread' || postType === 'protocol_breakdown'
 
-  let match
-  while ((match = optionRegex.exec(response)) !== null) {
-    const content = match[2].trim()
-    if (content) {
-      // Clean up the content - remove trailing asterisks, whitespace, and metadata
-      const cleanContent = content
-        .replace(/\n\n\*\*?$/g, '')
-        .replace(/\n\*Character count.*$/gi, '')
-        .replace(/\n\*Why this works.*$/gi, '')
-        .replace(/\n\*Hook Analysis.*$/gi, '')
-        .replace(/\n\*Algorithm Score.*$/gi, '')
-        .replace(/\n\*Reply Potential.*$/gi, '')
-        .replace(/\n\*Conversation hook.*$/gi, '')
-        .replace(/---\s*$/g, '')
-        .trim()
+  if (isThreadFormat) {
+    // Parse thread format: **Variation 1: [Title]** followed by numbered tweets
+    // The content continues until the next **Variation** or analysis sections
+    const variationRegex = /\*\*Variation\s+(\d+)(?:\/\d+)?:\s*([^*]*)\*\*\s*([\s\S]*?)(?=\*\*Variation\s+\d+|^\*Hook Analysis|^\*Educational Flow|^\*Trust Factor|^\*Reply Potential|^\*\*Recommendation|$)/gim
 
-      if (cleanContent.length > 0) {
-        posts.push({
-          content: cleanContent,
-          archetype: archetypeToOutput(archetype),
-          postType,
-          characterCount: cleanContent.length,
-        })
+    let match
+    while ((match = variationRegex.exec(response)) !== null) {
+      const rawContent = match[3].trim()
+      if (rawContent) {
+        // Extract just the tweet content (numbered lines like "1/ content")
+        // Remove analysis metadata that might be inline
+        const cleanContent = rawContent
+          // Remove inline analysis lines
+          .replace(/^\*Hook Analysis:.*$/gm, '')
+          .replace(/^\*Educational Flow:.*$/gm, '')
+          .replace(/^\*Trust Factor:.*$/gm, '')
+          .replace(/^\*Reply Potential:.*$/gm, '')
+          .replace(/^\*Algorithm Score:.*$/gm, '')
+          .replace(/^\*Conversation hook:.*$/gm, '')
+          .replace(/^\*Character count:.*$/gm, '')
+          .replace(/^\*Why this works:.*$/gm, '')
+          .replace(/^\[Suggest:.*\]$/gm, '') // Remove image placement suggestions
+          // Remove separator lines
+          .replace(/^---+\s*$/gm, '')
+          // Remove any trailing metadata section (multiple * lines at the end)
+          .replace(/(\n\*[A-Z][^:]*:[\s\S]*?)$/i, '')
+          .trim()
+
+        if (cleanContent.length > 0) {
+          posts.push({
+            content: cleanContent,
+            archetype: archetypeToOutput(archetype),
+            postType,
+            characterCount: cleanContent.length,
+          })
+        }
+      }
+    }
+  }
+
+  // If no thread variations found, try standard Option format
+  if (posts.length === 0) {
+    // Match patterns like "**Option 1:**" or "**Option 1: Title**" or "**Option 1**"
+    const optionRegex = /\*\*Option\s+(\d+)(?::\s*[^*]*)?\*\*\s*([\s\S]*?)(?=\*\*Option\s+\d+|$|\*Why|\*Recommendation|---)/gi
+
+    let match
+    while ((match = optionRegex.exec(response)) !== null) {
+      const content = match[2].trim()
+      if (content) {
+        // Clean up the content - remove trailing asterisks, whitespace, and metadata
+        const cleanContent = content
+          .replace(/\n\n\*\*?$/g, '')
+          .replace(/\n\*Character count.*$/gi, '')
+          .replace(/\n\*Why this works.*$/gi, '')
+          .replace(/\n\*Hook Analysis.*$/gi, '')
+          .replace(/\n\*Algorithm Score.*$/gi, '')
+          .replace(/\n\*Reply Potential.*$/gi, '')
+          .replace(/\n\*Conversation hook.*$/gi, '')
+          .replace(/---\s*$/g, '')
+          .trim()
+
+        if (cleanContent.length > 0) {
+          posts.push({
+            content: cleanContent,
+            archetype: archetypeToOutput(archetype),
+            postType,
+            characterCount: cleanContent.length,
+          })
+        }
       }
     }
   }
