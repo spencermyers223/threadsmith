@@ -81,12 +81,22 @@ Here's exactly what happened and what I learned:"
 
 ### What Makes Build-in-Public Content Work
 
-**Specific Numbers Over Vague Claims**
+**Specific Numbers Over Vague Claims (ONLY IF USER PROVIDED THEM)**
 - BAD: "Revenue is growing nicely"
-- GOOD: "Hit $2,847 MRR, up 23% from last month"
+- GOOD: "Hit $2,847 MRR, up 23% from last month" (if user provided these numbers)
 
 - BAD: "Getting some traction"
-- GOOD: "47 signups this week, 12 converted to paid"
+- GOOD: "47 signups this week, 12 converted to paid" (if user provided these numbers)
+
+**When Metrics Aren't Available**
+If no specific metrics are provided by the user, focus on actions and learnings:
+- GOOD: "Shipped the new onboarding flow this week"
+- GOOD: "Learning that retention matters more than acquisition"
+- GOOD: "Made progress on the mobile app - finally fixed the auth bug"
+- BAD: "Hit 47 users this week" (inventing user counts)
+- BAD: "Revenue up 23%" (inventing revenue data)
+
+NEVER invent numbers. Qualitative progress updates are still valuable and authentic.
 
 **Struggles Alongside Wins**
 - BAD: "Everything's going great! Users love it!"
@@ -240,17 +250,20 @@ ${lengthGuideline}
 ${OUTPUT_FORMAT_RULES}
 
 CRITICAL REMINDERS FOR BUILD-IN-PUBLIC:
-1. Use REAL-SOUNDING specific numbers (don't use placeholder [X])
-2. Include both a win AND a struggle/learning
-3. End with a SPECIFIC question requesting feedback or advice
-4. Keep it SHORT - build-in-public thrives on brevity
-5. Voice should be vulnerable and authentic, not polished
+1. NEVER invent specific numbers or metrics - ONLY use numbers the user explicitly provides
+2. If no metrics are given, use qualitative language: "shipped X", "working on Y", "improving", "making progress"
+3. Focus on actions, learnings, and honest reflections when metrics aren't available
+4. Include both a win AND a struggle/learning
+5. End with a SPECIFIC question requesting feedback or advice
+6. Keep it SHORT - build-in-public thrives on brevity
+7. Voice should be vulnerable and authentic, not polished
 `;
 
   const userPrompt = `Create build-in-public content about: ${topic}
 
 This is a project update/journey post. Remember:
-- Use specific (realistic) numbers
+- ONLY use numbers/metrics if they are explicitly mentioned in the topic above - NEVER invent stats
+- If no metrics are provided, focus on actions, learnings, and qualitative progress
 - Include honest reflection
 - End with a genuine question for feedback
 
