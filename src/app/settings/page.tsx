@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Bell, Moon, Sun, User, Check, AlertCircle, LogOut,
-  Target, Mic, Users, Plus, X, ChevronDown, ChevronUp, RefreshCw, FileText
+  Target, Mic, Users, Plus, X, ChevronDown, ChevronUp
 } from 'lucide-react'
 import Link from 'next/link'
 import { useTheme } from '@/components/providers/ThemeProvider'
@@ -88,8 +88,6 @@ export default function SettingsPage() {
     admired_accounts: [],
   })
   const [newAccount, setNewAccount] = useState('')
-  const [reprocessing, setReprocessing] = useState(false)
-  const [reprocessResult, setReprocessResult] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   // Collapsible sections
   const [expandedSections, setExpandedSections] = useState({
@@ -245,26 +243,6 @@ export default function SettingsPage() {
     setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
-  const handleReprocessFiles = async () => {
-    setReprocessing(true)
-    setReprocessResult(null)
-
-    try {
-      const res = await fetch('/api/files/reprocess', { method: 'POST' })
-      const data = await res.json()
-
-      if (res.ok) {
-        setReprocessResult({ message: data.message, type: 'success' })
-      } else {
-        setReprocessResult({ message: data.error || 'Failed to reprocess files', type: 'error' })
-      }
-    } catch {
-      setReprocessResult({ message: 'Failed to reprocess files', type: 'error' })
-    } finally {
-      setReprocessing(false)
-    }
-  }
-
   const toggleNotifications = () => {
     setNotifications(prev => !prev)
   }
@@ -370,43 +348,6 @@ export default function SettingsPage() {
                 />
               </button>
             </div>
-          </div>
-        </section>
-
-        {/* Data Maintenance Section */}
-        <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
-          <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--background)]">
-            <h2 className="font-semibold flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Data Maintenance
-            </h2>
-          </div>
-          <div className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Reprocess Word Documents</p>
-                <p className="text-sm text-[var(--muted)]">
-                  Fix formatting issues in previously uploaded .docx files
-                </p>
-              </div>
-              <button
-                onClick={handleReprocessFiles}
-                disabled={reprocessing}
-                className="flex items-center gap-2 px-4 py-2 bg-[var(--background)] hover:bg-[var(--border)] disabled:opacity-50 rounded-lg transition-colors border border-[var(--border)]"
-              >
-                <RefreshCw className={`w-4 h-4 ${reprocessing ? 'animate-spin' : ''}`} />
-                {reprocessing ? 'Processing...' : 'Reprocess'}
-              </button>
-            </div>
-            {reprocessResult && (
-              <div className={`mt-3 text-sm p-3 rounded-lg ${
-                reprocessResult.type === 'success'
-                  ? 'bg-green-400/10 text-green-400'
-                  : 'bg-red-400/10 text-red-400'
-              }`}>
-                {reprocessResult.message}
-              </div>
-            )}
           </div>
         </section>
 
