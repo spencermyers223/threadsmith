@@ -143,7 +143,6 @@ export default function WriteMode({ editingFile, onFileSaved, onNewFile }: Write
   useEffect(() => {
     if (editingFile) {
       setTitle(editingFile.name || '')
-      // Content is stored as plain text or markdown
       const content = editingFile.content || ''
       const htmlContent = convertTextToHtml(content)
       editor?.commands.setContent(htmlContent)
