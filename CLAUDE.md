@@ -1,9 +1,18 @@
 # ThreadSmith
 
+
+For every project, write a detailed FORspencer.md file that explains the whole project in plain language.
+
+Explain the technical architecture, the structure of the codebase and how the various parts are connected, the technologies used, why we made these technical decisions, and lessons I can learn from it (this should include the bugs we ran into and how we fixed them, potential pitfalls and how to avoid them in the future, new technologies used, how good engineers think and work, best practices, etc).
+
+It should be very engaging to read; don't make it sound like boring technical documentation/textbook. Where appropriate, use analogies and anecdotes to make it more understandable and memorable.
+
 ## Project Overview
+
 A web app that helps researchers turn their notes into optimized X/Twitter content. Users upload research files (.docx, .md, .txt), chat with AI to generate tweets/threads/articles, then organize content in a calendar/scheduler.
 
 ## Tech Stack
+
 - **Framework**: Next.js 14 (App Router, TypeScript)
 - **Styling**: Tailwind CSS
 - **Database/Auth/Storage**: Supabase (Postgres, Google OAuth, File Storage)
@@ -12,7 +21,9 @@ A web app that helps researchers turn their notes into optimized X/Twitter conte
 - **Calendar**: react-big-calendar + custom list view
 
 ## Design System
+
 Minimal, clean UI inspired by claude.ai:
+
 - Dark mode default (neutral-900 background), light mode optional
 - Accent color: Subtle blue (#3b82f6) for interactive elements
 - Font: System font stack for performance, or Geist if available
@@ -23,11 +34,13 @@ Minimal, clean UI inspired by claude.ai:
 ## Core Features
 
 ### 1. Authentication
+
 - Google sign-in via Supabase Auth
 - Protected routes (dashboard, workspace, settings)
 - Redirect unauthenticated users to landing page
 
 ### 2. File Management (Left Sidebar)
+
 - Upload .docx, .md, .txt files
 - Display list of user's files with name, date, file type icon
 - Click to preview content
@@ -35,6 +48,7 @@ Minimal, clean UI inspired by claude.ai:
 - Files stored in Supabase Storage, extracted text in Postgres
 
 ### 3. AI Chat Interface (Main Area)
+
 - Claude-like chat UI with message bubbles
 - Content type selector: Tweet | Thread | Article (pill buttons above input)
 - Context toggle: "Use all files" checkbox OR "Attach file" button to select specific file(s)
@@ -43,6 +57,7 @@ Minimal, clean UI inspired by claude.ai:
 - Each generated option has "Copy to Workspace" button
 
 ### 4. Workspace (Separate Page)
+
 - Tiptap rich text editor (bold, italic, underline, links)
 - Live preview panel showing how content looks on X:
   - Tweet: character count (280/4000), warning if over
@@ -52,6 +67,7 @@ Minimal, clean UI inspired by claude.ai:
 - Schedule modal: date picker, optional time picker
 
 ### 5. Content Calendar (Workspace Page)
+
 - Toggle between Calendar view and List view
 - Calendar: monthly view, posts shown on their scheduled dates
 - List: chronological list with status badges (draft, scheduled, posted)
@@ -59,12 +75,15 @@ Minimal, clean UI inspired by claude.ai:
 - Drag-and-drop to reschedule (calendar view)
 
 ### 6. Settings Page
+
 - Notification preferences (email notifications toggle)
 - Theme toggle (dark/light)
 - Account info
 
 ## X Algorithm Optimization
+
 Reference `/docs/x-algorithm-guide.md` for all content generation. The AI must:
+
 - Structure content as Hook → Value → CTA
 - Warn if external links detected in main tweet
 - Suggest image placement points in threads
@@ -73,6 +92,7 @@ Reference `/docs/x-algorithm-guide.md` for all content generation. The AI must:
 - Score content against algorithm factors (show engagement potential)
 
 ## File Parsing
+
 - **.docx**: Use mammoth.js to extract text/HTML
 - **.md**: Read as plain text, preserve formatting
 - **.txt**: Read as plain text
@@ -154,29 +174,36 @@ create trigger on_auth_user_created
 ## API Routes
 
 ### POST /api/chat
+
 - Body: { message, contentType, useAllFiles, selectedFileIds, conversationId }
 - Streams Claude response
 - Saves to conversations table
 
 ### GET /api/files
+
 - Returns user's files
 
 ### POST /api/files
+
 - Multipart form upload
 - Parse file, extract text
 - Store in Supabase Storage + save metadata to Postgres
 
 ### DELETE /api/files/[id]
+
 - Delete file from storage and database
 
 ### GET /api/posts
+
 - Query params: status, startDate, endDate
 - Returns user's posts
 
 ### POST /api/posts
+
 - Create or update post
 
 ### DELETE /api/posts/[id]
+
 - Delete post
 
 ## Claude System Prompt for Content Generation
@@ -210,6 +237,7 @@ Always consider:
 ```
 
 ## Environment Variables
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
@@ -218,6 +246,7 @@ ANTHROPIC_API_KEY=
 ```
 
 ## Build Order
+
 1. Initialize Next.js with TypeScript and Tailwind
 2. Set up Supabase client and auth
 3. Create database schema (run SQL in Supabase dashboard)
@@ -235,7 +264,9 @@ ANTHROPIC_API_KEY=
 ## Key Implementation Notes
 
 ### Streaming with Claude
+
 Use the Anthropic SDK with streaming:
+
 ```typescript
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -254,6 +285,7 @@ for await (const chunk of stream) {
 ```
 
 ### File Upload with Supabase
+
 ```typescript
 // Upload to storage
 const { data, error } = await supabase.storage
@@ -271,6 +303,7 @@ await supabase.from('files').insert({
 ```
 
 ### Tiptap Setup
+
 ```typescript
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -283,6 +316,7 @@ const editor = useEditor({
 ```
 
 ## Testing Checklist
+
 - [ ] Google sign-in works
 - [ ] File upload extracts text correctly (.docx, .md, .txt)
 - [ ] Chat sends message and streams response
