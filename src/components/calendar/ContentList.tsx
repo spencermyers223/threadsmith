@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { format } from 'date-fns'
-import { FileText, MessageSquare, Newspaper, Trash2, Edit, Calendar as CalendarIcon, Clock, CheckCircle } from 'lucide-react'
+import { FileText, MessageSquare, Newspaper, Trash2, Edit, Calendar as CalendarIcon, Clock, Send } from 'lucide-react'
 import PostTypeIcon, { GenerationType } from './PostTypeIcon'
 import type { CalendarFilterState } from './CalendarFilters'
 import TagBadge, { Tag } from '@/components/tags/TagBadge'
@@ -289,13 +289,13 @@ export function ContentList({ onSelectPost, filters }: ContentListProps) {
                   </div>
 
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {post.status === 'scheduled' && (
+                    {post.status !== 'posted' && (
                       <button
                         onClick={(e) => handleMarkAsPosted(post.id, e)}
                         className="p-2 rounded hover:bg-green-500/20 text-[var(--muted)] hover:text-green-400 transition-colors"
-                        title="Mark as Posted"
+                        title="Post Now"
                       >
-                        <CheckCircle className="w-4 h-4" />
+                        <Send className="w-4 h-4" />
                       </button>
                     )}
                     <button
