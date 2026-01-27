@@ -194,7 +194,7 @@ export default function WorkspacePage() {
           title: title || `Untitled ${contentType}`,
           content: getCurrentContent(),
           status: 'draft',
-          generation_type: generationType,
+          generation_type: generationType || 'user_generated',
           tagIds: selectedTagIds,
         }),
       })
@@ -340,7 +340,7 @@ export default function WorkspacePage() {
           status: 'scheduled',
           scheduled_date: date,
           scheduled_time: time,
-          generation_type: generationType,
+          generation_type: generationType || 'user_generated',
           tagIds: selectedTagIds,
         }),
       })

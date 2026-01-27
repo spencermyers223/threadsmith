@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate generation_type/archetype
-    const validArchetypes = ['scroll_stopper', 'debate_starter', 'viral_catalyst', 'market_take', 'hot_take', 'on_chain_insight', 'alpha_thread', 'protocol_breakdown', 'build_in_public']
+    const validArchetypes = ['scroll_stopper', 'debate_starter', 'viral_catalyst', 'market_take', 'hot_take', 'on_chain_insight', 'alpha_thread', 'protocol_breakdown', 'build_in_public', 'user_generated']
     if (finalGenerationType && !validArchetypes.includes(finalGenerationType)) {
       return NextResponse.json({ error: 'Invalid generation type' }, { status: 400 })
     }

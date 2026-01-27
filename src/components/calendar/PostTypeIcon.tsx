@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { TrendingUp, Flame, BarChart3, Sparkles, BookOpen, Hammer } from 'lucide-react'
+import { TrendingUp, Flame, BarChart3, Sparkles, BookOpen, Hammer, PenLine } from 'lucide-react'
 
 export type GenerationType =
   | 'market_take'
@@ -10,6 +10,7 @@ export type GenerationType =
   | 'alpha_thread'
   | 'protocol_breakdown'
   | 'build_in_public'
+  | 'user_generated'
 
 interface PostTypeIconProps {
   type: GenerationType
@@ -72,6 +73,14 @@ export const typeConfig: Record<GenerationType, {
     bgColorSolid: 'bg-pink-500/25',
     textColor: 'text-pink-400',
     borderColor: 'border-pink-500/40',
+  },
+  user_generated: {
+    label: 'User Generated',
+    icon: PenLine,
+    bgColor: 'bg-slate-400/20',
+    bgColorSolid: 'bg-slate-400/25',
+    textColor: 'text-slate-300',
+    borderColor: 'border-slate-400/40',
   },
 }
 
