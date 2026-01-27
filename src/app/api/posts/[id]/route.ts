@@ -97,7 +97,7 @@ export async function PUT(
     }
 
     // Validate generation_type if provided
-    const validArchetypes = ['scroll_stopper', 'debate_starter', 'viral_catalyst']
+    const validArchetypes = ['scroll_stopper', 'debate_starter', 'viral_catalyst', 'market_take', 'hot_take', 'on_chain_insight', 'alpha_thread', 'protocol_breakdown', 'build_in_public']
     if (finalGenerationType && !validArchetypes.includes(finalGenerationType)) {
       return NextResponse.json({ error: 'Invalid generation type' }, { status: 400 })
     }

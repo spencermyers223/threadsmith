@@ -1,9 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { Eye, MessageCircle, Rocket } from 'lucide-react'
+import { TrendingUp, Flame, BarChart3, Sparkles, BookOpen, Hammer } from 'lucide-react'
 
-export type GenerationType = 'scroll_stopper' | 'debate_starter' | 'viral_catalyst'
+export type GenerationType =
+  | 'market_take'
+  | 'hot_take'
+  | 'on_chain_insight'
+  | 'alpha_thread'
+  | 'protocol_breakdown'
+  | 'build_in_public'
 
 interface PostTypeIconProps {
   type: GenerationType
@@ -12,27 +18,45 @@ interface PostTypeIconProps {
 
 const typeConfig: Record<GenerationType, {
   label: string
-  icon: typeof Eye
+  icon: typeof TrendingUp
   bgColor: string
   textColor: string
 }> = {
-  scroll_stopper: {
-    label: 'Scroll Stopper',
-    icon: Eye,
-    bgColor: 'bg-amber-500/20',
-    textColor: 'text-amber-400',
-  },
-  debate_starter: {
-    label: 'Debate Starter',
-    icon: MessageCircle,
+  market_take: {
+    label: 'Market Take',
+    icon: TrendingUp,
     bgColor: 'bg-blue-500/20',
     textColor: 'text-blue-400',
   },
-  viral_catalyst: {
-    label: 'Viral Catalyst',
-    icon: Rocket,
-    bgColor: 'bg-green-500/20',
-    textColor: 'text-green-400',
+  hot_take: {
+    label: 'Hot Take',
+    icon: Flame,
+    bgColor: 'bg-red-500/20',
+    textColor: 'text-red-400',
+  },
+  on_chain_insight: {
+    label: 'On-Chain Insight',
+    icon: BarChart3,
+    bgColor: 'bg-emerald-500/20',
+    textColor: 'text-emerald-400',
+  },
+  alpha_thread: {
+    label: 'Alpha Thread',
+    icon: Sparkles,
+    bgColor: 'bg-amber-500/20',
+    textColor: 'text-amber-400',
+  },
+  protocol_breakdown: {
+    label: 'Protocol Breakdown',
+    icon: BookOpen,
+    bgColor: 'bg-purple-500/20',
+    textColor: 'text-purple-400',
+  },
+  build_in_public: {
+    label: 'Build in Public',
+    icon: Hammer,
+    bgColor: 'bg-orange-500/20',
+    textColor: 'text-orange-400',
   },
 }
 

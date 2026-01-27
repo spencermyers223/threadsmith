@@ -17,7 +17,7 @@ import TagSelector from '@/components/tags/TagSelector'
 import TagBadge, { Tag as TagType } from '@/components/tags/TagBadge'
 
 type ContentType = 'tweet' | 'thread' | 'article'
-type GenerationType = 'scroll_stopper' | 'debate_starter' | 'viral_catalyst'
+import type { GenerationType } from '@/components/calendar/PostTypeIcon'
 
 interface Draft {
   id: string
