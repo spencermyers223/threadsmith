@@ -93,8 +93,8 @@ function PostPill({
   // Color by post type (matching the generate page), fall back to neutral gray
   const tc = post.generation_type ? typeConfig[post.generation_type] : null
   const pillColor = tc
-    ? `${tc.bgColorSolid} ${tc.textColor} ${tc.borderColor}`
-    : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+    ? `${tc.bgColorSolid} text-[var(--foreground)] ${tc.borderColor}`
+    : 'bg-gray-500/20 text-[var(--foreground)] border-gray-500/30'
   // Dim posted items slightly
   const postedDim = post.status === 'posted' ? 'opacity-60' : ''
 
