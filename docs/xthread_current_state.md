@@ -120,39 +120,16 @@
 
 ---
 
-## Fixes Needed
+## Fixes Completed (Jan 26, 2026)
 
-### Creator Hub Fixes
+All 6 original Creator Hub bugs have been resolved:
 
-#### 1. Pro Status - Hide Upgrade Button
-**Issue:** "Upgrade to Pro" button still shows for users with active subscription
-**Fix:** Check subscription status and hide button if `status = 'active'`
-
-#### 2. Sidebar Collapse Behavior
-**Issue:** Clicking anywhere on main area collapses the sidebar
-**Fix:** 
-- Sidebar should stay open by default
-- Add explicit collapse/expand button at top of sidebar
-- Only collapse when user clicks that button
-
-#### 3. File Opening in Write Mode
-**Issue:** Clicking a file in sidebar doesn't open it in the editor
-**Fix:** Implement file click handler that loads file content into editor
-
-#### 4. Save Functionality
-**Issue:** Save button adds file to generate prompt instead of saving to sidebar
-**Fix:** 
-- "Save" button creates new file in sidebar (default to root or current folder)
-- "Save to Folder" button prompts folder selection then saves
-- Could be dropdown: Save | Save to Folder...
-
-#### 5. New File Button
-**Issue:** No way to create new file after opening/saving one
-**Fix:** Add "New" or "+" button above the text editor that clears editor and starts fresh
-
-#### 6. Auto-Select Thread Length
-**Issue:** Selecting "Alpha Thread" or "Protocol Breakdown" doesn't auto-select "Thread" length
-**Fix:** When post type changes to a thread type, automatically set length to "Thread"
+1. ✅ **Pro Status** — Upgrade button now hidden for active/lifetime subscribers (commit 988bc51)
+2. ✅ **Sidebar Collapse** — Explicit toggle button, no click-outside collapse (commit 2c418b2)
+3. ✅ **File Opening** — Click file in sidebar → opens in Write mode editor (commit 2c418b2)
+4. ✅ **Save Functionality** — Save button properly saves to Supabase + refreshes sidebar (commit 3d793b1)
+5. ✅ **New File Button** — FilePlus button in WriteMode clears editor for new file (commit 3d793b1)
+6. ✅ **Auto-Select Thread Length** — Alpha Thread/Protocol Breakdown auto-select "Thread" length (commit 3d793b1)
 
 ---
 
