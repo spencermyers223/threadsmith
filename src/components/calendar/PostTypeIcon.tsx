@@ -61,10 +61,10 @@ export const typeConfig: Record<GenerationType, {
   protocol_breakdown: {
     label: 'Protocol Breakdown',
     icon: BookOpen,
-    bgColor: 'bg-cyan-500/20',
-    bgColorSolid: 'bg-cyan-500/25',
-    textColor: 'text-cyan-400',
-    borderColor: 'border-cyan-500/40',
+    bgColor: 'bg-blue-500/20',
+    bgColorSolid: 'bg-blue-500/25',
+    textColor: 'text-blue-400',
+    borderColor: 'border-blue-500/40',
   },
   build_in_public: {
     label: 'Build in Public',

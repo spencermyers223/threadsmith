@@ -55,9 +55,9 @@ const POST_TYPES = [
     label: 'Protocol Breakdown',
     description: 'Educational deep-dive into a protocol',
     icon: Layers,
-    color: 'text-cyan-400',
-    bgColor: 'bg-cyan-500/10',
-    borderColor: 'border-cyan-500/30',
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/10',
+    borderColor: 'border-blue-500/30',
   },
   {
     id: 'build_in_public',
