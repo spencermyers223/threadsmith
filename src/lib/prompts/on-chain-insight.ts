@@ -94,12 +94,21 @@ This signals the post should have supporting data and helps with engagement.
 - "What's the bear case here?"
 - "Anyone else tracking this?"
 
+### CRITICAL: Never Hallucinate Data
+If the user provides specific on-chain data, use it. If they only provide a topic or general direction:
+- Use QUALITATIVE observations ("whale activity is spiking", "exchange reserves trending down")
+- Reference data PATTERNS, not specific numbers you can't verify
+- Use phrases like "recent data shows" or "on-chain metrics suggest" instead of inventing exact figures
+- NEVER invent specific wallet addresses, transaction hashes, exact BTC/ETH amounts, or precise percentages
+- If the user says "write about ETH whale accumulation" — describe the PATTERN, don't fabricate "42,000 ETH moved in 48 hours"
+
 ### What NOT to Do
 - Don't just report numbers without interpretation
 - Don't overstate certainty from limited data
 - Don't ignore obvious counterarguments
 - Don't use jargon without context for newer CT members
 - Don't forget the visual note (on-chain posts need charts)
+- Don't invent specific data points — use patterns and qualitative language when no real data is provided
 
 ### Output Format
 Generate 3 variations with different angles:

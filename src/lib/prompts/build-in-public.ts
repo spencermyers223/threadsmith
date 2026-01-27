@@ -217,6 +217,36 @@ export const BUILD_IN_PUBLIC_HOOKS = [
     template: "[Project/feature] failed.\n\nHere's exactly what happened:",
     example: "My Product Hunt launch failed.\n\nHere's exactly what happened:",
   },
+  {
+    pattern: "decision_reveal",
+    template: "I almost [wrong decision].\n\nHere's why I went with [right decision] instead:",
+    example: "I almost added a free tier.\n\nHere's why I went paid-only instead:",
+  },
+  {
+    pattern: "tool_stack",
+    template: "My entire tech stack costs $[X]/month.\n\nHere's every tool and why:",
+    example: "My entire tech stack costs $47/month.\n\nHere's every tool and why:",
+  },
+  {
+    pattern: "user_feedback",
+    template: "A user told me [feedback].\n\nIt changed how I think about [aspect]:",
+    example: "A user told me my onboarding was confusing.\n\nIt changed how I think about first impressions:",
+  },
+  {
+    pattern: "before_after",
+    template: "[Time period] ago I [starting state].\n\nToday: [current state].\n\nWhat changed:",
+    example: "6 months ago I had zero users.\n\nToday: 200 signups.\n\nWhat changed:",
+  },
+  {
+    pattern: "unpopular_opinion",
+    template: "Unpopular builder opinion:\n\n[Contrarian take about building/shipping]",
+    example: "Unpopular builder opinion:\n\nYou don't need a co-founder. You need discipline.",
+  },
+  {
+    pattern: "weekly_recap",
+    template: "This week building [project]:\n\n✅ [Win]\n❌ [Loss]\n📊 [Key metric]",
+    example: "This week building my SaaS:\n\n✅ Shipped dark mode\n❌ Lost 3 users to churn\n📊 MRR: $847",
+  },
 ];
 
 /**
