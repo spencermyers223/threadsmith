@@ -713,6 +713,7 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
           </button>
           <div className="relative">
             <button
+              onMouseEnter={() => setShowColorPicker(true)}
               onClick={(e) => {
                 e.stopPropagation()
                 setShowColorPicker(!showColorPicker)
