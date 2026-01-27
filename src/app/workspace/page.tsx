@@ -9,12 +9,13 @@ import type { ThreadTweet } from '@/components/preview/ThreadPreview'
 import { ArticlePreview } from '@/components/preview/ArticlePreview'
 import { ScheduleModal } from '@/components/workspace/ScheduleModal'
 import { DraftsSidebar } from '@/components/workspace/DraftsSidebar'
-import { Save, Calendar, ArrowLeft, Check, AlertCircle, Tag } from 'lucide-react'
+import { Save, Calendar, ArrowLeft, Check, AlertCircle, Tag, Image as ImageIcon } from 'lucide-react'
 import PostTypeIcon from '@/components/calendar/PostTypeIcon'
 import Link from 'next/link'
 import { markdownToHtml } from '@/lib/markdown'
 import TagSelector from '@/components/tags/TagSelector'
 import TagBadge, { Tag as TagType } from '@/components/tags/TagBadge'
+import { MediaUpload, type MediaItem } from '@/components/workspace/MediaUpload'
 
 type ContentType = 'tweet' | 'thread' | 'article'
 import type { GenerationType } from '@/components/calendar/PostTypeIcon'
@@ -28,6 +29,7 @@ interface Draft {
   updated_at: string
   generation_type?: GenerationType
   tags?: TagType[]
+  media?: MediaItem[]
 }
 
 export default function WorkspacePage() {
@@ -51,6 +53,9 @@ export default function WorkspacePage() {
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [tags, setTags] = useState<TagType[]>([])
   const [showTagSelector, setShowTagSelector] = useState(false)
+
+  // Media state
+  const [media, setMedia] = useState<MediaItem[]>([])
 
   const lastSavedContent = useRef<string>('')
   const lastSavedTweets = useRef<ThreadTweet[]>([])
@@ -115,6 +120,11 @@ export default function WorkspacePage() {
           setThreadTweets(parseThreadFromContent(post.content.html))
         } else {
           setContent(post.content?.html || '')
+        }
+
+        // Load media from post
+        if (post.media && Array.isArray(post.media)) {
+          setMedia(post.media)
         }
 
         // Fetch tags for this post
@@ -279,6 +289,9 @@ export default function WorkspacePage() {
       lastSavedContent.current = draft.content?.html || ''
     }
 
+    // Load media
+    setMedia(Array.isArray(draft.media) ? draft.media : [])
+
     // Fetch tags for this draft
     fetchPostTags(draft.id)
 
@@ -295,6 +308,7 @@ export default function WorkspacePage() {
     setGenerationType(null)
     setSelectedTagIds([])
     setTags([])
+    setMedia([])
     lastSavedContent.current = ''
     lastSavedTweets.current = []
     setHasUnsavedChanges(false)
@@ -372,6 +386,39 @@ export default function WorkspacePage() {
     setHasUnsavedChanges(true)
   }, [threadTweets.length])
 
+  // Save draft and return postId (for media upload when no postId yet)
+  const handleSaveAndGetId = useCallback(async (): Promise<string | null> => {
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: postId,
+          type: contentType,
+          title: title || `Untitled ${contentType}`,
+          content: getCurrentContent(),
+          status: 'draft',
+          generation_type: generationType,
+          tagIds: selectedTagIds,
+        }),
+      })
+      if (!res.ok) return null
+      const data = await res.json()
+      setPostId(data.id)
+      lastSavedContent.current = content
+      lastSavedTweets.current = [...threadTweets]
+      setHasUnsavedChanges(false)
+      setDraftsRefreshTrigger(prev => prev + 1)
+      return data.id
+    } catch {
+      return null
+    } finally {
+      setSaving(false)
+    }
+  }, [content, contentType, generationType, postId, title, threadTweets, getCurrentContent, selectedTagIds])
+
   const renderEditor = () => {
     if (contentType === 'thread') {
       return (
@@ -388,7 +435,7 @@ export default function WorkspacePage() {
   const renderPreview = () => {
     switch (contentType) {
       case 'tweet':
-        return <TweetPreview content={content} />
+        return <TweetPreview content={content} media={media} />
       case 'thread':
         return (
           <ThreadPreview
@@ -542,6 +589,20 @@ export default function WorkspacePage() {
                 />
               </div>
             )}
+          </div>
+
+          {/* Media Section */}
+          <div className="mt-6 pt-6 border-t border-[var(--border)]">
+            <h4 className="text-sm font-medium text-[var(--muted)] uppercase tracking-wider flex items-center gap-2 mb-3">
+              <ImageIcon className="w-4 h-4" />
+              Media
+            </h4>
+            <MediaUpload
+              postId={postId}
+              media={media}
+              onMediaChange={setMedia}
+              onSaveFirst={handleSaveAndGetId}
+            />
           </div>
         </div>
 

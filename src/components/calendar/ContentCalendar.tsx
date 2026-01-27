@@ -18,6 +18,7 @@ import { CheckCircle } from 'lucide-react'
 import PostTypeIcon, { GenerationType, typeConfig } from './PostTypeIcon'
 import type { CalendarFilterState } from './CalendarFilters'
 import TagBadge, { Tag } from '@/components/tags/TagBadge'
+import { MediaThumbnails, type MediaItem } from '@/components/workspace/MediaUpload'
 
 interface Post {
   id: string
@@ -30,6 +31,7 @@ interface Post {
   scheduled_time: string | null
   created_at: string
   tags?: Tag[]
+  media?: MediaItem[]
 }
 
 interface ContentCalendarProps {
@@ -176,6 +178,9 @@ function PostPill({
                   <TagBadge key={tag.id} tag={tag} size="sm" />
                 ))}
               </div>
+            )}
+            {(post.media?.length ?? 0) > 0 && (
+              <MediaThumbnails media={post.media!} maxShow={4} />
             )}
             {post.status === 'scheduled' && (
               <button
