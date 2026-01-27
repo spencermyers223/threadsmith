@@ -3,11 +3,20 @@
 import { Link as LinkIcon } from 'lucide-react'
 import { ProfileHeader } from './ProfileHeader'
 
-interface TweetPreviewProps {
-  content: string
+interface MediaItem {
+  url: string
+  type: string
+  filename: string
+  size: number
+  created_at: string
 }
 
-export function TweetPreview({ content }: TweetPreviewProps) {
+interface TweetPreviewProps {
+  content: string
+  media?: MediaItem[]
+}
+
+export function TweetPreview({ content, media }: TweetPreviewProps) {
   const plainText = stripHtml(content)
   const charCount = plainText.length
   const maxChars = 280
@@ -32,6 +41,40 @@ export function TweetPreview({ content }: TweetPreviewProps) {
           <div className="whitespace-pre-wrap break-words text-[var(--foreground)]">
             {plainText || <span className="text-[var(--muted)]">Start typing...</span>}
           </div>
+
+          {/* Media Grid */}
+          {media && media.length > 0 && (
+            <div className={`mt-3 grid gap-0.5 rounded-xl overflow-hidden border border-[var(--border)] ${
+              media.length === 1 ? 'grid-cols-1' :
+              media.length === 2 ? 'grid-cols-2' :
+              media.length === 3 ? 'grid-cols-2' : 'grid-cols-2'
+            }`}>
+              {media.slice(0, 4).map((item, i) => (
+                <div
+                  key={item.filename}
+                  className={`relative bg-[var(--card)] ${
+                    media.length === 1 ? 'aspect-video' :
+                    media.length === 3 && i === 0 ? 'row-span-2 aspect-auto h-full' :
+                    'aspect-square'
+                  }`}
+                >
+                  {item.type.startsWith('image/') ? (
+                    <img
+                      src={item.url}
+                      alt={item.filename}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <video
+                      src={item.url}
+                      className="w-full h-full object-cover"
+                      muted
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Character Count */}
