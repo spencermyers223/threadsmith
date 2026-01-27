@@ -11,12 +11,13 @@ The algorithm weights engagement types very differently:
 
 | Action | Weight | Strategic Implication |
 |--------|--------|----------------------|
-| Replies | 7x | Most valuable - create reply bait |
-| Retweets | 3x | Second most valuable - make content shareable |
-| Likes | 1x | Baseline - easy to get but low impact |
-| Bookmarks | 2x | Signals high-value content |
-| Profile clicks | 4x | Indicates curiosity/authority |
-| Dwell time | 2x | Longer reads = quality signal |
+| Reply w/ author engagement | 75x | THE most valuable - spark conversations and reply back |
+| Standard replies | 13.5x | Second most valuable - create reply bait |
+| Profile clicks + engagement | 12x | Build curiosity and authority |
+| Dwell time >2 min | 10-11x | Longer reads = strong quality signal |
+| Bookmarks | ~5x | Signals save-worthy, high-value content |
+| Retweets | 1-20x | Valuable but varies - make content shareable |
+| Likes | 0.5x | Nearly worthless - don't optimize for these |
 
 ### The Two-Hour Window
 - First 2 hours after posting are CRITICAL
