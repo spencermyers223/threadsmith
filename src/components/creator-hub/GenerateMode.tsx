@@ -276,7 +276,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
           type: contentType,
           title: topic.slice(0, 50) || 'Generated post',
           content: contentType === 'thread'
-            ? { tweets: post.content.split('\n\n').filter(t => t.trim()).map((text, i) => ({ id: String(i + 1), content: text })) }
+            ? { tweets: parseThreadContent(post.content).map((t) => ({ id: t.number, content: t.text })) }
             : { html: `<p>${post.content.replace(/\n/g, '</p><p>')}</p>` },
           status: 'draft',
           post_type: selectedPostType,
@@ -318,7 +318,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
           type: contentType,
           title: topic.slice(0, 50) || 'Generated post',
           content: contentType === 'thread'
-            ? { tweets: post.content.split('\n\n').filter(t => t.trim()).map((text, i) => ({ id: String(i + 1), content: text })) }
+            ? { tweets: parseThreadContent(post.content).map((t) => ({ id: t.number, content: t.text })) }
             : { html: `<p>${post.content.replace(/\n/g, '</p><p>')}</p>` },
           status: 'scheduled',
           scheduled_date: tomorrow.toISOString().split('T')[0],
