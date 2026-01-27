@@ -13,6 +13,7 @@ import { Save, Calendar, ArrowLeft, Check, AlertCircle, Tag, Image as ImageIcon,
 import PostTypeIcon from '@/components/calendar/PostTypeIcon'
 import Link from 'next/link'
 import { markdownToHtml } from '@/lib/markdown'
+import { getPostTweetText, openTwitterIntent } from '@/lib/twitter'
 import TagSelector from '@/components/tags/TagSelector'
 import TagBadge, { Tag as TagType } from '@/components/tags/TagBadge'
 import { MediaUpload, type MediaItem } from '@/components/workspace/MediaUpload'
@@ -394,6 +395,19 @@ export default function WorkspacePage() {
     setSaving(true)
     setError(null)
 
+    // Extract tweet text BEFORE clearing state
+    const currentContent = getCurrentContent()
+    let tweetText = ''
+    if (contentType === 'thread' && 'tweets' in currentContent && Array.isArray(currentContent.tweets)) {
+      // For threads, use the first tweet's content
+      const firstTweet = currentContent.tweets[0]
+      if (firstTweet) {
+        tweetText = getPostTweetText(firstTweet.content || '')
+      }
+    } else if ('html' in currentContent) {
+      tweetText = getPostTweetText(currentContent.html || '')
+    }
+
     try {
       const res = await fetch('/api/posts', {
         method: 'POST',
@@ -402,7 +416,7 @@ export default function WorkspacePage() {
           id: postId,
           type: contentType,
           title: title || `Untitled ${contentType}`,
-          content: getCurrentContent(),
+          content: currentContent,
           status: 'posted',
           generation_type: generationType || 'user_generated',
           tagIds: selectedTagIds,
@@ -410,6 +424,11 @@ export default function WorkspacePage() {
       })
 
       if (!res.ok) throw new Error('Failed to post')
+
+      // Open X/Twitter compose window with the content
+      if (tweetText) {
+        openTwitterIntent(tweetText)
+      }
 
       setPosted(true)
       setTimeout(() => setPosted(false), 2000)

@@ -6,6 +6,7 @@ import { FileText, MessageSquare, Newspaper, Trash2, Edit, Calendar as CalendarI
 import PostTypeIcon, { GenerationType } from './PostTypeIcon'
 import type { CalendarFilterState } from './CalendarFilters'
 import TagBadge, { Tag } from '@/components/tags/TagBadge'
+import { getPostTweetText, openTwitterIntent } from '@/lib/twitter'
 
 interface Post {
   id: string
@@ -143,6 +144,9 @@ export function ContentList({ onSelectPost, filters }: ContentListProps) {
 
   const handleMarkAsPosted = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
+    // Find the post to extract content before marking as posted
+    const post = posts.find(p => p.id === id)
+
     const res = await fetch(`/api/posts/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -151,6 +155,18 @@ export function ContentList({ onSelectPost, filters }: ContentListProps) {
     if (res.ok) {
       const updatedPost = await res.json()
       setPosts(posts.map(p => p.id === id ? updatedPost : p))
+
+      // Open X/Twitter compose window with the post content
+      if (post) {
+        let tweetText = ''
+        if (post.type === 'thread' && Array.isArray(post.content?.tweets)) {
+          const firstTweet = (post.content.tweets as Array<{ content?: string }>)[0]
+          if (firstTweet) tweetText = getPostTweetText(firstTweet.content || '')
+        } else {
+          tweetText = getPostTweetText((post.content?.html as string) || (post.content?.text as string) || '')
+        }
+        if (tweetText) openTwitterIntent(tweetText)
+      }
     }
   }
 

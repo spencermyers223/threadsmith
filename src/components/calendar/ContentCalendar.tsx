@@ -19,6 +19,7 @@ import PostTypeIcon, { GenerationType, typeConfig } from './PostTypeIcon'
 import type { CalendarFilterState } from './CalendarFilters'
 import TagBadge, { Tag } from '@/components/tags/TagBadge'
 import { MediaThumbnails, type MediaItem } from '@/components/workspace/MediaUpload'
+import { getPostTweetText, openTwitterIntent } from '@/lib/twitter'
 
 interface Post {
   id: string
@@ -377,6 +378,9 @@ export function ContentCalendar({ onSelectPost, filters }: ContentCalendarProps)
   }, [loading])
 
   const handleMarkAsPosted = async (id: string) => {
+    // Find the post to extract content before marking as posted
+    const post = posts.find((p) => p.id === id)
+
     const res = await fetch(`/api/posts/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -385,6 +389,18 @@ export function ContentCalendar({ onSelectPost, filters }: ContentCalendarProps)
     if (res.ok) {
       const updated = await res.json()
       setPosts((prev) => prev.map((p) => (p.id === id ? updated : p)))
+
+      // Open X/Twitter compose window with the post content
+      if (post) {
+        let tweetText = ''
+        if (post.type === 'thread' && Array.isArray(post.content?.tweets)) {
+          const firstTweet = (post.content.tweets as Array<{ content?: string }>)[0]
+          if (firstTweet) tweetText = getPostTweetText(firstTweet.content || '')
+        } else {
+          tweetText = getPostTweetText((post.content?.html as string) || (post.content?.text as string) || '')
+        }
+        if (tweetText) openTwitterIntent(tweetText)
+      }
     }
   }
 
