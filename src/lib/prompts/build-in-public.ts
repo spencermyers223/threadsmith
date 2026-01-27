@@ -268,7 +268,20 @@ This is a project update/journey post. Remember:
 - End with a genuine question for feedback
 
 ${additionalContext ? `Additional context:\n${additionalContext}\n` : ''}
-Generate 3 distinct options, each taking a different angle on this update.`;
+Generate 3 distinct options, each taking a different angle on this update.
+
+Format each option as:
+
+**Variation 1: [Angle Description]**
+[Tweet content]
+
+**Variation 2: [Angle Description]**
+[Tweet content]
+
+**Variation 3: [Angle Description]**
+[Tweet content]
+
+**Recommendation:** [Which option and why]`;
 
   return { systemPrompt, userPrompt };
 }

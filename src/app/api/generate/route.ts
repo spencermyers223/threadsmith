@@ -139,10 +139,10 @@ function parseGeneratedPosts(
 ): GeneratedPost[] {
   const posts: GeneratedPost[] = []
 
-  // Check if this is a thread type that uses "Variation" format
-  const isThreadFormat = postType === 'alpha_thread' || postType === 'protocol_breakdown'
+  // All CT-native post types use "Variation" format in their prompts
+  const isVariationFormat = postType != null
 
-  if (isThreadFormat) {
+  if (isVariationFormat) {
     // Parse thread format: **Variation 1: [Title]** followed by numbered tweets
     // The content continues until the next **Variation** or **Recommendation** section
     // Use a simpler regex that captures content until the next variation header or end markers
@@ -166,10 +166,15 @@ function parseGeneratedPosts(
           .replace(/^\*Why this works:.*$/gm, '')
           .replace(/^\*Why they'll reply:.*$/gm, '')
           .replace(/^\[Suggest:.*\]$/gm, '') // Remove image placement suggestions
+          .replace(/\[(\d+)\s*chars?\]/gi, '') // Remove [149 chars] metadata
+          .replace(/^\*Visual note:.*$/gm, '') // Remove visual note metadata
+          .replace(/^\*Conversation hook:.*$/gm, '') // Remove conversation hook metadata
           // Remove separator lines
           .replace(/^---+\s*$/gm, '')
           // Remove trailing metadata block (lines starting with * at the end)
           .replace(/(\n\*[A-Z][^\n]*)+\s*$/gi, '')
+          // Clean up numbered tweet prefixes for single-tweet post types (not threads)
+          // For threads, keep the numbering as-is since parseThreadContent handles it
           // Clean up extra whitespace
           .replace(/\n{3,}/g, '\n\n')
           .trim()
