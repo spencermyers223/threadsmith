@@ -209,13 +209,11 @@ function MonthGrid({
   postsByDate,
   onSelectPost,
   onMarkAsPosted,
-  todayRowRef,
 }: {
   month: Date
   postsByDate: Map<string, Post[]>
   onSelectPost: (post: Post) => void
   onMarkAsPosted: (id: string) => void
-  todayRowRef?: (node: HTMLDivElement | null) => void
 }) {
   const monthStart = startOfMonth(month)
   const monthEnd = endOfMonth(month)
@@ -253,11 +251,10 @@ function MonthGrid({
       {/* Day grid */}
       <div className="border border-[var(--border)] rounded-lg overflow-hidden">
         {weeks.map((week, wi) => {
-          const weekHasToday = week.some((d) => isToday(d))
           return (
           <div
             key={wi}
-            ref={weekHasToday ? todayRowRef : undefined}
+            data-week-row
             className={`grid grid-cols-7 ${wi > 0 ? 'border-t border-[var(--border)]' : ''}`}
           >
             {week.map((d) => {
@@ -347,21 +344,24 @@ export function ContentCalendar({ onSelectPost, filters }: ContentCalendarProps)
 
   // Scroll to today's row on initial load
   const hasScrolledToToday = useRef(false)
-  const todayRowRef = useCallback((node: HTMLDivElement | null) => {
-    if (node && scrollRef.current && !hasScrolledToToday.current) {
+
+  useEffect(() => {
+    if (loading || hasScrolledToToday.current) return
+    // Wait for paint to complete, then scroll
+    const raf = requestAnimationFrame(() => {
+      const container = scrollRef.current
+      const todayEl = container?.querySelector('[data-today="true"]')
+      if (!container || !todayEl) return
+      const row = todayEl.closest('[data-week-row]')
+      if (!row) return
       hasScrolledToToday.current = true
-      // Calculate position relative to the scroll container
-      requestAnimationFrame(() => {
-        const container = scrollRef.current
-        if (!container) return
-        const containerRect = container.getBoundingClientRect()
-        const rowRect = node.getBoundingClientRect()
-        // Scroll so today's row is at the top, with space for the month header
-        const scrollOffset = rowRect.top - containerRect.top + container.scrollTop - 60
-        container.scrollTop = Math.max(0, scrollOffset)
-      })
-    }
-  }, [])
+      const containerRect = container.getBoundingClientRect()
+      const rowRect = row.getBoundingClientRect()
+      const scrollOffset = rowRect.top - containerRect.top + container.scrollTop - 60
+      container.scrollTop = Math.max(0, scrollOffset)
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [loading])
 
   // Infinite scroll: load more months when sentinel is visible
   useEffect(() => {
@@ -432,7 +432,6 @@ export function ContentCalendar({ onSelectPost, filters }: ContentCalendarProps)
           postsByDate={postsByDate}
           onSelectPost={onSelectPost}
           onMarkAsPosted={handleMarkAsPosted}
-          todayRowRef={todayRowRef}
         />
       ))}
       <div ref={sentinelRef} className="h-10" />
