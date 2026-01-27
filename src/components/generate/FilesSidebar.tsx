@@ -20,6 +20,9 @@ const FOLDER_COLORS = [
   { name: 'tan', label: 'Tan', class: 'text-sand-alt', bg: 'bg-sand-alt' },
   { name: 'cyan', label: 'Cyan', class: 'text-cyan-400', bg: 'bg-cyan-400' },
   { name: 'gray', label: 'Gray', class: 'text-gray-400', bg: 'bg-gray-400' },
+  { name: 'orange', label: 'Orange', class: 'text-orange-400', bg: 'bg-orange-400' },
+  { name: 'yellow', label: 'Yellow', class: 'text-yellow-400', bg: 'bg-yellow-400' },
+  { name: 'emerald', label: 'Emerald', class: 'text-emerald-400', bg: 'bg-emerald-400' },
 ] as const
 
 export interface FileRecord {
@@ -145,14 +148,18 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
   }, [editingFolderId])
 
   // Close context menu when clicking outside
+  const contextMenuRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    const handleClick = () => {
+    const handleClick = (e: MouseEvent) => {
+      // Don't close if clicking inside the context menu
+      if (contextMenuRef.current?.contains(e.target as Node)) return
       setContextMenu(null)
       setShowColorPicker(false)
     }
     if (contextMenu) {
-      document.addEventListener('click', handleClick)
-      return () => document.removeEventListener('click', handleClick)
+      document.addEventListener('mousedown', handleClick)
+      return () => document.removeEventListener('mousedown', handleClick)
     }
   }, [contextMenu])
 
@@ -685,6 +692,7 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
       {/* Context Menu */}
       {contextMenu && (
         <div
+          ref={contextMenuRef}
           className="fixed bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg py-1 z-50"
           style={{ top: contextMenu.y, left: contextMenu.x }}
           onClick={(e) => e.stopPropagation()}
@@ -720,7 +728,7 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
                 className="absolute left-full top-0 ml-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg p-2 min-w-[140px]"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="grid grid-cols-3 gap-1">
+                <div className="grid grid-cols-4 gap-1">
                   {FOLDER_COLORS.map((color) => {
                     const currentFolder = folders.find(f => f.id === contextMenu.folderId)
                     const isSelected = currentFolder?.color === color.name
