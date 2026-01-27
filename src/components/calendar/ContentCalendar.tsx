@@ -86,6 +86,7 @@ function PostPill({
   const [showTooltip, setShowTooltip] = useState(false)
   const [pos, setPos] = useState({ top: 0, left: 0 })
   const ref = useRef<HTMLButtonElement>(null)
+  const hideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Color by post type (matching the generate page), fall back to neutral gray
   const tc = post.generation_type ? typeConfig[post.generation_type] : null
@@ -94,6 +95,15 @@ function PostPill({
     : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
   // Dim posted items slightly
   const postedDim = post.status === 'posted' ? 'opacity-60' : ''
+
+  const showTip = () => {
+    if (hideTimeout.current) { clearTimeout(hideTimeout.current); hideTimeout.current = null }
+    setShowTooltip(true)
+  }
+
+  const hideTip = () => {
+    hideTimeout.current = setTimeout(() => setShowTooltip(false), 150)
+  }
 
   const handleMouseEnter = () => {
     if (ref.current) {
@@ -106,7 +116,7 @@ function PostPill({
         left: Math.min(r.left, window.innerWidth - 300),
       })
     }
-    setShowTooltip(true)
+    showTip()
   }
 
   return (
@@ -115,7 +125,7 @@ function PostPill({
         ref={ref}
         onClick={() => onSelect(post)}
         onMouseEnter={handleMouseEnter}
-        onMouseLeave={() => setShowTooltip(false)}
+        onMouseLeave={hideTip}
         className={`
           w-full flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium
           border transition-all duration-150 cursor-pointer
@@ -133,8 +143,8 @@ function PostPill({
           <div
             className="fixed w-72 p-3 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-xl z-[9999]"
             style={{ top: pos.top, left: pos.left }}
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
+            onMouseEnter={showTip}
+            onMouseLeave={hideTip}
           >
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               {post.generation_type && <PostTypeIcon type={post.generation_type} size="sm" />}
