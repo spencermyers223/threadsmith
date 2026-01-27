@@ -362,7 +362,7 @@ export default function WorkspacePage() {
 
       if (!res.ok) throw new Error('Failed to schedule')
 
-      const data = await res.json()
+      await res.json()
       setShowScheduleModal(false)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
