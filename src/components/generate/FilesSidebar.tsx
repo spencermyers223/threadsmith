@@ -457,9 +457,9 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
             <ChevronRight className="w-3 h-3 text-[var(--muted)]" />
           )}
           {isFolderExpanded ? (
-            <FolderOpen className={`w-4 h-4 ${getFolderColorClass(folder.color)}`} />
+            <FolderOpen className={`w-5 h-5 ${getFolderColorClass(folder.color)}`} style={{ fill: 'currentColor', fillOpacity: 0.3 }} />
           ) : (
-            <Folder className={`w-4 h-4 ${getFolderColorClass(folder.color)}`} />
+            <Folder className={`w-5 h-5 ${getFolderColorClass(folder.color)}`} style={{ fill: 'currentColor', fillOpacity: 0.3 }} />
           )}
           {editingFolderId === folder.id ? (
             <input
