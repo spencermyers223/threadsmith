@@ -315,15 +315,16 @@ export function ContentCalendar({ onSelectPost, filters }: ContentCalendarProps)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   const baseDate = useMemo(() => startOfMonth(new Date()), [])
+  const pastMonths = 2 // show 2 months before current month for history
 
   const months = useMemo(() => {
     const m: Date[] = []
-    for (let i = 0; i < monthCount; i++) m.push(addMonths(baseDate, i))
+    for (let i = -pastMonths; i < monthCount; i++) m.push(addMonths(baseDate, i))
     return m
   }, [baseDate, monthCount])
 
   const fetchPosts = useCallback(async () => {
-    const start = format(subMonths(baseDate, 1), 'yyyy-MM-dd')
+    const start = format(subMonths(baseDate, pastMonths + 1), 'yyyy-MM-dd')
     const end = format(endOfMonth(addMonths(baseDate, monthCount + 1)), 'yyyy-MM-dd')
     try {
       const res = await fetch(`/api/posts?startDate=${start}&endDate=${end}`)
@@ -341,18 +342,19 @@ export function ContentCalendar({ onSelectPost, filters }: ContentCalendarProps)
   // Scroll to today's row on initial load
   useEffect(() => {
     if (loading) return
-    const todayEl = scrollRef.current?.querySelector('[data-today="true"]')
-    if (todayEl) {
-      // Scroll the today cell's parent row into view, with some top padding
-      const row = todayEl.closest('.grid.grid-cols-7')
-      if (row) {
-        requestAnimationFrame(() => {
+    // Use a short delay to ensure DOM is fully rendered
+    const timer = setTimeout(() => {
+      const todayEl = scrollRef.current?.querySelector('[data-today="true"]')
+      if (todayEl) {
+        const row = todayEl.closest('.grid.grid-cols-7')
+        if (row) {
           row.scrollIntoView({ block: 'start' })
-          // Nudge up a bit so the month header is visible
+          // Nudge up so the month header is visible
           if (scrollRef.current) scrollRef.current.scrollTop -= 60
-        })
+        }
       }
-    }
+    }, 100)
+    return () => clearTimeout(timer)
   }, [loading])
 
   // Infinite scroll: load more months when sentinel is visible
