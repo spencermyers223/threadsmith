@@ -15,7 +15,7 @@ import {
   isToday,
 } from 'date-fns'
 import { CheckCircle } from 'lucide-react'
-import PostTypeIcon, { GenerationType } from './PostTypeIcon'
+import PostTypeIcon, { GenerationType, typeConfig } from './PostTypeIcon'
 import type { CalendarFilterState } from './CalendarFilters'
 import TagBadge, { Tag } from '@/components/tags/TagBadge'
 
@@ -87,12 +87,13 @@ function PostPill({
   const [pos, setPos] = useState({ top: 0, left: 0 })
   const ref = useRef<HTMLButtonElement>(null)
 
-  const statusColor =
-    post.status === 'posted'
-      ? 'bg-green-500/20 text-green-300 border-green-500/30'
-      : post.status === 'scheduled'
-      ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-      : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+  // Color by post type (matching the generate page), fall back to neutral gray
+  const tc = post.generation_type ? typeConfig[post.generation_type] : null
+  const pillColor = tc
+    ? `${tc.bgColorSolid} ${tc.textColor} ${tc.borderColor}`
+    : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+  // Dim posted items slightly
+  const postedDim = post.status === 'posted' ? 'opacity-60' : ''
 
   const handleMouseEnter = () => {
     if (ref.current) {
@@ -119,7 +120,7 @@ function PostPill({
           w-full flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium
           border transition-all duration-150 cursor-pointer
           hover:brightness-125 hover:scale-[1.02]
-          ${statusColor}
+          ${pillColor} ${postedDim}
         `}
       >
         {post.generation_type && <PostTypeIcon type={post.generation_type} size="sm" />}

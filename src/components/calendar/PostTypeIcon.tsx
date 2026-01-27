@@ -16,47 +16,62 @@ interface PostTypeIconProps {
   size?: 'sm' | 'md'
 }
 
-const typeConfig: Record<GenerationType, {
+// Canonical post-type color config — used by calendar pills, icons, filters, etc.
+export const typeConfig: Record<GenerationType, {
   label: string
   icon: typeof TrendingUp
   bgColor: string
+  bgColorSolid: string   // slightly stronger bg for calendar pills
   textColor: string
+  borderColor: string
 }> = {
+  alpha_thread: {
+    label: 'Alpha Thread',
+    icon: Sparkles,
+    bgColor: 'bg-emerald-500/20',
+    bgColorSolid: 'bg-emerald-500/25',
+    textColor: 'text-emerald-400',
+    borderColor: 'border-emerald-500/40',
+  },
   market_take: {
     label: 'Market Take',
     icon: TrendingUp,
     bgColor: 'bg-blue-500/20',
+    bgColorSolid: 'bg-blue-500/25',
     textColor: 'text-blue-400',
+    borderColor: 'border-blue-500/40',
   },
   hot_take: {
     label: 'Hot Take',
     icon: Flame,
-    bgColor: 'bg-red-500/20',
-    textColor: 'text-red-400',
+    bgColor: 'bg-orange-500/20',
+    bgColorSolid: 'bg-orange-500/25',
+    textColor: 'text-orange-400',
+    borderColor: 'border-orange-500/40',
   },
   on_chain_insight: {
     label: 'On-Chain Insight',
     icon: BarChart3,
-    bgColor: 'bg-emerald-500/20',
-    textColor: 'text-emerald-400',
-  },
-  alpha_thread: {
-    label: 'Alpha Thread',
-    icon: Sparkles,
-    bgColor: 'bg-amber-500/20',
-    textColor: 'text-amber-400',
+    bgColor: 'bg-purple-500/20',
+    bgColorSolid: 'bg-purple-500/25',
+    textColor: 'text-purple-400',
+    borderColor: 'border-purple-500/40',
   },
   protocol_breakdown: {
     label: 'Protocol Breakdown',
     icon: BookOpen,
-    bgColor: 'bg-purple-500/20',
-    textColor: 'text-purple-400',
+    bgColor: 'bg-cyan-500/20',
+    bgColorSolid: 'bg-cyan-500/25',
+    textColor: 'text-cyan-400',
+    borderColor: 'border-cyan-500/40',
   },
   build_in_public: {
     label: 'Build in Public',
     icon: Hammer,
-    bgColor: 'bg-orange-500/20',
-    textColor: 'text-orange-400',
+    bgColor: 'bg-pink-500/20',
+    bgColorSolid: 'bg-pink-500/25',
+    textColor: 'text-pink-400',
+    borderColor: 'border-pink-500/40',
   },
 }
 
