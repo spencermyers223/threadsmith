@@ -14,7 +14,7 @@ import {
   isSameMonth,
   isToday,
 } from 'date-fns'
-import { CheckCircle } from 'lucide-react'
+import { Send } from 'lucide-react'
 import PostTypeIcon, { GenerationType, typeConfig } from './PostTypeIcon'
 import type { CalendarFilterState } from './CalendarFilters'
 import TagBadge, { Tag } from '@/components/tags/TagBadge'
@@ -182,7 +182,7 @@ function PostPill({
             {(post.media?.length ?? 0) > 0 && (
               <MediaThumbnails media={post.media!} maxShow={4} />
             )}
-            {post.status === 'scheduled' && (
+            {post.status !== 'posted' && (
               <button
                 onClick={(e) => {
                   e.stopPropagation()
@@ -191,8 +191,8 @@ function PostPill({
                 }}
                 className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors"
               >
-                <CheckCircle className="w-3.5 h-3.5" />
-                Mark as Posted
+                <Send className="w-3.5 h-3.5" />
+                Post Now
               </button>
             )}
           </div>,

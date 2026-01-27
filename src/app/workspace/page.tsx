@@ -9,7 +9,7 @@ import type { ThreadTweet } from '@/components/preview/ThreadPreview'
 import { ArticlePreview } from '@/components/preview/ArticlePreview'
 import { ScheduleModal } from '@/components/workspace/ScheduleModal'
 import { DraftsSidebar } from '@/components/workspace/DraftsSidebar'
-import { Save, Calendar, ArrowLeft, Check, AlertCircle, Tag, Image as ImageIcon } from 'lucide-react'
+import { Save, Calendar, ArrowLeft, Check, AlertCircle, Tag, Image as ImageIcon, Send } from 'lucide-react'
 import PostTypeIcon from '@/components/calendar/PostTypeIcon'
 import Link from 'next/link'
 import { markdownToHtml } from '@/lib/markdown'
@@ -44,6 +44,7 @@ export default function WorkspacePage() {
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [posted, setPosted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [postId, setPostId] = useState<string | null>(null)
   const [draftsRefreshTrigger, setDraftsRefreshTrigger] = useState(0)
@@ -389,6 +390,52 @@ export default function WorkspacePage() {
     }
   }
 
+  const handlePostNow = async () => {
+    setSaving(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: postId,
+          type: contentType,
+          title: title || `Untitled ${contentType}`,
+          content: getCurrentContent(),
+          status: 'posted',
+          generation_type: generationType || 'user_generated',
+          tagIds: selectedTagIds,
+        }),
+      })
+
+      if (!res.ok) throw new Error('Failed to post')
+
+      setPosted(true)
+      setTimeout(() => setPosted(false), 2000)
+
+      // Clear editor
+      setPostId(null)
+      setTitle('')
+      setContent('')
+      setThreadTweets([{ id: '1', content: '' }])
+      setContentType('tweet')
+      setGenerationType(null)
+      setSelectedTagIds([])
+      setTags([])
+      setMedia([])
+      lastSavedContent.current = ''
+      lastSavedTweets.current = []
+      setHasUnsavedChanges(false)
+
+      setDraftsRefreshTrigger(prev => prev + 1)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to post')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   // Thread preview handlers
   const handleAddTweet = useCallback(() => {
     const newId = String(Date.now())
@@ -539,6 +586,24 @@ export default function WorkspacePage() {
           >
             <Calendar className="w-4 h-4" />
             Schedule
+          </button>
+
+          <button
+            onClick={handlePostNow}
+            disabled={saving || isContentEmpty()}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg transition-colors"
+          >
+            {posted ? (
+              <>
+                <Check className="w-4 h-4" />
+                Posted!
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                Post Now
+              </>
+            )}
           </button>
         </div>
       </div>
