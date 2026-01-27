@@ -282,6 +282,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
             : { html: `<p>${post.content.replace(/\n/g, '</p><p>')}</p>` },
           status: 'draft',
           post_type: selectedPostType,
+          generation_type: selectedPostType,
         }),
       })
 
@@ -325,6 +326,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
           status: 'scheduled',
           scheduled_date: tomorrow.toISOString().split('T')[0],
           post_type: selectedPostType,
+          generation_type: selectedPostType,
         }),
       })
 
