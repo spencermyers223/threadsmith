@@ -136,6 +136,8 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
         const cleanText = tweetText
           .replace(/\n\*[A-Z][\s\S]*$/, '') // Remove metadata at end
           .replace(/\n---[\s\S]*$/, '') // Remove separators
+          .replace(/\[\d+\s*chars?\]/gi, '') // Remove [149 chars] metadata
+          .replace(/^\*Character count:.*$/gm, '') // Remove character count lines
           .trim()
 
         if (cleanText) {

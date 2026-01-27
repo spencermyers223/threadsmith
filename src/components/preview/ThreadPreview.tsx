@@ -156,7 +156,13 @@ export function parseThreadFromContent(content: string): ThreadTweet[] {
   const parts = plainText.split(numberedPattern).filter(Boolean)
 
   if (parts.length > 1) {
-    return parts.map((p, i) => ({ id: String(i + 1), content: p.trim() }))
+    return parts.map((p, i) => ({
+      id: String(i + 1),
+      content: p.trim()
+        .replace(/\[\d+\s*chars?\]/gi, '') // Remove [149 chars] metadata
+        .replace(/^\*Character count:.*$/gm, '') // Remove character count lines
+        .trim()
+    }))
   }
 
   // Fall back to splitting by double newlines
