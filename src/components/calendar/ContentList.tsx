@@ -228,9 +228,7 @@ export function ContentList({ onSelectPost, filters }: ContentListProps) {
               <div
                 key={post.id}
                 onClick={() => onSelectPost(post)}
-                onMouseEnter={() => setHoveredPostId(post.id)}
-                onMouseLeave={() => setHoveredPostId(null)}
-                className="relative p-4 bg-[var(--card)] border border-[var(--border)] rounded-lg hover:border-accent/50 cursor-pointer transition-colors group"
+                className="p-4 bg-[var(--card)] border border-[var(--border)] rounded-lg hover:border-accent/50 cursor-pointer transition-colors group"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
@@ -239,11 +237,28 @@ export function ContentList({ onSelectPost, filters }: ContentListProps) {
                         <PostTypeIcon type={post.generation_type} size="sm" />
                       )}
                       <span className="text-[var(--muted)]">{getTypeIcon(post.type)}</span>
-                      <h3 className="font-medium truncate">
+                      <h3
+                        className="font-medium truncate hover:text-accent transition-colors"
+                        onMouseEnter={() => setHoveredPostId(post.id)}
+                        onMouseLeave={() => setHoveredPostId(null)}
+                      >
                         {post.title || `Untitled ${post.type}`}
                       </h3>
                       {getStatusBadge(post.status)}
                     </div>
+
+                    {/* Inline Content Preview - shown on title hover */}
+                    {hoveredPostId === post.id && (
+                      <div
+                        className="mb-2 p-3 bg-[var(--background)] border border-[var(--border)] rounded-lg"
+                        onMouseEnter={() => setHoveredPostId(post.id)}
+                        onMouseLeave={() => setHoveredPostId(null)}
+                      >
+                        <p className="text-sm text-[var(--foreground)] whitespace-pre-wrap">
+                          {getContentPreview(post.content, post.type)}
+                        </p>
+                      </div>
+                    )}
 
                     <div className="flex items-center gap-4 text-sm text-[var(--muted)]">
                       {post.scheduled_date && (
@@ -302,15 +317,6 @@ export function ContentList({ onSelectPost, filters }: ContentListProps) {
                     </button>
                   </div>
                 </div>
-
-                {/* Content Preview Tooltip */}
-                {hoveredPostId === post.id && (
-                  <div className="absolute left-0 right-0 top-full mt-2 z-50 p-3 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg max-w-lg">
-                    <p className="text-sm text-[var(--foreground)] whitespace-pre-wrap">
-                      {getContentPreview(post.content, post.type)}
-                    </p>
-                  </div>
-                )}
               </div>
             ))}
           </div>

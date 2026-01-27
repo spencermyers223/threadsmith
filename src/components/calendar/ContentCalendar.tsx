@@ -12,7 +12,6 @@ import {
   endOfWeek,
   addDays,
   isSameMonth,
-  isSameDay,
   isToday,
 } from 'date-fns'
 import { CheckCircle } from 'lucide-react'
@@ -98,7 +97,13 @@ function PostPill({
   const handleMouseEnter = () => {
     if (ref.current) {
       const r = ref.current.getBoundingClientRect()
-      setPos({ top: r.bottom + 6, left: Math.min(r.left, window.innerWidth - 300) })
+      const tooltipHeight = 250 // estimated tooltip height
+      const spaceBelow = window.innerHeight - r.bottom
+      const showAbove = spaceBelow < tooltipHeight && r.top > tooltipHeight
+      setPos({
+        top: showAbove ? r.top - tooltipHeight - 6 : r.bottom + 6,
+        left: Math.min(r.left, window.innerWidth - 300),
+      })
     }
     setShowTooltip(true)
   }
