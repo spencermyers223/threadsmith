@@ -286,21 +286,6 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
     return color?.class || 'text-sand'
   }
 
-  const getFolderBgStyle = (colorName: string): React.CSSProperties => {
-    const colorMap: Record<string, string> = {
-      sand: 'rgba(194, 178, 128, 0.35)',
-      blue: 'rgba(96, 165, 250, 0.35)',
-      green: 'rgba(74, 222, 128, 0.35)',
-      red: 'rgba(248, 113, 113, 0.35)',
-      purple: 'rgba(192, 132, 252, 0.35)',
-      pink: 'rgba(244, 114, 182, 0.35)',
-      tan: 'rgba(210, 180, 140, 0.35)',
-      cyan: 'rgba(34, 211, 238, 0.35)',
-      gray: 'rgba(156, 163, 175, 0.35)',
-    }
-    return { backgroundColor: colorMap[colorName] || colorMap.sand }
-  }
-
   const handleMoveFile = async (fileId: string, folderId: string | null) => {
     try {
       const res = await fetch(`/api/files/${fileId}`, {
@@ -451,9 +436,8 @@ export function FilesSidebar({ isExpanded, onToggleExpanded, selectedFileId, onS
       <li key={folder.id}>
         <div
           className={`flex items-center gap-1 px-2 py-2 rounded-lg transition-colors cursor-pointer group ${
-            isDragOver ? 'bg-accent/20 ring-1 ring-accent' : 'hover:brightness-125'
+            isDragOver ? 'bg-accent/20 ring-1 ring-accent' : 'hover:bg-[var(--card-hover)]'
           }`}
-          style={isDragOver ? undefined : getFolderBgStyle(folder.color)}
           onClick={() => toggleFolder(folder.id)}
           onContextMenu={(e) => handleContextMenu(e, folder.id)}
           onDragOver={(e) => handleDragOver(e, folder.id)}
