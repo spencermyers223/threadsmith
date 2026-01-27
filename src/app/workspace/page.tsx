@@ -362,10 +362,26 @@ export default function WorkspacePage() {
       if (!res.ok) throw new Error('Failed to schedule')
 
       const data = await res.json()
-      setPostId(data.id)
       setShowScheduleModal(false)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
+
+      // Clear editor — the post is now on the calendar, not a draft
+      setPostId(null)
+      setTitle('')
+      setContent('')
+      setThreadTweets([{ id: '1', content: '' }])
+      setContentType('tweet')
+      setGenerationType(null)
+      setSelectedTagIds([])
+      setTags([])
+      setMedia([])
+      lastSavedContent.current = ''
+      lastSavedTweets.current = []
+      setHasUnsavedChanges(false)
+
+      // Refresh drafts sidebar to remove the scheduled post
+      setDraftsRefreshTrigger(prev => prev + 1)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to schedule')
     } finally {
