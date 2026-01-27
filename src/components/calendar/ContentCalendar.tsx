@@ -264,6 +264,7 @@ function MonthGrid({
               return (
                 <div
                   key={key}
+                  data-today={today ? 'true' : undefined}
                   className={`
                     min-h-[100px] p-1.5 border-r last:border-r-0 border-[var(--border)]
                     transition-colors duration-100
@@ -336,6 +337,23 @@ export function ContentCalendar({ onSelectPost, filters }: ContentCalendarProps)
   useEffect(() => {
     fetchPosts()
   }, [fetchPosts])
+
+  // Scroll to today's row on initial load
+  useEffect(() => {
+    if (loading) return
+    const todayEl = scrollRef.current?.querySelector('[data-today="true"]')
+    if (todayEl) {
+      // Scroll the today cell's parent row into view, with some top padding
+      const row = todayEl.closest('.grid.grid-cols-7')
+      if (row) {
+        requestAnimationFrame(() => {
+          row.scrollIntoView({ block: 'start' })
+          // Nudge up a bit so the month header is visible
+          if (scrollRef.current) scrollRef.current.scrollTop -= 60
+        })
+      }
+    }
+  }, [loading])
 
   // Infinite scroll: load more months when sentinel is visible
   useEffect(() => {
