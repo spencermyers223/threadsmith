@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Filter, Check, X, ChevronDown, TrendingUp, Flame, BarChart3, Sparkles, BookOpen, Hammer } from 'lucide-react'
+import { Filter, Check, X, ChevronDown } from 'lucide-react'
 import { TagFilter } from '@/components/tags'
 import type { Tag } from '@/components/tags'
-import type { GenerationType } from './PostTypeIcon'
+import { typeConfig, type GenerationType } from './PostTypeIcon'
 
 export interface CalendarFilterState {
   postTypes: GenerationType[]
@@ -17,19 +17,12 @@ interface CalendarFiltersProps {
   availableTags: Tag[]
 }
 
-const postTypeOptions: {
-  id: GenerationType
-  label: string
-  icon: typeof TrendingUp
-  color: string
-}[] = [
-  { id: 'alpha_thread', label: 'Alpha Thread', icon: Sparkles, color: 'text-amber-400' },
-  { id: 'market_take', label: 'Market Take', icon: TrendingUp, color: 'text-blue-400' },
-  { id: 'hot_take', label: 'Hot Take', icon: Flame, color: 'text-red-400' },
-  { id: 'on_chain_insight', label: 'On-Chain Insight', icon: BarChart3, color: 'text-emerald-400' },
-  { id: 'protocol_breakdown', label: 'Protocol Breakdown', icon: BookOpen, color: 'text-purple-400' },
-  { id: 'build_in_public', label: 'Build in Public', icon: Hammer, color: 'text-orange-400' },
-]
+const postTypeOptions = (Object.keys(typeConfig) as GenerationType[]).map((id) => ({
+  id,
+  label: typeConfig[id].label,
+  icon: typeConfig[id].icon,
+  color: typeConfig[id].textColor,
+}))
 
 export default function CalendarFilters({
   filters,
