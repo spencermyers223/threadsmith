@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Build tweet payload
-    const tweetPayload: any = { text }
+    const tweetPayload: { text: string; reply?: { in_reply_to_tweet_id: string } } = { text }
     
     if (reply_to) {
       tweetPayload.reply = {

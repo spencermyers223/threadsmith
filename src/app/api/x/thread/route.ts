@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     let previousTweetId: string | null = null
     
     for (let i = 0; i < tweets.length; i++) {
-      const tweetPayload: any = { text: tweets[i] }
+      const tweetPayload: { text: string; reply?: { in_reply_to_tweet_id: string } } = { text: tweets[i] }
       
       // Reply to previous tweet in thread
       if (previousTweetId) {

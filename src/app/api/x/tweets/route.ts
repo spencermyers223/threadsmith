@@ -74,7 +74,31 @@ export async function GET(request: NextRequest) {
     const tweetsData = await tweetsResponse.json()
     
     // Transform the data
-    const tweets = (tweetsData.data || []).map((tweet: any) => ({
+    interface XTweet {
+      id: string
+      text: string
+      created_at: string
+      public_metrics?: {
+        like_count?: number
+        retweet_count?: number
+        reply_count?: number
+      }
+      conversation_id?: string
+    }
+    
+    interface TransformedTweet {
+      id: string
+      text: string
+      created_at: string
+      metrics: {
+        like_count?: number
+        retweet_count?: number
+        reply_count?: number
+      }
+      is_thread_start: boolean
+    }
+    
+    const tweets: TransformedTweet[] = (tweetsData.data || []).map((tweet: XTweet) => ({
       id: tweet.id,
       text: tweet.text,
       created_at: tweet.created_at,
@@ -86,13 +110,13 @@ export async function GET(request: NextRequest) {
     const stats = {
       total_tweets: tweets.length,
       avg_likes: tweets.length > 0
-        ? Math.round(tweets.reduce((sum: number, t: any) => sum + (t.metrics.like_count || 0), 0) / tweets.length)
+        ? Math.round(tweets.reduce((sum, t) => sum + (t.metrics.like_count || 0), 0) / tweets.length)
         : 0,
       avg_retweets: tweets.length > 0
-        ? Math.round(tweets.reduce((sum: number, t: any) => sum + (t.metrics.retweet_count || 0), 0) / tweets.length)
+        ? Math.round(tweets.reduce((sum, t) => sum + (t.metrics.retweet_count || 0), 0) / tweets.length)
         : 0,
       avg_replies: tweets.length > 0
-        ? Math.round(tweets.reduce((sum: number, t: any) => sum + (t.metrics.reply_count || 0), 0) / tweets.length)
+        ? Math.round(tweets.reduce((sum, t) => sum + (t.metrics.reply_count || 0), 0) / tweets.length)
         : 0,
     }
     
