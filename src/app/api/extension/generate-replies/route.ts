@@ -2,6 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 
+// CORS headers for extension requests
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+// Helper to add CORS headers to responses
+function jsonResponse(data: unknown, options: { status?: number } = {}) {
+  return NextResponse.json(data, { 
+    status: options.status || 200,
+    headers: corsHeaders 
+  });
+}
+
+// Handle CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
 interface PostData {
   author: string;
   text: string;
@@ -44,7 +64,7 @@ export async function POST(request: NextRequest) {
   // Check required env vars early
   if (!process.env.ANTHROPIC_API_KEY) {
     console.error('ANTHROPIC_API_KEY is not set');
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'API not configured. Please contact support.' },
       { status: 500 }
     );
@@ -63,7 +83,7 @@ export async function POST(request: NextRequest) {
     // Verify auth
     const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Missing or invalid authorization header' },
         { status: 401 }
       );
@@ -73,7 +93,7 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Invalid or expired token' },
         { status: 401 }
       );
@@ -96,7 +116,7 @@ export async function POST(request: NextRequest) {
     console.log('[generate-replies] Post data received:', { author: post?.author, textLength: post?.text?.length });
 
     if (!post?.text) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Post text is required' },
         { status: 400 }
       );
@@ -246,7 +266,7 @@ GUIDELINES:
         created_at: new Date().toISOString()
       });
 
-    return NextResponse.json({
+    return jsonResponse({
       coaching,
       usage: {
         tokens: response.usage.input_tokens + response.usage.output_tokens
@@ -267,27 +287,27 @@ GUIDELINES:
     
     // Check for common issues
     if (errorMessage.includes('API key') || errorMessage.includes('authentication') || errorMessage.includes('401')) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'API configuration error. Please contact support.' },
         { status: 500 }
       );
     }
     
     if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Too many requests. Please try again in a moment.' },
         { status: 429 }
       );
     }
 
     if (errorMessage.includes('model') || errorMessage.includes('not found')) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Model configuration error. Please contact support.' },
         { status: 500 }
       );
     }
     
-    return NextResponse.json(
+    return jsonResponse(
       { error: `Failed to generate coaching: ${errorMessage}` },
       { status: 500 }
     );
