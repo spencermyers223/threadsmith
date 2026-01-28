@@ -47,7 +47,7 @@ export default function WriteMode({ editingFile, onFileSaved, onNewFile }: Write
     content: '',
     editorProps: {
       attributes: {
-        class: 'prose prose-invert max-w-none focus:outline-none min-h-[400px] p-4',
+        class: 'prose prose-sm prose-invert max-w-none focus:outline-none min-h-[400px] p-4',
       },
     },
     onUpdate: () => {
