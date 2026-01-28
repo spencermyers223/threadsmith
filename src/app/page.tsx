@@ -1,5 +1,5 @@
 import XSignInButton from '@/components/auth/XSignInButton'
-import { Zap, Brain, Calendar, Target, TrendingUp, Sparkles, Clock, BarChart3, PenTool, Users, CheckCircle2 } from 'lucide-react'
+import { Zap, Brain, Calendar, Target, Sparkles, Clock, BarChart3, PenTool, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 
 export default function LandingPage() {
