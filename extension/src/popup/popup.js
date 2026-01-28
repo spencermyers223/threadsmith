@@ -348,8 +348,61 @@ function formatDate(isoString) {
 
 // Sign in handler
 signInBtn.addEventListener('click', () => {
-  const authUrl = `${XTHREAD_URL}/auth/extension?redirect=${encodeURIComponent(chrome.runtime.getURL('auth-callback.html'))}`;
+  // Open xthread login with extension callback
+  const callbackUrl = `${XTHREAD_URL}/auth/extension-callback`;
+  const authUrl = `${XTHREAD_URL}/login?redirect=${encodeURIComponent(callbackUrl)}`;
   chrome.tabs.create({ url: authUrl });
+});
+
+// Token paste handler
+const tokenInput = document.getElementById('token-input');
+const tokenSubmitBtn = document.getElementById('token-submit-btn');
+
+tokenSubmitBtn.addEventListener('click', async () => {
+  const token = tokenInput.value.trim();
+  if (!token) return;
+  
+  tokenSubmitBtn.textContent = '...';
+  tokenSubmitBtn.disabled = true;
+  
+  try {
+    // Verify token with API
+    const response = await fetch(`${XTHREAD_API}/extension/user`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Invalid token');
+    }
+    
+    const data = await response.json();
+    
+    // Save to storage
+    await chrome.storage.local.set({
+      xthreadToken: token,
+      xthreadUser: data.user,
+      isPremium: data.isPremium
+    });
+    
+    // Update UI
+    showMainView(data.user, data.isPremium);
+    notifyContentScripts(token, data.isPremium);
+    
+    tokenInput.value = '';
+  } catch (err) {
+    alert('Invalid token. Please try again.');
+    tokenInput.value = '';
+  } finally {
+    tokenSubmitBtn.textContent = '→';
+    tokenSubmitBtn.disabled = false;
+  }
+});
+
+// Allow Enter key to submit token
+tokenInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    tokenSubmitBtn.click();
+  }
 });
 
 // Sign out handler
