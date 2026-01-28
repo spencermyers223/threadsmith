@@ -17,24 +17,32 @@ export default function LandingPage() {
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-16 sm:py-20">
         <div className="max-w-3xl text-center space-y-6">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
-            Write Smarter About{' '}
-            <span className="text-sand">Technology Shaping the Future</span>
+            Tech Twitter content{' '}
+            <span className="text-sand">that performs.</span>
           </h1>
           <p className="text-lg sm:text-xl text-[var(--muted)] max-w-2xl mx-auto leading-relaxed">
-            AI-powered content for tech enthusiasts. Generate algorithm-optimized posts about AI, crypto, robotics, biotech, and more.
+            Create algorithm-optimized posts for AI, crypto, biotech, and dev Twitter. Train the AI on your writing style. Know if your content will perform before you hit post.
           </p>
 
           {/* CTA Section */}
           <div className="pt-4 space-y-4">
             <p className="text-sm text-[var(--foreground-muted)] font-medium">
-              Get Started Free
+              Start Creating for Free
             </p>
             <div className="w-full max-w-md mx-auto">
               <GoogleSignInButton variant="prominent" />
             </div>
-            <p className="text-xs text-[var(--muted)]">
-              No credit card required • 5 free generations
-            </p>
+            <div className="flex flex-wrap justify-center gap-4 text-xs text-[var(--muted)]">
+              <span className="flex items-center gap-1">
+                <span className="text-green-500">✓</span> 5 free generations
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="text-green-500">✓</span> No credit card
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="text-green-500">✓</span> Train on your style
+              </span>
+            </div>
           </div>
         </div>
 
@@ -42,23 +50,23 @@ export default function LandingPage() {
         <div className="mt-20 sm:mt-24 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl w-full">
           <FeatureCard
             icon={<TrendingUp className="w-6 h-6" />}
-            title="Algorithm-Optimized"
-            description="Posts engineered for X's algorithm. Maximize reach with content designed to perform."
+            title="Algorithm Score"
+            description="Know before you post. Our scoring engine analyzes hooks, length, and engagement triggers so you never waste a tweet."
           />
           <FeatureCard
             icon={<Sparkles className="w-6 h-6" />}
-            title="Multiple Tech Niches"
-            description="AI, crypto, robotics, biotech, climate tech — content tailored to your specific focus."
+            title="Built for Tech Twitter"
+            description="AI that speaks your niche. Whether you're covering GPT-5, Solana, or quantum computing — content that resonates."
           />
           <FeatureCard
             icon={<Calendar className="w-6 h-6" />}
-            title="Smart Scheduling"
-            description="Plan your content calendar and post at optimal times for your audience."
+            title="Content Calendar"
+            description="Plan a week of content in 15 minutes. Color-coded calendar, one-click posting, never miss a day."
           />
           <FeatureCard
             icon={<Mic className="w-6 h-6" />}
-            title="Your Voice"
-            description="Train the AI on your writing style. Generated content sounds like you, not a robot."
+            title="Voice Training"
+            description="Sound like you, not a robot. Paste your past tweets, tweak the settings, and every generation matches your voice."
           />
         </div>
 
