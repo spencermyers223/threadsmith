@@ -8,8 +8,9 @@ import TableRow from '@tiptap/extension-table-row'
 import TableCell from '@tiptap/extension-table-cell'
 import TableHeader from '@tiptap/extension-table-header'
 import Image from '@tiptap/extension-image'
-import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Undo, Redo } from 'lucide-react'
-import { useEffect } from 'react'
+import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Undo, Redo, ImageIcon } from 'lucide-react'
+import { useEffect, useRef, useCallback } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 interface TiptapEditorProps {
   content: string
@@ -52,6 +53,39 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
       editor.commands.setContent(content)
     }
   }, [content, editor])
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleImageUpload = useCallback(async (file: File) => {
+    if (!editor) return
+    const supabase = createClient()
+
+    // Check auth
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      alert('You must be logged in to upload images.')
+      return
+    }
+
+    const fileExt = file.name.split('.').pop()
+    const filePath = `${user.id}/${Date.now()}.${fileExt}`
+
+    const { error } = await supabase.storage
+      .from('attachments')
+      .upload(filePath, file)
+
+    if (error) {
+      console.error('Upload error:', error)
+      alert('Failed to upload image.')
+      return
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('attachments')
+      .getPublicUrl(filePath)
+
+    editor.chain().focus().setImage({ src: urlData.publicUrl }).run()
+  }, [editor])
 
   if (!editor) return null
 
@@ -104,6 +138,26 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
         >
           <ListOrdered className="w-4 h-4" />
         </ToolbarButton>
+
+        <div className="w-px h-5 bg-[var(--border)] mx-1" />
+
+        <ToolbarButton
+          onClick={() => fileInputRef.current?.click()}
+          title="Insert Image"
+        >
+          <ImageIcon className="w-4 h-4" />
+        </ToolbarButton>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) handleImageUpload(file)
+            e.target.value = ''
+          }}
+        />
 
         <div className="w-px h-5 bg-[var(--border)] mx-1" />
 
