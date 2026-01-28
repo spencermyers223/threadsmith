@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import { exchangeCodeForTokens, fetchXUser } from '@/lib/x-auth'
+import crypto from 'crypto'
 
 // Create admin Supabase client for token storage
 const supabaseAdmin = createClient(
@@ -22,14 +23,16 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get('state')
   const error = searchParams.get('error')
   
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin
+  
   // Handle authorization denied
   if (error) {
     console.error('X OAuth error:', error)
-    return NextResponse.redirect(new URL('/login?error=x_auth_denied', request.url))
+    return NextResponse.redirect(new URL('/login?error=x_auth_denied', baseUrl))
   }
   
   if (!code || !state) {
-    return NextResponse.redirect(new URL('/login?error=missing_params', request.url))
+    return NextResponse.redirect(new URL('/login?error=missing_params', baseUrl))
   }
   
   // Verify state to prevent CSRF
@@ -38,11 +41,13 @@ export async function GET(request: NextRequest) {
   const codeVerifier = cookieStore.get('x_code_verifier')?.value
   
   if (!storedState || state !== storedState) {
-    return NextResponse.redirect(new URL('/login?error=invalid_state', request.url))
+    console.error('State mismatch:', { received: state, stored: storedState })
+    return NextResponse.redirect(new URL('/login?error=invalid_state', baseUrl))
   }
   
   if (!codeVerifier) {
-    return NextResponse.redirect(new URL('/login?error=missing_verifier', request.url))
+    console.error('Missing code verifier')
+    return NextResponse.redirect(new URL('/login?error=missing_verifier', baseUrl))
   }
   
   try {
@@ -55,11 +60,23 @@ export async function GET(request: NextRequest) {
       redirectUri: process.env.X_CALLBACK_URL!,
     })
     
+    console.log('Token exchange successful')
+    
     // Fetch X user profile
     const xUser = await fetchXUser(tokens.access_token)
+    console.log('Fetched X user:', xUser.username)
     
-    // Check if user exists in our database (by x_user_id)
-    const { data: existingProfile } = await supabaseAdmin
+    // Generate a deterministic password from X user ID + secret
+    const secretKey = process.env.SUPABASE_SERVICE_ROLE_KEY!.slice(0, 32)
+    const userPassword = crypto
+      .createHmac('sha256', secretKey)
+      .update(xUser.id)
+      .digest('hex')
+    
+    const userEmail = `${xUser.id}@x.xthread.io`
+    
+    // Check if user exists
+    const { data: existingUser } = await supabaseAdmin
       .from('profiles')
       .select('id')
       .eq('x_user_id', xUser.id)
@@ -67,26 +84,15 @@ export async function GET(request: NextRequest) {
     
     let userId: string
     
-    if (existingProfile) {
-      // Existing user - update their tokens
-      userId = existingProfile.id
-      
-      await supabaseAdmin
-        .from('x_tokens')
-        .upsert({
-          user_id: userId,
-          x_user_id: xUser.id,
-          x_username: xUser.username,
-          access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token,
-          expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-          updated_at: new Date().toISOString(),
-        })
+    if (existingUser) {
+      // Existing user
+      userId = existingUser.id
+      console.log('Existing user found:', userId)
     } else {
-      // New user - create profile and tokens
-      // First, create a Supabase auth user (email-less, X-only)
-      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: `${xUser.id}@x.xthread.io`, // Placeholder email
+      // New user - create with deterministic password
+      const { data: authUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: userEmail,
+        password: userPassword,
         email_confirm: true,
         user_metadata: {
           x_user_id: xUser.id,
@@ -96,12 +102,13 @@ export async function GET(request: NextRequest) {
         },
       })
       
-      if (authError || !authUser.user) {
-        console.error('Failed to create auth user:', authError)
-        return NextResponse.redirect(new URL('/login?error=user_creation_failed', request.url))
+      if (createError || !authUser.user) {
+        console.error('Failed to create user:', createError)
+        return NextResponse.redirect(new URL('/login?error=user_creation_failed', baseUrl))
       }
       
       userId = authUser.user.id
+      console.log('Created new user:', userId)
       
       // Update profile with X info
       await supabaseAdmin
@@ -109,47 +116,38 @@ export async function GET(request: NextRequest) {
         .update({
           x_user_id: xUser.id,
           x_username: xUser.username,
+          display_name: xUser.name,
+          avatar_url: xUser.profile_image_url,
         })
         .eq('id', userId)
-      
-      // Store tokens
-      await supabaseAdmin
-        .from('x_tokens')
-        .insert({
-          user_id: userId,
-          x_user_id: xUser.id,
-          x_username: xUser.username,
-          access_token: tokens.access_token,
-          refresh_token: tokens.refresh_token,
-          expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-        })
     }
     
-    // Create a Supabase session for the user
-    // We need to sign them in - using a workaround with a magic link token
-    const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
-      email: `${xUser.id}@x.xthread.io`,
-    })
+    // Store/update X tokens
+    await supabaseAdmin
+      .from('x_tokens')
+      .upsert({
+        user_id: userId,
+        x_user_id: xUser.id,
+        x_username: xUser.username,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id',
+      })
     
-    if (sessionError || !sessionData.properties?.hashed_token) {
-      console.error('Failed to generate session:', sessionError)
-      return NextResponse.redirect(new URL('/login?error=session_failed', request.url))
-    }
+    console.log('Stored X tokens')
     
-    // Clean up cookies
-    cookieStore.delete('x_code_verifier')
-    cookieStore.delete('x_oauth_state')
+    // Clean up OAuth cookies and redirect to session endpoint to complete sign-in
+    const response = NextResponse.redirect(new URL(`/api/auth/x/session?user=${xUser.id}`, baseUrl))
+    response.cookies.delete('x_code_verifier')
+    response.cookies.delete('x_oauth_state')
     
-    // Redirect to the magic link to complete sign-in
-    // The magic link will set the Supabase session cookies
-    const magicLinkUrl = new URL(sessionData.properties.action_link)
-    magicLinkUrl.searchParams.set('redirect_to', '/creator-hub')
-    
-    return NextResponse.redirect(magicLinkUrl)
+    return response
     
   } catch (err) {
     console.error('X OAuth callback error:', err)
-    return NextResponse.redirect(new URL('/login?error=token_exchange_failed', request.url))
+    return NextResponse.redirect(new URL('/login?error=callback_failed', baseUrl))
   }
 }
