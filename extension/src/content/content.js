@@ -105,6 +105,77 @@ async function updateWatchlistAvatar(handle, avatar) {
 }
 
 // ============================================================
+// Watchlist Notifications Module
+// ============================================================
+const WATCHLIST_NOTIFICATIONS_MAX = 50;
+
+async function getWatchlistNotifications() {
+  try {
+    const stored = await chrome.storage.local.get(['watchlistNotifications']);
+    return stored.watchlistNotifications || [];
+  } catch (err) {
+    console.debug('[xthread] Error getting watchlist notifications:', err);
+    return [];
+  }
+}
+
+async function addWatchlistNotification(post) {
+  try {
+    const notifications = await getWatchlistNotifications();
+    
+    // Check for duplicate (same URL)
+    const exists = notifications.some(n => n.url === post.url);
+    if (exists) return false;
+    
+    const newNotification = {
+      handle: post.handle,
+      displayName: post.displayName,
+      avatar: post.avatar,
+      text: post.text,
+      url: post.url,
+      postAge: post.postAge,
+      metrics: post.metrics,
+      detectedAt: new Date().toISOString(),
+      read: false
+    };
+    
+    notifications.unshift(newNotification);
+    
+    // Keep only last WATCHLIST_NOTIFICATIONS_MAX
+    if (notifications.length > WATCHLIST_NOTIFICATIONS_MAX) {
+      notifications.splice(WATCHLIST_NOTIFICATIONS_MAX);
+    }
+    
+    await chrome.storage.local.set({ watchlistNotifications: notifications });
+    
+    // Update badge
+    chrome.runtime.sendMessage({ type: 'WATCHLIST_NOTIFICATION_NEW' });
+    
+    console.debug('[xthread] Added watchlist notification from:', post.handle);
+    return true;
+  } catch (err) {
+    console.debug('[xthread] Error adding watchlist notification:', err);
+    return false;
+  }
+}
+
+async function markNotificationsRead() {
+  try {
+    const notifications = await getWatchlistNotifications();
+    notifications.forEach(n => n.read = true);
+    await chrome.storage.local.set({ watchlistNotifications: notifications });
+    chrome.runtime.sendMessage({ type: 'WATCHLIST_NOTIFICATIONS_READ' });
+  } catch (err) {
+    console.debug('[xthread] Error marking notifications read:', err);
+  }
+}
+
+async function getUnreadNotificationCount() {
+  const notifications = await getWatchlistNotifications();
+  return notifications.filter(n => !n.read).length;
+}
+
+// ============================================================
 // Post History Module (for Content Coach)
 // ============================================================
 
@@ -261,6 +332,9 @@ async function init() {
   // Check if on profile page
   checkProfilePage();
   
+  // Start scanning for watched account posts
+  startWatchlistScanner();
+  
   // Listen for URL changes (SPA navigation)
   let lastUrl = location.href;
   new MutationObserver(() => {
@@ -272,6 +346,155 @@ async function init() {
   
   if (!userToken) {
     console.debug('[xthread] Not authenticated. Click extension icon to sign in.');
+  }
+}
+
+// ============================================================
+// Watchlist Scanner - Detect posts from watched accounts
+// ============================================================
+let watchlistCache = [];
+let lastWatchlistFetch = 0;
+const WATCHLIST_CACHE_TTL = 30000; // 30 seconds
+
+async function getCachedWatchlist() {
+  const now = Date.now();
+  if (now - lastWatchlistFetch > WATCHLIST_CACHE_TTL) {
+    watchlistCache = await getWatchlist();
+    lastWatchlistFetch = now;
+  }
+  return watchlistCache;
+}
+
+function startWatchlistScanner() {
+  // Scan on scroll (debounced)
+  let scrollTimeout;
+  window.addEventListener('scroll', () => {
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(scanForWatchedPosts, 500);
+  }, { passive: true });
+  
+  // Also scan periodically
+  setInterval(scanForWatchedPosts, 10000);
+  
+  // Initial scan after a delay
+  setTimeout(scanForWatchedPosts, 2000);
+}
+
+async function scanForWatchedPosts() {
+  const watchlist = await getCachedWatchlist();
+  if (watchlist.length === 0) return;
+  
+  // Create a Set of watched handles for fast lookup
+  const watchedHandles = new Set(watchlist.map(w => w.handle.toLowerCase()));
+  
+  // Get all visible posts
+  const posts = document.querySelectorAll('article[data-testid="tweet"]');
+  
+  for (const post of posts) {
+    // Skip if already scanned
+    if (post.dataset.xthreadWatchlistScanned) continue;
+    post.dataset.xthreadWatchlistScanned = 'true';
+    
+    // Extract author handle
+    const authorLink = post.querySelector('a[role="link"][href^="/"]');
+    if (!authorLink) continue;
+    
+    const hrefMatch = authorLink.getAttribute('href')?.match(/^\/([^\/]+)/);
+    if (!hrefMatch) continue;
+    
+    const handle = hrefMatch[1].toLowerCase();
+    
+    // Skip if not watching this account
+    if (!watchedHandles.has(handle)) continue;
+    
+    // This is a post from a watched account - extract details
+    const postData = extractWatchedPostData(post, handle);
+    if (postData) {
+      await addWatchlistNotification(postData);
+      
+      // Add visual indicator
+      highlightWatchedPost(post, handle);
+    }
+  }
+}
+
+function extractWatchedPostData(post, handle) {
+  try {
+    // Get display name
+    const authorEl = post.querySelector('[data-testid="User-Name"]');
+    const displayName = authorEl?.querySelector('span')?.textContent || handle;
+    
+    // Get avatar
+    const avatarImg = post.querySelector('img[src*="profile_images"]');
+    const avatar = avatarImg?.src || null;
+    
+    // Get text
+    const textEl = post.querySelector('[data-testid="tweetText"]');
+    const text = textEl?.textContent || '';
+    
+    // Skip if no text (might be a retweet indicator)
+    if (!text.trim()) return null;
+    
+    // Get URL
+    const timeEl = post.querySelector('time');
+    const url = timeEl?.closest('a')?.href || '';
+    
+    // Skip if no URL (can't link back to it)
+    if (!url) return null;
+    
+    // Get post age
+    const postAge = timeEl?.textContent || '';
+    
+    // Get metrics
+    const metrics = {};
+    const replyBtn = post.querySelector('[data-testid="reply"]');
+    const retweetBtn = post.querySelector('[data-testid="retweet"]');
+    const likeBtn = post.querySelector('[data-testid="like"]');
+    
+    if (replyBtn) {
+      const replyMatch = replyBtn.getAttribute('aria-label')?.match(/(\d+[\d,\.]*[KkMm]?)/);
+      if (replyMatch) metrics.replies = replyMatch[1];
+    }
+    if (retweetBtn) {
+      const rtMatch = retweetBtn.getAttribute('aria-label')?.match(/(\d+[\d,\.]*[KkMm]?)/);
+      if (rtMatch) metrics.retweets = rtMatch[1];
+    }
+    if (likeBtn) {
+      const likeMatch = likeBtn.getAttribute('aria-label')?.match(/(\d+[\d,\.]*[KkMm]?)/);
+      if (likeMatch) metrics.likes = likeMatch[1];
+    }
+    
+    return {
+      handle,
+      displayName,
+      avatar,
+      text,
+      url,
+      postAge,
+      metrics
+    };
+  } catch (err) {
+    console.debug('[xthread] Error extracting watched post data:', err);
+    return null;
+  }
+}
+
+function highlightWatchedPost(post, handle) {
+  // Don't re-highlight
+  if (post.querySelector('.xthread-watched-indicator')) return;
+  
+  // Add subtle indicator
+  const indicator = document.createElement('div');
+  indicator.className = 'xthread-watched-indicator';
+  indicator.innerHTML = `<span class="xthread-watched-icon">👁</span><span class="xthread-watched-label">Watching</span>`;
+  indicator.title = `You're watching @${handle}`;
+  
+  // Insert at top of post
+  const firstChild = post.firstChild;
+  if (firstChild) {
+    post.insertBefore(indicator, firstChild);
+  } else {
+    post.appendChild(indicator);
   }
 }
 

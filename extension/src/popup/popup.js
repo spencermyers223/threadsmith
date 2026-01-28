@@ -27,6 +27,12 @@ const watchlistEmpty = document.getElementById('watchlist-empty');
 const watchlistBadge = document.getElementById('watchlist-badge');
 const savedBadge = document.getElementById('saved-badge');
 
+// Notifications DOM elements
+const notificationsList = document.getElementById('notifications-list');
+const notificationsEmpty = document.getElementById('notifications-empty');
+const notificationsBadge = document.getElementById('notifications-badge');
+const markReadBtn = document.getElementById('mark-read-btn');
+
 // Tab elements
 const tabs = document.querySelectorAll('.tab');
 const tabContents = document.querySelectorAll('.tab-content');
@@ -75,10 +81,12 @@ function setupTabs() {
 
 // Update badge counts
 async function updateBadges() {
-  const stored = await chrome.storage.local.get(['watchlist', 'savedPosts']);
+  const stored = await chrome.storage.local.get(['watchlist', 'savedPosts', 'watchlistNotifications']);
   
   const watchlistCount = stored.watchlist?.length || 0;
   const savedPostsCount = stored.savedPosts?.length || 0;
+  const notifications = stored.watchlistNotifications || [];
+  const unreadCount = notifications.filter(n => !n.read).length;
   
   if (watchlistCount > 0) {
     watchlistBadge.textContent = watchlistCount;
@@ -92,6 +100,13 @@ async function updateBadges() {
     savedBadge.classList.add('visible');
   } else {
     savedBadge.classList.remove('visible');
+  }
+  
+  if (unreadCount > 0) {
+    notificationsBadge.textContent = unreadCount;
+    notificationsBadge.classList.add('visible');
+  } else {
+    notificationsBadge.classList.remove('visible');
   }
 }
 
@@ -121,6 +136,7 @@ function showMainView(user, isPremium) {
   loadStats();
   loadSavedPosts();
   loadWatchlist();
+  loadNotifications();
 }
 
 // Refresh user data from API
@@ -319,6 +335,101 @@ async function notifyWatchlistUpdated() {
   }
 }
 
+// ============================================================
+// Notifications Functions
+// ============================================================
+
+// Load and display notifications
+async function loadNotifications() {
+  try {
+    const stored = await chrome.storage.local.get(['watchlistNotifications']);
+    const notifications = stored.watchlistNotifications || [];
+    
+    if (notifications.length === 0) {
+      notificationsEmpty.classList.remove('hidden');
+      notificationsList.innerHTML = '';
+      return;
+    }
+    
+    notificationsEmpty.classList.add('hidden');
+    notificationsList.innerHTML = notifications.slice(0, 20).map((notif, index) => `
+      <div class="notification-item ${notif.read ? '' : 'unread'}" data-url="${escapeHtml(notif.url)}">
+        <div class="notification-avatar">
+          ${notif.avatar 
+            ? `<img src="${escapeHtml(notif.avatar)}" alt="${escapeHtml(notif.displayName)}" onerror="this.parentElement.innerHTML='${(notif.displayName || '?')[0]?.toUpperCase() || '?'}'">` 
+            : (notif.displayName || '?')[0]?.toUpperCase() || '?'}
+        </div>
+        <div class="notification-content">
+          <div class="notification-header">
+            <span class="notification-author">${escapeHtml(notif.displayName)}</span>
+            <span class="notification-handle">@${escapeHtml(notif.handle)}</span>
+            <span class="notification-time">${notif.postAge || formatDate(notif.detectedAt)}</span>
+          </div>
+          <div class="notification-text">${escapeHtml(truncate(notif.text, 100))}</div>
+          ${notif.metrics && Object.keys(notif.metrics).length > 0 ? `
+            <div class="notification-metrics">
+              ${notif.metrics.replies ? `<span>💬 ${notif.metrics.replies}</span>` : ''}
+              ${notif.metrics.retweets ? `<span>🔄 ${notif.metrics.retweets}</span>` : ''}
+              ${notif.metrics.likes ? `<span>❤️ ${notif.metrics.likes}</span>` : ''}
+            </div>
+          ` : ''}
+        </div>
+        ${!notif.read ? '<div class="notification-unread-dot"></div>' : ''}
+      </div>
+    `).join('');
+    
+    if (notifications.length > 20) {
+      notificationsList.innerHTML += `
+        <div class="notifications-more">
+          +${notifications.length - 20} more posts
+        </div>
+      `;
+    }
+    
+    // Add click handlers to open posts
+    notificationsList.querySelectorAll('.notification-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const url = item.dataset.url;
+        if (url) {
+          chrome.tabs.create({ url });
+        }
+      });
+    });
+    
+  } catch (err) {
+    console.error('Failed to load notifications:', err);
+  }
+}
+
+// Mark all notifications as read
+async function markAllNotificationsRead() {
+  try {
+    const stored = await chrome.storage.local.get(['watchlistNotifications']);
+    const notifications = stored.watchlistNotifications || [];
+    
+    notifications.forEach(n => n.read = true);
+    await chrome.storage.local.set({ watchlistNotifications: notifications });
+    
+    // Reload UI
+    loadNotifications();
+    updateBadges();
+    
+    // Update extension badge
+    chrome.runtime.sendMessage({ type: 'WATCHLIST_NOTIFICATIONS_READ' });
+  } catch (err) {
+    console.error('Failed to mark notifications read:', err);
+  }
+}
+
+// Clear all notifications
+async function clearAllNotifications() {
+  if (!confirm('Clear all notifications?')) return;
+  
+  await chrome.storage.local.set({ watchlistNotifications: [] });
+  loadNotifications();
+  updateBadges();
+}
+
 // Utility functions
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -413,6 +524,9 @@ signOutBtn.addEventListener('click', async () => {
 // Clear saved handler
 clearSavedBtn.addEventListener('click', clearSavedPosts);
 
+// Mark notifications read handler
+markReadBtn.addEventListener('click', markAllNotificationsRead);
+
 async function signOut() {
   await chrome.storage.local.remove(['xthreadToken', 'xthreadUser', 'isPremium', 'coachingStats']);
   notifyContentScripts(null, false);
@@ -448,6 +562,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   if (message.type === 'UPDATE_WATCHLIST_BADGE') {
     loadWatchlist();
+    updateBadges();
+  }
+  if (message.type === 'WATCHLIST_NOTIFICATION_REFRESH') {
+    loadNotifications();
     updateBadges();
   }
 });

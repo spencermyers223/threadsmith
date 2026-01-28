@@ -1831,3 +1831,33 @@
     border-top-color: #e5e7eb;
   }
 }
+
+/* ============================================================
+   Watched Post Indicator (Feed)
+   ============================================================ */
+
+.xthread-watched-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%);
+  border-bottom: 1px solid rgba(124, 58, 237, 0.2);
+  font-size: 12px;
+  color: #a78bfa;
+}
+
+.xthread-watched-icon {
+  font-size: 14px;
+}
+
+.xthread-watched-label {
+  font-weight: 500;
+}
+
+/* Dark mode adjustments (X is dark by default) */
+@media (prefers-color-scheme: dark) {
+  .xthread-watched-indicator {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%);
+  }
+}

@@ -48,7 +48,42 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       handleAuthCallback(message.token);
     });
   }
+  
+  // Watchlist notification handling
+  if (message.type === 'WATCHLIST_NOTIFICATION_NEW') {
+    updateNotificationBadge();
+    // Forward to popup if open
+    chrome.runtime.sendMessage({ type: 'WATCHLIST_NOTIFICATION_REFRESH' }).catch(() => {});
+  }
+  
+  if (message.type === 'WATCHLIST_NOTIFICATIONS_READ') {
+    updateNotificationBadge();
+  }
+  
+  if (message.type === 'GET_UNREAD_COUNT') {
+    getUnreadNotificationCount().then(count => sendResponse({ count }));
+    return true; // Keep channel open for async response
+  }
 });
+
+// Update notification badge with unread count
+async function updateNotificationBadge() {
+  const count = await getUnreadNotificationCount();
+  if (count > 0) {
+    chrome.action.setBadgeText({ text: count.toString() });
+    chrome.action.setBadgeBackgroundColor({ color: '#ef4444' }); // Red for notifications
+  } else {
+    // Fall back to saved posts badge
+    await updateBadge();
+  }
+}
+
+// Get unread notification count
+async function getUnreadNotificationCount() {
+  const stored = await chrome.storage.local.get(['watchlistNotifications']);
+  const notifications = stored.watchlistNotifications || [];
+  return notifications.filter(n => !n.read).length;
+}
 
 // Handle auth callback when popup isn't open
 async function handleAuthCallback(token) {

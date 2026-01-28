@@ -1387,3 +1387,477 @@
     color: #d97706;
   }
 }
+
+/* ============================================================
+   Content Coach - Ideas Button & Panel
+   ============================================================ */
+
+/* Ideas Button in Compose Toolbar */
+.xthread-ideas-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 34px;
+  border: 1px solid #8b5cf6;
+  border-radius: 9999px;
+  background: transparent;
+  color: #8b5cf6;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.xthread-ideas-btn:hover {
+  background: rgba(139, 92, 246, 0.1);
+  transform: scale(1.02);
+}
+
+.xthread-ideas-btn:active {
+  transform: scale(0.98);
+}
+
+.xthread-ideas-btn.xthread-loading {
+  opacity: 0.7;
+  pointer-events: none;
+  border-color: #6b7280;
+  color: #6b7280;
+}
+
+.xthread-ideas-icon {
+  font-size: 15px;
+}
+
+.xthread-ideas-text {
+  font-size: 14px;
+}
+
+/* Content Coach Panel */
+.xthread-coach-panel-ideas {
+  margin: 12px;
+  padding: 16px;
+  background: #16181c;
+  border: 1px solid #8b5cf6;
+  border-radius: 16px;
+  animation: xthread-slideIn 0.3s ease;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.xthread-coach-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2f3336;
+}
+
+.xthread-coach-header .xthread-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.xthread-coach-header .xthread-logo {
+  font-weight: 700;
+  font-size: 16px;
+  color: #e7e9ea;
+}
+
+.xthread-coach-header .xthread-subtitle {
+  font-size: 12px;
+  color: #71767b;
+}
+
+/* Coach Sections */
+.xthread-coach-section {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #2f3336;
+}
+
+.xthread-coach-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.xthread-coach-section .xthread-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e7e9ea;
+  margin-bottom: 10px;
+}
+
+/* What's Working Section */
+.xthread-working-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.xthread-working-label {
+  font-size: 12px;
+  color: #71767b;
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.xthread-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.xthread-tag {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.xthread-tag.topic {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.xthread-tag.format {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.xthread-tag.hook {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.xthread-no-data {
+  font-size: 13px;
+  color: #71767b;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Ideas List */
+.xthread-ideas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.xthread-idea-card {
+  padding: 12px;
+  background: #1d1f23;
+  border: 1px solid #2f3336;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.xthread-idea-card:hover {
+  border-color: #8b5cf6;
+  background: #1a1c20;
+}
+
+.xthread-idea-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.xthread-idea-format {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.xthread-idea-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #e7e9ea;
+}
+
+.xthread-idea-desc {
+  font-size: 13px;
+  color: #8b949e;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.xthread-idea-hook {
+  padding: 8px 10px;
+  background: #2f3336;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.xthread-idea-hook:hover {
+  background: #3f4246;
+}
+
+.xthread-idea-hook.xthread-copied {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.xthread-hook-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #71767b;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.xthread-idea-hook .xthread-hook-text {
+  font-size: 13px;
+  color: #e7e9ea;
+  font-style: italic;
+}
+
+.xthread-copy-hint {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  color: #71767b;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.xthread-idea-hook:hover .xthread-copy-hint {
+  opacity: 1;
+}
+
+.xthread-idea-hook.xthread-copied .xthread-copy-hint {
+  color: #10b981;
+  opacity: 1;
+}
+
+.xthread-idea-hook.xthread-copied .xthread-copy-hint::before {
+  content: '✓ ';
+}
+
+/* Best Times Section */
+.xthread-best-times {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.xthread-time-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.xthread-time-pill {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.xthread-time-pill.day {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.xthread-time-pill.time {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.xthread-time-reason {
+  font-size: 12px;
+  color: #8b949e;
+  line-height: 1.4;
+}
+
+/* Voice Check Section */
+.xthread-voice-style {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e7e9ea;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: rgba(139, 92, 246, 0.1);
+  border-left: 3px solid #8b5cf6;
+  border-radius: 0 6px 6px 0;
+}
+
+.xthread-voice-tips {
+  margin: 0;
+  padding-left: 20px;
+  list-style: none;
+}
+
+.xthread-voice-tips li {
+  position: relative;
+  font-size: 13px;
+  color: #c9d1d9;
+  line-height: 1.5;
+  padding: 2px 0 2px 4px;
+}
+
+.xthread-voice-tips li::before {
+  content: '→';
+  position: absolute;
+  left: -16px;
+  color: #8b5cf6;
+}
+
+/* Content Gaps Section */
+.xthread-gaps-list {
+  margin: 0;
+  padding-left: 20px;
+  list-style: none;
+}
+
+.xthread-gaps-list li {
+  position: relative;
+  font-size: 13px;
+  color: #c9d1d9;
+  line-height: 1.5;
+  padding: 4px 0 4px 4px;
+}
+
+.xthread-gaps-list li::before {
+  content: '📊';
+  position: absolute;
+  left: -20px;
+  font-size: 12px;
+}
+
+/* Coach Footer */
+.xthread-coach-footer {
+  padding-top: 12px;
+  border-top: 1px solid #2f3336;
+  text-align: center;
+  margin-top: 12px;
+}
+
+.xthread-footer-tip {
+  font-size: 11px;
+  color: #71767b;
+}
+
+/* Light mode for Content Coach */
+@media (prefers-color-scheme: light) {
+  .xthread-ideas-btn {
+    border-color: #7c3aed;
+    color: #7c3aed;
+  }
+  
+  .xthread-ideas-btn:hover {
+    background: rgba(124, 58, 237, 0.1);
+  }
+  
+  .xthread-coach-panel-ideas {
+    background: #ffffff;
+    border-color: #8b5cf6;
+  }
+  
+  .xthread-coach-header {
+    border-bottom-color: #e5e7eb;
+  }
+  
+  .xthread-coach-header .xthread-logo {
+    color: #0f1419;
+  }
+  
+  .xthread-coach-section {
+    border-bottom-color: #e5e7eb;
+  }
+  
+  .xthread-coach-section .xthread-section-title {
+    color: #0f1419;
+  }
+  
+  .xthread-idea-card {
+    background: #f7f9f9;
+    border-color: #e5e7eb;
+  }
+  
+  .xthread-idea-card:hover {
+    background: #eff3f4;
+  }
+  
+  .xthread-idea-title {
+    color: #0f1419;
+  }
+  
+  .xthread-idea-desc,
+  .xthread-time-reason {
+    color: #536471;
+  }
+  
+  .xthread-idea-hook {
+    background: #e5e7eb;
+  }
+  
+  .xthread-idea-hook:hover {
+    background: #d1d5db;
+  }
+  
+  .xthread-idea-hook .xthread-hook-text {
+    color: #0f1419;
+  }
+  
+  .xthread-voice-style {
+    color: #0f1419;
+    background: rgba(139, 92, 246, 0.1);
+  }
+  
+  .xthread-voice-tips li,
+  .xthread-gaps-list li {
+    color: #374151;
+  }
+  
+  .xthread-coach-footer {
+    border-top-color: #e5e7eb;
+  }
+}
+
+/* ============================================================
+   Watched Post Indicator (Feed)
+   ============================================================ */
+
+.xthread-watched-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%);
+  border-bottom: 1px solid rgba(124, 58, 237, 0.2);
+  font-size: 12px;
+  color: #a78bfa;
+}
+
+.xthread-watched-icon {
+  font-size: 14px;
+}
+
+.xthread-watched-label {
+  font-weight: 500;
+}
+
+/* Dark mode adjustments (X is dark by default) */
+@media (prefers-color-scheme: dark) {
+  .xthread-watched-indicator {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%);
+  }
+}
