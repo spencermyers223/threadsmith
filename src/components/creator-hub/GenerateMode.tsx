@@ -108,6 +108,18 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   const [currentThreadIndex, setCurrentThreadIndex] = useState(0)
   const [isSubscribed, setIsSubscribed] = useState<boolean | null>(null)
 
+  // Check for template data from /templates page
+  useEffect(() => {
+    const raw = sessionStorage.getItem('xthread-template-data')
+    if (raw) {
+      try {
+        const data = JSON.parse(raw)
+        if (data.topic) setTopic(data.topic)
+      } catch {}
+      sessionStorage.removeItem('xthread-template-data')
+    }
+  }, [])
+
   const selectedPostTypeData = POST_TYPES.find(pt => pt.id === selectedPostType)
 
   // Helper function to parse thread content into individual tweets
