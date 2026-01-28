@@ -63,10 +63,81 @@ body.xthread-sidebar-active {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--xthread-border);
   background: var(--xthread-bg);
   flex-shrink: 0;
+}
+
+/* ============================================================
+   Sidebar Tabs
+   ============================================================ */
+.xthread-sidebar-tabs {
+  display: flex;
+  padding: 8px 12px;
+  gap: 4px;
+  background: var(--xthread-bg);
+  border-bottom: 1px solid var(--xthread-border);
+  flex-shrink: 0;
+}
+
+.xthread-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border: none;
+  background: transparent;
+  color: var(--xthread-text-secondary);
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.xthread-tab:hover {
+  background: var(--xthread-bg-hover);
+  color: var(--xthread-text);
+}
+
+.xthread-tab.active {
+  background: var(--xthread-primary);
+  color: white;
+}
+
+.xthread-tab-icon {
+  font-size: 16px;
+}
+
+.xthread-tab-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.xthread-tab-badge {
+  display: none;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  background: #ef4444;
+  color: white;
+  border-radius: 8px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.xthread-tab-badge.visible {
+  display: block;
 }
 
 .xthread-sidebar-brand {
@@ -601,4 +672,502 @@ body.xthread-sidebar-active {
     width: 100%;
     max-width: 400px;
   }
+}
+
+/* ============================================================
+   Shared Empty States
+   ============================================================ */
+.xthread-feed-empty,
+.xthread-stats-empty,
+.xthread-watch-empty,
+.xthread-saved-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.xthread-empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.xthread-empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--xthread-text);
+  margin-bottom: 8px;
+}
+
+.xthread-empty-desc {
+  font-size: 13px;
+  color: var(--xthread-text-secondary);
+  line-height: 1.5;
+  max-width: 260px;
+}
+
+.xthread-empty-desc strong {
+  color: var(--xthread-primary);
+}
+
+/* ============================================================
+   Feed Tab Styles
+   ============================================================ */
+.xthread-feed-header {
+  margin-bottom: 12px;
+}
+
+.xthread-feed-subtitle {
+  font-size: 12px;
+  color: var(--xthread-text-secondary);
+}
+
+.xthread-feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.xthread-feed-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: var(--xthread-bg-elevated);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.xthread-feed-item:hover {
+  background: var(--xthread-bg-hover);
+  border-color: var(--xthread-primary);
+}
+
+.xthread-feed-item.unread {
+  background: var(--xthread-primary-light);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.xthread-feed-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--xthread-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.xthread-feed-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.xthread-feed-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.xthread-feed-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.xthread-feed-author {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--xthread-text);
+}
+
+.xthread-feed-handle {
+  font-size: 12px;
+  color: var(--xthread-text-muted);
+}
+
+.xthread-feed-time {
+  font-size: 11px;
+  color: var(--xthread-text-muted);
+  margin-left: auto;
+}
+
+.xthread-feed-text {
+  font-size: 13px;
+  color: var(--xthread-text);
+  line-height: 1.4;
+}
+
+.xthread-feed-metrics {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--xthread-text-muted);
+}
+
+/* ============================================================
+   Stats Tab Styles
+   ============================================================ */
+.xthread-stats-overview {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.xthread-stat-card {
+  flex: 1;
+  padding: 16px;
+  background: var(--xthread-bg-elevated);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.xthread-stat-card.highlight {
+  background: var(--xthread-primary-light);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.xthread-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--xthread-text);
+  margin-bottom: 4px;
+}
+
+.xthread-stat-card.highlight .xthread-stat-value {
+  color: var(--xthread-primary);
+}
+
+.xthread-stat-label {
+  font-size: 11px;
+  color: var(--xthread-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.xthread-stats-section {
+  margin-bottom: 16px;
+}
+
+.xthread-stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.xthread-stats-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--xthread-text);
+}
+
+.xthread-clear-btn {
+  background: none;
+  border: none;
+  color: var(--xthread-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.xthread-clear-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--xthread-danger);
+}
+
+.xthread-reply-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.xthread-reply-item {
+  padding: 12px;
+  background: var(--xthread-bg-elevated);
+  border-radius: 10px;
+  border-left: 3px solid var(--xthread-border);
+}
+
+.xthread-reply-item.converted {
+  border-left-color: var(--xthread-success);
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, var(--xthread-bg-elevated) 50%);
+}
+
+.xthread-reply-item.not-converted {
+  border-left-color: var(--xthread-text-muted);
+}
+
+.xthread-reply-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.xthread-reply-author {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--xthread-primary);
+  text-decoration: none;
+}
+
+.xthread-reply-author:hover {
+  text-decoration: underline;
+}
+
+.xthread-reply-time {
+  font-size: 11px;
+  color: var(--xthread-text-muted);
+}
+
+.xthread-reply-original {
+  font-size: 12px;
+  color: var(--xthread-text-secondary);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.xthread-reply-yours {
+  font-size: 12px;
+  color: var(--xthread-primary);
+  font-style: italic;
+  margin-bottom: 8px;
+}
+
+.xthread-reply-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.xthread-reply-label {
+  font-size: 11px;
+  color: var(--xthread-text-muted);
+}
+
+.xthread-reply-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  border: 1px solid var(--xthread-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--xthread-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.xthread-reply-btn:hover {
+  border-color: var(--xthread-primary);
+  color: var(--xthread-text);
+}
+
+.xthread-reply-btn.active[data-action="yes"] {
+  background: var(--xthread-success);
+  border-color: var(--xthread-success);
+  color: white;
+}
+
+.xthread-reply-btn.active[data-action="no"] {
+  background: var(--xthread-text-muted);
+  border-color: var(--xthread-text-muted);
+  color: white;
+}
+
+.xthread-stats-tip {
+  padding: 10px 12px;
+  background: var(--xthread-primary-light);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--xthread-primary);
+  line-height: 1.4;
+}
+
+.xthread-stats-tip strong {
+  font-weight: 600;
+}
+
+/* ============================================================
+   Watch Tab Styles
+   ============================================================ */
+.xthread-watch-header {
+  margin-bottom: 12px;
+}
+
+.xthread-watch-subtitle {
+  font-size: 12px;
+  color: var(--xthread-text-secondary);
+}
+
+.xthread-watch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.xthread-watch-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--xthread-bg-elevated);
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.xthread-watch-item:hover {
+  border-color: var(--xthread-primary);
+  background: var(--xthread-bg-hover);
+}
+
+.xthread-watch-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--xthread-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.xthread-watch-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.xthread-watch-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.xthread-watch-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--xthread-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.xthread-watch-handle {
+  font-size: 13px;
+  color: var(--xthread-primary);
+  text-decoration: none;
+}
+
+.xthread-watch-handle:hover {
+  text-decoration: underline;
+}
+
+.xthread-watch-remove {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--xthread-text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.xthread-watch-remove:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--xthread-danger);
+}
+
+/* ============================================================
+   Saved Tab Styles
+   ============================================================ */
+.xthread-saved-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.xthread-saved-subtitle {
+  font-size: 12px;
+  color: var(--xthread-text-secondary);
+}
+
+.xthread-saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.xthread-saved-item {
+  padding: 12px;
+  background: var(--xthread-bg-elevated);
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.xthread-saved-item:hover {
+  border-color: var(--xthread-primary);
+  background: var(--xthread-bg-hover);
+}
+
+.xthread-saved-author {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--xthread-text);
+  margin-bottom: 4px;
+}
+
+.xthread-saved-text {
+  font-size: 13px;
+  color: var(--xthread-text-secondary);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.xthread-saved-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.xthread-saved-date {
+  font-size: 11px;
+  color: var(--xthread-text-muted);
+}
+
+.xthread-saved-link {
+  font-size: 12px;
+  color: var(--xthread-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.xthread-saved-link:hover {
+  text-decoration: underline;
 }
