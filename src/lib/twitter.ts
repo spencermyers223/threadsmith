@@ -3,10 +3,44 @@
  */
 
 /**
+ * Strip HTML tags from a string and convert to plain text
+ */
+function stripHtmlTags(html: string): string {
+  // Replace <br> and <br/> with newlines
+  let text = html.replace(/<br\s*\/?>/gi, '\n')
+  
+  // Replace </p><p> with double newline (paragraph breaks)
+  text = text.replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
+  
+  // Replace closing block tags with newlines
+  text = text.replace(/<\/(p|div|h[1-6]|li)>/gi, '\n')
+  
+  // Remove all remaining HTML tags
+  text = text.replace(/<[^>]+>/g, '')
+  
+  // Decode common HTML entities
+  text = text.replace(/&nbsp;/gi, ' ')
+  text = text.replace(/&amp;/gi, '&')
+  text = text.replace(/&lt;/gi, '<')
+  text = text.replace(/&gt;/gi, '>')
+  text = text.replace(/&quot;/gi, '"')
+  text = text.replace(/&#39;/gi, "'")
+  
+  // Clean up multiple newlines and trim
+  text = text.replace(/\n{3,}/g, '\n\n')
+  
+  return text.trim()
+}
+
+/**
  * Extract plain text from TipTap JSON content or plain string
  */
 export function getPostTweetText(content: unknown): string {
   if (typeof content === 'string') {
+    // Check if it looks like HTML (contains tags)
+    if (content.includes('<') && content.includes('>')) {
+      return stripHtmlTags(content)
+    }
     return content.trim()
   }
 
