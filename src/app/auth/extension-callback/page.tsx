@@ -1,21 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function ExtensionCallbackPage() {
-  const searchParams = useSearchParams();
-  const state = searchParams.get('state');
   const supabase = createClient();
   const [status, setStatus] = useState<'checking' | 'success' | 'error'>('checking');
   const [token, setToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    checkAuthAndShowToken();
-  }, []);
-
-  async function checkAuthAndShowToken() {
+  const checkAuthAndShowToken = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
 
@@ -29,7 +22,11 @@ export default function ExtensionCallbackPage() {
       console.error('Auth check error:', error);
       setStatus('error');
     }
-  }
+  }, [supabase.auth]);
+
+  useEffect(() => {
+    checkAuthAndShowToken();
+  }, [checkAuthAndShowToken]);
 
   const copyToken = async () => {
     if (token) {
@@ -55,7 +52,7 @@ export default function ExtensionCallbackPage() {
         {status === 'success' && token && (
           <div className="space-y-4">
             <div className="text-green-500 text-5xl mb-4">✓</div>
-            <p className="text-white text-lg mb-2">You're signed in!</p>
+            <p className="text-white text-lg mb-2">You&apos;re signed in!</p>
             <p className="text-gray-400 text-sm mb-4">
               Copy this token and paste it in the extension popup:
             </p>
