@@ -146,7 +146,7 @@ export default function TemplatesPage() {
             <div>
               <h1 className="text-3xl font-bold">📋 Template Library</h1>
               <p className="text-[var(--muted)] mt-1">
-                Proven CT post formats — browse, fill in variables, and generate.
+                Proven post formats — browse, fill in variables, and generate.
               </p>
             </div>
             {/* Search */}

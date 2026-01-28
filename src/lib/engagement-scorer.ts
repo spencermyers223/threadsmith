@@ -1,6 +1,6 @@
 /**
  * Client-side engagement scoring — instant, no API calls.
- * "Yoast SEO for tweets" — scores drafts on CT algorithm factors.
+ * "Yoast SEO for tweets" — scores drafts on X algorithm factors.
  */
 
 export interface ScoreDetail {
@@ -220,7 +220,7 @@ export function scoreEngagement(text: string): EngagementScore {
         emojiUsage: empty,
         bestTime: {
           recommendation: 'Weekday 9-11am EST',
-          reason: 'CT most active during US market open',
+          reason: 'Tech Twitter most active during US market hours',
         },
       },
     }
@@ -253,15 +253,15 @@ export function scoreEngagement(text: string): EngagementScore {
 
   let bestTime = {
     recommendation: 'Weekday 9-11am EST',
-    reason: 'CT most active during US market open',
+    reason: 'Tech Twitter most active during US market hours',
   }
 
   if (isWeekday && estHour >= 9 && estHour <= 11) {
-    bestTime = { recommendation: 'Now is great! 🔥', reason: 'Peak CT hours — US market open' }
+    bestTime = { recommendation: 'Now is great! 🔥', reason: 'Peak engagement hours — US market open' }
   } else if (isWeekday && estHour >= 14 && estHour <= 16) {
-    bestTime = { recommendation: 'Good time to post', reason: 'Afternoon engagement wave on CT' }
+    bestTime = { recommendation: 'Good time to post', reason: 'Afternoon engagement wave' }
   } else if (!isWeekday) {
-    bestTime = { recommendation: 'Wait for Monday 9-11am EST', reason: 'Weekday posts get more engagement on CT' }
+    bestTime = { recommendation: 'Wait for Monday 9-11am EST', reason: 'Weekday posts typically get more engagement' }
   }
 
   return {
