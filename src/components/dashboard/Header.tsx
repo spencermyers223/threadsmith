@@ -65,6 +65,12 @@ export function Header({ user }: HeaderProps) {
           📊 Analytics
         </Link>
         <Link
+          href="/settings/voice"
+          className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
+        >
+          🎙️ Voice
+        </Link>
+        <Link
           href="/settings"
           className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
         >

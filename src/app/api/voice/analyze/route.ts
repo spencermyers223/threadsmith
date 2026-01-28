@@ -1,0 +1,119 @@
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+import Anthropic from '@anthropic-ai/sdk'
+
+const anthropic = new Anthropic()
+
+export async function POST() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    // Fetch all voice samples for the user
+    const { data: samples, error: samplesError } = await supabase
+      .from('voice_samples')
+      .select('tweet_text')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (samplesError) throw samplesError
+
+    if (!samples || samples.length < 3) {
+      return NextResponse.json(
+        { error: 'Need at least 3 tweet samples to analyze your voice' },
+        { status: 400 }
+      )
+    }
+
+    const tweetsText = samples.map((s, i) => `${i + 1}. ${s.tweet_text}`).join('\n')
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2048,
+      system: `You are a writing style analyst. Analyze the provided tweets and extract a detailed voice profile. Return ONLY valid JSON with no other text.`,
+      messages: [{
+        role: 'user',
+        content: `Analyze these ${samples.length} tweets and return a JSON voice profile:
+
+${tweetsText}
+
+Return this exact JSON structure:
+{
+  "avgTweetLength": <number, average character count>,
+  "sentenceStyle": "<short/medium/long> sentences",
+  "emojiUsage": {
+    "frequency": "<none|rare|moderate|heavy>",
+    "favorites": ["<top emojis used, up to 5>"]
+  },
+  "punctuationStyle": {
+    "exclamationMarks": "<none|rare|moderate|heavy>",
+    "ellipses": "<none|rare|moderate|heavy>",
+    "dashes": "<none|rare|moderate|heavy>",
+    "questionMarks": "<none|rare|moderate|heavy>"
+  },
+  "vocabularyLevel": "<simple|moderate|advanced|technical>",
+  "commonPhrases": ["<up to 5 recurring phrases or expressions>"],
+  "toneMarkers": ["<up to 4 tone descriptors like: sarcastic, earnest, hype, analytical, confident, casual, authoritative>"],
+  "formalityLevel": <1-10, where 1 is very casual and 10 is very formal>,
+  "hotTakeTendency": <1-10, where 1 is safe/consensus and 10 is contrarian/spicy>,
+  "threadPreference": "<single tweets|mix|mostly threads>",
+  "hashtagUsage": "<none|rare|moderate|heavy>",
+  "cashtagUsage": "<none|rare|moderate|heavy>",
+  "openingStyle": "<how they typically start tweets>",
+  "closingStyle": "<how they typically end tweets>",
+  "signatureElements": ["<unique stylistic elements, up to 3>"],
+  "summary": "<2-3 sentence natural language summary of their writing voice>"
+}`
+      }],
+    })
+
+    const textContent = response.content
+      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+      .map(block => block.text)
+      .join('')
+
+    // Parse the JSON from Claude's response
+    let voiceProfile
+    try {
+      // Try to extract JSON from the response (handle markdown code blocks)
+      const jsonMatch = textContent.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) throw new Error('No JSON found in response')
+      voiceProfile = JSON.parse(jsonMatch[0])
+    } catch {
+      return NextResponse.json(
+        { error: 'Failed to parse voice analysis' },
+        { status: 500 }
+      )
+    }
+
+    // Store the voice profile
+    const { error: updateError } = await supabase
+      .from('content_profiles')
+      .upsert({
+        user_id: user.id,
+        voice_profile: voiceProfile,
+        voice_trained_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id',
+      })
+
+    if (updateError) throw updateError
+
+    return NextResponse.json({
+      voiceProfile,
+      sampleCount: samples.length,
+      analyzedAt: new Date().toISOString(),
+    })
+  } catch (err) {
+    console.error('Voice analysis error:', err)
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Analysis failed' },
+      { status: 500 }
+    )
+  }
+}

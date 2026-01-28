@@ -428,11 +428,12 @@ export async function POST(request: NextRequest) {
     const { contentLength, contentType } = mapLength(length)
     const mappedTone = mapTone(tone)
 
-    // Fetch user's content profile
+    // Fetch user's content profile (including voice_profile)
     let userProfile: UserProfile | undefined
+    let voiceProfileData: Record<string, unknown> | null = null
     const { data: profileData } = await supabase
       .from('content_profiles')
-      .select('niche, content_goal, admired_accounts, target_audience')
+      .select('niche, content_goal, admired_accounts, target_audience, voice_profile')
       .eq('user_id', user.id)
       .single()
 
@@ -443,10 +444,37 @@ export async function POST(request: NextRequest) {
         admiredAccounts: profileData.admired_accounts || undefined,
         targetAudience: profileData.target_audience || undefined,
       }
+      voiceProfileData = profileData.voice_profile as Record<string, unknown> | null
+    }
+
+    // Build voice profile context
+    let additionalContext: string | undefined
+    if (voiceProfileData) {
+      const vp = voiceProfileData as Record<string, unknown>
+      const emojiUsage = vp.emojiUsage as { frequency?: string; favorites?: string[] } | undefined
+      additionalContext = `<voice_profile>
+IMPORTANT: Match this user's writing voice exactly. This was analyzed from their real tweets.
+
+Summary: ${vp.summary || 'N/A'}
+Tone: ${Array.isArray(vp.toneMarkers) ? (vp.toneMarkers as string[]).join(', ') : 'N/A'}
+Formality Level: ${vp.formalityLevel || 'N/A'}/10
+Hot Take Tendency: ${vp.hotTakeTendency || 'N/A'}/10
+Vocabulary: ${vp.vocabularyLevel || 'N/A'}
+Emoji Usage: ${emojiUsage?.frequency || 'N/A'}${emojiUsage?.favorites?.length ? ` (favorites: ${(emojiUsage.favorites as string[]).join(' ')})` : ''}
+Sentence Style: ${vp.sentenceStyle || 'N/A'}
+Avg Tweet Length: ${vp.avgTweetLength || 'N/A'} chars
+Opening Style: ${vp.openingStyle || 'N/A'}
+Closing Style: ${vp.closingStyle || 'N/A'}
+Common Phrases: ${Array.isArray(vp.commonPhrases) ? (vp.commonPhrases as string[]).join(', ') : 'N/A'}
+Signature Elements: ${Array.isArray(vp.signatureElements) ? (vp.signatureElements as string[]).join(', ') : 'N/A'}
+Hashtag Usage: ${vp.hashtagUsage || 'N/A'}
+Thread Preference: ${vp.threadPreference || 'N/A'}
+
+Write as if YOU are this person. Mirror their exact tone, vocabulary level, emoji patterns, and sentence structure.
+</voice_profile>`
     }
 
     // Fetch source file content if provided
-    let additionalContext: string | undefined
     if (sourceFileId) {
       const { data: fileData } = await supabase
         .from('files')
@@ -456,7 +484,8 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (fileData?.content) {
-        additionalContext = `<source_material file="${fileData.name}">\n${fileData.content}\n</source_material>`
+        const fileContext = `<source_material file="${fileData.name}">\n${fileData.content}\n</source_material>`
+        additionalContext = additionalContext ? `${additionalContext}\n\n${fileContext}` : fileContext
       }
     }
 

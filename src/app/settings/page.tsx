@@ -351,6 +351,28 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* Voice Training Link */}
+        <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--background)]">
+            <h2 className="font-semibold flex items-center gap-2">
+              <Mic className="w-4 h-4" />
+              AI Voice Training
+            </h2>
+          </div>
+          <div className="p-4">
+            <p className="text-sm text-[var(--muted)] mb-3">
+              Import your tweets so the AI learns your unique writing voice. Generated posts will sound like you, not generic.
+            </p>
+            <Link
+              href="/settings/voice"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-[var(--accent-text)] rounded-lg transition-colors text-sm font-medium"
+            >
+              <Mic className="w-4 h-4" />
+              Train Your Voice
+            </Link>
+          </div>
+        </section>
+
         {/* Content Profile - Niche */}
         <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
           <button
