@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>xthread Reply Assistant</title>
+  <title>xthread Reply Coach</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -16,28 +16,36 @@
         </svg>
         <span>xthread</span>
       </div>
-      <span class="version">v1.0.0</span>
+      <span class="version">v1.1.0</span>
     </div>
 
     <!-- Not authenticated view -->
     <div id="auth-view" class="view">
       <div class="auth-prompt">
-        <h2>Reply Assistant</h2>
-        <p>Craft killer replies and grow your X following with AI.</p>
+        <h2>Reply Coach</h2>
+        <p>Learn HOW to craft killer replies and grow your X following.</p>
         
         <div class="features">
           <div class="feature">
-            <span class="feature-icon">✨</span>
-            <span>AI-powered reply suggestions</span>
-          </div>
-          <div class="feature">
             <span class="feature-icon">🎯</span>
-            <span>Match your unique voice</span>
+            <span>Strategic angles, not full replies</span>
           </div>
           <div class="feature">
-            <span class="feature-icon">⚡</span>
-            <span>One-click insert</span>
+            <span class="feature-icon">📊</span>
+            <span>Post scoring (worth replying?)</span>
           </div>
+          <div class="feature">
+            <span class="feature-icon">🪝</span>
+            <span>Hook starters to get you going</span>
+          </div>
+          <div class="feature">
+            <span class="feature-icon">📌</span>
+            <span>Save posts for later</span>
+          </div>
+        </div>
+        
+        <div class="algorithm-tip">
+          💡 Replies are weighted <strong>75x</strong> in X's algorithm
         </div>
         
         <button id="sign-in-btn" class="primary-btn">
@@ -68,7 +76,7 @@
         <span class="status-icon">👑</span>
         <div class="status-text">
           <strong>Premium Active</strong>
-          <span>Reply Assistant enabled</span>
+          <span>Reply Coach enabled</span>
         </div>
       </div>
       
@@ -77,7 +85,7 @@
         <span class="status-icon">🔒</span>
         <div class="status-text">
           <strong>Premium Required</strong>
-          <span>Upgrade to use Reply Assistant</span>
+          <span>Upgrade to use Reply Coach</span>
         </div>
         <a href="https://xthread.io/pricing" target="_blank" class="upgrade-link">Upgrade →</a>
       </div>
@@ -85,12 +93,26 @@
       <!-- Stats -->
       <div class="stats" id="stats-section">
         <div class="stat">
-          <div class="stat-value" id="replies-today">0</div>
-          <div class="stat-label">Replies today</div>
+          <div class="stat-value" id="coaching-today">0</div>
+          <div class="stat-label">Coached today</div>
         </div>
         <div class="stat">
-          <div class="stat-value" id="replies-total">0</div>
-          <div class="stat-label">Total replies</div>
+          <div class="stat-value" id="saved-count">0</div>
+          <div class="stat-label">Saved posts</div>
+        </div>
+      </div>
+      
+      <!-- Saved Posts Section -->
+      <div class="saved-section" id="saved-section">
+        <div class="saved-header">
+          <h3>📌 Saved Posts</h3>
+          <button id="clear-saved-btn" class="text-btn">Clear all</button>
+        </div>
+        <div id="saved-posts-list" class="saved-posts-list">
+          <!-- Populated by JS -->
+        </div>
+        <div id="no-saved" class="no-saved">
+          No saved posts yet. Click the bookmark icon on any post to save it.
         </div>
       </div>
       
@@ -99,10 +121,13 @@
         <h3>How to use</h3>
         <ol>
           <li>Browse X normally</li>
-          <li>Click the purple <strong>Reply</strong> button on any post</li>
-          <li>Choose from AI-generated reply options</li>
-          <li>Click "Use this" to insert into reply box</li>
+          <li>Click the purple <strong>Coach</strong> button on any post</li>
+          <li>Review strategic angles and hook starters</li>
+          <li>Write YOUR reply using the coaching</li>
         </ol>
+        <div class="tip">
+          <strong>Pro tip:</strong> Focus on high-score posts (&gt;7) for maximum impact
+        </div>
       </div>
     </div>
 
