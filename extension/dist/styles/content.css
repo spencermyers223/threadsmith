@@ -1,6 +1,51 @@
 /* xthread Reply Coach - Content Styles */
 
 /* ============================================================
+   Analyze Button (Profile Pages)
+   ============================================================ */
+
+.xthread-analyze-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 36px;
+  border: 1px solid #10b981;
+  border-radius: 9999px;
+  background: transparent;
+  color: #10b981;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin-right: 8px;
+}
+
+.xthread-analyze-btn:hover {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.xthread-analyze-btn:active {
+  transform: scale(0.96);
+}
+
+.xthread-analyze-btn.xthread-loading {
+  opacity: 0.7;
+  pointer-events: none;
+  border-color: #6b7280;
+  color: #6b7280;
+}
+
+.xthread-analyze-icon {
+  font-size: 16px;
+}
+
+.xthread-analyze-text {
+  font-size: 15px;
+}
+
+/* ============================================================
    Watch Button (Profile Pages)
    ============================================================ */
 
@@ -601,5 +646,744 @@
   
   .xthread-save-btn:hover {
     background: rgba(124, 58, 237, 0.1);
+  }
+}
+
+/* ============================================================
+   Account Analysis Panel
+   ============================================================ */
+
+.xthread-analysis-panel {
+  margin: 12px 16px;
+  padding: 20px;
+  background: #16181c;
+  border: 1px solid #10b981;
+  border-radius: 16px;
+  animation: xthread-slideIn 0.3s ease;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.xthread-analysis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2f3336;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.xthread-analysis-header .xthread-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.xthread-analysis-header .xthread-logo {
+  font-weight: 700;
+  font-size: 16px;
+  color: #e7e9ea;
+}
+
+.xthread-handle {
+  font-size: 13px;
+  color: #10b981;
+  font-weight: 500;
+}
+
+.xthread-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.xthread-cache-info {
+  font-size: 11px;
+  color: #71767b;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.xthread-cache-info:hover {
+  color: #10b981;
+}
+
+.xthread-refresh-btn {
+  background: none;
+  border: none;
+  color: #71767b;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 50%;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.xthread-refresh-btn:hover {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.xthread-analysis-panel .xthread-close-btn {
+  background: none;
+  border: none;
+  color: #71767b;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 50%;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.xthread-analysis-panel .xthread-close-btn:hover {
+  background: rgba(239, 243, 244, 0.1);
+  color: #e7e9ea;
+}
+
+/* Summary */
+.xthread-analysis-summary {
+  font-size: 15px;
+  color: #e7e9ea;
+  line-height: 1.5;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #1d1f23;
+  border-radius: 10px;
+  border-left: 3px solid #10b981;
+}
+
+/* Quick Stats */
+.xthread-quick-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.xthread-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #1d1f23;
+  border-radius: 8px;
+}
+
+.xthread-stat-icon {
+  font-size: 16px;
+}
+
+.xthread-stat-value {
+  font-size: 13px;
+  color: #e7e9ea;
+}
+
+/* Section styling */
+.xthread-analysis-section {
+  margin-bottom: 16px;
+}
+
+.xthread-analysis-section .xthread-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #71767b;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Topics */
+.xthread-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.xthread-topic-tag {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.xthread-topic-tag.primary {
+  background: #10b981;
+  color: white;
+}
+
+.xthread-topic-tag.secondary {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.xthread-topic-tag.occasional {
+  background: #2f3336;
+  color: #8b949e;
+}
+
+/* Voice & Style */
+.xthread-voice-badge {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  padding: 6px 14px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.xthread-characteristics {
+  margin: 0 0 10px 0;
+  padding-left: 20px;
+  list-style: none;
+}
+
+.xthread-characteristics li {
+  position: relative;
+  font-size: 13px;
+  color: #c9d1d9;
+  line-height: 1.6;
+  padding-left: 4px;
+}
+
+.xthread-characteristics li::before {
+  content: '•';
+  position: absolute;
+  left: -16px;
+  color: #10b981;
+}
+
+.xthread-engagement-pattern {
+  font-size: 13px;
+  color: #8b949e;
+  padding: 10px 12px;
+  background: #1d1f23;
+  border-radius: 8px;
+}
+
+.xthread-engagement-pattern strong {
+  color: #c9d1d9;
+}
+
+/* Viral Content */
+.xthread-viral-pattern {
+  font-size: 14px;
+  color: #e7e9ea;
+  margin-bottom: 8px;
+}
+
+.xthread-viral-examples {
+  margin: 0;
+  padding-left: 20px;
+  list-style: none;
+}
+
+.xthread-viral-examples li {
+  position: relative;
+  font-size: 12px;
+  color: #8b949e;
+  line-height: 1.5;
+  padding-left: 4px;
+  margin-bottom: 4px;
+}
+
+.xthread-viral-examples li::before {
+  content: '🔥';
+  position: absolute;
+  left: -20px;
+  font-size: 10px;
+}
+
+/* Engagement Tips */
+.xthread-tips {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.xthread-tip-card {
+  padding: 12px;
+  background: #1d1f23;
+  border: 1px solid #2f3336;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.xthread-tip-card:hover {
+  border-color: #10b981;
+  background: #1a1c20;
+}
+
+.xthread-tip-approach {
+  font-weight: 600;
+  font-size: 14px;
+  color: #e7e9ea;
+  margin-bottom: 6px;
+}
+
+.xthread-tip-example {
+  font-size: 13px;
+  color: #10b981;
+  font-style: italic;
+  margin-bottom: 6px;
+  padding-left: 8px;
+  border-left: 2px solid #10b981;
+}
+
+.xthread-tip-why {
+  font-size: 12px;
+  color: #8b949e;
+  line-height: 1.4;
+}
+
+/* Footer */
+.xthread-analysis-footer {
+  padding-top: 12px;
+  border-top: 1px solid #2f3336;
+  text-align: center;
+}
+
+.xthread-powered-by {
+  font-size: 11px;
+  color: #536471;
+}
+
+/* Light mode for Analysis Panel */
+@media (prefers-color-scheme: light) {
+  .xthread-analysis-panel {
+    background: #ffffff;
+    border-color: #10b981;
+  }
+  
+  .xthread-analysis-header {
+    border-bottom-color: #e5e7eb;
+  }
+  
+  .xthread-analysis-header .xthread-logo {
+    color: #0f1419;
+  }
+  
+  .xthread-analysis-summary {
+    background: #f7f9f9;
+    color: #0f1419;
+  }
+  
+  .xthread-stat,
+  .xthread-engagement-pattern,
+  .xthread-tip-card {
+    background: #f7f9f9;
+    border-color: #e5e7eb;
+  }
+  
+  .xthread-tip-card:hover {
+    background: #eff3f4;
+  }
+  
+  .xthread-stat-value,
+  .xthread-tip-approach,
+  .xthread-viral-pattern {
+    color: #0f1419;
+  }
+  
+  .xthread-characteristics li {
+    color: #374151;
+  }
+  
+  .xthread-topic-tag.occasional {
+    background: #e5e7eb;
+    color: #536471;
+  }
+  
+  .xthread-analysis-footer {
+    border-top-color: #e5e7eb;
+  }
+  
+  .xthread-analyze-btn {
+    border-color: #10b981;
+    color: #10b981;
+  }
+  
+  .xthread-analyze-btn:hover {
+    background: rgba(16, 185, 129, 0.1);
+  }
+}
+
+/* ============================================================
+   Algo Analyzer - Score Button & Panel
+   ============================================================ */
+
+/* Score Button in Compose Toolbar */
+.xthread-score-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 34px;
+  border: 1px solid #f59e0b;
+  border-radius: 9999px;
+  background: transparent;
+  color: #f59e0b;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.xthread-score-btn:hover {
+  background: rgba(245, 158, 11, 0.1);
+  transform: scale(1.02);
+}
+
+.xthread-score-btn:active {
+  transform: scale(0.98);
+}
+
+.xthread-score-btn.xthread-loading {
+  opacity: 0.7;
+  pointer-events: none;
+  border-color: #6b7280;
+  color: #6b7280;
+}
+
+.xthread-score-icon {
+  font-size: 15px;
+}
+
+.xthread-score-text {
+  font-size: 14px;
+}
+
+/* Score Panel */
+.xthread-score-panel {
+  margin: 12px;
+  padding: 16px;
+  background: #16181c;
+  border: 1px solid #f59e0b;
+  border-radius: 16px;
+  animation: xthread-slideIn 0.3s ease;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.xthread-score-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #2f3336;
+}
+
+.xthread-score-header .xthread-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.xthread-score-header .xthread-logo {
+  font-weight: 700;
+  font-size: 16px;
+  color: #e7e9ea;
+}
+
+.xthread-subtitle {
+  font-size: 12px;
+  color: #71767b;
+}
+
+/* Overall Score Display */
+.xthread-overall-score {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.xthread-overall-score.score-green {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.xthread-overall-score.score-yellow {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.xthread-overall-score.score-red {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.xthread-score-circle {
+  display: flex;
+  align-items: baseline;
+  flex-shrink: 0;
+}
+
+.xthread-score-number {
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.score-green .xthread-score-number {
+  color: #10b981;
+}
+
+.score-yellow .xthread-score-number {
+  color: #f59e0b;
+}
+
+.score-red .xthread-score-number {
+  color: #ef4444;
+}
+
+.xthread-score-max {
+  font-size: 18px;
+  color: #71767b;
+  margin-left: 2px;
+}
+
+.xthread-score-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: #e7e9ea;
+}
+
+/* Engagement Prediction */
+.xthread-engagement-prediction {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #1d1f23;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.xthread-engagement-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.xthread-engagement-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.xthread-engagement-type {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e7e9ea;
+  text-transform: capitalize;
+}
+
+.xthread-engagement-why {
+  font-size: 12px;
+  color: #8b949e;
+  line-height: 1.4;
+}
+
+/* Factors Section */
+.xthread-factors-section {
+  margin-bottom: 16px;
+}
+
+.xthread-factors {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.xthread-factor {
+  padding: 10px 12px;
+  background: #1d1f23;
+  border-radius: 8px;
+  border-left: 3px solid;
+}
+
+.xthread-factor.factor-good {
+  border-left-color: #10b981;
+}
+
+.xthread-factor.factor-medium {
+  border-left-color: #f59e0b;
+}
+
+.xthread-factor.factor-weak {
+  border-left-color: #ef4444;
+}
+
+.xthread-factor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.xthread-factor-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e7e9ea;
+}
+
+.xthread-factor-score {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.factor-good .xthread-factor-score {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.factor-medium .xthread-factor-score {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.factor-weak .xthread-factor-score {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.xthread-factor-feedback {
+  font-size: 12px;
+  color: #8b949e;
+  line-height: 1.4;
+}
+
+/* Strengths & Weaknesses */
+.xthread-sw-section {
+  margin-bottom: 16px;
+}
+
+.xthread-sw-list {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.xthread-sw-list li {
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 4px 0;
+}
+
+.xthread-strength {
+  color: #10b981;
+}
+
+.xthread-weakness {
+  color: #ef4444;
+}
+
+/* Suggestions Section */
+.xthread-suggestions-section {
+  margin-bottom: 12px;
+}
+
+.xthread-suggestions {
+  margin: 0;
+  padding-left: 20px;
+  list-style: none;
+}
+
+.xthread-suggestions li {
+  position: relative;
+  font-size: 13px;
+  color: #c9d1d9;
+  line-height: 1.5;
+  padding: 4px 0 4px 4px;
+}
+
+.xthread-suggestions li::before {
+  content: '→';
+  position: absolute;
+  left: -16px;
+  color: #f59e0b;
+}
+
+/* Score Footer */
+.xthread-score-footer {
+  padding-top: 12px;
+  border-top: 1px solid #2f3336;
+  text-align: center;
+}
+
+.xthread-algo-tip {
+  font-size: 11px;
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+/* Light mode for Score Panel */
+@media (prefers-color-scheme: light) {
+  .xthread-score-btn {
+    border-color: #d97706;
+    color: #d97706;
+  }
+  
+  .xthread-score-btn:hover {
+    background: rgba(217, 119, 6, 0.1);
+  }
+  
+  .xthread-score-panel {
+    background: #ffffff;
+    border-color: #f59e0b;
+  }
+  
+  .xthread-score-header {
+    border-bottom-color: #e5e7eb;
+  }
+  
+  .xthread-score-header .xthread-logo {
+    color: #0f1419;
+  }
+  
+  .xthread-score-label {
+    color: #0f1419;
+  }
+  
+  .xthread-engagement-prediction,
+  .xthread-factor {
+    background: #f7f9f9;
+  }
+  
+  .xthread-engagement-type,
+  .xthread-factor-name {
+    color: #0f1419;
+  }
+  
+  .xthread-engagement-why,
+  .xthread-factor-feedback {
+    color: #536471;
+  }
+  
+  .xthread-suggestions li {
+    color: #374151;
+  }
+  
+  .xthread-score-footer {
+    border-top-color: #e5e7eb;
+  }
+  
+  .xthread-algo-tip {
+    color: #d97706;
   }
 }

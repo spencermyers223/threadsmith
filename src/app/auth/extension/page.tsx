@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 
 export default function ExtensionAuthPage() {
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect');
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const [status, setStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
 
   useEffect(() => {

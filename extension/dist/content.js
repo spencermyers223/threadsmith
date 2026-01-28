@@ -176,7 +176,9 @@ let userToken = null;
 let isPremium = false;
 let isProcessing = false;
 let isAnalyzing = false;
+let isScoring = false;
 let currentProfileHandle = null;
+let composeObserver = null;
 
 // Initialize
 async function init() {
@@ -210,7 +212,7 @@ async function init() {
   }
 }
 
-// Observe DOM for new posts and profile page changes
+// Observe DOM for new posts, profile page changes, and compose modal
 function observeDOM() {
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
@@ -230,6 +232,14 @@ function observeDOM() {
             if (node.querySelector && node.querySelector('[data-testid="placementTracking"]')) {
               checkProfilePage();
             }
+            
+            // Check for compose modal / tweet composer
+            if (node.querySelector) {
+              const composeArea = node.querySelector('[data-testid="tweetTextarea_0"]');
+              if (composeArea) {
+                checkComposeModal();
+              }
+            }
           }
         });
       }
@@ -240,6 +250,9 @@ function observeDOM() {
     childList: true,
     subtree: true
   });
+  
+  // Also check for compose modal on initial load
+  setTimeout(checkComposeModal, 1000);
 }
 
 // ============================================================
@@ -754,6 +767,396 @@ async function updateWatchlistBadge() {
     count: watchlist.length
   });
 }
+
+// ============================================================
+// Algo Analyzer - Score Draft Feature
+// ============================================================
+
+// Check for compose modal and inject score button
+function checkComposeModal() {
+  // Look for tweet compose areas (modal or inline)
+  const composeAreas = document.querySelectorAll('[data-testid="tweetTextarea_0"]');
+  
+  composeAreas.forEach((textarea) => {
+    // Find the toolbar with the Post button (closest to textarea)
+    // X structure: textarea is nested, toolbar is nearby with tweetButton
+    let toolbar = null;
+    let searchEl = textarea.parentElement;
+    
+    // Walk up the DOM to find the toolbar
+    for (let i = 0; i < 10 && searchEl; i++) {
+      toolbar = searchEl.querySelector('[data-testid="toolBar"]');
+      if (toolbar) break;
+      searchEl = searchEl.parentElement;
+    }
+    
+    if (!toolbar) {
+      console.debug('[xthread] No toolbar found for compose area');
+      return;
+    }
+    
+    // Check if we already injected
+    if (toolbar.querySelector('.xthread-score-btn')) return;
+    
+    injectScoreButton(toolbar, textarea);
+  });
+}
+
+// Inject score button into compose toolbar
+function injectScoreButton(toolbar, textarea) {
+  // Find the Post button - try multiple selectors
+  let postButton = toolbar.querySelector('[data-testid="tweetButton"]');
+  if (!postButton) {
+    postButton = toolbar.querySelector('[data-testid="tweetButtonInline"]');
+  }
+  if (!postButton) {
+    // Fallback: find a button that looks like the Post button
+    const buttons = toolbar.querySelectorAll('button');
+    for (const btn of buttons) {
+      const text = btn.textContent?.toLowerCase();
+      if (text && (text.includes('post') || text.includes('reply') || text.includes('tweet'))) {
+        postButton = btn;
+        break;
+      }
+    }
+  }
+  
+  // Create score button
+  const scoreBtn = document.createElement('button');
+  scoreBtn.className = 'xthread-score-btn';
+  scoreBtn.type = 'button';
+  scoreBtn.setAttribute('aria-label', 'Score your tweet');
+  scoreBtn.innerHTML = `
+    <span class="xthread-score-icon">📊</span>
+    <span class="xthread-score-text">Score</span>
+  `;
+  scoreBtn.title = 'Analyze your tweet before posting';
+  
+  // Insert into toolbar
+  if (postButton && postButton.parentElement) {
+    // Insert before the Post button's container
+    const postBtnContainer = postButton.closest('div[class]') || postButton.parentElement;
+    if (postBtnContainer && postBtnContainer.parentElement) {
+      postBtnContainer.parentElement.insertBefore(scoreBtn, postBtnContainer);
+    } else {
+      toolbar.insertBefore(scoreBtn, postButton);
+    }
+  } else {
+    // Fallback: append to toolbar
+    toolbar.appendChild(scoreBtn);
+  }
+  
+  // Click handler
+  scoreBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await handleScoreDraft(scoreBtn, textarea);
+  });
+  
+  console.debug('[xthread] Score button injected');
+}
+
+// Handle score button click
+async function handleScoreDraft(btn, textarea) {
+  if (isScoring) return;
+  
+  if (!userToken) {
+    showToast('Please sign in to xthread first. Click the extension icon.');
+    return;
+  }
+  
+  if (!isPremium) {
+    showToast('Algo Analyzer is a premium feature. Upgrade at xthread.io');
+    return;
+  }
+  
+  // Get the draft text
+  const draftText = getDraftText(textarea);
+  
+  if (!draftText || draftText.trim().length === 0) {
+    showToast('Write something first to score your tweet!');
+    return;
+  }
+  
+  isScoring = true;
+  btn.classList.add('xthread-loading');
+  btn.innerHTML = `
+    <span class="xthread-score-icon">⏳</span>
+    <span class="xthread-score-text">Scoring...</span>
+  `;
+  
+  try {
+    // Determine if this is a reply
+    const isReply = isReplyComposer(textarea);
+    const replyToContext = isReply ? getReplyContext() : null;
+    
+    // Call API
+    const result = await scoreDraft(draftText, isReply ? 'reply' : 'tweet', replyToContext);
+    
+    // Show score panel
+    showScorePanel(btn, result, draftText);
+    
+  } catch (err) {
+    console.error('[xthread] Error scoring draft:', err);
+    showToast(err.message || 'Failed to score draft. Please try again.');
+  } finally {
+    isScoring = false;
+    btn.classList.remove('xthread-loading');
+    btn.innerHTML = `
+      <span class="xthread-score-icon">📊</span>
+      <span class="xthread-score-text">Score</span>
+    `;
+  }
+}
+
+// Get draft text from textarea
+function getDraftText(textarea) {
+  // X uses contenteditable divs, not actual textareas
+  // The text is in a div with data-testid="tweetTextarea_0"
+  
+  // First try: textarea itself might be the editable div
+  let editableDiv = textarea;
+  if (!editableDiv.matches('[data-testid="tweetTextarea_0"]')) {
+    editableDiv = textarea.closest('[data-testid="tweetTextarea_0"]');
+  }
+  
+  if (editableDiv) {
+    // Try multiple methods to get text
+    
+    // Method 1: Look for spans with data-text="true"
+    const spans = editableDiv.querySelectorAll('[data-text="true"]');
+    if (spans.length > 0) {
+      return Array.from(spans).map(span => span.textContent).join('\n');
+    }
+    
+    // Method 2: Get innerText which preserves line breaks better
+    if (editableDiv.innerText && editableDiv.innerText.trim()) {
+      return editableDiv.innerText.trim();
+    }
+    
+    // Method 3: Get textContent as fallback
+    if (editableDiv.textContent && editableDiv.textContent.trim()) {
+      return editableDiv.textContent.trim();
+    }
+  }
+  
+  // Fallback: search nearby for text content
+  let searchEl = textarea.parentElement;
+  for (let i = 0; i < 5 && searchEl; i++) {
+    const textSpans = searchEl.querySelectorAll('[data-text="true"]');
+    if (textSpans.length > 0) {
+      return Array.from(textSpans).map(span => span.textContent).join('\n');
+    }
+    searchEl = searchEl.parentElement;
+  }
+  
+  return '';
+}
+
+// Check if this is a reply composer
+function isReplyComposer(textarea) {
+  // Check if we're in a reply context by looking for reply indicator
+  const dialog = textarea.closest('[role="dialog"]');
+  if (dialog) {
+    // Check for "Replying to" text
+    const replyingTo = dialog.querySelector('[data-testid="Tweet-User-Avatar"]');
+    if (replyingTo) return true;
+  }
+  
+  // Check URL for reply context
+  if (location.pathname.includes('/status/') && location.pathname.includes('/compose/')) {
+    return true;
+  }
+  
+  return false;
+}
+
+// Get context of the tweet being replied to
+function getReplyContext() {
+  // Try to find the original tweet in the reply modal
+  const dialog = document.querySelector('[role="dialog"]');
+  if (dialog) {
+    const originalTweet = dialog.querySelector('[data-testid="tweetText"]');
+    if (originalTweet) {
+      return originalTweet.textContent || '';
+    }
+  }
+  
+  // Try to get from the thread view
+  const threadTweets = document.querySelectorAll('article[data-testid="tweet"] [data-testid="tweetText"]');
+  if (threadTweets.length > 0) {
+    return threadTweets[0].textContent || '';
+  }
+  
+  return null;
+}
+
+// Call scoring API
+async function scoreDraft(text, postType, replyToContext) {
+  const response = await fetch(`${XTHREAD_API}/extension/score-draft`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${userToken}`
+    },
+    body: JSON.stringify({
+      text,
+      postType,
+      replyToContext
+    })
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'API request failed');
+  }
+  
+  const data = await response.json();
+  return data.result;
+}
+
+// Show score panel
+function showScorePanel(btn, result, draftText) {
+  // Remove existing panel
+  const existingPanel = document.querySelector('.xthread-score-panel');
+  if (existingPanel) existingPanel.remove();
+  
+  // Create panel
+  const panel = document.createElement('div');
+  panel.className = 'xthread-score-panel';
+  
+  // Score color class
+  const scoreColorClass = result.scoreColor === 'green' ? 'score-green' :
+                          result.scoreColor === 'yellow' ? 'score-yellow' : 'score-red';
+  
+  // Build factors HTML
+  const factorsHtml = result.factors.map(factor => {
+    const factorColor = factor.score >= 7 ? 'factor-good' :
+                        factor.score >= 4 ? 'factor-medium' : 'factor-weak';
+    return `
+      <div class="xthread-factor ${factorColor}">
+        <div class="xthread-factor-header">
+          <span class="xthread-factor-name">${escapeHtml(factor.name)}</span>
+          <span class="xthread-factor-score">${factor.score}/10</span>
+        </div>
+        <div class="xthread-factor-feedback">${escapeHtml(factor.feedback)}</div>
+      </div>
+    `;
+  }).join('');
+  
+  // Build suggestions HTML
+  const suggestionsHtml = result.suggestions.map(suggestion => 
+    `<li>${escapeHtml(suggestion)}</li>`
+  ).join('');
+  
+  // Build strengths/weaknesses HTML
+  const strengthsHtml = result.strengthsAndWeaknesses.strengths.map(s =>
+    `<li class="xthread-strength">✓ ${escapeHtml(s)}</li>`
+  ).join('');
+  
+  const weaknessesHtml = result.strengthsAndWeaknesses.weaknesses.map(w =>
+    `<li class="xthread-weakness">✗ ${escapeHtml(w)}</li>`
+  ).join('');
+  
+  // Engagement prediction icon
+  const engagementIcon = result.predictedEngagement.primary === 'replies' ? '💬' :
+                         result.predictedEngagement.primary === 'retweets' ? '🔄' :
+                         result.predictedEngagement.primary === 'likes' ? '❤️' : '✨';
+  
+  panel.innerHTML = `
+    <div class="xthread-score-header">
+      <div class="xthread-header-left">
+        <span class="xthread-logo">📊 Algo Analyzer</span>
+        <span class="xthread-subtitle">How the algorithm sees your tweet</span>
+      </div>
+      <button class="xthread-close-btn">×</button>
+    </div>
+    
+    <!-- Overall Score -->
+    <div class="xthread-overall-score ${scoreColorClass}">
+      <div class="xthread-score-circle">
+        <span class="xthread-score-number">${result.score}</span>
+        <span class="xthread-score-max">/100</span>
+      </div>
+      <div class="xthread-score-label">
+        ${result.score >= 70 ? 'Great! Ready to post' :
+          result.score >= 40 ? 'Room for improvement' : 'Needs work'}
+      </div>
+    </div>
+    
+    <!-- Predicted Engagement -->
+    <div class="xthread-engagement-prediction">
+      <div class="xthread-engagement-icon">${engagementIcon}</div>
+      <div class="xthread-engagement-info">
+        <span class="xthread-engagement-type">Predicted: ${result.predictedEngagement.primary}</span>
+        <span class="xthread-engagement-why">${escapeHtml(result.predictedEngagement.explanation)}</span>
+      </div>
+    </div>
+    
+    <!-- Factors Breakdown -->
+    <div class="xthread-factors-section">
+      <div class="xthread-section-title">📈 Factor Breakdown</div>
+      <div class="xthread-factors">
+        ${factorsHtml}
+      </div>
+    </div>
+    
+    <!-- Strengths & Weaknesses -->
+    ${(strengthsHtml || weaknessesHtml) ? `
+    <div class="xthread-sw-section">
+      <div class="xthread-section-title">⚖️ Quick Summary</div>
+      <ul class="xthread-sw-list">
+        ${strengthsHtml}
+        ${weaknessesHtml}
+      </ul>
+    </div>
+    ` : ''}
+    
+    <!-- Suggestions -->
+    <div class="xthread-suggestions-section">
+      <div class="xthread-section-title">💡 Suggestions to Improve</div>
+      <ul class="xthread-suggestions">
+        ${suggestionsHtml}
+      </ul>
+    </div>
+    
+    <div class="xthread-score-footer">
+      <span class="xthread-algo-tip">💡 Replies are weighted 75x in the algorithm!</span>
+    </div>
+  `;
+  
+  // Find where to insert panel
+  const composeContainer = btn.closest('[role="dialog"]') || 
+                           btn.closest('[data-testid="primaryColumn"]')?.querySelector('div[style*="border"]')?.parentElement ||
+                           btn.parentElement?.parentElement?.parentElement;
+  
+  if (composeContainer) {
+    // Insert at the top of compose area
+    const toolbar = btn.closest('[data-testid="toolBar"]');
+    if (toolbar && toolbar.parentElement) {
+      toolbar.parentElement.insertBefore(panel, toolbar.parentElement.firstChild);
+    } else {
+      composeContainer.insertBefore(panel, composeContainer.firstChild);
+    }
+  } else {
+    // Fallback: append to body as fixed position
+    panel.style.position = 'fixed';
+    panel.style.top = '50%';
+    panel.style.left = '50%';
+    panel.style.transform = 'translate(-50%, -50%)';
+    panel.style.zIndex = '10001';
+    document.body.appendChild(panel);
+  }
+  
+  // Close button handler
+  panel.querySelector('.xthread-close-btn').addEventListener('click', () => {
+    panel.remove();
+  });
+}
+
+// ============================================================
+// Post Buttons & Coaching
+// ============================================================
 
 // Process posts already on page
 function processExistingPosts() {
