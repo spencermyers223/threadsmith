@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <!-- Premium gold gradient -->
+    <linearGradient id="goldPremium" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E8D5B7"/>
+      <stop offset="30%" style="stop-color:#D4B896"/>
+      <stop offset="70%" style="stop-color:#C9A876"/>
+      <stop offset="100%" style="stop-color:#B8956A"/>
+    </linearGradient>
+    
+    <!-- Radial gradient for background depth -->
+    <radialGradient id="bgGradient" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" style="stop-color:#151515"/>
+      <stop offset="100%" style="stop-color:#0A0A0A"/>
+    </radialGradient>
+    
+    <!-- Glow effect -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Outer glow -->
+    <filter id="outerGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="400" fill="url(#bgGradient)"/>
+  
+  <!-- Subtle grid pattern for texture -->
+  <g opacity="0.03">
+    <line x1="0" y1="100" x2="400" y2="100" stroke="#fff" stroke-width="1"/>
+    <line x1="0" y1="200" x2="400" y2="200" stroke="#fff" stroke-width="1"/>
+    <line x1="0" y1="300" x2="400" y2="300" stroke="#fff" stroke-width="1"/>
+    <line x1="100" y1="0" x2="100" y2="400" stroke="#fff" stroke-width="1"/>
+    <line x1="200" y1="0" x2="200" y2="400" stroke="#fff" stroke-width="1"/>
+    <line x1="300" y1="0" x2="300" y2="400" stroke="#fff" stroke-width="1"/>
+  </g>
+  
+  <!-- Outer decorative ring -->
+  <circle cx="200" cy="200" r="160" fill="none" stroke="url(#goldPremium)" stroke-width="1" opacity="0.15"/>
+  <circle cx="200" cy="200" r="140" fill="none" stroke="url(#goldPremium)" stroke-width="1" opacity="0.1"/>
+  
+  <!-- Main logo container -->
+  <g transform="translate(200, 200)">
+    <!-- Background circle -->
+    <circle cx="0" cy="0" r="100" fill="#0D0D0D" stroke="url(#goldPremium)" stroke-width="3"/>
+    
+    <!-- X mark with refined thread aesthetic -->
+    <g filter="url(#glow)">
+      <!-- Primary X strokes - bold and clear -->
+      <path d="M-45,-45 L45,45" stroke="url(#goldPremium)" stroke-width="14" stroke-linecap="round"/>
+      <path d="M45,-45 L-45,45" stroke="url(#goldPremium)" stroke-width="14" stroke-linecap="round"/>
+      
+      <!-- Thread accent lines - creating woven effect -->
+      <path d="M-35,-55 L55,35" stroke="url(#goldPremium)" stroke-width="4" stroke-linecap="round" opacity="0.35"/>
+      <path d="M-55,-35 L35,55" stroke="url(#goldPremium)" stroke-width="4" stroke-linecap="round" opacity="0.35"/>
+      <path d="M35,-55 L-55,35" stroke="url(#goldPremium)" stroke-width="4" stroke-linecap="round" opacity="0.35"/>
+      <path d="M55,-35 L-35,55" stroke="url(#goldPremium)" stroke-width="4" stroke-linecap="round" opacity="0.35"/>
+      
+      <!-- Inner thread details -->
+      <path d="M-25,-55 L55,25" stroke="url(#goldPremium)" stroke-width="2" stroke-linecap="round" opacity="0.2"/>
+      <path d="M-55,-25 L25,55" stroke="url(#goldPremium)" stroke-width="2" stroke-linecap="round" opacity="0.2"/>
+      <path d="M25,-55 L-55,25" stroke="url(#goldPremium)" stroke-width="2" stroke-linecap="round" opacity="0.2"/>
+      <path d="M55,-25 L-25,55" stroke="url(#goldPremium)" stroke-width="2" stroke-linecap="round" opacity="0.2"/>
+    </g>
+  </g>
+</svg>
