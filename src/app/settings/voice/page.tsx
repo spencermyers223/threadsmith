@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   ArrowLeft, Mic, Upload, Trash2, RefreshCw, AlertCircle, Check,
@@ -60,13 +60,7 @@ export default function VoiceSettingsPage() {
     emojiFrequency?: string
   }>({})
 
-  useEffect(() => {
-    if (hasLoadedRef.current) return
-    hasLoadedRef.current = true
-    loadData()
-  }, [])
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true)
     try {
       // Load samples
@@ -94,7 +88,13 @@ export default function VoiceSettingsPage() {
       // Ignore load errors
     }
     setLoading(false)
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    if (hasLoadedRef.current) return
+    hasLoadedRef.current = true
+    loadData()
+  }, [loadData])
 
   async function handleImport() {
     if (!tweetInput.trim()) return

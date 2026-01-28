@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
@@ -10,11 +10,7 @@ export default function ExtensionAuthPage() {
   const supabase = createClient();
   const [status, setStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
 
-  useEffect(() => {
-    checkAuthAndRedirect();
-  }, []);
-
-  async function checkAuthAndRedirect() {
+  const checkAuthAndRedirect = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
 
@@ -37,7 +33,11 @@ export default function ExtensionAuthPage() {
       console.error('Auth check error:', error);
       setStatus('unauthenticated');
     }
-  }
+  }, [supabase.auth, redirectUrl]);
+
+  useEffect(() => {
+    checkAuthAndRedirect();
+  }, [checkAuthAndRedirect]);
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center">
