@@ -117,38 +117,39 @@ body {
 .ProseMirror {
   color: var(--foreground);
   background: var(--background);
-  line-height: 1.6;
+  line-height: 1.5;
+  font-size: 0.9rem;
 }
 
 .ProseMirror p {
   color: var(--foreground);
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
+  margin-top: 0.15em;
+  margin-bottom: 0.15em;
 }
 
 .ProseMirror h1 {
   color: var(--foreground);
-  font-size: 1.5em;
+  font-size: 1.3em;
   font-weight: 700;
-  margin-top: 1em;
-  margin-bottom: 0.5em;
+  margin-top: 0.6em;
+  margin-bottom: 0.2em;
 }
 
 .ProseMirror h2 {
   color: var(--foreground);
-  font-size: 1.25em;
+  font-size: 1.15em;
   font-weight: 600;
-  margin-top: 0.75em;
-  margin-bottom: 0.4em;
+  margin-top: 0.5em;
+  margin-bottom: 0.15em;
 }
 
 .ProseMirror h3,
 .ProseMirror h4 {
   color: var(--foreground);
-  font-size: 1.1em;
+  font-size: 1.05em;
   font-weight: 600;
-  margin-top: 0.75em;
-  margin-bottom: 0.4em;
+  margin-top: 0.4em;
+  margin-bottom: 0.1em;
 }
 
 .ProseMirror li,
@@ -158,22 +159,42 @@ body {
 
 .ProseMirror hr {
   border-color: var(--border);
-  margin-top: 1em;
-  margin-bottom: 1em;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
 }
 
 .ProseMirror ul,
 .ProseMirror ol {
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
+  margin-top: 0.15em;
+  margin-bottom: 0.15em;
   padding-left: 1.5em;
 }
 
 .ProseMirror blockquote {
   border-left: 3px solid var(--border);
   padding-left: 1em;
+  margin-top: 0.2em;
+  margin-bottom: 0.2em;
+}
+
+/* Override Tailwind prose spacing inside ProseMirror */
+.ProseMirror.prose > * + * {
+  margin-top: 0.25em;
+}
+
+.ProseMirror.prose :where(hr):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
   margin-top: 0.5em;
   margin-bottom: 0.5em;
+}
+
+.ProseMirror.prose :where(p):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  margin-top: 0.15em;
+  margin-bottom: 0.15em;
+}
+
+.ProseMirror.prose :where(h1, h2, h3, h4):not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  margin-top: 0.5em;
+  margin-bottom: 0.15em;
 }
 
 .ProseMirror p.is-editor-empty:first-child::before {
