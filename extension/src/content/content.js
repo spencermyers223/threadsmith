@@ -2,6 +2,7 @@
 // Coaches users on HOW to reply, not what to say
 
 const XTHREAD_API = 'https://xthread.io/api';
+const POST_HISTORY_MAX = 20;
 
 // ============================================================
 // Watchlist Module (inline to avoid module loading issues)
@@ -104,6 +105,67 @@ async function updateWatchlistAvatar(handle, avatar) {
 }
 
 // ============================================================
+// Post History Module (for Content Coach)
+// ============================================================
+
+async function getPostHistory() {
+  try {
+    const stored = await chrome.storage.local.get(['postHistory']);
+    return stored.postHistory || [];
+  } catch (err) {
+    console.debug('[xthread] Error getting post history:', err);
+    return [];
+  }
+}
+
+async function addToPostHistory(post) {
+  try {
+    const history = await getPostHistory();
+    
+    // Check for duplicate (same text)
+    const exists = history.some(p => p.text === post.text);
+    if (exists) {
+      console.debug('[xthread] Post already in history');
+      return;
+    }
+    
+    const newEntry = {
+      text: post.text,
+      postedAt: new Date().toISOString(),
+      metrics: post.metrics || null,
+      estimatedMetrics: null // Will be updated later when we can scrape
+    };
+    
+    history.unshift(newEntry);
+    
+    // Keep only last POST_HISTORY_MAX posts
+    if (history.length > POST_HISTORY_MAX) {
+      history.splice(POST_HISTORY_MAX);
+    }
+    
+    await chrome.storage.local.set({ postHistory: history });
+    console.debug('[xthread] Added to post history:', post.text.substring(0, 50) + '...');
+  } catch (err) {
+    console.debug('[xthread] Error adding to post history:', err);
+  }
+}
+
+async function updatePostMetrics(text, metrics) {
+  try {
+    const history = await getPostHistory();
+    const entry = history.find(p => p.text === text);
+    
+    if (entry) {
+      entry.estimatedMetrics = metrics;
+      entry.metricsUpdatedAt = new Date().toISOString();
+      await chrome.storage.local.set({ postHistory: history });
+    }
+  } catch (err) {
+    console.debug('[xthread] Error updating post metrics:', err);
+  }
+}
+
+// ============================================================
 // Account Analysis Cache Module
 // ============================================================
 const ANALYSIS_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
@@ -177,6 +239,7 @@ let isPremium = false;
 let isProcessing = false;
 let isAnalyzing = false;
 let isScoring = false;
+let isCoaching = false;
 let currentProfileHandle = null;
 let composeObserver = null;
 
@@ -772,7 +835,7 @@ async function updateWatchlistBadge() {
 // Algo Analyzer - Score Draft Feature
 // ============================================================
 
-// Check for compose modal and inject score button
+// Check for compose modal and inject score button + ideas button
 function checkComposeModal() {
   // Look for tweet compose areas (modal or inline)
   const composeAreas = document.querySelectorAll('[data-testid="tweetTextarea_0"]');
@@ -795,11 +858,19 @@ function checkComposeModal() {
       return;
     }
     
-    // Check if we already injected
-    if (toolbar.querySelector('.xthread-score-btn')) return;
+    // Check if we already injected the score button
+    if (!toolbar.querySelector('.xthread-score-btn')) {
+      injectScoreButton(toolbar, textarea);
+    }
     
-    injectScoreButton(toolbar, textarea);
+    // Check if we already injected the ideas button
+    if (!toolbar.querySelector('.xthread-ideas-btn')) {
+      injectIdeasButton(toolbar, textarea);
+    }
   });
+  
+  // Also check for post submission to track in history
+  observePostSubmission();
 }
 
 // Inject score button into compose toolbar
@@ -1152,6 +1223,336 @@ function showScorePanel(btn, result, draftText) {
   panel.querySelector('.xthread-close-btn').addEventListener('click', () => {
     panel.remove();
   });
+}
+
+// ============================================================
+// Content Coach - Ideas Feature
+// ============================================================
+
+// Inject ideas button into compose toolbar
+function injectIdeasButton(toolbar, textarea) {
+  // Create ideas button
+  const ideasBtn = document.createElement('button');
+  ideasBtn.className = 'xthread-ideas-btn';
+  ideasBtn.type = 'button';
+  ideasBtn.setAttribute('aria-label', 'Get content ideas');
+  ideasBtn.innerHTML = `
+    <span class="xthread-ideas-icon">💡</span>
+    <span class="xthread-ideas-text">Ideas</span>
+  `;
+  ideasBtn.title = 'Get personalized content ideas';
+  
+  // Find where to insert (before the score button if it exists, or at start of toolbar)
+  const scoreBtn = toolbar.querySelector('.xthread-score-btn');
+  if (scoreBtn) {
+    toolbar.insertBefore(ideasBtn, scoreBtn);
+  } else {
+    const postButton = toolbar.querySelector('[data-testid="tweetButton"]') ||
+                       toolbar.querySelector('[data-testid="tweetButtonInline"]');
+    if (postButton && postButton.parentElement) {
+      const postBtnContainer = postButton.closest('div[class]') || postButton.parentElement;
+      if (postBtnContainer && postBtnContainer.parentElement) {
+        postBtnContainer.parentElement.insertBefore(ideasBtn, postBtnContainer);
+      } else {
+        toolbar.insertBefore(ideasBtn, postButton);
+      }
+    } else {
+      toolbar.appendChild(ideasBtn);
+    }
+  }
+  
+  // Click handler
+  ideasBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await handleGetIdeas(ideasBtn, textarea);
+  });
+  
+  console.debug('[xthread] Ideas button injected');
+}
+
+// Handle ideas button click
+async function handleGetIdeas(btn, textarea) {
+  if (isCoaching) return;
+  
+  if (!userToken) {
+    showToast('Please sign in to xthread first. Click the extension icon.');
+    return;
+  }
+  
+  if (!isPremium) {
+    showToast('Content Coach is a premium feature. Upgrade at xthread.io');
+    return;
+  }
+  
+  isCoaching = true;
+  btn.classList.add('xthread-loading');
+  btn.innerHTML = `
+    <span class="xthread-ideas-icon">⏳</span>
+    <span class="xthread-ideas-text">Loading...</span>
+  `;
+  
+  try {
+    // Get post history from local storage
+    const postHistory = await getPostHistory();
+    
+    // Get user's voice profile from storage (if available)
+    const stored = await chrome.storage.local.get(['voiceProfile']);
+    const voiceProfile = stored.voiceProfile || null;
+    
+    // Call API
+    const result = await getContentCoaching(postHistory, voiceProfile);
+    
+    // Show content coach panel
+    showContentCoachPanel(btn, result, postHistory.length);
+    
+  } catch (err) {
+    console.error('[xthread] Error getting content ideas:', err);
+    showToast(err.message || 'Failed to get ideas. Please try again.');
+  } finally {
+    isCoaching = false;
+    btn.classList.remove('xthread-loading');
+    btn.innerHTML = `
+      <span class="xthread-ideas-icon">💡</span>
+      <span class="xthread-ideas-text">Ideas</span>
+    `;
+  }
+}
+
+// Call Content Coach API
+async function getContentCoaching(postHistory, voiceProfile) {
+  // Map post history to API format
+  const recentPosts = postHistory.map(post => ({
+    text: post.text,
+    metrics: post.estimatedMetrics || post.metrics || null,
+    postedAt: post.postedAt
+  }));
+  
+  const response = await fetch(`${XTHREAD_API}/extension/content-coach`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${userToken}`
+    },
+    body: JSON.stringify({
+      recentPosts,
+      voiceProfile
+    })
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || 'API request failed');
+  }
+  
+  const data = await response.json();
+  return data.result;
+}
+
+// Show Content Coach panel
+function showContentCoachPanel(btn, result, postCount) {
+  // Remove existing panel
+  const existingPanel = document.querySelector('.xthread-coach-panel-ideas');
+  if (existingPanel) existingPanel.remove();
+  
+  // Create panel
+  const panel = document.createElement('div');
+  panel.className = 'xthread-coach-panel-ideas';
+  
+  // Format icons for content ideas
+  const formatIcons = {
+    'single': '📝',
+    'thread': '🧵',
+    'question': '❓',
+    'hot-take': '🔥',
+    'story': '📖'
+  };
+  
+  // Build "What's Working" section
+  const whatWorksHtml = `
+    <div class="xthread-coach-section">
+      <div class="xthread-section-title">✨ What's Working</div>
+      ${result.whatWorks.topics.length > 0 ? `
+        <div class="xthread-working-row">
+          <span class="xthread-working-label">Topics:</span>
+          <div class="xthread-tags">
+            ${result.whatWorks.topics.map(t => `<span class="xthread-tag topic">${escapeHtml(t)}</span>`).join('')}
+          </div>
+        </div>
+      ` : ''}
+      ${result.whatWorks.formats.length > 0 ? `
+        <div class="xthread-working-row">
+          <span class="xthread-working-label">Formats:</span>
+          <div class="xthread-tags">
+            ${result.whatWorks.formats.map(f => `<span class="xthread-tag format">${escapeHtml(f)}</span>`).join('')}
+          </div>
+        </div>
+      ` : ''}
+      ${result.whatWorks.hooks.length > 0 ? `
+        <div class="xthread-working-row">
+          <span class="xthread-working-label">Hooks:</span>
+          <div class="xthread-tags">
+            ${result.whatWorks.hooks.map(h => `<span class="xthread-tag hook">${escapeHtml(h)}</span>`).join('')}
+          </div>
+        </div>
+      ` : ''}
+      ${postCount === 0 ? '<p class="xthread-no-data">Start posting to see what works for you!</p>' : ''}
+    </div>
+  `;
+  
+  // Build "Try This" ideas section
+  const ideasHtml = `
+    <div class="xthread-coach-section">
+      <div class="xthread-section-title">💡 Try This</div>
+      <div class="xthread-ideas-list">
+        ${result.ideas.map((idea, i) => `
+          <div class="xthread-idea-card" data-index="${i}">
+            <div class="xthread-idea-header">
+              <span class="xthread-idea-format">${formatIcons[idea.format] || '📝'} ${idea.format}</span>
+              <span class="xthread-idea-title">${escapeHtml(idea.title)}</span>
+            </div>
+            <div class="xthread-idea-desc">${escapeHtml(idea.description)}</div>
+            <div class="xthread-idea-hook" data-hook="${escapeHtml(idea.hook)}">
+              <span class="xthread-hook-label">Hook:</span>
+              <span class="xthread-hook-text">"${escapeHtml(idea.hook)}"</span>
+              <span class="xthread-copy-hint">Click to copy</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  
+  // Build "Best Time" section
+  const bestTimeHtml = `
+    <div class="xthread-coach-section">
+      <div class="xthread-section-title">⏰ Best Time to Post</div>
+      <div class="xthread-best-times">
+        <div class="xthread-time-pills">
+          ${result.bestTimes.days.map(d => `<span class="xthread-time-pill day">${escapeHtml(d)}</span>`).join('')}
+          ${result.bestTimes.times.map(t => `<span class="xthread-time-pill time">${escapeHtml(t)}</span>`).join('')}
+        </div>
+        <div class="xthread-time-reason">${escapeHtml(result.bestTimes.reasoning)}</div>
+      </div>
+    </div>
+  `;
+  
+  // Build "Voice Check" section
+  const voiceHtml = `
+    <div class="xthread-coach-section">
+      <div class="xthread-section-title">🎭 Voice Check</div>
+      <div class="xthread-voice-style">${escapeHtml(result.voiceReminder.style)}</div>
+      <ul class="xthread-voice-tips">
+        ${result.voiceReminder.tips.map(tip => `<li>${escapeHtml(tip)}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+  
+  // Build "Content Gaps" section
+  const gapsHtml = result.contentGaps.length > 0 ? `
+    <div class="xthread-coach-section">
+      <div class="xthread-section-title">📊 Content Gaps</div>
+      <ul class="xthread-gaps-list">
+        ${result.contentGaps.map(gap => `<li>${escapeHtml(gap)}</li>`).join('')}
+      </ul>
+    </div>
+  ` : '';
+  
+  panel.innerHTML = `
+    <div class="xthread-coach-header">
+      <div class="xthread-header-left">
+        <span class="xthread-logo">💡 Content Coach</span>
+        <span class="xthread-subtitle">Personalized ideas based on ${postCount} post${postCount !== 1 ? 's' : ''}</span>
+      </div>
+      <button class="xthread-close-btn">×</button>
+    </div>
+    
+    ${whatWorksHtml}
+    ${ideasHtml}
+    ${bestTimeHtml}
+    ${voiceHtml}
+    ${gapsHtml}
+    
+    <div class="xthread-coach-footer">
+      <span class="xthread-footer-tip">📝 Your posts are tracked locally to improve suggestions</span>
+    </div>
+  `;
+  
+  // Find where to insert panel - inside the compose area
+  const composeContainer = btn.closest('[role="dialog"]') || 
+                           btn.closest('[data-testid="primaryColumn"]');
+  
+  if (composeContainer) {
+    const toolbar = btn.closest('[data-testid="toolBar"]');
+    if (toolbar && toolbar.parentElement) {
+      toolbar.parentElement.insertBefore(panel, toolbar.parentElement.firstChild);
+    } else {
+      composeContainer.insertBefore(panel, composeContainer.firstChild);
+    }
+  } else {
+    // Fallback: append to body as fixed position
+    panel.style.position = 'fixed';
+    panel.style.top = '50%';
+    panel.style.left = '50%';
+    panel.style.transform = 'translate(-50%, -50%)';
+    panel.style.zIndex = '10001';
+    panel.style.maxWidth = '500px';
+    panel.style.maxHeight = '80vh';
+    panel.style.overflow = 'auto';
+    document.body.appendChild(panel);
+  }
+  
+  // Close button handler
+  panel.querySelector('.xthread-close-btn').addEventListener('click', () => {
+    panel.remove();
+  });
+  
+  // Hook copy handlers
+  panel.querySelectorAll('.xthread-idea-hook').forEach(hookEl => {
+    hookEl.addEventListener('click', () => {
+      const hookText = hookEl.dataset.hook;
+      navigator.clipboard.writeText(hookText);
+      hookEl.classList.add('xthread-copied');
+      setTimeout(() => hookEl.classList.remove('xthread-copied'), 1500);
+      showToast('Hook copied! Paste it in your compose area 📋');
+    });
+  });
+}
+
+// Observe post submission to track in history
+function observePostSubmission() {
+  // We'll track when the user clicks Post/Tweet button
+  // The text should be captured before submission
+  
+  document.addEventListener('click', async (e) => {
+    const target = e.target.closest('[data-testid="tweetButton"], [data-testid="tweetButtonInline"]');
+    if (!target) return;
+    
+    // Find the compose textarea
+    let toolbar = target.closest('[data-testid="toolBar"]');
+    if (!toolbar) return;
+    
+    // Walk up to find the textarea
+    let searchEl = toolbar.parentElement;
+    let textarea = null;
+    
+    for (let i = 0; i < 10 && searchEl; i++) {
+      textarea = searchEl.querySelector('[data-testid="tweetTextarea_0"]');
+      if (textarea) break;
+      searchEl = searchEl.parentElement;
+    }
+    
+    if (!textarea) return;
+    
+    // Get the text being posted
+    const text = getDraftText(textarea);
+    if (!text || text.trim().length < 5) return;
+    
+    // Add to history after a short delay (to ensure post goes through)
+    setTimeout(async () => {
+      await addToPostHistory({ text: text.trim() });
+    }, 2000);
+  }, true);
 }
 
 // ============================================================
