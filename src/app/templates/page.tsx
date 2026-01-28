@@ -33,8 +33,8 @@ interface PostTemplate {
 // Category config
 const CATEGORIES = [
   { id: 'all', label: 'All Templates', icon: Sparkles },
-  { id: 'alpha', label: 'Alpha Drops', icon: TrendingUp },
-  { id: 'contrarian', label: 'Contrarian Takes', icon: Flame },
+  { id: 'alpha', label: 'Insight Threads', icon: TrendingUp },
+  { id: 'contrarian', label: 'Hot Takes', icon: Flame },
   { id: 'data', label: 'Data Posts', icon: BarChart2 },
   { id: 'build-in-public', label: 'Build in Public', icon: Rocket },
   { id: 'engagement', label: 'Engagement Hooks', icon: MessageCircle },

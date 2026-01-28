@@ -27,7 +27,7 @@ export const typeConfig: Record<GenerationType, {
   borderColor: string
 }> = {
   alpha_thread: {
-    label: 'Alpha Thread',
+    label: 'Insight Thread',
     icon: Sparkles,
     bgColor: 'bg-emerald-500/20',
     bgColorSolid: 'bg-emerald-500/25',
@@ -35,7 +35,7 @@ export const typeConfig: Record<GenerationType, {
     borderColor: 'border-emerald-500/40',
   },
   market_take: {
-    label: 'Market Take',
+    label: 'Industry Take',
     icon: TrendingUp,
     bgColor: 'bg-blue-500/20',
     bgColorSolid: 'bg-blue-500/25',
@@ -51,7 +51,7 @@ export const typeConfig: Record<GenerationType, {
     borderColor: 'border-orange-500/40',
   },
   on_chain_insight: {
-    label: 'On-Chain Insight',
+    label: 'Data Insight',
     icon: BarChart3,
     bgColor: 'bg-purple-500/20',
     bgColorSolid: 'bg-purple-500/25',
@@ -59,7 +59,7 @@ export const typeConfig: Record<GenerationType, {
     borderColor: 'border-purple-500/40',
   },
   protocol_breakdown: {
-    label: 'Protocol Breakdown',
+    label: 'Technical Deep Dive',
     icon: BookOpen,
     bgColor: 'bg-blue-500/20',
     bgColorSolid: 'bg-blue-500/25',

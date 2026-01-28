@@ -12,11 +12,11 @@ import { GenerationCounter } from '@/components/subscription/GenerationCounter'
 import { UpgradeModal } from '@/components/subscription/UpgradeModal'
 import type { FileRecord } from '@/components/generate/FilesSidebar'
 
-// CT-native post types as defined in the spec
+// Post types for content generation
 const POST_TYPES = [
   {
     id: 'alpha_thread',
-    label: 'Alpha Thread',
+    label: 'Insight Thread',
     description: 'Share exclusive insights and research',
     icon: TrendingUp,
     color: 'text-emerald-400',
@@ -25,8 +25,8 @@ const POST_TYPES = [
   },
   {
     id: 'market_take',
-    label: 'Market Take',
-    description: 'Your analysis on current market conditions',
+    label: 'Industry Take',
+    description: 'Your analysis on trends and news',
     icon: BarChart2,
     color: 'text-blue-400',
     bgColor: 'bg-blue-500/10',
@@ -43,8 +43,8 @@ const POST_TYPES = [
   },
   {
     id: 'on_chain_insight',
-    label: 'On-Chain Insight',
-    description: 'Data-driven observations from the blockchain',
+    label: 'Data Insight',
+    description: 'Data-driven observations and analysis',
     icon: Zap,
     color: 'text-purple-400',
     bgColor: 'bg-purple-500/10',
@@ -52,8 +52,8 @@ const POST_TYPES = [
   },
   {
     id: 'protocol_breakdown',
-    label: 'Protocol Breakdown',
-    description: 'Educational deep-dive into a protocol',
+    label: 'Technical Deep Dive',
+    description: 'Educational breakdown of complex topics',
     icon: Layers,
     color: 'text-blue-400',
     bgColor: 'bg-blue-500/10',
