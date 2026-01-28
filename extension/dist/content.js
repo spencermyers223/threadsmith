@@ -4,6 +4,9 @@
 const XTHREAD_API = 'https://xthread.io/api';
 const POST_HISTORY_MAX = 20;
 
+// Side panel is now handled by Chrome's sidePanel API
+// Content script sends messages to the side panel via chrome.runtime
+
 // ============================================================
 // Watchlist Module (inline to avoid module loading issues)
 // ============================================================
@@ -429,6 +432,14 @@ async function init() {
       checkProfilePage();
     }
   }).observe(document.body, { childList: true, subtree: true });
+  
+  // Listen for messages from side panel
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'OPEN_REPLY' && window.xthreadCurrentPost) {
+      const replyBtn = window.xthreadCurrentPost.querySelector('[data-testid="reply"]');
+      if (replyBtn) replyBtn.click();
+    }
+  });
   
   if (!userToken) {
     console.debug('[xthread] Not authenticated. Click extension icon to sign in.');
@@ -2029,10 +2040,23 @@ async function handleGetCoaching(post, btn) {
   isProcessing = true;
   btn.classList.add('xthread-loading');
   
+  // Store reference to current post for reply button
+  window.xthreadCurrentPost = post;
+  
   try {
     const postData = extractPostData(post);
     const coaching = await generateCoaching(postData);
-    showCoachingPanel(post, coaching, postData);
+    
+    // Send coaching to side panel
+    chrome.runtime.sendMessage({
+      type: 'SHOW_COACHING',
+      coaching: coaching,
+      postData: postData
+    });
+    
+    // Open the side panel
+    chrome.runtime.sendMessage({ type: 'OPEN_SIDE_PANEL' });
+    
   } catch (err) {
     console.error('[xthread] Error getting coaching:', err);
     showToast('Failed to get coaching. Please try again.');
@@ -2190,7 +2214,8 @@ function showCoachingPanel(post, coaching, postData) {
     
     <!-- Action Bar -->
     <div class="xthread-action-bar">
-      <button class="xthread-start-reply-btn">Start Writing Reply →</button>
+      <button class="xthread-start-reply-btn">Open X Composer →</button>
+      ${isPremium ? `<button class="xthread-quick-post-btn">⚡ Quick Post via xthread</button>` : ''}
     </div>
   `;
   
@@ -2203,21 +2228,35 @@ function showCoachingPanel(post, coaching, postData) {
     panel.remove();
   });
   
-  // Hook click to copy
+  // Hook click - copy to clipboard and optionally open quick post
   panel.querySelectorAll('.xthread-hook').forEach(hook => {
     hook.addEventListener('click', () => {
       const text = hook.dataset.text;
       navigator.clipboard.writeText(text);
       hook.classList.add('xthread-copied');
       setTimeout(() => hook.classList.remove('xthread-copied'), 1500);
-      showToast('Hook copied to clipboard!');
+      
+      if (isPremium) {
+        // Open quick post modal with hook pre-filled
+        showQuickReplyModal(postData, text);
+      } else {
+        showToast('Hook copied to clipboard!');
+      }
     });
   });
   
-  // Start reply button
+  // Start reply button (opens X's native composer)
   panel.querySelector('.xthread-start-reply-btn').addEventListener('click', () => {
     openReplyComposer(post);
   });
+  
+  // Quick post button (posts via xthread API)
+  const quickPostBtn = panel.querySelector('.xthread-quick-post-btn');
+  if (quickPostBtn) {
+    quickPostBtn.addEventListener('click', () => {
+      showQuickReplyModal(postData);
+    });
+  }
   
   // Angle card expansion
   panel.querySelectorAll('.xthread-angle-card').forEach(card => {
@@ -2313,6 +2352,160 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// ============================================================
+// Direct Posting via xthread X API
+// ============================================================
+
+let isPosting = false;
+
+// Post a reply directly to X via xthread API
+async function postReplyViaXthread(replyText, replyToUrl) {
+  if (isPosting) return { success: false, error: 'Already posting' };
+  
+  if (!userToken) {
+    return { success: false, error: 'Please sign in to xthread first' };
+  }
+  
+  if (!isPremium) {
+    return { success: false, error: 'Premium subscription required for direct posting' };
+  }
+  
+  isPosting = true;
+  
+  try {
+    const response = await fetch(`${XTHREAD_API}/extension/post-reply`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({
+        text: replyText,
+        replyToUrl: replyToUrl
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return { success: false, error: data.error || 'Failed to post' };
+    }
+    
+    return { 
+      success: true, 
+      tweetId: data.tweet_id,
+      text: data.text
+    };
+    
+  } catch (err) {
+    console.error('[xthread] Error posting reply:', err);
+    return { success: false, error: err.message || 'Network error' };
+  } finally {
+    isPosting = false;
+  }
+}
+
+// Show quick reply modal for direct posting
+function showQuickReplyModal(postData, hookText = '') {
+  // Remove existing modal
+  const existing = document.querySelector('.xthread-reply-modal');
+  if (existing) existing.remove();
+  
+  const modal = document.createElement('div');
+  modal.className = 'xthread-reply-modal';
+  modal.innerHTML = `
+    <div class="xthread-modal-overlay"></div>
+    <div class="xthread-modal-content">
+      <div class="xthread-modal-header">
+        <span class="xthread-modal-title">✨ Quick Reply via xthread</span>
+        <button class="xthread-modal-close">×</button>
+      </div>
+      <div class="xthread-modal-body">
+        <div class="xthread-reply-to">
+          <span class="xthread-reply-label">Replying to @${escapeHtml(postData.handle)}</span>
+          <p class="xthread-reply-preview">${escapeHtml(postData.text.slice(0, 100))}${postData.text.length > 100 ? '...' : ''}</p>
+        </div>
+        <textarea 
+          class="xthread-reply-input" 
+          placeholder="Write your reply..."
+          maxlength="280"
+        >${escapeHtml(hookText)}</textarea>
+        <div class="xthread-reply-footer">
+          <span class="xthread-char-count">0/280</span>
+          <div class="xthread-reply-actions">
+            <button class="xthread-cancel-btn">Cancel</button>
+            <button class="xthread-post-btn" disabled>Post Reply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  const textarea = modal.querySelector('.xthread-reply-input');
+  const charCount = modal.querySelector('.xthread-char-count');
+  const postBtn = modal.querySelector('.xthread-post-btn');
+  
+  // Update char count
+  const updateCharCount = () => {
+    const len = textarea.value.length;
+    charCount.textContent = `${len}/280`;
+    postBtn.disabled = len === 0 || len > 280;
+    charCount.classList.toggle('xthread-over-limit', len > 280);
+  };
+  
+  textarea.addEventListener('input', updateCharCount);
+  updateCharCount();
+  
+  // Focus textarea
+  setTimeout(() => textarea.focus(), 100);
+  
+  // Close handlers
+  modal.querySelector('.xthread-modal-close').addEventListener('click', () => modal.remove());
+  modal.querySelector('.xthread-modal-overlay').addEventListener('click', () => modal.remove());
+  modal.querySelector('.xthread-cancel-btn').addEventListener('click', () => modal.remove());
+  
+  // Post handler
+  postBtn.addEventListener('click', async () => {
+    const replyText = textarea.value.trim();
+    if (!replyText) return;
+    
+    postBtn.disabled = true;
+    postBtn.textContent = 'Posting...';
+    
+    const result = await postReplyViaXthread(replyText, postData.url);
+    
+    if (result.success) {
+      showToast('Reply posted! 🎉');
+      modal.remove();
+      
+      // Track the reply
+      await trackReply({
+        originalPostUrl: postData.url,
+        originalAuthor: postData.author,
+        originalAuthorHandle: postData.handle,
+        originalText: postData.text,
+        replyText: replyText
+      });
+      
+    } else {
+      showToast(result.error || 'Failed to post');
+      postBtn.disabled = false;
+      postBtn.textContent = 'Post Reply';
+    }
+  });
+  
+  // Escape key to close
+  const handleEscape = (e) => {
+    if (e.key === 'Escape') {
+      modal.remove();
+      document.removeEventListener('keydown', handleEscape);
+    }
+  };
+  document.addEventListener('keydown', handleEscape);
 }
 
 // Listen for auth updates and watchlist updates
