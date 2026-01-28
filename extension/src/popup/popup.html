@@ -16,7 +16,7 @@
         </svg>
         <span>xthread</span>
       </div>
-      <span class="version">v1.3.0</span>
+      <span class="version">v1.4.0</span>
     </div>
 
     <!-- Not authenticated view -->
@@ -109,9 +109,13 @@
           <span class="tab-text">Feed</span>
           <span class="tab-badge notification-badge" id="notifications-badge"></span>
         </button>
+        <button class="tab" data-tab="stats">
+          <span class="tab-icon">📈</span>
+          <span class="tab-text">Stats</span>
+        </button>
         <button class="tab" data-tab="watchlist">
           <span class="tab-icon">👁</span>
-          <span class="tab-text">Watchlist</span>
+          <span class="tab-text">Watch</span>
           <span class="tab-badge" id="watchlist-badge"></span>
         </button>
         <button class="tab" data-tab="saved">
@@ -167,6 +171,41 @@
           <div class="empty-desc">
             Posts from accounts you're watching will appear here as you browse X.
           </div>
+        </div>
+      </div>
+      
+      <!-- Stats Tab Content -->
+      <div class="tab-content" id="tab-stats">
+        <div class="stats-overview">
+          <div class="stat-card">
+            <div class="stat-card-value" id="total-replies">0</div>
+            <div class="stat-card-label">Replies Tracked</div>
+          </div>
+          <div class="stat-card highlight">
+            <div class="stat-card-value" id="conversion-rate">0%</div>
+            <div class="stat-card-label">Conversion Rate</div>
+          </div>
+        </div>
+        
+        <div class="stats-header">
+          <h4>Reply History</h4>
+          <button id="clear-replies-btn" class="text-btn">Clear all</button>
+        </div>
+        
+        <div id="reply-history-list" class="reply-history-list">
+          <!-- Populated by JS -->
+        </div>
+        
+        <div id="reply-history-empty" class="reply-history-empty">
+          <div class="empty-icon">📈</div>
+          <div class="empty-title">No replies tracked</div>
+          <div class="empty-desc">
+            Your replies will be tracked automatically when you reply to posts. Use this to see which replies lead to follows!
+          </div>
+        </div>
+        
+        <div class="stats-tip">
+          💡 <strong>Tip:</strong> After replying, check if the author followed you back and mark it here to track your conversion rate!
         </div>
       </div>
       

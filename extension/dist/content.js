@@ -176,6 +176,92 @@ async function getUnreadNotificationCount() {
 }
 
 // ============================================================
+// Performance Tracking Module - Track Replies
+// ============================================================
+const REPLY_HISTORY_MAX = 100;
+
+async function getReplyHistory() {
+  try {
+    const stored = await chrome.storage.local.get(['replyHistory']);
+    return stored.replyHistory || [];
+  } catch (err) {
+    console.debug('[xthread] Error getting reply history:', err);
+    return [];
+  }
+}
+
+async function trackReply(replyData) {
+  try {
+    const history = await getReplyHistory();
+    
+    // Check for duplicate (same original post URL)
+    const exists = history.some(r => r.originalPostUrl === replyData.originalPostUrl);
+    if (exists) {
+      console.debug('[xthread] Reply already tracked');
+      return false;
+    }
+    
+    const newReply = {
+      originalPostUrl: replyData.originalPostUrl,
+      originalAuthor: replyData.originalAuthor,
+      originalAuthorHandle: replyData.originalAuthorHandle,
+      originalText: replyData.originalText,
+      replyText: replyData.replyText,
+      repliedAt: new Date().toISOString(),
+      followedBack: null, // null = unknown, true/false = confirmed
+      checkedAt: null
+    };
+    
+    history.unshift(newReply);
+    
+    // Keep only last REPLY_HISTORY_MAX
+    if (history.length > REPLY_HISTORY_MAX) {
+      history.splice(REPLY_HISTORY_MAX);
+    }
+    
+    await chrome.storage.local.set({ replyHistory: history });
+    
+    // Notify popup
+    chrome.runtime.sendMessage({ type: 'REPLY_TRACKED' });
+    
+    console.debug('[xthread] Tracked reply to:', replyData.originalAuthorHandle);
+    return true;
+  } catch (err) {
+    console.debug('[xthread] Error tracking reply:', err);
+    return false;
+  }
+}
+
+async function updateReplyFollowStatus(originalPostUrl, followedBack) {
+  try {
+    const history = await getReplyHistory();
+    const reply = history.find(r => r.originalPostUrl === originalPostUrl);
+    
+    if (reply) {
+      reply.followedBack = followedBack;
+      reply.checkedAt = new Date().toISOString();
+      await chrome.storage.local.set({ replyHistory: history });
+    }
+  } catch (err) {
+    console.debug('[xthread] Error updating follow status:', err);
+  }
+}
+
+async function getReplyStats() {
+  const history = await getReplyHistory();
+  const total = history.length;
+  const confirmed = history.filter(r => r.followedBack === true).length;
+  const pending = history.filter(r => r.followedBack === null).length;
+  
+  return {
+    total,
+    confirmed,
+    pending,
+    conversionRate: total > 0 ? Math.round((confirmed / total) * 100) : 0
+  };
+}
+
+// ============================================================
 // Post History Module (for Content Coach)
 // ============================================================
 
@@ -1771,11 +1857,107 @@ function observePostSubmission() {
     const text = getDraftText(textarea);
     if (!text || text.trim().length < 5) return;
     
+    // Check if this is a reply
+    const isReply = isReplyComposer(textarea);
+    
     // Add to history after a short delay (to ensure post goes through)
     setTimeout(async () => {
       await addToPostHistory({ text: text.trim() });
+      
+      // If this is a reply, also track it for performance analysis
+      if (isReply) {
+        const replyContext = extractReplyContext();
+        if (replyContext) {
+          await trackReply({
+            originalPostUrl: replyContext.url,
+            originalAuthor: replyContext.author,
+            originalAuthorHandle: replyContext.handle,
+            originalText: replyContext.text,
+            replyText: text.trim()
+          });
+          showToast('Reply tracked! 📊 Check Stats tab to see performance.');
+        }
+      }
     }, 2000);
   }, true);
+}
+
+// Extract context from the tweet being replied to
+function extractReplyContext() {
+  try {
+    // Check if we're in a reply modal
+    const dialog = document.querySelector('[role="dialog"]');
+    if (!dialog) {
+      // Try to get from thread view (if replying inline)
+      return extractReplyContextFromThread();
+    }
+    
+    // Look for the original tweet in the modal
+    // The modal typically shows the tweet being replied to
+    const originalTweet = dialog.querySelector('[data-testid="tweet"]');
+    if (!originalTweet) return null;
+    
+    // Get author info
+    const authorLink = originalTweet.querySelector('a[role="link"][href^="/"]');
+    const hrefMatch = authorLink?.getAttribute('href')?.match(/^\/([^\/]+)/);
+    const handle = hrefMatch ? hrefMatch[1] : null;
+    
+    if (!handle) return null;
+    
+    // Get display name
+    const authorEl = originalTweet.querySelector('[data-testid="User-Name"]');
+    const author = authorEl?.querySelector('span')?.textContent || handle;
+    
+    // Get text
+    const textEl = originalTweet.querySelector('[data-testid="tweetText"]');
+    const text = textEl?.textContent || '';
+    
+    // Get URL
+    const timeEl = originalTweet.querySelector('time');
+    const url = timeEl?.closest('a')?.href || window.location.href;
+    
+    return { handle, author, text, url };
+  } catch (err) {
+    console.debug('[xthread] Error extracting reply context:', err);
+    return null;
+  }
+}
+
+// Extract reply context when replying in a thread view
+function extractReplyContextFromThread() {
+  try {
+    // If we're on a status page and replying
+    if (!location.pathname.includes('/status/')) return null;
+    
+    // Get the first tweet in the thread (the one being replied to)
+    const tweets = document.querySelectorAll('article[data-testid="tweet"]');
+    if (tweets.length === 0) return null;
+    
+    const originalTweet = tweets[0];
+    
+    // Get author info
+    const authorLink = originalTweet.querySelector('a[role="link"][href^="/"]');
+    const hrefMatch = authorLink?.getAttribute('href')?.match(/^\/([^\/]+)/);
+    const handle = hrefMatch ? hrefMatch[1] : null;
+    
+    if (!handle) return null;
+    
+    // Get display name
+    const authorEl = originalTweet.querySelector('[data-testid="User-Name"]');
+    const author = authorEl?.querySelector('span')?.textContent || handle;
+    
+    // Get text
+    const textEl = originalTweet.querySelector('[data-testid="tweetText"]');
+    const text = textEl?.textContent || '';
+    
+    // Get URL from the current page
+    const url = location.href;
+    
+    return { handle, author, text, url };
+  } catch (err) {
+    console.debug('[xthread] Error extracting thread reply context:', err);
+    return null;
+  }
 }
 
 // ============================================================

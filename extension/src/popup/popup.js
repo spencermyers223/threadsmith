@@ -33,6 +33,13 @@ const notificationsEmpty = document.getElementById('notifications-empty');
 const notificationsBadge = document.getElementById('notifications-badge');
 const markReadBtn = document.getElementById('mark-read-btn');
 
+// Stats DOM elements
+const totalReplies = document.getElementById('total-replies');
+const conversionRate = document.getElementById('conversion-rate');
+const replyHistoryList = document.getElementById('reply-history-list');
+const replyHistoryEmpty = document.getElementById('reply-history-empty');
+const clearRepliesBtn = document.getElementById('clear-replies-btn');
+
 // Tab elements
 const tabs = document.querySelectorAll('.tab');
 const tabContents = document.querySelectorAll('.tab-content');
@@ -137,6 +144,7 @@ function showMainView(user, isPremium) {
   loadSavedPosts();
   loadWatchlist();
   loadNotifications();
+  loadReplyHistory();
 }
 
 // Refresh user data from API
@@ -430,6 +438,103 @@ async function clearAllNotifications() {
   updateBadges();
 }
 
+// ============================================================
+// Reply History / Performance Tracking Functions
+// ============================================================
+
+// Load and display reply history
+async function loadReplyHistory() {
+  try {
+    const stored = await chrome.storage.local.get(['replyHistory']);
+    const history = stored.replyHistory || [];
+    
+    // Update stats
+    const total = history.length;
+    const confirmed = history.filter(r => r.followedBack === true).length;
+    const rate = total > 0 ? Math.round((confirmed / total) * 100) : 0;
+    
+    totalReplies.textContent = total;
+    conversionRate.textContent = rate + '%';
+    
+    if (history.length === 0) {
+      replyHistoryEmpty.classList.remove('hidden');
+      replyHistoryList.innerHTML = '';
+      return;
+    }
+    
+    replyHistoryEmpty.classList.add('hidden');
+    replyHistoryList.innerHTML = history.slice(0, 15).map((reply, index) => `
+      <div class="reply-item ${reply.followedBack === true ? 'converted' : reply.followedBack === false ? 'not-converted' : ''}" data-index="${index}">
+        <div class="reply-header">
+          <a href="https://x.com/${escapeHtml(reply.originalAuthorHandle)}" target="_blank" class="reply-author">@${escapeHtml(reply.originalAuthorHandle)}</a>
+          <span class="reply-time">${formatDate(reply.repliedAt)}</span>
+        </div>
+        <div class="reply-original-text">${escapeHtml(truncate(reply.originalText, 60))}</div>
+        <div class="reply-your-text">↳ "${escapeHtml(truncate(reply.replyText, 50))}"</div>
+        <div class="reply-actions">
+          <button class="reply-action-btn ${reply.followedBack === true ? 'active' : ''}" data-url="${escapeHtml(reply.originalPostUrl)}" data-action="yes" title="They followed back!">
+            ✓ Followed
+          </button>
+          <button class="reply-action-btn ${reply.followedBack === false ? 'active' : ''}" data-url="${escapeHtml(reply.originalPostUrl)}" data-action="no" title="They didn't follow">
+            ✗ Nope
+          </button>
+          <a href="${escapeHtml(reply.originalPostUrl)}" target="_blank" class="reply-view-btn">View →</a>
+        </div>
+      </div>
+    `).join('');
+    
+    if (history.length > 15) {
+      replyHistoryList.innerHTML += `
+        <div class="reply-history-more">
+          +${history.length - 15} more replies tracked
+        </div>
+      `;
+    }
+    
+    // Add action handlers
+    replyHistoryList.querySelectorAll('.reply-action-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = btn.dataset.url;
+        const action = btn.dataset.action;
+        await updateReplyFollowStatus(url, action === 'yes');
+      });
+    });
+    
+  } catch (err) {
+    console.error('Failed to load reply history:', err);
+  }
+}
+
+// Update reply follow status
+async function updateReplyFollowStatus(originalPostUrl, followedBack) {
+  try {
+    const stored = await chrome.storage.local.get(['replyHistory']);
+    const history = stored.replyHistory || [];
+    
+    const reply = history.find(r => r.originalPostUrl === originalPostUrl);
+    if (reply) {
+      reply.followedBack = followedBack;
+      reply.checkedAt = new Date().toISOString();
+      await chrome.storage.local.set({ replyHistory: history });
+      
+      // Reload UI
+      loadReplyHistory();
+    }
+  } catch (err) {
+    console.error('Failed to update reply status:', err);
+  }
+}
+
+// Clear all reply history
+async function clearReplyHistory() {
+  if (!confirm('Clear all reply history? This cannot be undone.')) return;
+  
+  await chrome.storage.local.set({ replyHistory: [] });
+  loadReplyHistory();
+}
+
 // Utility functions
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -527,6 +632,9 @@ clearSavedBtn.addEventListener('click', clearSavedPosts);
 // Mark notifications read handler
 markReadBtn.addEventListener('click', markAllNotificationsRead);
 
+// Clear reply history handler
+clearRepliesBtn.addEventListener('click', clearReplyHistory);
+
 async function signOut() {
   await chrome.storage.local.remove(['xthreadToken', 'xthreadUser', 'isPremium', 'coachingStats']);
   notifyContentScripts(null, false);
@@ -567,6 +675,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'WATCHLIST_NOTIFICATION_REFRESH') {
     loadNotifications();
     updateBadges();
+  }
+  if (message.type === 'REPLY_TRACKED') {
+    loadReplyHistory();
   }
 });
 
