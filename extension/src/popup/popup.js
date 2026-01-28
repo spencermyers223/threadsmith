@@ -566,7 +566,8 @@ function formatDate(isoString) {
 signInBtn.addEventListener('click', () => {
   // Open xthread login with extension callback
   const callbackUrl = `${XTHREAD_URL}/auth/extension-callback`;
-  const authUrl = `${XTHREAD_URL}/login?redirect=${encodeURIComponent(callbackUrl)}`;
+  // Homepage has the sign-in button, and after auth it redirects to callback
+  const authUrl = `${XTHREAD_URL}?redirect=${encodeURIComponent(callbackUrl)}`;
   chrome.tabs.create({ url: authUrl });
 });
 
