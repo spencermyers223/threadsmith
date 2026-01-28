@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   ArrowLeft, Mic, Upload, Trash2, RefreshCw, AlertCircle, Check,
-  ChevronDown, ChevronUp, Sparkles, MessageSquare
+  ChevronDown, ChevronUp, Sparkles, MessageSquare, Download
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -47,6 +47,7 @@ export default function VoiceSettingsPage() {
   const [tweetInput, setTweetInput] = useState('')
   const [loading, setLoading] = useState(true)
   const [importing, setImporting] = useState(false)
+  const [importingFromX, setImportingFromX] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -95,6 +96,48 @@ export default function VoiceSettingsPage() {
     hasLoadedRef.current = true
     loadData()
   }, [loadData])
+
+  async function handleImportFromX() {
+    setImportingFromX(true)
+    setError(null)
+
+    try {
+      // Fetch tweets from X API
+      const xRes = await fetch('/api/x/tweets?max_results=100')
+      const xData = await xRes.json()
+
+      if (!xRes.ok) {
+        throw new Error(xData.error || 'Failed to fetch tweets from X')
+      }
+
+      if (!xData.tweets || xData.tweets.length === 0) {
+        throw new Error('No tweets found on your X account')
+      }
+
+      // Extract just the text from each tweet
+      const tweetTexts = xData.tweets.map((t: { text: string }) => t.text)
+
+      // Import them as voice samples
+      const res = await fetch('/api/voice/samples', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tweets: tweetTexts }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+
+      setSuccess(`Imported ${data.inserted} tweets from X!`)
+      setTimeout(() => setSuccess(null), 3000)
+
+      // Reload samples
+      const samplesRes = await fetch('/api/voice/samples')
+      if (samplesRes.ok) setSamples(await samplesRes.json())
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to import from X')
+    }
+    setImportingFromX(false)
+  }
 
   async function handleImport() {
     if (!tweetInput.trim()) return
@@ -260,17 +303,51 @@ export default function VoiceSettingsPage() {
       )}
 
       <div className="space-y-6">
-        {/* Import Section */}
+        {/* Import from X Section */}
         <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--background)]">
             <h2 className="font-semibold flex items-center gap-2">
-              <Upload className="w-4 h-4" />
-              Import Your Tweets
+              <Download className="w-4 h-4" />
+              Import from X
             </h2>
           </div>
           <div className="p-4 space-y-3">
             <p className="text-sm text-[var(--muted)]">
-              Paste your tweets below — one per line or separated by blank lines. The more samples you provide, the better the AI learns your voice.
+              Automatically import your recent tweets from X to train the AI on your voice.
+            </p>
+            <button
+              onClick={handleImportFromX}
+              disabled={importingFromX}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-black hover:bg-gray-900 disabled:opacity-50 text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              {importingFromX ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  Importing from X...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                  Import My Tweets
+                </>
+              )}
+            </button>
+          </div>
+        </section>
+
+        {/* Manual Import Section */}
+        <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--background)]">
+            <h2 className="font-semibold flex items-center gap-2">
+              <Upload className="w-4 h-4" />
+              Or Paste Manually
+            </h2>
+          </div>
+          <div className="p-4 space-y-3">
+            <p className="text-sm text-[var(--muted)]">
+              Paste tweets below — one per line or separated by blank lines.
             </p>
             <textarea
               value={tweetInput}
