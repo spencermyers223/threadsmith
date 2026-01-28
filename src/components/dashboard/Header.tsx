@@ -15,6 +15,12 @@ export function Header({ user }: HeaderProps) {
   const router = useRouter()
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  
+  // Get X profile info from user metadata
+  const xUsername = user.user_metadata?.x_username || user.user_metadata?.username
+  const xName = user.user_metadata?.name || user.user_metadata?.full_name
+  const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture
+  const displayName = xUsername ? `@${xUsername}` : (xName || user.email?.split('@')[0])
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -89,15 +95,26 @@ export function Header({ user }: HeaderProps) {
           onClick={() => setShowMenu(!showMenu)}
           className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[var(--card)] transition-colors"
         >
-          <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-[var(--accent-text)] text-sm font-medium">
-            {user.email?.[0].toUpperCase()}
-          </div>
+          {avatarUrl ? (
+            <img 
+              src={avatarUrl} 
+              alt={displayName}
+              className="w-7 h-7 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-[var(--accent-text)] text-sm font-medium">
+              {displayName[0]?.toUpperCase()}
+            </div>
+          )}
         </button>
 
         {showMenu && (
           <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg py-1 z-50">
             <div className="px-4 py-2 border-b border-[var(--border)]">
-              <p className="text-sm font-medium truncate">{user.email}</p>
+              <p className="text-sm font-medium truncate">{displayName}</p>
+              {xName && xUsername && (
+                <p className="text-xs text-[var(--muted)] truncate">{xName}</p>
+              )}
             </div>
             <Link
               href="/settings"
