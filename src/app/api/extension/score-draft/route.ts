@@ -30,13 +30,22 @@ interface ScoreResponse {
 }
 
 export async function POST(request: NextRequest) {
+  // Check required env vars early
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error('ANTHROPIC_API_KEY is not set');
+    return NextResponse.json(
+      { error: 'API not configured. Please contact support.' },
+      { status: 500 }
+    );
+  }
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
   
   const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY!,
+    apiKey: process.env.ANTHROPIC_API_KEY,
   });
 
   try {

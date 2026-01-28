@@ -41,13 +41,22 @@ interface CoachingResponse {
 }
 
 export async function POST(request: NextRequest) {
+  // Check required env vars early
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error('ANTHROPIC_API_KEY is not set');
+    return NextResponse.json(
+      { error: 'API not configured. Please contact support.' },
+      { status: 500 }
+    );
+  }
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
   
   const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY!,
+    apiKey: process.env.ANTHROPIC_API_KEY,
   });
 
   try {
@@ -242,8 +251,27 @@ GUIDELINES:
 
   } catch (error) {
     console.error('Generate coaching API error:', error);
+    
+    // Provide more specific error messages
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Check for common issues
+    if (errorMessage.includes('API key')) {
+      return NextResponse.json(
+        { error: 'API configuration error. Please contact support.' },
+        { status: 500 }
+      );
+    }
+    
+    if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again in a moment.' },
+        { status: 429 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to generate coaching' },
+      { error: 'Failed to generate coaching. Please try again.' },
       { status: 500 }
     );
   }
