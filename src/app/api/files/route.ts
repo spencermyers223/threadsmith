@@ -55,34 +55,9 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(arrayBuffer)
 
     if (ext === 'docx') {
-      // Convert to HTML first to preserve structure, then extract clean text
+      // Convert to HTML and keep it — TipTap can render it directly
       const result = await mammoth.convertToHtml({ buffer })
-      const html = result.value
-
-      // Convert HTML to clean text with normalized spacing
-      content = html
-        // Replace block elements with double newlines for paragraph separation
-        .replace(/<\/p>\s*<p>/gi, '\n\n')
-        .replace(/<br\s*\/?>/gi, '\n')
-        .replace(/<\/h[1-6]>/gi, '\n\n')
-        .replace(/<\/li>/gi, '\n')
-        .replace(/<\/ul>|<\/ol>/gi, '\n')
-        // Remove all remaining HTML tags
-        .replace(/<[^>]+>/g, '')
-        // Decode HTML entities
-        .replace(/&nbsp;/g, ' ')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        // Normalize whitespace: collapse multiple spaces to single
-        .replace(/[ \t]+/g, ' ')
-        // Normalize newlines: collapse 3+ newlines to double newlines
-        .replace(/\n{3,}/g, '\n\n')
-        // Trim whitespace from start/end of each line
-        .replace(/^[ \t]+|[ \t]+$/gm, '')
-        .trim()
+      content = result.value
     } else {
       // .md and .txt - read as plain text
       content = buffer.toString('utf-8')

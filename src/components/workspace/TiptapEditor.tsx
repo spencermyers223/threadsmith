@@ -3,6 +3,10 @@
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
+import { Table } from '@tiptap/extension-table'
+import TableRow from '@tiptap/extension-table-row'
+import TableCell from '@tiptap/extension-table-cell'
+import TableHeader from '@tiptap/extension-table-header'
 import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Undo, Redo } from 'lucide-react'
 import { useEffect } from 'react'
 
@@ -21,6 +25,10 @@ export function TiptapEditor({ content, onChange }: TiptapEditorProps) {
           class: 'text-accent underline',
         },
       }),
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableCell,
+      TableHeader,
     ],
     content,
     immediatelyRender: false,

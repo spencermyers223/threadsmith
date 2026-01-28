@@ -6,6 +6,10 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
+import { Table } from '@tiptap/extension-table'
+import TableRow from '@tiptap/extension-table-row'
+import TableCell from '@tiptap/extension-table-cell'
+import TableHeader from '@tiptap/extension-table-header'
 import {
   Save, Loader2, Bold, Italic, List, ListOrdered, Link as LinkIcon,
   Heading1, Heading2, Quote, Undo, Redo, FileText, FilePlus, Check
@@ -43,6 +47,10 @@ export default function WriteMode({ editingFile, onFileSaved, onNewFile }: Write
       Placeholder.configure({
         placeholder: 'Start writing your research notes...',
       }),
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableCell,
+      TableHeader,
     ],
     content: '',
     editorProps: {
@@ -62,9 +70,28 @@ export default function WriteMode({ editingFile, onFileSaved, onNewFile }: Write
 
     // Check if content is already HTML (saved from Tiptap)
     // Look for common HTML tags that Tiptap would produce
-    if (/<(?:p|ul|ol|li|h[1-6]|blockquote|strong|em)[>\s]/i.test(text)) {
+    if (/<(?:p|ul|ol|li|h[1-6]|blockquote|strong|em|table|tr|td|th)[>\s]/i.test(text)) {
       return text // Already HTML, return as-is
     }
+
+    // Pre-process: convert markdown tables to HTML tables
+    const tableRegex = /^(\|[^\n]+\|\n)((?:\|[-: ]+\|[-: |\n]*\n)?)((?:\|[^\n]+\|\n?)*)/gm
+    text = text.replace(tableRegex, (match, headerRow, separatorRow, bodyRows) => {
+      const parseRow = (row: string, cellTag: string) => {
+        const cells = row.trim().split('|').filter(c => c.trim() !== '' && !c.match(/^[-: ]+$/))
+        return `<tr>${cells.map(c => `<${cellTag}>${c.trim()}</${cellTag}>`).join('')}</tr>`
+      }
+      
+      let html = '<table>'
+      html += `<thead>${parseRow(headerRow, 'th')}</thead>`
+      html += '<tbody>'
+      const rows = bodyRows.trim().split('\n').filter((r: string) => r.trim())
+      rows.forEach((row: string) => {
+        html += parseRow(row, 'td')
+      })
+      html += '</tbody></table>'
+      return html
+    })
 
     // Plain text conversion - parse line by line
     const lines = text.split('\n')
