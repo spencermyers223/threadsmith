@@ -33,6 +33,7 @@ export default function WriteMode({ editingFile, onFileSaved, onNewFile }: Write
   const supabase = createClient()
   const imageInputRef = useRef<HTMLInputElement>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const autoSaveTimer = useRef<NodeJS.Timeout | null>(null)
 
   const editor = useEditor({
     extensions: [
@@ -249,6 +250,21 @@ export default function WriteMode({ editingFile, onFileSaved, onNewFile }: Write
       setIsSaving(false)
     }
   }, [editor, title, editingFile, supabase, onFileSaved])
+
+  // Auto-save every 30 seconds if there are unsaved changes
+  useEffect(() => {
+    if (hasUnsavedChanges && title.trim()) {
+      autoSaveTimer.current = setTimeout(() => {
+        handleSave()
+      }, 30000)
+    }
+
+    return () => {
+      if (autoSaveTimer.current) {
+        clearTimeout(autoSaveTimer.current)
+      }
+    }
+  }, [hasUnsavedChanges, handleSave, title])
 
   // Auto-save on Cmd/Ctrl+S
   useEffect(() => {
