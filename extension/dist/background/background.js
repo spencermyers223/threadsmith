@@ -58,6 +58,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
             await chrome.storage.local.set({
               xthreadToken: token,
               xthreadUser: data.user,
+              userEmail: data.user?.email || data.email || null,
               isPremium: data.isPremium
             });
             
@@ -66,8 +67,13 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
             // Close the callback tab
             chrome.tabs.remove(tabId);
             
-            // Notify any open popups
-            chrome.runtime.sendMessage({ type: 'AUTH_SUCCESS', isPremium: data.isPremium }).catch(() => {});
+            // Notify side panel and any open popups
+            chrome.runtime.sendMessage({ 
+              type: 'AUTH_UPDATE', 
+              token,
+              email: data.user?.email || data.email,
+              isPremium: data.isPremium 
+            }).catch(() => {});
             
             // Notify content scripts on X
             const xTabs = await chrome.tabs.query({ url: ['https://x.com/*', 'https://twitter.com/*'] });

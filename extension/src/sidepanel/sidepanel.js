@@ -25,8 +25,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Setup event listeners
   setupEventListeners();
   
-  // Listen for messages from content script
+  // Listen for messages from content script and background
   chrome.runtime.onMessage.addListener(handleMessage);
+  
+  // Listen for storage changes (e.g., when auth completes)
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local') {
+      if (changes.xthreadToken || changes.userEmail || changes.isPremium) {
+        console.log('[xthread] Auth state changed, reloading...');
+        loadAuthState();
+      }
+    }
+  });
   
   // Load initial data
   loadTabData(currentTab);
@@ -431,9 +441,10 @@ async function loadSaved() {
 // ============================================================
 
 function setupEventListeners() {
-  // Sign in button
+  // Sign in button - go directly to extension callback
+  // If not logged in, that page shows a "Sign In" button that redirects properly
   document.getElementById('sign-in-btn')?.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'https://xthread.io/login?extension=true' });
+    chrome.tabs.create({ url: 'https://xthread.io/auth/extension-callback' });
   });
   
   // Sign out button
