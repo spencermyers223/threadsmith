@@ -29,15 +29,23 @@ export async function GET(request: NextRequest) {
     }
 
     // Get subscription status
-    const { data: subscription } = await supabase
+    const { data: subscription, error: subError } = await supabase
       .from('subscriptions')
-      .select('status, plan_id')
+      .select('status, plan_id, plan_type')
       .eq('user_id', user.id)
       .single();
 
+    // Log subscription lookup for debugging (remove in production)
+    if (subError && subError.code !== 'PGRST116') {
+      // PGRST116 = no rows found, which is expected for users without subscriptions
+      console.error('Subscription lookup error:', subError);
+    }
+    console.log('Subscription lookup for user', user.id, ':', { subscription, error: subError?.code });
+
     const isPremium = subscription?.status === 'active' || 
                       subscription?.status === 'trialing' ||
-                      subscription?.plan_id === 'lifetime';
+                      subscription?.plan_id === 'lifetime' ||
+                      subscription?.plan_type === 'lifetime';
 
     // Get user profile
     const { data: profile } = await supabase
