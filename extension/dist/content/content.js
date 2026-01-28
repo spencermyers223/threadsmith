@@ -105,6 +105,163 @@ async function updateWatchlistAvatar(handle, avatar) {
 }
 
 // ============================================================
+// Watchlist Notifications Module
+// ============================================================
+const WATCHLIST_NOTIFICATIONS_MAX = 50;
+
+async function getWatchlistNotifications() {
+  try {
+    const stored = await chrome.storage.local.get(['watchlistNotifications']);
+    return stored.watchlistNotifications || [];
+  } catch (err) {
+    console.debug('[xthread] Error getting watchlist notifications:', err);
+    return [];
+  }
+}
+
+async function addWatchlistNotification(post) {
+  try {
+    const notifications = await getWatchlistNotifications();
+    
+    // Check for duplicate (same URL)
+    const exists = notifications.some(n => n.url === post.url);
+    if (exists) return false;
+    
+    const newNotification = {
+      handle: post.handle,
+      displayName: post.displayName,
+      avatar: post.avatar,
+      text: post.text,
+      url: post.url,
+      postAge: post.postAge,
+      metrics: post.metrics,
+      detectedAt: new Date().toISOString(),
+      read: false
+    };
+    
+    notifications.unshift(newNotification);
+    
+    // Keep only last WATCHLIST_NOTIFICATIONS_MAX
+    if (notifications.length > WATCHLIST_NOTIFICATIONS_MAX) {
+      notifications.splice(WATCHLIST_NOTIFICATIONS_MAX);
+    }
+    
+    await chrome.storage.local.set({ watchlistNotifications: notifications });
+    
+    // Update badge
+    chrome.runtime.sendMessage({ type: 'WATCHLIST_NOTIFICATION_NEW' });
+    
+    console.debug('[xthread] Added watchlist notification from:', post.handle);
+    return true;
+  } catch (err) {
+    console.debug('[xthread] Error adding watchlist notification:', err);
+    return false;
+  }
+}
+
+async function markNotificationsRead() {
+  try {
+    const notifications = await getWatchlistNotifications();
+    notifications.forEach(n => n.read = true);
+    await chrome.storage.local.set({ watchlistNotifications: notifications });
+    chrome.runtime.sendMessage({ type: 'WATCHLIST_NOTIFICATIONS_READ' });
+  } catch (err) {
+    console.debug('[xthread] Error marking notifications read:', err);
+  }
+}
+
+async function getUnreadNotificationCount() {
+  const notifications = await getWatchlistNotifications();
+  return notifications.filter(n => !n.read).length;
+}
+
+// ============================================================
+// Performance Tracking Module - Track Replies
+// ============================================================
+const REPLY_HISTORY_MAX = 100;
+
+async function getReplyHistory() {
+  try {
+    const stored = await chrome.storage.local.get(['replyHistory']);
+    return stored.replyHistory || [];
+  } catch (err) {
+    console.debug('[xthread] Error getting reply history:', err);
+    return [];
+  }
+}
+
+async function trackReply(replyData) {
+  try {
+    const history = await getReplyHistory();
+    
+    // Check for duplicate (same original post URL)
+    const exists = history.some(r => r.originalPostUrl === replyData.originalPostUrl);
+    if (exists) {
+      console.debug('[xthread] Reply already tracked');
+      return false;
+    }
+    
+    const newReply = {
+      originalPostUrl: replyData.originalPostUrl,
+      originalAuthor: replyData.originalAuthor,
+      originalAuthorHandle: replyData.originalAuthorHandle,
+      originalText: replyData.originalText,
+      replyText: replyData.replyText,
+      repliedAt: new Date().toISOString(),
+      followedBack: null, // null = unknown, true/false = confirmed
+      checkedAt: null
+    };
+    
+    history.unshift(newReply);
+    
+    // Keep only last REPLY_HISTORY_MAX
+    if (history.length > REPLY_HISTORY_MAX) {
+      history.splice(REPLY_HISTORY_MAX);
+    }
+    
+    await chrome.storage.local.set({ replyHistory: history });
+    
+    // Notify popup
+    chrome.runtime.sendMessage({ type: 'REPLY_TRACKED' });
+    
+    console.debug('[xthread] Tracked reply to:', replyData.originalAuthorHandle);
+    return true;
+  } catch (err) {
+    console.debug('[xthread] Error tracking reply:', err);
+    return false;
+  }
+}
+
+async function updateReplyFollowStatus(originalPostUrl, followedBack) {
+  try {
+    const history = await getReplyHistory();
+    const reply = history.find(r => r.originalPostUrl === originalPostUrl);
+    
+    if (reply) {
+      reply.followedBack = followedBack;
+      reply.checkedAt = new Date().toISOString();
+      await chrome.storage.local.set({ replyHistory: history });
+    }
+  } catch (err) {
+    console.debug('[xthread] Error updating follow status:', err);
+  }
+}
+
+async function getReplyStats() {
+  const history = await getReplyHistory();
+  const total = history.length;
+  const confirmed = history.filter(r => r.followedBack === true).length;
+  const pending = history.filter(r => r.followedBack === null).length;
+  
+  return {
+    total,
+    confirmed,
+    pending,
+    conversionRate: total > 0 ? Math.round((confirmed / total) * 100) : 0
+  };
+}
+
+// ============================================================
 // Post History Module (for Content Coach)
 // ============================================================
 
@@ -261,6 +418,9 @@ async function init() {
   // Check if on profile page
   checkProfilePage();
   
+  // Start scanning for watched account posts
+  startWatchlistScanner();
+  
   // Listen for URL changes (SPA navigation)
   let lastUrl = location.href;
   new MutationObserver(() => {
@@ -272,6 +432,155 @@ async function init() {
   
   if (!userToken) {
     console.debug('[xthread] Not authenticated. Click extension icon to sign in.');
+  }
+}
+
+// ============================================================
+// Watchlist Scanner - Detect posts from watched accounts
+// ============================================================
+let watchlistCache = [];
+let lastWatchlistFetch = 0;
+const WATCHLIST_CACHE_TTL = 30000; // 30 seconds
+
+async function getCachedWatchlist() {
+  const now = Date.now();
+  if (now - lastWatchlistFetch > WATCHLIST_CACHE_TTL) {
+    watchlistCache = await getWatchlist();
+    lastWatchlistFetch = now;
+  }
+  return watchlistCache;
+}
+
+function startWatchlistScanner() {
+  // Scan on scroll (debounced)
+  let scrollTimeout;
+  window.addEventListener('scroll', () => {
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(scanForWatchedPosts, 500);
+  }, { passive: true });
+  
+  // Also scan periodically
+  setInterval(scanForWatchedPosts, 10000);
+  
+  // Initial scan after a delay
+  setTimeout(scanForWatchedPosts, 2000);
+}
+
+async function scanForWatchedPosts() {
+  const watchlist = await getCachedWatchlist();
+  if (watchlist.length === 0) return;
+  
+  // Create a Set of watched handles for fast lookup
+  const watchedHandles = new Set(watchlist.map(w => w.handle.toLowerCase()));
+  
+  // Get all visible posts
+  const posts = document.querySelectorAll('article[data-testid="tweet"]');
+  
+  for (const post of posts) {
+    // Skip if already scanned
+    if (post.dataset.xthreadWatchlistScanned) continue;
+    post.dataset.xthreadWatchlistScanned = 'true';
+    
+    // Extract author handle
+    const authorLink = post.querySelector('a[role="link"][href^="/"]');
+    if (!authorLink) continue;
+    
+    const hrefMatch = authorLink.getAttribute('href')?.match(/^\/([^\/]+)/);
+    if (!hrefMatch) continue;
+    
+    const handle = hrefMatch[1].toLowerCase();
+    
+    // Skip if not watching this account
+    if (!watchedHandles.has(handle)) continue;
+    
+    // This is a post from a watched account - extract details
+    const postData = extractWatchedPostData(post, handle);
+    if (postData) {
+      await addWatchlistNotification(postData);
+      
+      // Add visual indicator
+      highlightWatchedPost(post, handle);
+    }
+  }
+}
+
+function extractWatchedPostData(post, handle) {
+  try {
+    // Get display name
+    const authorEl = post.querySelector('[data-testid="User-Name"]');
+    const displayName = authorEl?.querySelector('span')?.textContent || handle;
+    
+    // Get avatar
+    const avatarImg = post.querySelector('img[src*="profile_images"]');
+    const avatar = avatarImg?.src || null;
+    
+    // Get text
+    const textEl = post.querySelector('[data-testid="tweetText"]');
+    const text = textEl?.textContent || '';
+    
+    // Skip if no text (might be a retweet indicator)
+    if (!text.trim()) return null;
+    
+    // Get URL
+    const timeEl = post.querySelector('time');
+    const url = timeEl?.closest('a')?.href || '';
+    
+    // Skip if no URL (can't link back to it)
+    if (!url) return null;
+    
+    // Get post age
+    const postAge = timeEl?.textContent || '';
+    
+    // Get metrics
+    const metrics = {};
+    const replyBtn = post.querySelector('[data-testid="reply"]');
+    const retweetBtn = post.querySelector('[data-testid="retweet"]');
+    const likeBtn = post.querySelector('[data-testid="like"]');
+    
+    if (replyBtn) {
+      const replyMatch = replyBtn.getAttribute('aria-label')?.match(/(\d+[\d,\.]*[KkMm]?)/);
+      if (replyMatch) metrics.replies = replyMatch[1];
+    }
+    if (retweetBtn) {
+      const rtMatch = retweetBtn.getAttribute('aria-label')?.match(/(\d+[\d,\.]*[KkMm]?)/);
+      if (rtMatch) metrics.retweets = rtMatch[1];
+    }
+    if (likeBtn) {
+      const likeMatch = likeBtn.getAttribute('aria-label')?.match(/(\d+[\d,\.]*[KkMm]?)/);
+      if (likeMatch) metrics.likes = likeMatch[1];
+    }
+    
+    return {
+      handle,
+      displayName,
+      avatar,
+      text,
+      url,
+      postAge,
+      metrics
+    };
+  } catch (err) {
+    console.debug('[xthread] Error extracting watched post data:', err);
+    return null;
+  }
+}
+
+function highlightWatchedPost(post, handle) {
+  // Don't re-highlight
+  if (post.querySelector('.xthread-watched-indicator')) return;
+  
+  // Add subtle indicator
+  const indicator = document.createElement('div');
+  indicator.className = 'xthread-watched-indicator';
+  indicator.innerHTML = `<span class="xthread-watched-icon">👁</span><span class="xthread-watched-label">Watching</span>`;
+  indicator.title = `You're watching @${handle}`;
+  
+  // Insert at top of post
+  const firstChild = post.firstChild;
+  if (firstChild) {
+    post.insertBefore(indicator, firstChild);
+  } else {
+    post.appendChild(indicator);
   }
 }
 
@@ -484,10 +793,7 @@ async function handleAnalyzeClick(btn, handle, forceRefresh = false) {
     return;
   }
   
-  if (!isPremium) {
-    showToast('Account Analyzer is a premium feature. Upgrade at xthread.io');
-    return;
-  }
+  // Account Analyzer is now FREE for all users!
   
   // Check cache first (unless force refresh)
   if (!forceRefresh) {
@@ -1548,11 +1854,107 @@ function observePostSubmission() {
     const text = getDraftText(textarea);
     if (!text || text.trim().length < 5) return;
     
+    // Check if this is a reply
+    const isReply = isReplyComposer(textarea);
+    
     // Add to history after a short delay (to ensure post goes through)
     setTimeout(async () => {
       await addToPostHistory({ text: text.trim() });
+      
+      // If this is a reply, also track it for performance analysis
+      if (isReply) {
+        const replyContext = extractReplyContext();
+        if (replyContext) {
+          await trackReply({
+            originalPostUrl: replyContext.url,
+            originalAuthor: replyContext.author,
+            originalAuthorHandle: replyContext.handle,
+            originalText: replyContext.text,
+            replyText: text.trim()
+          });
+          showToast('Reply tracked! 📊 Check Stats tab to see performance.');
+        }
+      }
     }, 2000);
   }, true);
+}
+
+// Extract context from the tweet being replied to
+function extractReplyContext() {
+  try {
+    // Check if we're in a reply modal
+    const dialog = document.querySelector('[role="dialog"]');
+    if (!dialog) {
+      // Try to get from thread view (if replying inline)
+      return extractReplyContextFromThread();
+    }
+    
+    // Look for the original tweet in the modal
+    // The modal typically shows the tweet being replied to
+    const originalTweet = dialog.querySelector('[data-testid="tweet"]');
+    if (!originalTweet) return null;
+    
+    // Get author info
+    const authorLink = originalTweet.querySelector('a[role="link"][href^="/"]');
+    const hrefMatch = authorLink?.getAttribute('href')?.match(/^\/([^\/]+)/);
+    const handle = hrefMatch ? hrefMatch[1] : null;
+    
+    if (!handle) return null;
+    
+    // Get display name
+    const authorEl = originalTweet.querySelector('[data-testid="User-Name"]');
+    const author = authorEl?.querySelector('span')?.textContent || handle;
+    
+    // Get text
+    const textEl = originalTweet.querySelector('[data-testid="tweetText"]');
+    const text = textEl?.textContent || '';
+    
+    // Get URL
+    const timeEl = originalTweet.querySelector('time');
+    const url = timeEl?.closest('a')?.href || window.location.href;
+    
+    return { handle, author, text, url };
+  } catch (err) {
+    console.debug('[xthread] Error extracting reply context:', err);
+    return null;
+  }
+}
+
+// Extract reply context when replying in a thread view
+function extractReplyContextFromThread() {
+  try {
+    // If we're on a status page and replying
+    if (!location.pathname.includes('/status/')) return null;
+    
+    // Get the first tweet in the thread (the one being replied to)
+    const tweets = document.querySelectorAll('article[data-testid="tweet"]');
+    if (tweets.length === 0) return null;
+    
+    const originalTweet = tweets[0];
+    
+    // Get author info
+    const authorLink = originalTweet.querySelector('a[role="link"][href^="/"]');
+    const hrefMatch = authorLink?.getAttribute('href')?.match(/^\/([^\/]+)/);
+    const handle = hrefMatch ? hrefMatch[1] : null;
+    
+    if (!handle) return null;
+    
+    // Get display name
+    const authorEl = originalTweet.querySelector('[data-testid="User-Name"]');
+    const author = authorEl?.querySelector('span')?.textContent || handle;
+    
+    // Get text
+    const textEl = originalTweet.querySelector('[data-testid="tweetText"]');
+    const text = textEl?.textContent || '';
+    
+    // Get URL from the current page
+    const url = location.href;
+    
+    return { handle, author, text, url };
+  } catch (err) {
+    console.debug('[xthread] Error extracting thread reply context:', err);
+    return null;
+  }
 }
 
 // ============================================================
@@ -1622,10 +2024,7 @@ async function handleGetCoaching(post, btn) {
     return;
   }
   
-  if (!isPremium) {
-    showToast('Reply Coach is a premium feature. Upgrade at xthread.io');
-    return;
-  }
+  // Reply Coach is now FREE for all users!
   
   isProcessing = true;
   btn.classList.add('xthread-loading');
