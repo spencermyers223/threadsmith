@@ -793,10 +793,7 @@ async function handleAnalyzeClick(btn, handle, forceRefresh = false) {
     return;
   }
   
-  if (!isPremium) {
-    showToast('Account Analyzer is a premium feature. Upgrade at xthread.io');
-    return;
-  }
+  // Account Analyzer is now FREE for all users!
   
   // Check cache first (unless force refresh)
   if (!forceRefresh) {
@@ -2027,10 +2024,7 @@ async function handleGetCoaching(post, btn) {
     return;
   }
   
-  if (!isPremium) {
-    showToast('Reply Coach is a premium feature. Upgrade at xthread.io');
-    return;
-  }
+  // Reply Coach is now FREE for all users!
   
   isProcessing = true;
   btn.classList.add('xthread-loading');
