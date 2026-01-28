@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>xthread</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <div class="panel-container">
+    <!-- Header -->
+    <div class="panel-header">
+      <div class="panel-brand">
+        <img src="../icons/icon32.png" alt="xthread" class="panel-logo">
+        <span class="panel-title">xthread</span>
+      </div>
+      <span class="panel-version">v1.8.0</span>
+    </div>
+    
+    <!-- User Info -->
+    <div class="user-section" id="user-section">
+      <div class="user-info">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div class="user-details">
+          <div class="user-email" id="user-email">Not signed in</div>
+          <div class="user-plan" id="user-plan">-</div>
+        </div>
+        <button id="sign-out-btn" class="icon-btn" title="Sign out">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Auth Section (shown when not logged in) -->
+    <div class="auth-section hidden" id="auth-section">
+      <p class="auth-prompt">Sign in to use xthread Reply Coach</p>
+      <button id="sign-in-btn" class="primary-btn">Sign in with xthread</button>
+    </div>
+    
+    <!-- Tabs -->
+    <div class="panel-tabs">
+      <button class="panel-tab active" data-tab="coach">
+        <span class="tab-icon">🎯</span>
+        <span class="tab-label">Coach</span>
+      </button>
+      <button class="panel-tab" data-tab="feed">
+        <span class="tab-icon">🔔</span>
+        <span class="tab-label">Feed</span>
+      </button>
+      <button class="panel-tab" data-tab="stats">
+        <span class="tab-icon">📈</span>
+        <span class="tab-label">Stats</span>
+      </button>
+      <button class="panel-tab" data-tab="watch">
+        <span class="tab-icon">👁</span>
+        <span class="tab-label">Watch</span>
+      </button>
+      <button class="panel-tab" data-tab="saved">
+        <span class="tab-icon">📌</span>
+        <span class="tab-label">Saved</span>
+      </button>
+    </div>
+    
+    <!-- Tab Content -->
+    <div class="panel-content">
+      <!-- Coach Tab -->
+      <div class="tab-content active" id="tab-coach">
+        <div class="empty-state">
+          <div class="empty-icon">✨</div>
+          <div class="empty-title">Ready to Coach</div>
+          <div class="empty-desc">Click the <strong>Coach</strong> button on any tweet to get personalized reply coaching.</div>
+        </div>
+        <div class="coach-content hidden" id="coach-content">
+          <!-- Filled dynamically -->
+        </div>
+      </div>
+      
+      <!-- Feed Tab -->
+      <div class="tab-content" id="tab-feed">
+        <div class="tab-header">
+          <span class="tab-subtitle">Posts from your watchlist</span>
+        </div>
+        <div class="feed-list" id="feed-list">
+          <!-- Filled dynamically -->
+        </div>
+        <div class="empty-state" id="feed-empty">
+          <div class="empty-icon">🔔</div>
+          <div class="empty-title">No posts yet</div>
+          <div class="empty-desc">Posts from accounts you're watching will appear here.</div>
+        </div>
+      </div>
+      
+      <!-- Stats Tab -->
+      <div class="tab-content" id="tab-stats">
+        <div class="stats-overview">
+          <div class="stat-card">
+            <div class="stat-value" id="total-replies">0</div>
+            <div class="stat-label">Replies</div>
+          </div>
+          <div class="stat-card highlight">
+            <div class="stat-value" id="conversion-rate">0%</div>
+            <div class="stat-label">Conversion</div>
+          </div>
+        </div>
+        <div class="tab-header">
+          <span class="tab-subtitle">Reply History</span>
+          <button class="text-btn" id="clear-replies-btn">Clear</button>
+        </div>
+        <div class="reply-list" id="reply-list">
+          <!-- Filled dynamically -->
+        </div>
+        <div class="empty-state" id="stats-empty">
+          <div class="empty-icon">📈</div>
+          <div class="empty-title">No replies tracked</div>
+          <div class="empty-desc">Your replies will be tracked automatically.</div>
+        </div>
+      </div>
+      
+      <!-- Watch Tab -->
+      <div class="tab-content" id="tab-watch">
+        <div class="tab-header">
+          <span class="tab-subtitle" id="watch-count">0 accounts</span>
+        </div>
+        <div class="watch-list" id="watch-list">
+          <!-- Filled dynamically -->
+        </div>
+        <div class="empty-state" id="watch-empty">
+          <div class="empty-icon">👁</div>
+          <div class="empty-title">No accounts yet</div>
+          <div class="empty-desc">Click <strong>Watch</strong> on any profile to track them.</div>
+        </div>
+      </div>
+      
+      <!-- Saved Tab -->
+      <div class="tab-content" id="tab-saved">
+        <div class="tab-header">
+          <span class="tab-subtitle" id="saved-count">0 posts</span>
+          <button class="text-btn" id="clear-saved-btn">Clear</button>
+        </div>
+        <div class="saved-list" id="saved-list">
+          <!-- Filled dynamically -->
+        </div>
+        <div class="empty-state" id="saved-empty">
+          <div class="empty-icon">📌</div>
+          <div class="empty-title">No saved posts</div>
+          <div class="empty-desc">Click the bookmark icon on any tweet to save it.</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="panel-footer">
+      <a href="https://xthread.io" target="_blank">xthread.io</a>
+      <span>•</span>
+      <a href="https://xthread.io/help" target="_blank">Help</a>
+    </div>
+  </div>
+  
+  <script src="sidepanel.js"></script>
+</body>
+</html>

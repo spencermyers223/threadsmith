@@ -10,10 +10,10 @@
   gap: 6px;
   padding: 0 16px;
   height: 36px;
-  border: 1px solid #10b981;
+  border: 1px solid #f59e0b;
   border-radius: 9999px;
   background: transparent;
-  color: #10b981;
+  color: #f59e0b;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
@@ -55,10 +55,10 @@
   gap: 6px;
   padding: 0 16px;
   height: 36px;
-  border: 1px solid #10b981;
+  border: 1px solid #f59e0b;
   border-radius: 9999px;
   background: transparent;
-  color: #10b981;
+  color: #f59e0b;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
@@ -76,14 +76,14 @@
 }
 
 .xthread-watch-btn.xthread-watching {
-  background: #10b981;
+  background: #f59e0b;
   color: white;
-  border-color: #10b981;
+  border-color: #f59e0b;
 }
 
 .xthread-watch-btn.xthread-watching:hover {
-  background: #059669;
-  border-color: #059669;
+  background: #d97706;
+  border-color: #d97706;
 }
 
 .xthread-watch-icon {
@@ -97,8 +97,8 @@
 /* Light mode adjustments for watch button */
 @media (prefers-color-scheme: light) {
   .xthread-watch-btn {
-    border-color: #10b981;
-    color: #10b981;
+    border-color: #f59e0b;
+    color: #f59e0b;
   }
   
   .xthread-watch-btn:hover {
@@ -106,7 +106,7 @@
   }
   
   .xthread-watch-btn.xthread-watching {
-    background: #10b981;
+    background: #f59e0b;
     color: white;
   }
 }
@@ -131,7 +131,7 @@
   padding: 4px 12px;
   border: none;
   border-radius: 9999px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: white;
   font-size: 13px;
   font-weight: 600;
@@ -141,7 +141,7 @@
 }
 
 .xthread-coach-btn:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
   transform: scale(1.05);
 }
 
@@ -196,15 +196,15 @@
 
 .xthread-save-btn:hover {
   background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
+  color: #f59e0b;
 }
 
 .xthread-save-btn.xthread-saved {
-  color: #10b981;
+  color: #f59e0b;
 }
 
 .xthread-save-btn.xthread-saved svg {
-  fill: #10b981;
+  fill: #f59e0b;
 }
 
 /* Coaching Panel */
@@ -212,7 +212,7 @@
   margin: 12px 16px;
   padding: 16px;
   background: #16181c;
-  border: 1px solid #10b981;
+  border: 1px solid #f59e0b;
   border-radius: 16px;
   animation: xthread-slideIn 0.3s ease;
 }
@@ -310,7 +310,7 @@
 }
 
 .xthread-score-badge.high {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
 }
 
 .xthread-score-badge.medium {
@@ -375,7 +375,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: white;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   padding: 4px 10px;
   border-radius: 6px;
   margin-bottom: 6px;
@@ -408,12 +408,12 @@
 }
 
 .xthread-angle-card:hover {
-  border-color: #10b981;
+  border-color: #f59e0b;
   background: #1a1c20;
 }
 
 .xthread-angle-card.xthread-expanded {
-  border-color: #10b981;
+  border-color: #f59e0b;
   background: #1a1c20;
 }
 
@@ -485,12 +485,12 @@
 }
 
 .xthread-hook:hover {
-  border-color: #10b981;
+  border-color: #f59e0b;
   background: #1a1c20;
 }
 
 .xthread-hook.xthread-copied {
-  border-color: #10b981;
+  border-color: #f59e0b;
   background: rgba(16, 185, 129, 0.1);
 }
 
@@ -546,7 +546,7 @@
   padding: 10px 24px;
   border: none;
   border-radius: 9999px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: white;
   font-size: 14px;
   font-weight: 600;
@@ -555,7 +555,7 @@
 }
 
 .xthread-start-reply-btn:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
   transform: scale(1.02);
 }
 
@@ -565,7 +565,7 @@
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%) translateY(100px);
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: white;
   padding: 12px 24px;
   border-radius: 8px;
@@ -585,7 +585,7 @@
 @media (prefers-color-scheme: light) {
   .xthread-coach-panel {
     background: #ffffff;
-    border-color: #10b981;
+    border-color: #f59e0b;
   }
   
   .xthread-panel-header {
@@ -657,7 +657,7 @@
   margin: 12px 16px;
   padding: 20px;
   background: #16181c;
-  border: 1px solid #10b981;
+  border: 1px solid #f59e0b;
   border-radius: 16px;
   animation: xthread-slideIn 0.3s ease;
   max-width: 100%;
@@ -689,7 +689,7 @@
 
 .xthread-handle {
   font-size: 13px;
-  color: #10b981;
+  color: #f59e0b;
   font-weight: 500;
 }
 
@@ -707,7 +707,7 @@
 }
 
 .xthread-cache-info:hover {
-  color: #10b981;
+  color: #f59e0b;
 }
 
 .xthread-refresh-btn {
@@ -724,7 +724,7 @@
 
 .xthread-refresh-btn:hover {
   background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
+  color: #f59e0b;
 }
 
 .xthread-analysis-panel .xthread-close-btn {
@@ -753,7 +753,7 @@
   padding: 12px;
   background: #1d1f23;
   border-radius: 10px;
-  border-left: 3px solid #10b981;
+  border-left: 3px solid #f59e0b;
 }
 
 /* Quick Stats */
@@ -812,13 +812,13 @@
 }
 
 .xthread-topic-tag.primary {
-  background: #10b981;
+  background: #f59e0b;
   color: white;
 }
 
 .xthread-topic-tag.secondary {
   background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  color: #f59e0b;
   border: 1px solid rgba(16, 185, 129, 0.4);
 }
 
@@ -833,7 +833,7 @@
   font-size: 14px;
   font-weight: 600;
   color: white;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   padding: 6px 14px;
   border-radius: 8px;
   margin-bottom: 10px;
@@ -857,7 +857,7 @@
   content: '•';
   position: absolute;
   left: -16px;
-  color: #10b981;
+  color: #f59e0b;
 }
 
 .xthread-engagement-pattern {
@@ -917,7 +917,7 @@
 }
 
 .xthread-tip-card:hover {
-  border-color: #10b981;
+  border-color: #f59e0b;
   background: #1a1c20;
 }
 
@@ -930,11 +930,11 @@
 
 .xthread-tip-example {
   font-size: 13px;
-  color: #10b981;
+  color: #f59e0b;
   font-style: italic;
   margin-bottom: 6px;
   padding-left: 8px;
-  border-left: 2px solid #10b981;
+  border-left: 2px solid #f59e0b;
 }
 
 .xthread-tip-why {
@@ -959,7 +959,7 @@
 @media (prefers-color-scheme: light) {
   .xthread-analysis-panel {
     background: #ffffff;
-    border-color: #10b981;
+    border-color: #f59e0b;
   }
   
   .xthread-analysis-header {
@@ -1006,8 +1006,8 @@
   }
   
   .xthread-analyze-btn {
-    border-color: #10b981;
-    color: #10b981;
+    border-color: #f59e0b;
+    color: #f59e0b;
   }
   
   .xthread-analyze-btn:hover {
@@ -1139,7 +1139,7 @@
 }
 
 .score-green .xthread-score-number {
-  color: #10b981;
+  color: #f59e0b;
 }
 
 .score-yellow .xthread-score-number {
@@ -1216,7 +1216,7 @@
 }
 
 .xthread-factor.factor-good {
-  border-left-color: #10b981;
+  border-left-color: #f59e0b;
 }
 
 .xthread-factor.factor-medium {
@@ -1249,7 +1249,7 @@
 
 .factor-good .xthread-factor-score {
   background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  color: #f59e0b;
 }
 
 .factor-medium .xthread-factor-score {
@@ -1286,7 +1286,7 @@
 }
 
 .xthread-strength {
-  color: #10b981;
+  color: #f59e0b;
 }
 
 .xthread-weakness {
@@ -1399,10 +1399,10 @@
   gap: 6px;
   padding: 0 14px;
   height: 34px;
-  border: 1px solid #10b981;
+  border: 1px solid #f59e0b;
   border-radius: 9999px;
   background: transparent;
-  color: #10b981;
+  color: #f59e0b;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -1441,7 +1441,7 @@
   margin: 12px;
   padding: 16px;
   background: #16181c;
-  border: 1px solid #10b981;
+  border: 1px solid #f59e0b;
   border-radius: 16px;
   animation: xthread-slideIn 0.3s ease;
   max-width: 100%;
@@ -1524,7 +1524,7 @@
 
 .xthread-tag.topic {
   background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  color: #f59e0b;
 }
 
 .xthread-tag.format {
@@ -1560,7 +1560,7 @@
 }
 
 .xthread-idea-card:hover {
-  border-color: #10b981;
+  border-color: #f59e0b;
   background: #1a1c20;
 }
 
@@ -1575,7 +1575,7 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #10b981;
+  color: #f59e0b;
   background: rgba(139, 92, 246, 0.1);
   padding: 2px 8px;
   border-radius: 4px;
@@ -1643,7 +1643,7 @@
 }
 
 .xthread-idea-hook.xthread-copied .xthread-copy-hint {
-  color: #10b981;
+  color: #f59e0b;
   opacity: 1;
 }
 
@@ -1695,7 +1695,7 @@
   margin-bottom: 8px;
   padding: 8px 12px;
   background: rgba(139, 92, 246, 0.1);
-  border-left: 3px solid #10b981;
+  border-left: 3px solid #f59e0b;
   border-radius: 0 6px 6px 0;
 }
 
@@ -1717,7 +1717,7 @@
   content: '→';
   position: absolute;
   left: -16px;
-  color: #10b981;
+  color: #f59e0b;
 }
 
 /* Content Gaps Section */
@@ -1758,8 +1758,8 @@
 /* Light mode for Content Coach */
 @media (prefers-color-scheme: light) {
   .xthread-ideas-btn {
-    border-color: #10b981;
-    color: #10b981;
+    border-color: #f59e0b;
+    color: #f59e0b;
   }
   
   .xthread-ideas-btn:hover {
@@ -1768,7 +1768,7 @@
   
   .xthread-coach-panel-ideas {
     background: #ffffff;
-    border-color: #10b981;
+    border-color: #f59e0b;
   }
   
   .xthread-coach-header {
@@ -1844,7 +1844,7 @@
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%);
   border-bottom: 1px solid rgba(124, 58, 237, 0.2);
   font-size: 12px;
-  color: #34d399;
+  color: #fbbf24;
 }
 
 .xthread-watched-icon {

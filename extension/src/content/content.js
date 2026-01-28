@@ -4,8 +4,8 @@
 const XTHREAD_API = 'https://xthread.io/api';
 const POST_HISTORY_MAX = 20;
 
-// Sidebar module will be loaded via sidebar.js
-// Access via window.xthreadSidebar
+// Side panel is now handled by Chrome's sidePanel API
+// Content script sends messages to the side panel via chrome.runtime
 
 // ============================================================
 // Watchlist Module (inline to avoid module loading issues)
@@ -412,12 +412,6 @@ async function init() {
   userToken = stored.xthreadToken;
   isPremium = stored.isPremium || false;
   
-  // Initialize sidebar
-  if (window.xthreadSidebar) {
-    window.xthreadSidebar.init();
-    console.debug('[xthread] Sidebar initialized');
-  }
-  
   // Start observing for DOM changes (posts + profile pages)
   observeDOM();
   
@@ -438,6 +432,14 @@ async function init() {
       checkProfilePage();
     }
   }).observe(document.body, { childList: true, subtree: true });
+  
+  // Listen for messages from side panel
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'OPEN_REPLY' && window.xthreadCurrentPost) {
+      const replyBtn = window.xthreadCurrentPost.querySelector('[data-testid="reply"]');
+      if (replyBtn) replyBtn.click();
+    }
+  });
   
   if (!userToken) {
     console.debug('[xthread] Not authenticated. Click extension icon to sign in.');
@@ -2038,30 +2040,26 @@ async function handleGetCoaching(post, btn) {
   isProcessing = true;
   btn.classList.add('xthread-loading');
   
-  // Open sidebar and show loading state
-  if (window.xthreadSidebar) {
-    window.xthreadSidebar.open();
-    window.xthreadSidebar.setContent('loading', { message: 'Analyzing tweet...' });
-  }
+  // Store reference to current post for reply button
+  window.xthreadCurrentPost = post;
   
   try {
     const postData = extractPostData(post);
     const coaching = await generateCoaching(postData);
     
-    // Show coaching in sidebar
-    if (window.xthreadSidebar) {
-      window.xthreadSidebar.setContent('coach', { coaching, postData, post });
-    } else {
-      // Fallback to inline panel if sidebar not loaded
-      showCoachingPanel(post, coaching, postData);
-    }
+    // Send coaching to side panel
+    chrome.runtime.sendMessage({
+      type: 'SHOW_COACHING',
+      coaching: coaching,
+      postData: postData
+    });
+    
+    // Open the side panel
+    chrome.runtime.sendMessage({ type: 'OPEN_SIDE_PANEL' });
+    
   } catch (err) {
     console.error('[xthread] Error getting coaching:', err);
-    if (window.xthreadSidebar && window.xthreadSidebar.isOpen()) {
-      window.xthreadSidebar.setContent('error', { message: 'Failed to get coaching. Please try again.' });
-    } else {
-      showToast('Failed to get coaching. Please try again.');
-    }
+    showToast('Failed to get coaching. Please try again.');
   } finally {
     isProcessing = false;
     btn.classList.remove('xthread-loading');

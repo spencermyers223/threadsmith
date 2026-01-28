@@ -4,6 +4,12 @@ const XTHREAD_API = 'https://xthread.io/api';
 const XTHREAD_URL = 'https://xthread.io';
 
 // ============================================================
+// Side Panel Setup - Open when extension icon is clicked
+// ============================================================
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+  .catch((error) => console.error('[xthread] Side panel setup error:', error));
+
+// ============================================================
 // Auto-detect extension auth callback and grab token
 // ============================================================
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
@@ -103,7 +109,7 @@ async function updateBadge() {
   
   if (count > 0) {
     chrome.action.setBadgeText({ text: count.toString() });
-    chrome.action.setBadgeBackgroundColor({ color: '#7c3aed' });
+    chrome.action.setBadgeBackgroundColor({ color: '#f59e0b' });
   } else {
     chrome.action.setBadgeText({ text: '' });
   }
@@ -118,7 +124,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'UPDATE_BADGE') {
     if (message.count > 0) {
       chrome.action.setBadgeText({ text: message.count.toString() });
-      chrome.action.setBadgeBackgroundColor({ color: '#7c3aed' });
+      chrome.action.setBadgeBackgroundColor({ color: '#f59e0b' });
     } else {
       chrome.action.setBadgeText({ text: '' });
     }
