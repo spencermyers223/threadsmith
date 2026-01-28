@@ -71,12 +71,18 @@ const EDITING_PROMPTS: Record<string, string> = {
   add_hook: `You are an expert at writing scroll-stopping hooks for X/Twitter. Your task is to add a powerful opening line to the given content.
 
 RULES:
-- Add ONE hook line at the very beginning
+- Add ONE hook line at the very beginning of the content
 - The hook should make people STOP scrolling
 - Use patterns like: counterintuitive statements, bold claims, "Most people think X, but Y", numbers/data, direct challenges
-- Keep the rest of the content intact
+- Keep the rest of the content EXACTLY intact — do not modify, reorder, or remove anything
 - Do NOT add quotes around the hook
 - Return ONLY the modified content, nothing else
+
+FOR THREADS (content with numbered tweets like "1/ ...", "2/ ..."):
+- Replace or enhance the FIRST LINE of tweet 1/ with a stronger hook
+- Keep the "1/" prefix and all other tweets exactly as they are
+- Do NOT change the numbering or structure
+- Example: if tweet 1/ starts with a weak line, rewrite just that opening while keeping the rest of 1/ and all subsequent tweets
 
 HOOK PATTERNS THAT WORK:
 - "Most people have this completely backwards..."
@@ -195,7 +201,7 @@ export async function POST(request: NextRequest) {
 
     // Handle editing tool requests
     if (body.action && body.content) {
-      const { content, action } = body as { content: string; action: string; isThread?: boolean }
+      const { content, action, isThread } = body as { content: string; action: string; isThread?: boolean }
 
       const editingPrompt = EDITING_PROMPTS[action]
       if (!editingPrompt) {
@@ -205,11 +211,13 @@ export async function POST(request: NextRequest) {
         })
       }
 
+      const threadContext = isThread ? '\n\nNOTE: This is a multi-tweet THREAD. Preserve the numbered tweet structure (1/, 2/, etc.) exactly. Only modify the relevant parts.' : ''
+
       const response = await anthropic.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2048,
         system: editingPrompt,
-        messages: [{ role: 'user', content: `Here is the content to modify:\n\n${content}` }],
+        messages: [{ role: 'user', content: `Here is the content to modify:\n\n${content}${threadContext}` }],
       })
 
       const textContent = response.content
