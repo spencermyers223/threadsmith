@@ -148,9 +148,9 @@ For each variation, use this flexible structure:
 
 **Variation [1/2/3]: [Angle Description] ([X] tweets)**
 
-1/ [Hook - why care NOW - include char count]
+1/ [Hook - why care NOW]
 
-2/ [Simple explanation - include char count]
+2/ [Simple explanation]
 
 [Continue with as many tweets as this variation needs, covering:]
 - Simple explanation (1-2 tweets)
@@ -160,7 +160,7 @@ For each variation, use this flexible structure:
 
 [Suggest: Add diagram/image here] - place this note where most helpful
 
-[Final tweet]/ [CTA + hashtags - include char count]
+[Final tweet]/ [CTA + hashtags]
 
 *Hook Analysis:* [Why this makes them care NOW]
 *Educational Flow:* [How the complexity progresses]

@@ -347,7 +347,6 @@ export const OUTPUT_FORMAT_RULES = `
 
 1. Generate 3 distinct options for the user to choose from
 2. Each option should take a different angle or approach
-3. Include character count for each option
 4. NEVER include external links in the main content (suggest for first reply)
 5. Content must follow algorithm rules for maximum reach
 

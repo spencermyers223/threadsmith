@@ -167,6 +167,9 @@ function parseGeneratedPosts(
           .replace(/^\*Why they'll reply:.*$/gm, '')
           .replace(/^\[Suggest:.*\]$/gm, '') // Remove image placement suggestions
           .replace(/\[(\d+)\s*chars?\]/gi, '') // Remove [149 chars] metadata
+          .replace(/\((\d+)\s*characters?\)/gi, '') // Remove (149 characters) metadata
+          .replace(/\s*—?\s*\d+\s*characters?\s*$/gm, '') // Remove "— 149 characters" at end of lines
+          .replace(/\s*\|\s*\d+\s*chars?\s*$/gm, '') // Remove "| 149 chars" at end of lines
           .replace(/^\*Visual note:.*$/gm, '') // Remove visual note metadata
           .replace(/^\*Conversation hook:.*$/gm, '') // Remove conversation hook metadata
           // Remove separator lines

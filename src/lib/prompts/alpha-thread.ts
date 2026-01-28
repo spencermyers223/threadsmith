@@ -140,13 +140,13 @@ For each variation, use this structure (adjust tweet count per variation):
 
 **Variation [1/2/3]: [Angle Description] ([X] tweets)**
 
-1/ [Hook tweet - include char count]
+1/ [Hook tweet]
 
-2/ [Context - include char count]
+2/ [Context]
 
 [Continue with as many tweets as this variation needs...]
 
-[Final tweet]/ [CTA + hashtags - include char count]
+[Final tweet]/ [CTA + hashtags]
 
 *Hook Analysis:* [Why this hook stops the scroll]
 *Algorithm Score:* [Why this should perform well - cite specific algorithm factors]

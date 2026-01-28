@@ -185,7 +185,6 @@ function buildOutputRequirements(): string {
 
 1. Generate 3 distinct options for the user to choose from
 2. For each option, explain WHY it should perform well (algorithm reasoning)
-3. Include character count for tweets
 4. Warn about any algorithm red flags (external links, engagement bait, etc.)
 5. CRITICAL: Every post must be personalized to the user's profile:
    - Content must align with their niche and speak to their target audience
