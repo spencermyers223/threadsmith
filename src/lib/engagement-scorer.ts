@@ -164,8 +164,8 @@ function scoreHashtagUsage(text: string): ScoreDetail {
 
   if (total === 0) {
     score = 40
-    suggestion = 'Add 1-2 relevant cashtags for discovery'
-    suggested.push('$BTC', '$ETH', '$SOL')
+    suggestion = 'Add 1-2 relevant hashtags for discovery'
+    // Don't suggest specific tags - let user add relevant ones for their niche
   } else if (total >= 1 && total <= 3) {
     score = 90
   } else if (total <= 5) {
@@ -194,7 +194,7 @@ function scoreEmojiUsage(text: string): ScoreDetail {
     score = 90
   } else if (count <= 5) {
     score = 70
-    suggestion = 'Slightly emoji-heavy — 1-3 is ideal for CT'
+    suggestion = 'Slightly emoji-heavy — 1-3 is ideal'
   } else {
     score = 35
     suggestion = 'Too many emojis — reduces credibility'
