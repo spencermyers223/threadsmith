@@ -1,6 +1,89 @@
 // xthread Reply Coach - Background Service Worker
 
 const XTHREAD_API = 'https://xthread.io/api';
+const XTHREAD_URL = 'https://xthread.io';
+
+// ============================================================
+// Auto-detect extension auth callback and grab token
+// ============================================================
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  // Check if this is our extension callback page
+  if (changeInfo.status === 'complete' && tab.url?.includes('xthread.io/auth/extension-callback')) {
+    console.log('[xthread] Detected extension callback page, attempting to grab token...');
+    
+    // Wait a moment for the page to fully render and get the session
+    setTimeout(async () => {
+      try {
+        // Execute script in the tab to grab the token
+        const results = await chrome.scripting.executeScript({
+          target: { tabId },
+          func: () => {
+            // The page stores the token in a data attribute or we can grab it from the DOM
+            const tokenEl = document.querySelector('[data-token]');
+            if (tokenEl) {
+              return tokenEl.dataset.token;
+            }
+            // Fallback: look for the token in the code element
+            const codeEl = document.querySelector('code');
+            if (codeEl && codeEl.textContent) {
+              // The token is truncated on display but we need the full one
+              // Check if there's a hidden input or data attribute with full token
+              const fullTokenEl = document.querySelector('#full-token');
+              if (fullTokenEl) {
+                return fullTokenEl.value || fullTokenEl.textContent;
+              }
+            }
+            return null;
+          }
+        });
+        
+        const token = results?.[0]?.result;
+        if (token && token.length > 50) {
+          console.log('[xthread] Token captured from callback page!');
+          
+          // Verify and save the token
+          const response = await fetch(`${XTHREAD_API}/extension/user`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            
+            await chrome.storage.local.set({
+              xthreadToken: token,
+              xthreadUser: data.user,
+              isPremium: data.isPremium
+            });
+            
+            console.log('[xthread] Auth successful! Premium:', data.isPremium);
+            
+            // Close the callback tab
+            chrome.tabs.remove(tabId);
+            
+            // Notify any open popups
+            chrome.runtime.sendMessage({ type: 'AUTH_SUCCESS', isPremium: data.isPremium }).catch(() => {});
+            
+            // Notify content scripts on X
+            const xTabs = await chrome.tabs.query({ url: ['https://x.com/*', 'https://twitter.com/*'] });
+            for (const xTab of xTabs) {
+              try {
+                await chrome.tabs.sendMessage(xTab.id, {
+                  type: 'AUTH_UPDATE',
+                  token,
+                  isPremium: data.isPremium
+                });
+              } catch (e) {
+                // Tab might not have content script
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[xthread] Error grabbing token:', err);
+      }
+    }, 1500);
+  }
+});
 
 // Track coaching stats
 async function incrementCoachingCount() {

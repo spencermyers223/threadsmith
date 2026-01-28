@@ -564,11 +564,11 @@ function formatDate(isoString) {
 
 // Sign in handler
 signInBtn.addEventListener('click', () => {
-  // Open xthread login with extension callback
-  const callbackUrl = `${XTHREAD_URL}/auth/extension-callback`;
-  // Homepage has the sign-in button, and after auth it redirects to callback
-  const authUrl = `${XTHREAD_URL}?redirect=${encodeURIComponent(callbackUrl)}`;
-  chrome.tabs.create({ url: authUrl });
+  // Open xthread homepage - user signs in with Google
+  // After OAuth, they land on the dashboard
+  // Then they need to go to extension-callback to get token
+  // OR the extension auto-detects if they visit extension-callback
+  chrome.tabs.create({ url: `${XTHREAD_URL}/auth/extension-callback` });
 });
 
 // Token paste handler
@@ -663,6 +663,11 @@ async function notifyContentScripts(token, isPremium) {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'AUTH_CALLBACK') {
     handleAuthCallback(message.token);
+  }
+  if (message.type === 'AUTH_SUCCESS') {
+    // Extension auto-grabbed token from callback page
+    console.log('[xthread] Auth success received!');
+    init(); // Reload everything
   }
   if (message.type === 'UPDATE_BADGE') {
     savedCount.textContent = message.count;

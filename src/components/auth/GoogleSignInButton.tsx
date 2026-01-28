@@ -1,19 +1,26 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
+import { useSearchParams } from 'next/navigation'
 
 interface GoogleSignInButtonProps {
   variant?: 'default' | 'prominent'
 }
 
 export function GoogleSignInButton({ variant = 'default' }: GoogleSignInButtonProps) {
+  const searchParams = useSearchParams()
+  
   const handleSignIn = async () => {
     const supabase = createClient()
+    
+    // Check for redirect param (used by extension auth flow)
+    const redirectParam = searchParams.get('redirect')
+    const nextPath = redirectParam || '/creator-hub'
 
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
       },
     })
   }

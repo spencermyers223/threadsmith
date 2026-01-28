@@ -1,12 +1,14 @@
 {
   "manifest_version": 3,
   "name": "xthread Reply Coach",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Learn HOW to craft killer replies on X. Strategic angles, not full replies. Grow your following with AI coaching.",
   "permissions": [
     "storage",
     "activeTab",
-    "alarms"
+    "alarms",
+    "tabs",
+    "scripting"
   ],
   "host_permissions": [
     "https://x.com/*",
