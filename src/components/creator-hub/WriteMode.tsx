@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -10,9 +10,10 @@ import { Table } from '@tiptap/extension-table'
 import TableRow from '@tiptap/extension-table-row'
 import TableCell from '@tiptap/extension-table-cell'
 import TableHeader from '@tiptap/extension-table-header'
+import Image from '@tiptap/extension-image'
 import {
   Save, Loader2, Bold, Italic, List, ListOrdered, Link as LinkIcon,
-  Heading1, Heading2, Quote, Undo, Redo, FileText, FilePlus, Check
+  Heading1, Heading2, Quote, Undo, Redo, FileText, FilePlus, Check, ImageIcon
 } from 'lucide-react'
 import type { FileRecord } from '@/components/generate/FilesSidebar'
 
@@ -30,6 +31,8 @@ export default function WriteMode({ editingFile, onFileSaved, onNewFile }: Write
   const [showSaveSuccess, setShowSaveSuccess] = useState(false)
 
   const supabase = createClient()
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   const editor = useEditor({
     extensions: [
@@ -51,6 +54,10 @@ export default function WriteMode({ editingFile, onFileSaved, onNewFile }: Write
       TableRow,
       TableCell,
       TableHeader,
+      Image.configure({
+        inline: false,
+        allowBase64: false,
+      }),
     ],
     content: '',
     editorProps: {
@@ -262,6 +269,27 @@ export default function WriteMode({ editingFile, onFileSaved, onNewFile }: Write
     }
   }
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !editor) return
+
+    setIsUploadingImage(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/files/images', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Upload failed')
+      editor.chain().focus().setImage({ src: data.url }).run()
+    } catch (err) {
+      console.error('Image upload error:', err)
+      alert(err instanceof Error ? err.message : 'Failed to upload image')
+    } finally {
+      setIsUploadingImage(false)
+      if (imageInputRef.current) imageInputRef.current.value = ''
+    }
+  }
+
   const handleNewFile = () => {
     // Confirm if there are unsaved changes
     if (hasUnsavedChanges) {
@@ -450,6 +478,21 @@ export default function WriteMode({ editingFile, onFileSaved, onNewFile }: Write
           >
             <LinkIcon size={16} />
           </button>
+          <button
+            onClick={() => imageInputRef.current?.click()}
+            disabled={isUploadingImage}
+            className="p-2 rounded hover:bg-[var(--border)] transition-colors disabled:opacity-50"
+            title="Insert Image"
+          >
+            {isUploadingImage ? <Loader2 size={16} className="animate-spin" /> : <ImageIcon size={16} />}
+          </button>
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            className="hidden"
+            onChange={handleImageUpload}
+          />
 
           <div className="flex-1" />
 
