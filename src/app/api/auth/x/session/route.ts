@@ -1,12 +1,12 @@
 /**
- * X Auth Session - Fallback sign-in endpoint
+ * X Auth Session - Sign-in endpoint
  * 
  * GET /api/auth/x/session?user=<x_user_id>
- * Signs user in using deterministic password approach
+ * Signs user in and sets session cookies
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
 import crypto from 'crypto'
 
 export async function GET(request: NextRequest) {
@@ -27,8 +27,28 @@ export async function GET(request: NextRequest) {
     
     const userEmail = `${xUserId}@x.xthread.io`
     
-    // Sign in with the Supabase client (this sets session cookies)
-    const supabase = await createClient()
+    // Create response that we'll set cookies on
+    const response = NextResponse.redirect(new URL('/creator-hub', baseUrl))
+    
+    // Create Supabase client that writes cookies to our response
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options)
+            })
+          },
+        },
+      }
+    )
+    
+    // Sign in with password
     const { error } = await supabase.auth.signInWithPassword({
       email: userEmail,
       password: userPassword,
@@ -39,8 +59,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/login?error=signin_failed', baseUrl))
     }
     
-    // Redirect to creator hub
-    return NextResponse.redirect(new URL('/creator-hub', baseUrl))
+    return response
     
   } catch (err) {
     console.error('Session creation error:', err)
