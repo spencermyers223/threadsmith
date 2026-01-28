@@ -1,26 +1,36 @@
-<svg width="400" height="120" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
-  <!-- Professional ThreadSmith Logo - Dark Version -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D4A574"/>
+      <stop offset="50%" style="stop-color:#C9956C"/>
+      <stop offset="100%" style="stop-color:#A67C52"/>
+    </linearGradient>
+    <linearGradient id="copper" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#B87333"/>
+      <stop offset="50%" style="stop-color:#D4956A"/>
+      <stop offset="100%" style="stop-color:#B87333"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
   
-  <!-- Spool Icon -->
-  <g transform="translate(50, 60)">
-    <rect x="-18" y="-28" width="36" height="56" fill="#09090B" rx="1"/>
-    <rect x="-22" y="-18" width="44" height="36" fill="#18181B" rx="2"/>
-    <line x1="-22" y1="-8" x2="22" y2="-8" stroke="#27272A" stroke-width="0.5"/>
-    <line x1="-22" y1="2" x2="22" y2="2" stroke="#27272A" stroke-width="0.5"/>
-    <line x1="-22" y1="12" x2="22" y2="12" stroke="#27272A" stroke-width="0.5"/>
-    <ellipse cx="0" cy="-28" rx="28" ry="8" fill="#27272A"/>
-    <ellipse cx="0" cy="-28" rx="18" ry="5" fill="#FAFAFA"/>
-    <ellipse cx="0" cy="28" rx="28" ry="8" fill="#27272A"/>
-    <path d="M 22 0 C 38 -5, 42 10, 38 22 C 34 34, 45 38, 52 35"
-          stroke="#09090B" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Transparent background - mark only -->
+  
+  <!-- Thread Layers X -->
+  <g transform="translate(100, 100)">
+    <!-- Left diagonal threads (gold) -->
+    <path d="M-55,-55 L55,55" stroke="url(#gold)" stroke-width="8" stroke-linecap="round" filter="url(#glow)"/>
+    <path d="M-45,-55 L65,55" stroke="url(#gold)" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
+    <path d="M-65,-55 L45,55" stroke="url(#gold)" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
+    
+    <!-- Right diagonal threads (copper) -->
+    <path d="M55,-55 L-55,55" stroke="url(#copper)" stroke-width="8" stroke-linecap="round" filter="url(#glow)"/>
+    <path d="M65,-55 L-45,55" stroke="url(#copper)" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
+    <path d="M45,-55 L-65,55" stroke="url(#copper)" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
   </g>
-  
-  <text x="110" y="68" 
-        font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" 
-        font-size="38" 
-        font-weight="600"
-        letter-spacing="-0.5"
-        fill="#09090B">
-    ThreadSmith
-  </text>
 </svg>

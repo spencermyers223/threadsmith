@@ -1,43 +1,31 @@
-<svg width="400" height="120" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
-  <!-- Professional ThreadSmith Logo - Horizontal Lockup -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80">
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D4A574"/>
+      <stop offset="50%" style="stop-color:#C9956C"/>
+      <stop offset="100%" style="stop-color:#A67C52"/>
+    </linearGradient>
+    <linearGradient id="copper" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#B87333"/>
+      <stop offset="50%" style="stop-color:#D4956A"/>
+      <stop offset="100%" style="stop-color:#B87333"/>
+    </linearGradient>
+  </defs>
   
-  <!-- Spool Icon -->
-  <g transform="translate(50, 60)">
-    <!-- Spool core - refined cylinder -->
-    <rect x="-18" y="-28" width="36" height="56" fill="#C9B896" rx="1"/>
+  <!-- Logo mark -->
+  <g transform="translate(40, 40)">
+    <circle cx="0" cy="0" r="28" fill="#151515"/>
     
-    <!-- Thread wrapped around - clean gradient effect -->
-    <rect x="-22" y="-18" width="44" height="36" fill="#E5E7EB" rx="2"/>
+    <!-- Thread layers -->
+    <path d="M-13,-13 L13,13" stroke="url(#gold)" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M-10,-13 L16,13" stroke="url(#gold)" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+    <path d="M-16,-13 L10,13" stroke="url(#gold)" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
     
-    <!-- Subtle thread line details -->
-    <line x1="-22" y1="-8" x2="22" y2="-8" stroke="#D1D5DB" stroke-width="0.5"/>
-    <line x1="-22" y1="2" x2="22" y2="2" stroke="#D1D5DB" stroke-width="0.5"/>
-    <line x1="-22" y1="12" x2="22" y2="12" stroke="#D1D5DB" stroke-width="0.5"/>
-    
-    <!-- Top disc - refined ellipse -->
-    <ellipse cx="0" cy="-28" rx="28" ry="8" fill="#78716C"/>
-    <ellipse cx="0" cy="-28" rx="18" ry="5" fill="#09090B"/>
-    
-    <!-- Bottom disc -->
-    <ellipse cx="0" cy="28" rx="28" ry="8" fill="#78716C"/>
-    
-    <!-- Thread trailing - elegant curve -->
-    <path d="M 22 0 
-             C 38 -5, 42 10, 38 22
-             C 34 34, 45 38, 52 35"
-          stroke="#C9B896"
-          stroke-width="3" 
-          fill="none"
-          stroke-linecap="round"/>
+    <path d="M13,-13 L-13,13" stroke="url(#copper)" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M16,-13 L-10,13" stroke="url(#copper)" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+    <path d="M10,-13 L-16,13" stroke="url(#copper)" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
   </g>
   
   <!-- Wordmark -->
-  <text x="110" y="68" 
-        font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" 
-        font-size="38" 
-        font-weight="600"
-        letter-spacing="-0.5"
-        fill="#E5E7EB">
-    Thread<tspan fill="#C9B896">Smith</tspan>
-  </text>
+  <text x="85" y="48" fill="url(#gold)" font-family="SF Pro Display, -apple-system, Helvetica Neue, sans-serif" font-size="32" font-weight="600" letter-spacing="-0.5">xthread</text>
 </svg>

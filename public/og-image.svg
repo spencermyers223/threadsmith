@@ -1,94 +1,62 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 500" width="1500" height="500">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#18181B"/>
-      <stop offset="100%" style="stop-color:#09090B"/>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D4A574"/>
+      <stop offset="50%" style="stop-color:#C9956C"/>
+      <stop offset="100%" style="stop-color:#A67C52"/>
     </linearGradient>
-    <linearGradient id="sandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#D4C4A8"/>
-      <stop offset="50%" style="stop-color:#C9B896"/>
-      <stop offset="100%" style="stop-color:#8B7355"/>
+    <linearGradient id="copper" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#B87333"/>
+      <stop offset="50%" style="stop-color:#D4956A"/>
+      <stop offset="100%" style="stop-color:#B87333"/>
     </linearGradient>
-    <linearGradient id="threadGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#F3F4F6"/>
-      <stop offset="50%" style="stop-color:#E5E7EB"/>
-      <stop offset="100%" style="stop-color:#D1D5DB"/>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#070707"/>
+      <stop offset="50%" style="stop-color:#0c0c0c"/>
+      <stop offset="100%" style="stop-color:#070707"/>
     </linearGradient>
-    <linearGradient id="buttonGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#D4C4A8"/>
-      <stop offset="100%" style="stop-color:#C9B896"/>
-    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
-
+  
   <!-- Background -->
-  <rect width="1200" height="630" fill="url(#bgGrad)"/>
-
-  <!-- Decorative glow circles -->
-  <circle cx="100" cy="100" r="200" fill="#C9B896" opacity="0.03"/>
-  <circle cx="1100" cy="530" r="250" fill="#C9B896" opacity="0.03"/>
-  <circle cx="600" cy="315" r="400" fill="#C9B896" opacity="0.02"/>
-
-  <!-- Logo Section -->
-  <g transform="translate(600, 240)">
-    <!-- Spool Icon -->
-    <g transform="translate(-200, 0)">
-      <!-- Spool body (sand) -->
-      <rect x="-30" y="-48" width="60" height="96" rx="3" fill="url(#sandGrad)"/>
-
-      <!-- Thread wrapped around spool -->
-      <rect x="-40" y="-33" width="80" height="66" rx="33" fill="url(#threadGrad)"/>
-
-      <!-- Thread texture -->
-      <path d="M-40 -18 Q0 -21 40 -18" stroke="#D1D5DB" stroke-width="1" fill="none" opacity="0.5"/>
-      <path d="M-40 0 Q0 -3 40 0" stroke="#D1D5DB" stroke-width="1" fill="none" opacity="0.5"/>
-      <path d="M-40 18 Q0 15 40 18" stroke="#D1D5DB" stroke-width="1" fill="none" opacity="0.5"/>
-
-      <!-- Center hole -->
-      <circle cx="0" cy="0" r="12" fill="#09090B"/>
-      <circle cx="0" cy="0" r="8" fill="#18181B"/>
-
-      <!-- Top disc -->
-      <ellipse cx="0" cy="-48" rx="48" ry="13" fill="#78716C"/>
-      <ellipse cx="0" cy="-48" rx="38" ry="9" fill="#8B8279"/>
-
-      <!-- Bottom disc -->
-      <ellipse cx="0" cy="48" rx="48" ry="13" fill="#78716C"/>
-      <ellipse cx="0" cy="48" rx="38" ry="9" fill="#6B6560"/>
-    </g>
-
-    <!-- Wordmark -->
-    <text x="-100" y="18"
-          font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-          font-size="72"
-          font-weight="600"
-          letter-spacing="-2"
-          fill="#E5E7EB">Thread</text>
-    <text x="137" y="18"
-          font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-          font-size="72"
-          font-weight="700"
-          letter-spacing="-2"
-          fill="#C9B896">Smith</text>
+  <rect width="1500" height="500" fill="url(#bgGrad)"/>
+  
+  <!-- Subtle horizontal line accents -->
+  <line x1="0" y1="249" x2="500" y2="249" stroke="#C9956C" stroke-width="0.5" opacity="0.08"/>
+  <line x1="1000" y1="249" x2="1500" y2="249" stroke="#C9956C" stroke-width="0.5" opacity="0.08"/>
+  
+  <!-- Decorative thread elements - left -->
+  <g transform="translate(120, 250)" opacity="0.12">
+    <path d="M-80,-100 L80,100" stroke="url(#gold)" stroke-width="5" stroke-linecap="round"/>
+    <path d="M-65,-100 L95,100" stroke="url(#gold)" stroke-width="5" stroke-linecap="round" opacity="0.5"/>
+    <path d="M80,-100 L-80,100" stroke="url(#copper)" stroke-width="5" stroke-linecap="round"/>
+    <path d="M95,-100 L-65,100" stroke="url(#copper)" stroke-width="5" stroke-linecap="round" opacity="0.5"/>
   </g>
-
-  <!-- Tagline -->
-  <text x="600" y="380"
-        font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-        font-size="32"
-        font-weight="400"
-        fill="#78716C"
-        text-anchor="middle">
-    Your ideas, expertly threaded
-  </text>
-
-  <!-- CTA Button -->
-  <rect x="450" y="430" width="300" height="60" rx="30" fill="url(#buttonGrad)"/>
-  <text x="600" y="470"
-        font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-        font-size="22"
-        font-weight="600"
-        fill="#09090B"
-        text-anchor="middle">
-    Start Crafting for Free
-  </text>
+  
+  <!-- Decorative thread elements - right -->
+  <g transform="translate(1380, 250)" opacity="0.12">
+    <path d="M-80,-100 L80,100" stroke="url(#gold)" stroke-width="5" stroke-linecap="round"/>
+    <path d="M-65,-100 L95,100" stroke="url(#gold)" stroke-width="5" stroke-linecap="round" opacity="0.5"/>
+    <path d="M80,-100 L-80,100" stroke="url(#copper)" stroke-width="5" stroke-linecap="round"/>
+    <path d="M95,-100 L-65,100" stroke="url(#copper)" stroke-width="5" stroke-linecap="round" opacity="0.5"/>
+  </g>
+  
+  <!-- Main tagline - centered -->
+  <text x="750" y="265" text-anchor="middle" fill="url(#gold)" font-family="SF Pro Display, -apple-system, Helvetica Neue, sans-serif" font-size="56" font-weight="500" letter-spacing="-0.5" filter="url(#glow)">Your ideas, optimized for X</text>
+  
+  <!-- Subtle underline accent -->
+  <line x1="550" y1="295" x2="950" y2="295" stroke="url(#gold)" stroke-width="1" opacity="0.2"/>
 </svg>

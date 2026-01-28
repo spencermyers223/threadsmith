@@ -1,53 +1,44 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#18181B"/>
-      <stop offset="100%" style="stop-color:#09090B"/>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D4A574"/>
+      <stop offset="50%" style="stop-color:#C9956C"/>
+      <stop offset="100%" style="stop-color:#A67C52"/>
     </linearGradient>
-    <linearGradient id="sandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#D4C4A8"/>
-      <stop offset="50%" style="stop-color:#C9B896"/>
-      <stop offset="100%" style="stop-color:#8B7355"/>
+    <linearGradient id="copper" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#B87333"/>
+      <stop offset="50%" style="stop-color:#D4956A"/>
+      <stop offset="100%" style="stop-color:#B87333"/>
     </linearGradient>
-    <linearGradient id="threadGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#F3F4F6"/>
-      <stop offset="50%" style="stop-color:#E5E7EB"/>
-      <stop offset="100%" style="stop-color:#D1D5DB"/>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#141414"/>
+      <stop offset="100%" style="stop-color:#0A0A0A"/>
     </linearGradient>
-    <linearGradient id="discGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#8B8279"/>
-      <stop offset="100%" style="stop-color:#78716C"/>
-    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
-
-  <!-- Background with rounded corners -->
-  <rect width="512" height="512" rx="108" fill="url(#bgGradient)"/>
-
-  <!-- Spool Icon - Centered -->
+  
+  <!-- Background with iOS-style rounded corners -->
+  <rect width="512" height="512" fill="url(#bgGrad)" rx="115"/>
+  
+  <!-- Subtle inner border -->
+  <rect x="4" y="4" width="504" height="504" fill="none" stroke="#C9956C" stroke-width="0.5" opacity="0.1" rx="112"/>
+  
+  <!-- Thread Layers X -->
   <g transform="translate(256, 256)">
-    <!-- Spool body (sand) -->
-    <rect x="-50" y="-80" width="100" height="160" rx="4" fill="url(#sandGradient)"/>
-
-    <!-- Thread wrapped around spool -->
-    <rect x="-65" y="-55" width="130" height="110" rx="55" fill="url(#threadGradient)"/>
-
-    <!-- Thread texture lines -->
-    <path d="M-65 -30 Q0 -35 65 -30" stroke="#D1D5DB" stroke-width="2" fill="none" opacity="0.5"/>
-    <path d="M-65 -5 Q0 -10 65 -5" stroke="#D1D5DB" stroke-width="2" fill="none" opacity="0.5"/>
-    <path d="M-65 20 Q0 15 65 20" stroke="#D1D5DB" stroke-width="2" fill="none" opacity="0.5"/>
-    <path d="M-65 45 Q0 40 65 45" stroke="#D1D5DB" stroke-width="2" fill="none" opacity="0.5"/>
-
-    <!-- Center hole -->
-    <circle cx="0" cy="0" r="22" fill="#09090B"/>
-    <circle cx="0" cy="0" r="16" fill="#18181B"/>
-
-    <!-- Top disc -->
-    <ellipse cx="0" cy="-80" rx="80" ry="22" fill="url(#discGradient)"/>
-    <ellipse cx="0" cy="-80" rx="65" ry="16" fill="#8B8279"/>
-    <ellipse cx="0" cy="-80" rx="30" ry="8" fill="#09090B"/>
-
-    <!-- Bottom disc -->
-    <ellipse cx="0" cy="80" rx="80" ry="22" fill="#78716C"/>
-    <ellipse cx="0" cy="80" rx="65" ry="16" fill="#6B6560"/>
+    <!-- Left diagonal threads (gold) -->
+    <path d="M-90,-90 L90,90" stroke="url(#gold)" stroke-width="14" stroke-linecap="round" filter="url(#glow)"/>
+    <path d="M-74,-90 L106,90" stroke="url(#gold)" stroke-width="14" stroke-linecap="round" opacity="0.4"/>
+    <path d="M-106,-90 L74,90" stroke="url(#gold)" stroke-width="14" stroke-linecap="round" opacity="0.4"/>
+    
+    <!-- Right diagonal threads (copper) -->
+    <path d="M90,-90 L-90,90" stroke="url(#copper)" stroke-width="14" stroke-linecap="round" filter="url(#glow)"/>
+    <path d="M106,-90 L-74,90" stroke="url(#copper)" stroke-width="14" stroke-linecap="round" opacity="0.4"/>
+    <path d="M74,-90 L-106,90" stroke="url(#copper)" stroke-width="14" stroke-linecap="round" opacity="0.4"/>
   </g>
 </svg>
