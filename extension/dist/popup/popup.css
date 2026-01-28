@@ -240,6 +240,83 @@ body {
   text-decoration: underline;
 }
 
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: #16181c;
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: #71767b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  background: rgba(239, 243, 244, 0.05);
+  color: #e7e9ea;
+}
+
+.tab.active {
+  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  color: white;
+}
+
+.tab-icon {
+  font-size: 14px;
+}
+
+.tab-text {
+  font-size: 12px;
+}
+
+.tab-badge {
+  display: none;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 700;
+  background: #ef4444;
+  color: white;
+  border-radius: 9999px;
+  margin-left: 4px;
+}
+
+.tab-badge.visible {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab.active .tab-badge {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Tab Content */
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
 /* Stats */
 .stats {
   display: grid;
@@ -450,4 +527,162 @@ body {
 
 .footer a:hover {
   color: #7c3aed;
+}
+
+/* ============================================================
+   Watchlist Styles
+   ============================================================ */
+
+.watchlist-header {
+  margin-bottom: 12px;
+}
+
+.watchlist-subtitle {
+  font-size: 12px;
+  color: #71767b;
+  margin: 0;
+}
+
+.watchlist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.watchlist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #16181c;
+  border-radius: 10px;
+  border: 1px solid #2f3336;
+  transition: all 0.2s;
+}
+
+.watchlist-item:hover {
+  border-color: #7c3aed;
+  background: #1a1c20;
+}
+
+.watchlist-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  color: white;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.watchlist-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.watchlist-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.watchlist-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #e7e9ea;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.watchlist-handle {
+  font-size: 12px;
+  color: #71767b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.watchlist-handle a {
+  color: #7c3aed;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.watchlist-handle a:hover {
+  text-decoration: underline;
+}
+
+.watchlist-added {
+  font-size: 10px;
+  color: #536471;
+}
+
+.watchlist-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.watchlist-remove-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #71767b;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.watchlist-remove-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+/* Watchlist Empty State */
+.watchlist-empty {
+  text-align: center;
+  padding: 32px 16px;
+  background: #16181c;
+  border-radius: 12px;
+}
+
+.watchlist-empty .empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.watchlist-empty .empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #e7e9ea;
+  margin-bottom: 8px;
+}
+
+.watchlist-empty .empty-desc {
+  font-size: 13px;
+  color: #71767b;
+  line-height: 1.5;
+}
+
+.watchlist-empty .empty-desc strong {
+  color: #7c3aed;
+}
+
+/* Saved section adjustments */
+.saved-subtitle {
+  font-size: 12px;
+  color: #71767b;
 }

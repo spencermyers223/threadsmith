@@ -2,6 +2,7 @@
 
 const XTHREAD_URL = 'https://xthread.io';
 const XTHREAD_API = 'https://xthread.io/api';
+const WATCHLIST_MAX = 50;
 
 // DOM Elements
 const authView = document.getElementById('auth-view');
@@ -16,10 +17,19 @@ const freeStatus = document.getElementById('free-status');
 const coachingToday = document.getElementById('coaching-today');
 const savedCount = document.getElementById('saved-count');
 const statsSection = document.getElementById('stats-section');
-const savedSection = document.getElementById('saved-section');
 const savedPostsList = document.getElementById('saved-posts-list');
 const noSaved = document.getElementById('no-saved');
 const clearSavedBtn = document.getElementById('clear-saved-btn');
+
+// Watchlist DOM elements
+const watchlistList = document.getElementById('watchlist-list');
+const watchlistEmpty = document.getElementById('watchlist-empty');
+const watchlistBadge = document.getElementById('watchlist-badge');
+const savedBadge = document.getElementById('saved-badge');
+
+// Tab elements
+const tabs = document.querySelectorAll('.tab');
+const tabContents = document.querySelectorAll('.tab-content');
 
 // Initialize
 async function init() {
@@ -30,6 +40,58 @@ async function init() {
     refreshUserData(stored.xthreadToken);
   } else {
     showAuthView();
+  }
+  
+  // Setup tab switching
+  setupTabs();
+  
+  // Load watchlist
+  loadWatchlist();
+  
+  // Update badges
+  updateBadges();
+}
+
+// Setup tab switching
+function setupTabs() {
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const tabName = tab.dataset.tab;
+      
+      // Update active tab
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      // Update tab content
+      tabContents.forEach(content => {
+        content.classList.remove('active');
+        if (content.id === `tab-${tabName}`) {
+          content.classList.add('active');
+        }
+      });
+    });
+  });
+}
+
+// Update badge counts
+async function updateBadges() {
+  const stored = await chrome.storage.local.get(['watchlist', 'savedPosts']);
+  
+  const watchlistCount = stored.watchlist?.length || 0;
+  const savedPostsCount = stored.savedPosts?.length || 0;
+  
+  if (watchlistCount > 0) {
+    watchlistBadge.textContent = watchlistCount;
+    watchlistBadge.classList.add('visible');
+  } else {
+    watchlistBadge.classList.remove('visible');
+  }
+  
+  if (savedPostsCount > 0) {
+    savedBadge.textContent = savedPostsCount;
+    savedBadge.classList.add('visible');
+  } else {
+    savedBadge.classList.remove('visible');
   }
 }
 
@@ -51,17 +113,14 @@ function showMainView(user, isPremium) {
   if (isPremium) {
     premiumStatus.classList.remove('hidden');
     freeStatus.classList.add('hidden');
-    statsSection.classList.remove('hidden');
-    savedSection.classList.remove('hidden');
   } else {
     premiumStatus.classList.add('hidden');
     freeStatus.classList.remove('hidden');
-    statsSection.classList.add('hidden');
-    savedSection.classList.add('hidden');
   }
   
   loadStats();
   loadSavedPosts();
+  loadWatchlist();
 }
 
 // Refresh user data from API
@@ -158,6 +217,106 @@ async function clearSavedPosts() {
   await chrome.storage.local.set({ savedPosts: [] });
   loadSavedPosts();
   savedCount.textContent = '0';
+  updateBadges();
+}
+
+// ============================================================
+// Watchlist Functions
+// ============================================================
+
+// Load and display watchlist
+async function loadWatchlist() {
+  try {
+    const stored = await chrome.storage.local.get(['watchlist']);
+    const watchlist = stored.watchlist || [];
+    
+    if (watchlist.length === 0) {
+      watchlistEmpty.classList.remove('hidden');
+      watchlistList.innerHTML = '';
+      return;
+    }
+    
+    watchlistEmpty.classList.add('hidden');
+    watchlistList.innerHTML = watchlist.map((account, index) => `
+      <div class="watchlist-item" data-handle="${escapeHtml(account.handle)}">
+        <div class="watchlist-avatar">
+          ${account.avatar 
+            ? `<img src="${escapeHtml(account.avatar)}" alt="${escapeHtml(account.displayName)}" onerror="this.parentElement.innerHTML='${account.displayName[0]?.toUpperCase() || '?'}'">` 
+            : account.displayName[0]?.toUpperCase() || '?'}
+        </div>
+        <div class="watchlist-info">
+          <div class="watchlist-name">${escapeHtml(account.displayName)}</div>
+          <div class="watchlist-handle">
+            <a href="https://x.com/${escapeHtml(account.handle)}" target="_blank">@${escapeHtml(account.handle)}</a>
+            <span class="watchlist-added">• Added ${formatDate(account.addedAt)}</span>
+          </div>
+        </div>
+        <div class="watchlist-actions">
+          <button class="watchlist-remove-btn" data-handle="${escapeHtml(account.handle)}" title="Remove from watchlist">×</button>
+        </div>
+      </div>
+    `).join('');
+    
+    // Add remove handlers
+    watchlistList.querySelectorAll('.watchlist-remove-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const handle = btn.dataset.handle;
+        await removeFromWatchlist(handle);
+      });
+    });
+    
+    // Make items clickable to open profile
+    watchlistList.querySelectorAll('.watchlist-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        if (!e.target.closest('.watchlist-remove-btn') && !e.target.closest('a')) {
+          const handle = item.dataset.handle;
+          chrome.tabs.create({ url: `https://x.com/${handle}` });
+        }
+      });
+    });
+    
+  } catch (err) {
+    console.error('Failed to load watchlist:', err);
+  }
+}
+
+// Remove from watchlist
+async function removeFromWatchlist(handle) {
+  try {
+    const stored = await chrome.storage.local.get(['watchlist']);
+    const watchlist = stored.watchlist || [];
+    
+    const normalizedHandle = handle.toLowerCase().replace('@', '');
+    const index = watchlist.findIndex(w => w.handle.toLowerCase() === normalizedHandle);
+    
+    if (index !== -1) {
+      watchlist.splice(index, 1);
+      await chrome.storage.local.set({ watchlist });
+      
+      // Reload UI
+      loadWatchlist();
+      updateBadges();
+      
+      // Notify content scripts
+      notifyWatchlistUpdated();
+    }
+  } catch (err) {
+    console.error('Failed to remove from watchlist:', err);
+  }
+}
+
+// Notify content scripts that watchlist was updated
+async function notifyWatchlistUpdated() {
+  const tabs = await chrome.tabs.query({ url: ['https://x.com/*', 'https://twitter.com/*'] });
+  
+  for (const tab of tabs) {
+    try {
+      await chrome.tabs.sendMessage(tab.id, { type: 'WATCHLIST_UPDATED' });
+    } catch (err) {
+      // Tab might not have content script loaded
+    }
+  }
 }
 
 // Utility functions
@@ -224,7 +383,7 @@ async function notifyContentScripts(token, isPremium) {
   }
 }
 
-// Listen for auth callback
+// Listen for auth callback and updates
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'AUTH_CALLBACK') {
     handleAuthCallback(message.token);
@@ -232,6 +391,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'UPDATE_BADGE') {
     savedCount.textContent = message.count;
     loadSavedPosts();
+    updateBadges();
+  }
+  if (message.type === 'UPDATE_WATCHLIST_BADGE') {
+    loadWatchlist();
+    updateBadges();
   }
 });
 

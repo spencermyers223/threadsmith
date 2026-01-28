@@ -3,45 +3,167 @@
 
 const XTHREAD_API = 'https://xthread.io/api';
 
+// ============================================================
+// Watchlist Module (inline to avoid module loading issues)
+// ============================================================
+const WATCHLIST_MAX = 50;
+
+async function getWatchlist() {
+  try {
+    const stored = await chrome.storage.local.get(['watchlist']);
+    return stored.watchlist || [];
+  } catch (err) {
+    console.debug('[xthread] Error getting watchlist:', err);
+    return [];
+  }
+}
+
+async function addToWatchlist(account) {
+  try {
+    const watchlist = await getWatchlist();
+    
+    if (watchlist.length >= WATCHLIST_MAX) {
+      return { 
+        success: false, 
+        error: `Watchlist is full (max ${WATCHLIST_MAX} accounts). Remove some to add more.` 
+      };
+    }
+    
+    const normalizedHandle = account.handle.toLowerCase().replace('@', '');
+    const existing = watchlist.find(w => w.handle.toLowerCase() === normalizedHandle);
+    if (existing) {
+      return { success: false, error: 'Already watching this account' };
+    }
+    
+    const newEntry = {
+      handle: normalizedHandle,
+      displayName: account.displayName || normalizedHandle,
+      avatar: account.avatar || null,
+      addedAt: new Date().toISOString(),
+      lastChecked: null
+    };
+    
+    watchlist.unshift(newEntry);
+    await chrome.storage.local.set({ watchlist });
+    
+    console.debug('[xthread] Added to watchlist:', normalizedHandle);
+    return { success: true };
+    
+  } catch (err) {
+    console.debug('[xthread] Error adding to watchlist:', err);
+    return { success: false, error: 'Failed to save to watchlist' };
+  }
+}
+
+async function removeFromWatchlist(handle) {
+  try {
+    const watchlist = await getWatchlist();
+    const normalizedHandle = handle.toLowerCase().replace('@', '');
+    
+    const index = watchlist.findIndex(w => w.handle.toLowerCase() === normalizedHandle);
+    if (index === -1) {
+      return { success: false, error: 'Account not in watchlist' };
+    }
+    
+    watchlist.splice(index, 1);
+    await chrome.storage.local.set({ watchlist });
+    
+    console.debug('[xthread] Removed from watchlist:', normalizedHandle);
+    return { success: true };
+    
+  } catch (err) {
+    console.debug('[xthread] Error removing from watchlist:', err);
+    return { success: false, error: 'Failed to remove from watchlist' };
+  }
+}
+
+async function isWatching(handle) {
+  try {
+    const watchlist = await getWatchlist();
+    const normalizedHandle = handle.toLowerCase().replace('@', '');
+    return watchlist.some(w => w.handle.toLowerCase() === normalizedHandle);
+  } catch (err) {
+    console.debug('[xthread] Error checking watchlist:', err);
+    return false;
+  }
+}
+
+async function updateWatchlistAvatar(handle, avatar) {
+  try {
+    const watchlist = await getWatchlist();
+    const normalizedHandle = handle.toLowerCase().replace('@', '');
+    const entry = watchlist.find(w => w.handle.toLowerCase() === normalizedHandle);
+    
+    if (entry && avatar && entry.avatar !== avatar) {
+      entry.avatar = avatar;
+      await chrome.storage.local.set({ watchlist });
+    }
+  } catch (err) {
+    console.debug('[xthread] Error updating avatar:', err);
+  }
+}
+
+// ============================================================
+// Main Content Script
+// ============================================================
+
 // State
 let userToken = null;
 let isPremium = false;
 let isProcessing = false;
+let currentProfileHandle = null;
 
 // Initialize
 async function init() {
-  console.log('[xthread] Reply Coach initializing...');
+  console.debug('[xthread] Reply Coach initializing...');
   
   // Get auth from storage
   const stored = await chrome.storage.local.get(['xthreadToken', 'isPremium']);
   userToken = stored.xthreadToken;
   isPremium = stored.isPremium || false;
   
-  if (!userToken) {
-    console.log('[xthread] Not authenticated. Click extension icon to sign in.');
-    return;
-  }
-  
-  // Start observing for new posts
-  observePosts();
+  // Start observing for DOM changes (posts + profile pages)
+  observeDOM();
   
   // Process existing posts
   processExistingPosts();
+  
+  // Check if on profile page
+  checkProfilePage();
+  
+  // Listen for URL changes (SPA navigation)
+  let lastUrl = location.href;
+  new MutationObserver(() => {
+    if (location.href !== lastUrl) {
+      lastUrl = location.href;
+      checkProfilePage();
+    }
+  }).observe(document.body, { childList: true, subtree: true });
+  
+  if (!userToken) {
+    console.debug('[xthread] Not authenticated. Click extension icon to sign in.');
+  }
 }
 
-// Observe DOM for new posts (X uses infinite scroll)
-function observePosts() {
+// Observe DOM for new posts and profile page changes
+function observeDOM() {
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       if (mutation.addedNodes.length) {
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
+            // Check for new posts
             const posts = node.querySelectorAll ? 
               node.querySelectorAll('article[data-testid="tweet"]') : [];
             posts.forEach(injectButtons);
             
             if (node.matches && node.matches('article[data-testid="tweet"]')) {
               injectButtons(node);
+            }
+            
+            // Check for profile action buttons (Follow button area)
+            if (node.querySelector && node.querySelector('[data-testid="placementTracking"]')) {
+              checkProfilePage();
             }
           }
         });
@@ -52,6 +174,159 @@ function observePosts() {
   observer.observe(document.body, {
     childList: true,
     subtree: true
+  });
+}
+
+// ============================================================
+// Profile Page Watch Button
+// ============================================================
+
+// Check if we're on a profile page and inject watch button
+function checkProfilePage() {
+  const profileMatch = location.pathname.match(/^\/([^\/]+)\/?$/);
+  
+  // Skip non-profile pages
+  const nonProfilePaths = ['home', 'explore', 'search', 'notifications', 'messages', 'settings', 'i', 'compose'];
+  if (!profileMatch || nonProfilePaths.includes(profileMatch[1].toLowerCase())) {
+    currentProfileHandle = null;
+    return;
+  }
+  
+  const handle = profileMatch[1];
+  currentProfileHandle = handle;
+  
+  // Delay slightly to let DOM settle
+  setTimeout(() => injectWatchButton(handle), 500);
+}
+
+// Inject the watch button on profile page
+async function injectWatchButton(handle) {
+  // Don't re-inject if already present
+  if (document.querySelector('.xthread-watch-btn')) {
+    // But do update state if handle changed
+    updateWatchButtonState(handle);
+    return;
+  }
+  
+  // Find the Follow button's container
+  // X uses [data-testid="placementTracking"] for the follow button area
+  const followContainer = document.querySelector('[data-testid="placementTracking"]');
+  if (!followContainer) {
+    console.debug('[xthread] Follow button container not found');
+    return;
+  }
+  
+  // Find parent to insert our button alongside
+  const buttonContainer = followContainer.parentElement;
+  if (!buttonContainer) return;
+  
+  // Check if user is watching this account
+  const watching = await isWatching(handle);
+  
+  // Create watch button
+  const watchBtn = document.createElement('button');
+  watchBtn.className = 'xthread-watch-btn' + (watching ? ' xthread-watching' : '');
+  watchBtn.setAttribute('data-handle', handle);
+  watchBtn.innerHTML = watching 
+    ? `<span class="xthread-watch-icon">✓</span><span class="xthread-watch-text">Watching</span>`
+    : `<span class="xthread-watch-icon">👁</span><span class="xthread-watch-text">Watch</span>`;
+  watchBtn.title = watching ? 'Remove from watchlist' : 'Add to watchlist';
+  
+  // Insert before follow button
+  buttonContainer.insertBefore(watchBtn, followContainer);
+  
+  // Click handler
+  watchBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await handleWatchClick(watchBtn, handle);
+  });
+}
+
+// Update watch button state (when navigating between profiles)
+async function updateWatchButtonState(handle) {
+  const watchBtn = document.querySelector('.xthread-watch-btn');
+  if (!watchBtn) return;
+  
+  // Update handle reference
+  watchBtn.setAttribute('data-handle', handle);
+  
+  const watching = await isWatching(handle);
+  watchBtn.className = 'xthread-watch-btn' + (watching ? ' xthread-watching' : '');
+  watchBtn.innerHTML = watching 
+    ? `<span class="xthread-watch-icon">✓</span><span class="xthread-watch-text">Watching</span>`
+    : `<span class="xthread-watch-icon">👁</span><span class="xthread-watch-text">Watch</span>`;
+  watchBtn.title = watching ? 'Remove from watchlist' : 'Add to watchlist';
+}
+
+// Handle watch button click
+async function handleWatchClick(btn, handle) {
+  const watching = await isWatching(handle);
+  
+  if (watching) {
+    // Remove from watchlist
+    const result = await removeFromWatchlist(handle);
+    if (result.success) {
+      btn.className = 'xthread-watch-btn';
+      btn.innerHTML = `<span class="xthread-watch-icon">👁</span><span class="xthread-watch-text">Watch</span>`;
+      btn.title = 'Add to watchlist';
+      showToast('Removed from watchlist');
+    } else {
+      showToast(result.error || 'Failed to remove');
+    }
+  } else {
+    // Add to watchlist - get profile info
+    const profileInfo = extractProfileInfo();
+    const result = await addToWatchlist({
+      handle: handle,
+      displayName: profileInfo.displayName,
+      avatar: profileInfo.avatar
+    });
+    
+    if (result.success) {
+      btn.className = 'xthread-watch-btn xthread-watching';
+      btn.innerHTML = `<span class="xthread-watch-icon">✓</span><span class="xthread-watch-text">Watching</span>`;
+      btn.title = 'Remove from watchlist';
+      showToast('Added to watchlist! 👁');
+      
+      // Update badge
+      updateWatchlistBadge();
+    } else {
+      showToast(result.error || 'Failed to add');
+    }
+  }
+}
+
+// Extract profile information from the page
+function extractProfileInfo() {
+  const info = {
+    displayName: currentProfileHandle,
+    avatar: null
+  };
+  
+  // Try to get display name from the profile header
+  // The display name is usually in a span inside the first h2 on profile pages
+  const nameEl = document.querySelector('[data-testid="UserName"] span');
+  if (nameEl) {
+    info.displayName = nameEl.textContent.trim();
+  }
+  
+  // Try to get avatar
+  // Profile avatar has a specific structure
+  const avatarEl = document.querySelector('[data-testid="UserAvatar-Container-unknown"] img, a[href$="/photo"] img');
+  if (avatarEl && avatarEl.src) {
+    info.avatar = avatarEl.src;
+  }
+  
+  return info;
+}
+
+// Update watchlist badge count
+async function updateWatchlistBadge() {
+  const watchlist = await getWatchlist();
+  chrome.runtime.sendMessage({
+    type: 'UPDATE_WATCHLIST_BADGE',
+    count: watchlist.length
   });
 }
 
@@ -412,12 +687,19 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// Listen for auth updates
+// Listen for auth updates and watchlist updates
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'AUTH_UPDATE') {
     userToken = message.token;
     isPremium = message.isPremium;
-    console.log('[xthread] Auth updated:', { isPremium });
+    console.debug('[xthread] Auth updated:', { isPremium });
+  }
+  
+  // Refresh watch button state when watchlist changes from popup
+  if (message.type === 'WATCHLIST_UPDATED') {
+    if (currentProfileHandle) {
+      updateWatchButtonState(currentProfileHandle);
+    }
   }
 });
 

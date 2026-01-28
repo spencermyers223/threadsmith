@@ -16,7 +16,7 @@
         </svg>
         <span>xthread</span>
       </div>
-      <span class="version">v1.1.0</span>
+      <span class="version">v1.2.0</span>
     </div>
 
     <!-- Not authenticated view -->
@@ -90,43 +90,85 @@
         <a href="https://xthread.io/pricing" target="_blank" class="upgrade-link">Upgrade →</a>
       </div>
       
-      <!-- Stats -->
-      <div class="stats" id="stats-section">
-        <div class="stat">
-          <div class="stat-value" id="coaching-today">0</div>
-          <div class="stat-label">Coached today</div>
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" data-tab="coach">
+          <span class="tab-icon">🎯</span>
+          <span class="tab-text">Coach</span>
+        </button>
+        <button class="tab" data-tab="watchlist">
+          <span class="tab-icon">👁</span>
+          <span class="tab-text">Watchlist</span>
+          <span class="tab-badge" id="watchlist-badge"></span>
+        </button>
+        <button class="tab" data-tab="saved">
+          <span class="tab-icon">📌</span>
+          <span class="tab-text">Saved</span>
+          <span class="tab-badge" id="saved-badge"></span>
+        </button>
+      </div>
+      
+      <!-- Coach Tab Content -->
+      <div class="tab-content active" id="tab-coach">
+        <!-- Stats -->
+        <div class="stats" id="stats-section">
+          <div class="stat">
+            <div class="stat-value" id="coaching-today">0</div>
+            <div class="stat-label">Coached today</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="saved-count">0</div>
+            <div class="stat-label">Saved posts</div>
+          </div>
         </div>
-        <div class="stat">
-          <div class="stat-value" id="saved-count">0</div>
-          <div class="stat-label">Saved posts</div>
+        
+        <!-- Instructions -->
+        <div class="instructions">
+          <h3>How to use</h3>
+          <ol>
+            <li>Browse X normally</li>
+            <li>Click the purple <strong>Coach</strong> button on any post</li>
+            <li>Review strategic angles and hook starters</li>
+            <li>Write YOUR reply using the coaching</li>
+          </ol>
+          <div class="tip">
+            <strong>Pro tip:</strong> Focus on high-score posts (&gt;7) for maximum impact
+          </div>
         </div>
       </div>
       
-      <!-- Saved Posts Section -->
-      <div class="saved-section" id="saved-section">
-        <div class="saved-header">
-          <h3>📌 Saved Posts</h3>
-          <button id="clear-saved-btn" class="text-btn">Clear all</button>
+      <!-- Watchlist Tab Content -->
+      <div class="tab-content" id="tab-watchlist">
+        <div class="watchlist-header">
+          <p class="watchlist-subtitle">Track your favorite creators</p>
         </div>
-        <div id="saved-posts-list" class="saved-posts-list">
+        
+        <div id="watchlist-list" class="watchlist-list">
           <!-- Populated by JS -->
         </div>
-        <div id="no-saved" class="no-saved">
-          No saved posts yet. Click the bookmark icon on any post to save it.
+        
+        <div id="watchlist-empty" class="watchlist-empty">
+          <div class="empty-icon">👁</div>
+          <div class="empty-title">No accounts yet</div>
+          <div class="empty-desc">
+            Add accounts to your watchlist by clicking the <strong>👁 Watch</strong> button on their profile.
+          </div>
         </div>
       </div>
       
-      <!-- Instructions -->
-      <div class="instructions">
-        <h3>How to use</h3>
-        <ol>
-          <li>Browse X normally</li>
-          <li>Click the purple <strong>Coach</strong> button on any post</li>
-          <li>Review strategic angles and hook starters</li>
-          <li>Write YOUR reply using the coaching</li>
-        </ol>
-        <div class="tip">
-          <strong>Pro tip:</strong> Focus on high-score posts (&gt;7) for maximum impact
+      <!-- Saved Posts Tab Content -->
+      <div class="tab-content" id="tab-saved">
+        <div class="saved-section">
+          <div class="saved-header">
+            <span class="saved-subtitle">Posts you've bookmarked</span>
+            <button id="clear-saved-btn" class="text-btn">Clear all</button>
+          </div>
+          <div id="saved-posts-list" class="saved-posts-list">
+            <!-- Populated by JS -->
+          </div>
+          <div id="no-saved" class="no-saved">
+            No saved posts yet. Click the bookmark icon on any post to save it.
+          </div>
         </div>
       </div>
     </div>
