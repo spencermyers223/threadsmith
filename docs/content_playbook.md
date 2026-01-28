@@ -229,4 +229,152 @@
 
 ---
 
+---
+
+## Part 8: February 2026 Content Calendar
+
+### Week 1 (Jan 27 - Feb 2): Foundation
+| Date | @nomad_spencer | @xthreadapp |
+|------|---------------|-------------|
+| Mon 1/27 | BIP: Week 4 update | Feature: Algorithm Score |
+| Tue 1/28 | Hot take: AI tools | Feature: Voice Training |
+| Wed 1/29 | Demo video #1 | Repost Spencer's demo |
+| Thu 1/30 | Lesson learned | Template library tease |
+| Fri 1/31 | Metrics update | Product tip thread |
+| Sat 2/1 | Light post | - |
+| Sun 2/2 | Week recap | - |
+
+### Week 2 (Feb 3-9): Video Push
+| Date | @nomad_spencer | @xthreadapp |
+|------|---------------|-------------|
+| Mon 2/3 | Video: What is xthread | Feature spotlight |
+| Tue 2/4 | Tech niche thread | Engagement Q |
+| Wed 2/5 | Video: Generate demo | Before/after post |
+| Thu 2/6 | Crypto market take | Algorithm education |
+| Fri 2/7 | BIP: First user story | CTA push |
+| Sat 2/8 | - | - |
+| Sun 2/9 | Week recap | - |
+
+### Week 3 (Feb 10-16): Conversion Focus
+Focus on driving free signups → paid conversion
+
+### Week 4 (Feb 17-23): Testimonial Push
+If we have paying users, feature their results
+
+### Week 5 (Feb 24-28): Month Recap + March Planning
+Document learnings, what worked, pivot as needed
+
+---
+
+## Part 9: Recurring Content Templates
+
+### Monday: Build in Public Update
+```
+Week [X] building xthread:
+
+✅ [Win 1]
+✅ [Win 2]  
+❌ [Setback]
+
+📊 Metrics: [Key number]
+
+Next week: [Focus]
+
+[Question for replies]
+```
+
+### Tuesday: Hot Take
+```
+Unpopular opinion: [Contrarian statement].
+
+Here's why:
+• [Point 1]
+• [Point 2]  
+• [Point 3]
+
+[Agree/disagree?]
+```
+
+### Wednesday: Demo Video
+```
+[Hook - problem or outcome]
+
+[20-30 second video]
+
+[CTA: Try free at xthread.io]
+```
+
+### Thursday: Alpha/Educational Thread
+```
+[Data-driven hook]
+
+A thread 🧵
+
+1/ [Context]
+2/ [Insight 1]
+3/ [Insight 2]
+...
+X/ [Takeaway + CTA]
+```
+
+### Friday: Honest Metrics
+```
+This week's numbers:
+
+📈 [Good metric]
+📉 [Bad metric]  
+🎯 [Goal metric]
+
+What I learned: [Insight]
+
+[Question]
+```
+
+---
+
+## Part 10: Engagement Checklist (Daily)
+
+### Morning (15 min)
+- [ ] Reply to 5 posts from target accounts
+- [ ] Check notifications, respond thoughtfully
+- [ ] Quote tweet 1 relevant post with insight
+
+### After Posting (30 min)
+- [ ] Respond to ALL replies within first hour
+- [ ] Engage with quote tweets
+- [ ] Like/reply to accounts who engaged
+
+### Evening (15 min)
+- [ ] DM 3-5 potential users
+- [ ] Find 2-3 interesting accounts to follow
+- [ ] Save good content inspiration to vault
+
+---
+
+## Part 11: Tool Stack
+
+### Content Creation
+- **xthread** — Generate and schedule posts (dogfooding!)
+- **Second Brain** — Task management, content calendar
+- **Markdown files** — Store scripts, templates, long-form
+
+### Video Production
+- **Screen Studio** (pending install) — Screen recordings with auto-zoom
+- **Rotato** (optional) — Device mockups for polish
+- **ffmpeg** — Video assembly, transitions
+- **Pillow** — Text overlays
+
+### Analytics (Future)
+- X Analytics — Native platform metrics
+- xthread Analytics — Post performance dashboard
+- Spreadsheet — Weekly metrics tracking
+
+### Engagement
+- X Lists — Track key accounts to engage with
+- Notifications — Check 3x daily minimum
+
+---
+
 *This playbook is a living document. Update as we learn what works.*
+
+*Last updated: January 28, 2026*
