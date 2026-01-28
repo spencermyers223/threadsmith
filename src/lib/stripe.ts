@@ -1,10 +1,23 @@
 import Stripe from 'stripe'
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is not set')
+let _stripe: Stripe | null = null;
+
+export function getStripe(): Stripe {
+  if (!_stripe) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY is not set')
+    }
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  }
+  return _stripe;
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+// For backwards compatibility
+export const stripe = new Proxy({} as Stripe, {
+  get(_target, prop: string | symbol) {
+    return getStripe()[prop as keyof Stripe];
+  }
+});
 
 // Price IDs are validated at runtime when accessed
 export const PRICES = {
