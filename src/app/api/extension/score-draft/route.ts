@@ -71,13 +71,12 @@ export async function POST(request: NextRequest) {
     // Check premium status
     const { data: subscription } = await supabase
       .from('subscriptions')
-      .select('status, plan_id, plan_type')
+      .select('status, plan_type')
       .eq('user_id', user.id)
       .single();
 
     const isPremium = subscription?.status === 'active' || 
                       subscription?.status === 'trialing' ||
-                      subscription?.plan_id === 'lifetime' ||
                       subscription?.plan_type === 'lifetime';
 
     if (!isPremium) {

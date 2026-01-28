@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     // Get subscription status
     const { data: subscription, error: subError } = await supabase
       .from('subscriptions')
-      .select('status, plan_id, plan_type')
+      .select('status, plan_type')
       .eq('user_id', user.id)
       .single();
 
@@ -40,11 +40,9 @@ export async function GET(request: NextRequest) {
       // PGRST116 = no rows found, which is expected for users without subscriptions
       console.error('Subscription lookup error:', subError);
     }
-    console.log('Subscription lookup for user', user.id, ':', { subscription, error: subError?.code });
 
     const isPremium = subscription?.status === 'active' || 
                       subscription?.status === 'trialing' ||
-                      subscription?.plan_id === 'lifetime' ||
                       subscription?.plan_type === 'lifetime';
 
     // Get user profile
