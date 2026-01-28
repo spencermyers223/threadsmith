@@ -1,4 +1,4 @@
-import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton'
+import XSignInButton from '@/components/auth/XSignInButton'
 import { TrendingUp, Sparkles, Calendar, Mic } from 'lucide-react'
 
 export default function LandingPage() {
@@ -30,7 +30,7 @@ export default function LandingPage() {
               Start Creating for Free
             </p>
             <div className="w-full max-w-md mx-auto">
-              <GoogleSignInButton variant="prominent" />
+              <XSignInButton className="w-full" />
             </div>
             <div className="flex flex-wrap justify-center gap-4 text-xs text-[var(--muted)]">
               <span className="flex items-center gap-1">
