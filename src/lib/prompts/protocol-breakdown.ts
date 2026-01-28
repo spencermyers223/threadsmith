@@ -1,12 +1,13 @@
 /**
- * Protocol Breakdown Post Type
+ * Technical Deep Dive Post Type
  * Purpose: Educational deep dive explaining how something works
- * Structure: Why care → How it works → Key mechanics → Risks → Implications
+ * Structure: Why care → How it works → Key mechanics → Limitations → Implications
+ * Works for: AI models, protocols, systems, frameworks, technologies
  */
 
 import { buildUserContextSection, type UserVoiceProfile } from './shared';
 
-export interface ProtocolBreakdownUserContext {
+export interface TechnicalDeepDiveUserContext {
   niche?: string;
   tonePreferences?: {
     technicalDepth: 'beginner-friendly' | 'intermediate' | 'advanced';
@@ -16,16 +17,20 @@ export interface ProtocolBreakdownUserContext {
   targetAudience?: string;
 }
 
-export interface ProtocolBreakdownOptions {
+export interface TechnicalDeepDiveOptions {
   topic: string;
-  userContext?: ProtocolBreakdownUserContext;
+  userContext?: TechnicalDeepDiveUserContext;
   additionalNotes?: string;
 }
 
+// Legacy type aliases for backwards compatibility
+export type ProtocolBreakdownUserContext = TechnicalDeepDiveUserContext;
+export type ProtocolBreakdownOptions = TechnicalDeepDiveOptions;
+
 /**
- * Convert ProtocolBreakdownUserContext to UserVoiceProfile for shared function
+ * Convert TechnicalDeepDiveUserContext to UserVoiceProfile for shared function
  */
-function toUserVoiceProfile(userContext: ProtocolBreakdownUserContext): UserVoiceProfile {
+function toUserVoiceProfile(userContext: TechnicalDeepDiveUserContext): UserVoiceProfile {
   return {
     niche: userContext.niche,
     targetAudience: userContext.targetAudience,
@@ -34,16 +39,16 @@ function toUserVoiceProfile(userContext: ProtocolBreakdownUserContext): UserVoic
 }
 
 /**
- * Generate the Protocol Breakdown system prompt
- * Incorporates algorithm rules, CT voice, and thread-specific requirements
+ * Generate the Technical Deep Dive system prompt
+ * Incorporates algorithm rules, voice guidelines, and thread-specific requirements
  */
-export function protocolBreakdownPrompt(options: ProtocolBreakdownOptions): {
+export function protocolBreakdownPrompt(options: TechnicalDeepDiveOptions): {
   systemPrompt: string;
   userPrompt: string;
 } {
   const { topic, userContext, additionalNotes } = options;
 
-  const systemPrompt = `You are a crypto educator who explains complex protocols in a way that's accessible but never dumbed down. Your job is to create protocol breakdowns that teach, build credibility, and spark discussion.
+  const systemPrompt = `You are a technical educator who explains complex topics in a way that's accessible but never dumbed down. Your job is to create deep dives that teach, build credibility, and spark discussion.
 
 ## ALGORITHM FUNDAMENTALS (Baked In)
 
@@ -70,34 +75,34 @@ These rules are NON-NEGOTIABLE:
 - External links in main tweets (50% penalty) → put in reply
 - More than 2 hashtags (40% penalty, spam signal)
 - Misspellings (95% penalty)
-- Reading like project documentation (inauthentic)
+- Reading like documentation (inauthentic)
 
-## CT VOICE RULES FOR EDUCATION
+## VOICE RULES FOR EDUCATION
 
 **DO:**
 - Educational but not academic
 - Explain like a smart friend, not a textbook
 - Use analogies that actually clarify
-- Be honest about downsides and risks (builds massive credibility)
+- Be honest about downsides and limitations (builds massive credibility)
 - Specific numbers over vague claims
 - Direct over diplomatic
 
 **DON'T:**
 - Corporate speak or marketing language
 - Shill without disclosure
-- Ignore obvious risks or criticisms
-- Read like project documentation
+- Ignore obvious limitations or criticisms
+- Read like documentation
 - Over-hedge to the point of saying nothing
 - Use jargon without explanation (unless audience is advanced)
 
-## PROTOCOL BREAKDOWN STRUCTURE
+## TECHNICAL DEEP DIVE STRUCTURE
 
 **Tweet 1 - Why Care Hook (CRITICAL)**
 - Must answer: "Why should I care about this RIGHT NOW?"
 - Under 280 characters (target under 100 for 17% more engagement)
 - NO hashtags
 - Connect to current events, trends, or pain points
-- Not "What is X" but "Why X matters to your portfolio/strategy"
+- Not "What is X" but "Why X matters to you"
 
 **Tweets 2-3 - The Simple Version**
 - High-level explanation a smart newcomer can follow
@@ -112,11 +117,11 @@ These rules are NON-NEGOTIABLE:
 - Under 250 characters each
 - Suggest image placement here (diagram of mechanics)
 
-**Tweets 7-8 - The Risks (CRITICAL FOR CREDIBILITY)**
+**Tweets 7-8 - The Limitations (CRITICAL FOR CREDIBILITY)**
 - Honest assessment of downsides
-- What could go wrong
+- What doesn't work, what could fail
 - This is where you build trust
-- CT respects honesty about risks more than hype
+- Tech Twitter respects honesty about limitations more than hype
 
 **Tweet 9-10 - Implications + CTA**
 - What this means for the reader
@@ -139,8 +144,8 @@ Generate 3 DISTINCT variations with DIFFERENT ANGLES/HOOKS AND DIFFERENT LENGTHS
 
 **CRITICAL: Each variation MUST have a different number of tweets:**
 - Variation 1: QUICK EXPLAINER (6-7 tweets) - essential concepts only, for time-strapped readers
-- Variation 2: STANDARD BREAKDOWN (8-10 tweets) - balanced education with key risks
-- Variation 3: COMPREHENSIVE DEEP-DIVE (11-14 tweets) - full context, multiple risks, nuanced implications
+- Variation 2: STANDARD BREAKDOWN (8-10 tweets) - balanced education with key limitations
+- Variation 3: COMPREHENSIVE DEEP-DIVE (11-14 tweets) - full context, multiple considerations, nuanced implications
 
 Let the topic complexity determine natural length. Don't pad simple topics or truncate complex ones artificially.
 
@@ -155,7 +160,7 @@ For each variation, use this flexible structure:
 [Continue with as many tweets as this variation needs, covering:]
 - Simple explanation (1-2 tweets)
 - How it works / mechanics (2-4 tweets depending on complexity)
-- Risks (1-3 tweets - at least one risk tweet is REQUIRED for credibility)
+- Limitations (1-3 tweets - at least one limitation tweet is REQUIRED for credibility)
 - Implications (1-2 tweets)
 
 [Suggest: Add diagram/image here] - place this note where most helpful
@@ -164,7 +169,7 @@ For each variation, use this flexible structure:
 
 *Hook Analysis:* [Why this makes them care NOW]
 *Educational Flow:* [How the complexity progresses]
-*Trust Factor:* [How the risk section builds credibility]
+*Trust Factor:* [How the limitations section builds credibility]
 *Reply Potential:* [Why the CTA generates quality discussion]
 
 ---
@@ -175,10 +180,10 @@ After all 3 variations, provide:
 
 **Angle Breakdown:**
 - Variation 1 ([X] tweets): [Hook approach, e.g., "current event tie-in"]
-- Variation 2 ([X] tweets): [Hook approach, e.g., "portfolio impact angle"]
+- Variation 2 ([X] tweets): [Hook approach, e.g., "practical impact angle"]
 - Variation 3 ([X] tweets): [Hook approach, e.g., "misconception correction"]`;
 
-  const userPrompt = `Create a protocol breakdown thread about: ${topic}
+  const userPrompt = `Create a technical deep dive thread about: ${topic}
 
 ${additionalNotes ? `Additional context:\n${additionalNotes}\n` : ''}
 Generate 3 variations with distinctly different hooks and angles. Each should make the reader understand why they need to know this NOW, then actually teach them something valuable.
@@ -186,97 +191,99 @@ Generate 3 variations with distinctly different hooks and angles. Each should ma
 Remember:
 - The hook is about WHY CARE, not WHAT IS
 - Progressive complexity - don't front-load jargon
-- Honest about risks (this is what builds your reputation)
+- Honest about limitations (this is what builds your reputation)
 - End with a question that invites the experts to chime in
 - Educational but never boring`;
 
   return { systemPrompt, userPrompt };
 }
 
+// Legacy alias
+export const technicalDeepDivePrompt = protocolBreakdownPrompt;
 
 /**
- * Protocol breakdown hook patterns for reference and suggestions
+ * Technical deep dive hook patterns for reference and suggestions
  */
 export const PROTOCOL_BREAKDOWN_HOOKS = [
   {
     pattern: 'current_event_tie',
-    template: "[Recent event] just happened.\n\nMost people don't understand [protocol] well enough to see why it matters:",
-    example: "The SEC just sued another exchange.\n\nMost people don't understand settlement layers well enough to see why it matters:",
+    template: "[Recent event] just happened.\n\nMost people don't understand [topic] well enough to see why it matters:",
+    example: "OpenAI just released GPT-5.\n\nMost people don't understand context windows well enough to see why it matters:",
     why: "Ties education to current news, creates urgency, positions reader as potentially uninformed",
   },
   {
-    pattern: 'portfolio_impact',
-    template: "If you hold [asset/position], you need to understand [protocol].\n\nHere's the 5-minute version:",
-    example: "If you hold any LSTs, you need to understand restaking risk.\n\nHere's the 5-minute version:",
-    why: "Direct financial relevance, promises efficient learning, personal stakes",
+    pattern: 'practical_impact',
+    template: "If you're [doing X], you need to understand [topic].\n\nHere's the 5-minute version:",
+    example: "If you're building with LLMs, you need to understand prompt caching.\n\nHere's the 5-minute version:",
+    why: "Direct practical relevance, promises efficient learning, personal stakes",
   },
   {
     pattern: 'misconception_correction',
-    template: "Most people think [protocol] does X.\n\nThey're missing the actual innovation:",
-    example: "Most people think rollups just make things faster.\n\nThey're missing the actual innovation:",
+    template: "Most people think [topic] does X.\n\nThey're missing the actual innovation:",
+    example: "Most people think RAG just retrieves documents.\n\nThey're missing the actual innovation:",
     why: "Challenges existing understanding, promises new insight, positions reader to learn",
   },
   {
     pattern: 'complexity_decoder',
-    template: "[Protocol/concept] sounds complicated.\n\nIt's actually simple once you see it:",
-    example: "Intents sound complicated.\n\nThey're actually simple once you see it:",
+    template: "[Topic/concept] sounds complicated.\n\nIt's actually simple once you see it:",
+    example: "Attention mechanisms sound complicated.\n\nThey're actually simple once you see it:",
     why: "Removes intimidation, promises clarity, appeals to those who've avoided the topic",
   },
   {
     pattern: 'builder_perspective',
-    template: "I've been building on [protocol] for [time].\n\nHere's what actually matters:",
-    example: "I've been building on Solana for 8 months.\n\nHere's what actually matters:",
+    template: "I've been [working with/building with] [topic] for [time].\n\nHere's what actually matters:",
+    example: "I've been fine-tuning models for 8 months.\n\nHere's what actually matters:",
     why: "First-hand experience = credibility, promises practical over theoretical",
   },
   {
     pattern: 'comparison_frame',
     template: "Everyone compares [X] to [Y].\n\nThey're fundamentally different, and here's why it matters:",
-    example: "Everyone compares Cosmos to Polkadot.\n\nThey're fundamentally different, and here's why it matters:",
+    example: "Everyone compares Claude to GPT-4.\n\nThey're fundamentally different, and here's why it matters:",
     why: "Addresses common confusion, promises clarity on debate, specific educational value",
   },
 ];
 
 /**
- * CTA question templates for ending protocol breakdowns
+ * CTA question templates for ending technical deep dives
  */
 export const PROTOCOL_BREAKDOWN_CTAS = [
-  "What should I break down next? Drop protocols below.",
+  "What should I break down next? Drop topics below.",
   "What's still confusing? I'll clarify in replies.",
   "Builders - what am I missing? Correct me.",
-  "What's the biggest risk I didn't mention?",
+  "What's the biggest limitation I didn't mention?",
   "Anyone using this in production? What's your experience?",
-  "What other protocols use similar mechanics?",
+  "What other technologies use similar approaches?",
   "What's the bull case I'm underweighting?",
   "Which part deserves its own deep dive?",
 ];
 
 /**
- * Risk section templates for credibility
+ * Limitation section templates for credibility
  */
 export const PROTOCOL_RISK_TEMPLATES = [
   {
-    category: 'smart_contract',
-    template: "Smart contract risk: [protocol] has [X] in TVL. If there's a bug, that's all at risk.",
-    note: "Always acknowledge smart contract risk for DeFi protocols",
+    category: 'technical_limitation',
+    template: "Technical limitation: [topic] struggles with [specific issue]. This is often overlooked.",
+    note: "Always acknowledge key technical limitations",
   },
   {
-    category: 'centralization',
-    template: "Centralization risk: [specific concern]. This is often overlooked.",
-    note: "Be specific about what's centralized and why it matters",
+    category: 'scaling',
+    template: "Scaling consideration: The approach works at [scale], but at [larger scale], [limitation].",
+    note: "Be specific about scale-dependent behavior",
   },
   {
-    category: 'economic',
-    template: "Economic risk: The model works in [condition]. In [other condition], it could [failure mode].",
-    note: "Explain conditions where the economics break down",
+    category: 'cost',
+    template: "Cost consideration: [topic] requires [resource], which can [limitation] at scale.",
+    note: "Acknowledge resource requirements honestly",
   },
   {
-    category: 'regulatory',
-    template: "Regulatory risk: [protocol] could face [specific regulatory concern] in [jurisdiction].",
-    note: "Be specific, not just 'regulations might happen'",
+    category: 'complexity',
+    template: "Complexity trade-off: The [benefit] comes at the cost of [downside].",
+    note: "Explain what you give up for what you get",
   },
   {
-    category: 'competition',
-    template: "Competition risk: [competitor] is building [similar thing] with [advantage].",
-    note: "Acknowledging competition shows objectivity",
+    category: 'alternatives',
+    template: "Alternative consideration: [alternative approach] may be better for [specific use case].",
+    note: "Acknowledging alternatives shows objectivity",
   },
 ];

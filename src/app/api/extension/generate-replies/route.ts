@@ -126,13 +126,13 @@ export async function POST(request: NextRequest) {
     const voiceContext = contentProfile ? `
 User's Voice Profile:
 - Tone: ${contentProfile.tone || 'witty and engaging'}
-- Niche: ${contentProfile.niche || 'crypto/web3'}
+- Niche: ${contentProfile.niche || 'tech/general'}
 - Style: ${contentProfile.content_style || 'conversational'}
 ${contentProfile.vocabulary_preferences ? `- Vocabulary: ${contentProfile.vocabulary_preferences}` : ''}
 ` : `
 User's Voice Profile:
 - Tone: witty and engaging  
-- Niche: crypto/web3
+- Niche: tech/general
 - Style: conversational
 `;
 
@@ -162,7 +162,7 @@ KEY ALGORITHM INSIGHTS:
 - Replies are weighted 75x in X's algorithm — this is high-leverage engagement
 - Early replies get more visibility (first 30min is golden)
 - Quality replies that spark conversation > generic praise
-- CT (Crypto Twitter) has its own culture: "gm", "wagmi", "ser", "anon" etc.
+- Adapt your vocabulary to match the community you're engaging with
 
 YOUR TASK:
 Analyze this post and provide strategic coaching for crafting a reply. Help the user think about HOW to reply, not WHAT to reply.
@@ -205,7 +205,7 @@ GUIDELINES:
 - postScore should be 1-10 based on: author influence, topic virality, engagement velocity, reply opportunity quality
 - timeUrgency: "high" if <30min old, "medium" if 30min-2h, "low" if >2h
 - Be specific to THIS post, not generic advice
-- CT cultural fluency matters — use appropriate shorthand when the context calls for it`;
+- Community cultural fluency matters — adapt language to match the community you're engaging with`;
 
     console.log('[generate-replies] Calling Claude API...');
     const response = await anthropic.messages.create({

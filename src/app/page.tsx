@@ -17,12 +17,11 @@ export default function LandingPage() {
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-16 sm:py-20">
         <div className="max-w-3xl text-center space-y-6">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
-            Grow Your X Audience with{' '}
-            <span className="text-sand">Algorithm-Optimized Content</span>
+            Write Smarter About{' '}
+            <span className="text-sand">Technology Shaping the Future</span>
           </h1>
           <p className="text-lg sm:text-xl text-[var(--muted)] max-w-2xl mx-auto leading-relaxed">
-            Generate viral posts in seconds. Our AI creates Scroll Stoppers, Debate Starters,
-            and Viral Catalysts designed to maximize engagement.
+            AI-powered content for tech enthusiasts. Generate algorithm-optimized posts about AI, crypto, robotics, biotech, and more.
           </p>
 
           {/* CTA Section */}
@@ -43,13 +42,13 @@ export default function LandingPage() {
         <div className="mt-20 sm:mt-24 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl w-full">
           <FeatureCard
             icon={<TrendingUp className="w-6 h-6" />}
-            title="Algorithm-Optimized Posts"
-            description="Generate posts engineered for maximum reach. Our AI understands what makes content go viral."
+            title="Algorithm-Optimized"
+            description="Posts engineered for X's algorithm. Maximize reach with content designed to perform."
           />
           <FeatureCard
             icon={<Sparkles className="w-6 h-6" />}
-            title="3 Post Types That Work"
-            description="Scroll Stoppers for attention, Debate Starters for replies, Viral Catalysts for shares."
+            title="Multiple Tech Niches"
+            description="AI, crypto, robotics, biotech, climate tech — content tailored to your specific focus."
           />
           <FeatureCard
             icon={<Calendar className="w-6 h-6" />}
@@ -58,16 +57,31 @@ export default function LandingPage() {
           />
           <FeatureCard
             icon={<Mic className="w-6 h-6" />}
-            title="Voice Preservation"
-            description="Upload your notes and research. We generate content that sounds like you, not a robot."
+            title="Your Voice"
+            description="Train the AI on your writing style. Generated content sounds like you, not a robot."
           />
+        </div>
+
+        {/* Social Proof / Tech Focus */}
+        <div className="mt-20 text-center">
+          <p className="text-sm text-[var(--muted)] mb-4">Built for creators covering</p>
+          <div className="flex flex-wrap justify-center gap-3">
+            {['AI / ML', 'Crypto / Web3', 'Robotics', 'Biotech', 'Space', 'Climate Tech', 'Fintech', 'Developer Tools'].map((niche) => (
+              <span 
+                key={niche}
+                className="px-3 py-1.5 rounded-full bg-[var(--card)] border border-[var(--border)] text-sm text-[var(--foreground)]"
+              >
+                {niche}
+              </span>
+            ))}
+          </div>
         </div>
       </main>
 
       {/* Footer */}
       <footer className="border-t border-[var(--border)] py-6">
         <div className="max-w-6xl mx-auto px-6 text-center text-sm text-[var(--muted)]">
-          xthread — Grow your X audience with AI-powered content
+          xthread — Write smarter about the technology shaping the future
         </div>
       </footer>
     </div>

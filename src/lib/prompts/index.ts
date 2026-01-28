@@ -4,11 +4,12 @@
  */
 
 // ============================================
-// Shared Utilities (Algorithm Rules, CT Voice)
+// Shared Utilities (Algorithm Rules, Voice Guidelines)
 // ============================================
 export {
   ALGORITHM_RULES,
-  CT_VOICE,
+  TECH_TWITTER_VOICE,
+  CT_VOICE, // Legacy alias for backwards compatibility
   OUTPUT_FORMAT_RULES,
   buildUserContext,
   buildUserContextSection,
@@ -51,15 +52,19 @@ export { DEBATE_STARTER_PROMPT, DEBATE_STARTER_HOOKS } from './debate-starter';
 export { VIRAL_CATALYST_PROMPT, VIRAL_CATALYST_HOOKS } from './viral-catalyst';
 
 // ============================================
-// CT-Native Post Type Prompts
+// Post Type Prompts
 // ============================================
 
-// Market Take - Quick opinion on price action/macro
+// Industry Take - Quick opinion on trends/news (formerly Market Take)
 export {
-  MARKET_TAKE_PROMPT,
-  MARKET_TAKE_HOOKS,
+  INDUSTRY_TAKE_PROMPT,
+  MARKET_TAKE_PROMPT, // Legacy alias
+  INDUSTRY_TAKE_HOOKS,
+  MARKET_TAKE_HOOKS, // Legacy alias
   marketTakePrompt,
-  type MarketTakeContext,
+  industryTakePrompt, // New name
+  type IndustryTakeContext,
+  type MarketTakeContext, // Legacy alias
 } from './market-take';
 
 // Hot Take - Contrarian/provocative opinions
@@ -70,12 +75,15 @@ export {
   type HotTakeContext,
 } from './hot-take';
 
-// On-Chain Insight - Data-driven observations
+// Data Insight - Data-driven observations (formerly On-Chain Insight)
 export {
-  ON_CHAIN_INSIGHT_PROMPT,
-  ON_CHAIN_INSIGHT_HOOKS,
+  DATA_INSIGHT_PROMPT,
+  ON_CHAIN_INSIGHT_PROMPT, // Legacy alias
+  DATA_INSIGHT_HOOKS,
+  ON_CHAIN_INSIGHT_HOOKS, // Legacy alias
   onChainInsightPrompt,
-  type OnChainInsightContext,
+  dataInsightPrompt, // New name
+  type DataInsightContext,
 } from './on-chain-insight';
 
 // Alpha Thread - Share non-obvious insights/research
@@ -87,14 +95,17 @@ export {
   type AlphaThreadOptions,
 } from './alpha-thread';
 
-// Protocol Breakdown - Educational deep-dive
+// Technical Deep Dive - Educational deep-dive (formerly Protocol Breakdown)
 export {
   protocolBreakdownPrompt,
+  technicalDeepDivePrompt, // New name
   PROTOCOL_BREAKDOWN_HOOKS,
   PROTOCOL_BREAKDOWN_CTAS,
   PROTOCOL_RISK_TEMPLATES,
-  type ProtocolBreakdownUserContext,
-  type ProtocolBreakdownOptions,
+  type TechnicalDeepDiveUserContext,
+  type TechnicalDeepDiveOptions,
+  type ProtocolBreakdownUserContext, // Legacy alias
+  type ProtocolBreakdownOptions, // Legacy alias
 } from './protocol-breakdown';
 
 // Build-in-Public - Project updates, learnings, journey documentation
@@ -108,11 +119,14 @@ export {
 // Post Type Registry (for easy lookup)
 // ============================================
 export const POST_TYPE_PROMPTS = {
-  market_take: 'marketTakePrompt',
+  industry_take: 'industryTakePrompt',
+  market_take: 'marketTakePrompt', // Legacy alias
   hot_take: 'hotTakePrompt',
-  on_chain_insight: 'onChainInsightPrompt',
+  data_insight: 'dataInsightPrompt',
+  on_chain_insight: 'onChainInsightPrompt', // Legacy alias
   alpha_thread: 'alphaThreadPrompt',
-  protocol_breakdown: 'protocolBreakdownPrompt',
+  technical_deep_dive: 'technicalDeepDivePrompt',
+  protocol_breakdown: 'protocolBreakdownPrompt', // Legacy alias
   build_in_public: 'buildInPublicPrompt',
 } as const;
 

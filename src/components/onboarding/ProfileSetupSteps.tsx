@@ -3,37 +3,7 @@
 import { useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import type { OnboardingData } from './OnboardingModal'
-
-// Step 4: Niche options (CT-focused as per spec)
-const PRIMARY_NICHES = [
-  { id: 'bitcoin', label: 'Bitcoin / Digital Gold' },
-  { id: 'ethereum', label: 'Ethereum / L1s / L2s' },
-  { id: 'defi', label: 'DeFi / Yield' },
-  { id: 'nfts', label: 'NFTs / Digital Art' },
-  { id: 'trading', label: 'Trading / Technical Analysis' },
-  { id: 'research', label: 'Protocol Research / Due Diligence' },
-  { id: 'macro', label: 'Macro / Institutional' },
-  { id: 'memecoins', label: 'Memecoins / Degen' },
-  { id: 'building', label: 'Building / Development' },
-]
-
-// Step 6: Goal options
-const GOALS = [
-  { id: 'authority', label: 'Build authority/credibility', description: 'Become a trusted voice in your niche' },
-  { id: 'followers', label: 'Grow follower count', description: 'Expand your reach and audience' },
-  { id: 'traffic', label: 'Drive traffic', description: 'Newsletter, Discord, etc.' },
-  { id: 'network', label: 'Network with others', description: 'Connect with people in the space' },
-  { id: 'document', label: 'Document my journey', description: 'Build in public, share learnings' },
-]
-
-// Frequency options
-const FREQUENCIES = [
-  { id: '1_day', label: '1 post/day' },
-  { id: '2_day', label: '2 posts/day' },
-  { id: '3_day', label: '3+ posts/day' },
-  { id: '3_week', label: '3 posts/week' },
-  { id: '1_week', label: '1 post/week' },
-]
+import { TECH_NICHES, CONTENT_GOALS, POSTING_FREQUENCIES } from '@/lib/constants/tech-niches'
 
 interface ProfileSetupStepsProps {
   step: number
@@ -97,7 +67,7 @@ export default function ProfileSetupSteps({
             Select all that apply
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {PRIMARY_NICHES.map((niche) => {
+            {TECH_NICHES.map((niche) => {
               const isSelected = data.primaryNiches.includes(niche.id)
               return (
                 <button
@@ -132,16 +102,16 @@ export default function ProfileSetupSteps({
           </div>
         </div>
 
-        {/* Specific protocols */}
+        {/* Specific topics/interests */}
         <div className="space-y-3">
           <label className="block text-sm font-medium text-[var(--foreground)]">
-            Specific protocols/chains you cover (optional)
+            Specific topics or technologies you cover (optional)
           </label>
           <input
             type="text"
             value={data.specificProtocols}
             onChange={(e) => updateData({ specificProtocols: e.target.value })}
-            placeholder="e.g., Solana, Arbitrum, Uniswap, Aave..."
+            placeholder="e.g., LLMs, React, Kubernetes, GPT-4, etc."
             className="
               w-full px-4 py-3 rounded-xl
               bg-[var(--card)] border border-[var(--border)]
@@ -265,7 +235,7 @@ export default function ProfileSetupSteps({
             Select all that apply
           </label>
           <div className="space-y-3">
-            {GOALS.map((goal) => {
+            {CONTENT_GOALS.map((goal) => {
               const isSelected = data.primaryGoals.includes(goal.id)
               return (
                 <button
@@ -307,7 +277,7 @@ export default function ProfileSetupSteps({
             Target posting frequency
           </label>
           <div className="flex flex-wrap gap-2">
-            {FREQUENCIES.map((freq) => {
+            {POSTING_FREQUENCIES.map((freq) => {
               const isSelected = data.contentFrequency === freq.id
               return (
                 <button
@@ -337,7 +307,7 @@ export default function ProfileSetupSteps({
             type="text"
             value={data.targetAudience}
             onChange={(e) => updateData({ targetAudience: e.target.value })}
-            placeholder="e.g., DeFi researchers, crypto-curious professionals, retail traders..."
+            placeholder="e.g., AI researchers, startup founders, tech professionals..."
             className="
               w-full px-4 py-3 rounded-xl
               bg-[var(--card)] border border-[var(--border)]
@@ -360,7 +330,7 @@ export default function ProfileSetupSteps({
             Accounts you admire
           </h2>
           <p className="text-[var(--muted)]">
-            Who on CT do you want to sound like? This helps us learn patterns.
+            Who on Tech Twitter do you want to sound like? This helps us learn patterns.
           </p>
         </div>
 

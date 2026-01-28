@@ -1,6 +1,6 @@
 /**
  * Shared Prompt Components
- * Algorithm optimization rules and CT voice guidelines used across all prompt types
+ * Algorithm optimization rules and Tech Twitter voice guidelines used across all prompt types
  */
 
 // Types for user profile integration
@@ -15,7 +15,7 @@ export interface UserVoiceProfile {
   formalityLevel?: number; // 0 = casual, 100 = formal
   technicalLevel?: number; // 0 = simple, 100 = deep technical
   humorLevel?: number; // 0 = serious, 100 = playful
-  // Extended tone preferences for specialized prompts (alpha-thread, protocol-breakdown)
+  // Extended tone preferences for specialized prompts
   tonePreferences?: TonePreferences;
 }
 
@@ -23,11 +23,9 @@ export interface UserVoiceProfile {
  * Extended tone preferences for specialized content types
  */
 export interface TonePreferences {
-  // Alpha thread preferences
   confidence?: 'measured' | 'confident' | 'bold';
   technicalDepth?: 'accessible' | 'intermediate' | 'deep' | 'beginner-friendly' | 'advanced';
   personality?: 'serious' | 'witty' | 'irreverent';
-  // Protocol breakdown preferences
   style?: 'teacher' | 'analyst' | 'builder';
   honesty?: 'diplomatic' | 'balanced' | 'brutally-honest';
 }
@@ -89,53 +87,64 @@ These rules are derived from X's actual algorithm weights and must be followed:
 `;
 
 /**
- * Crypto Twitter Voice Guidelines
- * Cultural norms, vocabulary, and tone that makes content feel native to CT
+ * Tech Twitter Voice Guidelines
+ * Voice and tone guidelines that make content feel native to Tech Twitter
+ * Adapts based on user's specific niche (AI, crypto, robotics, etc.)
  */
-export const CT_VOICE = `
-## CRYPTO TWITTER VOICE GUIDELINES
+export const TECH_TWITTER_VOICE = `
+## TECH TWITTER VOICE GUIDELINES
 
-CT is a distinct subculture with its own language and norms. Content must feel native.
+Tech Twitter spans many communities (AI, crypto, robotics, biotech, etc.). Content must feel authentic to the user's specific niche while following these universal principles.
 
 ### Tone Principles
 - Direct, not diplomatic. No hedging or corporate speak.
 - Confident but not arrogant. Strong opinions backed by reasoning.
 - Concise over comprehensive. Say more with less.
-- Self-aware humor when appropriate. CT can laugh at itself.
-- No excessive formality. Write like you're talking to a smart friend.
+- Self-aware humor when appropriate. Tech communities appreciate wit.
+- No excessive formality. Write like you're talking to a smart peer.
 
-### Use CT Vocabulary Naturally
-These terms should appear where appropriate (not forced):
-
-**Market Terms:** alpha, degen, ape/aping, FOMO, FUD, rekt, bag/bagholder, pump, dump, jeet, diamond hands, paper hands, moon/mooning, rug/rugged
-
-**Culture Terms:** CT, GM/GN, WAGMI, NGMI, ser, fren, anon, OG, maxi, normie, shill, NFA, DYOR, LFG, copium, hopium
-
-**Technical Terms:** gas, TVL, APY/APR, yield farming, liquidity, whale, on-chain, L1/L2, TGE, airdrop
+### Professional Voice (Default)
+- Clear, precise language
+- Data-driven claims with evidence
+- Technically accurate terminology
+- Thoughtful analysis over hype
+- Respect for the reader's intelligence
 
 ### What to Avoid
 - Corporate speak: "leveraging synergies", "ecosystem expansion", "strategic partnerships"
-- Over-hedging: "This is not financial advice and you should consult a professional..."
-  - A simple "NFA" or "DYOR" suffices when needed
-- Excessive formality: "I would like to share my thoughts on the recent market developments"
-  - Better: "Here's what I'm seeing in the market"
-- Hashtag abuse: Using #crypto #bitcoin #ethereum on every post
-- Emojis as substance: rocket rockets without actual content
+- Excessive hedging: "This is not professional advice and you should consult an expert..."
+  - Brief disclaimers when genuinely needed are fine
+- Excessive formality: "I would like to share my thoughts on the recent developments"
+  - Better: "Here's what I'm seeing"
+- Hashtag abuse: Using multiple hashtags on every post
+- Emoji spam without substance
+- Hype language without backing: "Revolutionary!", "Game-changing!"
 
 ### Credibility Signals to Include
 - Show your reasoning (let readers evaluate your logic)
 - Use specific numbers over vague claims
+- Cite sources when referencing data or research
 - Admit uncertainty when genuinely uncertain
-- Disclose relevant positions when appropriate
+- Disclose relevant affiliations when appropriate
 - Be timely - stale takes get ignored
 
-### Red Flags to Avoid (Scam Patterns)
+### Niche-Specific Vocabulary
+Different tech communities have their own language. The AI should:
+- Use terminology native to the user's niche
+- Understand context-specific jargon
+- Match the communication style of respected voices in that space
+- Avoid forcing vocabulary from other niches
+
+### Red Flags to Avoid
 - Urgency language: "Last chance", "Don't miss this"
-- Guaranteed returns: "100% gains guaranteed"
-- Excessive rockets without substance
-- Vague mechanics promising returns
+- Guaranteed outcomes: "100% guaranteed results"
+- Vague claims with no specifics
 - Pressure tactics
+- Misleading technical claims
 `;
+
+// Legacy alias for backwards compatibility
+export const CT_VOICE = TECH_TWITTER_VOICE;
 
 // ============================================
 // Helper functions for building context sections
@@ -203,7 +212,7 @@ function buildToneSlidersSection(profile: UserVoiceProfile): string {
 }
 
 /**
- * Build tone preferences section for specialized content types (alpha-thread, protocol-breakdown)
+ * Build tone preferences section for specialized content types
  */
 function buildTonePreferencesSection(tonePreferences: TonePreferences): string {
   if (!tonePreferences || Object.keys(tonePreferences).length === 0) return '';
@@ -229,7 +238,7 @@ function buildTonePreferencesSection(tonePreferences: TonePreferences): string {
   }
 
   if (personality) {
-    const desc = personality === 'irreverent' ? '(CT humor welcome)' :
+    const desc = personality === 'irreverent' ? '(tech humor welcome)' :
       personality === 'witty' ? '(clever observations)' : '(straightforward)';
     section += `- Personality: ${personality} ${desc}\n`;
   }
@@ -305,8 +314,7 @@ Content should be personalized to this specific creator:
 }
 
 /**
- * Build user context section for specialized prompts (alpha-thread, protocol-breakdown)
- * This is an alias with a clearer name for those contexts
+ * Build user context section for specialized prompts
  */
 export function buildUserContextSection(profile: UserVoiceProfile): string {
   if (!profile || Object.keys(profile).length === 0) {
@@ -319,7 +327,7 @@ export function buildUserContextSection(profile: UserVoiceProfile): string {
     section += `
 **Niche:** ${profile.niche}
 - Use terminology native to this space
-- Reference relevant protocols, trends, narratives
+- Reference relevant topics, trends, and developments
 - Speak to what this community cares about
 `;
   }

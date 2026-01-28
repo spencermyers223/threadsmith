@@ -35,7 +35,7 @@ function toUserVoiceProfile(userContext: AlphaThreadUserContext): UserVoiceProfi
 
 /**
  * Generate the Alpha Thread system prompt
- * Incorporates algorithm rules, CT voice, and thread-specific requirements
+ * Incorporates algorithm rules, voice guidelines, and thread-specific requirements
  */
 export function alphaThreadPrompt(options: AlphaThreadOptions): {
   systemPrompt: string;
@@ -43,7 +43,7 @@ export function alphaThreadPrompt(options: AlphaThreadOptions): {
 } {
   const { topic, userContext, additionalNotes } = options;
 
-  const systemPrompt = `You are a Crypto Twitter alpha hunter. Your job is to help users share non-obvious insights in a way that feels native to CT and maximizes algorithmic performance.
+  const systemPrompt = `You are a Tech Twitter insight hunter. Your job is to help users share non-obvious insights in a way that feels native to their niche and maximizes algorithmic performance.
 
 ## ALGORITHM FUNDAMENTALS (Baked In)
 
@@ -70,11 +70,11 @@ These rules are NON-NEGOTIABLE:
 - More than 2 hashtags (40% penalty, spam signal)
 - Misspellings (95% penalty - algorithm can't categorize)
 
-## CT VOICE RULES
+## VOICE RULES
 
 **DO:**
 - Direct over diplomatic - no hedging language
-- Use CT vocab naturally: alpha, degen, ape, rekt, ser, anon, etc.
+- Use vocabulary natural to the user's niche
 - Confident but not arrogant
 - Concise over comprehensive
 - Show your reasoning (builds credibility)
@@ -86,8 +86,8 @@ These rules are NON-NEGOTIABLE:
 - Over-hedging ("might potentially perhaps consider")
 - Excessive formality
 - Hashtag abuse (max 1-2, and ONLY in final tweet)
-- Rocket emoji spam (scam signal)
-- Guaranteed return language
+- Emoji spam without substance
+- Hype language without backing
 
 ## ALPHA THREAD STRUCTURE
 
@@ -101,7 +101,7 @@ These rules are NON-NEGOTIABLE:
 
 **Tweets 2-3 - Context + Evidence**
 - Why this matters NOW
-- Data points, on-chain evidence, specific observations
+- Data points, specific observations, evidence
 - Under 250 characters each
 - ONE idea per tweet
 
@@ -156,23 +156,23 @@ For each variation, use this structure (adjust tweet count per variation):
 
 After all 3 variations, provide:
 
-**Recommendation:** [Which variation and why, based on algorithm + CT authenticity + content depth needed]
+**Recommendation:** [Which variation and why, based on algorithm + authenticity + content depth needed]
 
 **Angle Breakdown:**
 - Variation 1 ([X] tweets): [Hook type used, e.g., "data-driven curiosity gap"]
 - Variation 2 ([X] tweets): [Hook type used, e.g., "contrarian take"]
 - Variation 3 ([X] tweets): [Hook type used, e.g., "insider observation"]`;
 
-  const userPrompt = `Create an alpha thread about: ${topic}
+  const userPrompt = `Create an insight thread about: ${topic}
 
 ${additionalNotes ? `Additional context:\n${additionalNotes}\n` : ''}
-Generate 3 variations with distinctly different hooks and angles. Each variation should feel like it could come from a respected CT voice who just discovered something worth sharing.
+Generate 3 variations with distinctly different hooks and angles. Each variation should feel like it could come from a respected voice in this space who just discovered something worth sharing.
 
 Remember:
 - The hook is everything - 3 different approaches
 - Each tweet must stand alone
 - End with a question that smart people want to answer
-- CT native, not corporate`;
+- Authentic voice, not corporate`;
 
   return { systemPrompt, userPrompt };
 }
@@ -185,37 +185,37 @@ export const ALPHA_THREAD_HOOKS = [
   {
     pattern: 'research_reveal',
     template: "I spent [X hours/days] digging into [topic].\n\nHere's what nobody's talking about:",
-    example: "I spent 6 hours in the Arbitrum contracts yesterday.\n\nHere's what nobody's talking about:",
+    example: "I spent 6 hours reverse-engineering how Claude handles context windows.\n\nHere's what nobody's talking about:",
     why: "Signals effort investment, creates curiosity gap, promises exclusive insight",
   },
   {
     pattern: 'data_contradiction',
     template: "Everyone's saying [common narrative].\n\nThe data says something different:",
-    example: "Everyone's calling this a bear market.\n\nThe data says something different:",
+    example: "Everyone's saying AI is replacing developers.\n\nThe data says something different:",
     why: "Contrarian hook triggers engagement, data promise adds credibility",
   },
   {
-    pattern: 'wallet_tracking',
-    template: "This wallet just [action] [amount/asset].\n\nLet me show you what they know:",
-    example: "This wallet just moved 47M from Aave.\n\nLet me show you what they know:",
-    why: "On-chain detective work is highly valued, specific numbers add credibility",
+    pattern: 'pattern_tracking',
+    template: "I've been tracking [metric/trend] for [time period].\n\nLet me show you what's actually happening:",
+    example: "I've been tracking AI startup funding for 6 months.\n\nLet me show you what's actually happening:",
+    why: "First-hand research is highly valued, specific timeframe adds credibility",
   },
   {
     pattern: 'missed_signal',
     template: "[X] just happened and most people scrolled past.\n\nHere's why it matters:",
-    example: "Binance just updated their proof of reserves.\n\nMost people scrolled past. Here's why it matters:",
-    why: "Positions reader as potentially missing something important (FOMO trigger)",
+    example: "OpenAI just updated their terms of service.\n\nMost people scrolled past. Here's why it matters:",
+    why: "Positions reader as potentially missing something important",
   },
   {
     pattern: 'pattern_recognition',
     template: "I've seen this pattern [X] times before.\n\nEvery time, [outcome]:",
-    example: "I've seen this TVL pattern 4 times before.\n\nEvery time, it preceded a 3x:",
+    example: "I've seen this adoption curve 4 times before.\n\nEvery time, it preceded massive growth:",
     why: "Historical pattern suggests predictive value, specific numbers add weight",
   },
   {
     pattern: 'insider_observation',
-    template: "Something weird is happening with [protocol/token].\n\nAnd I don't think it's coincidence:",
-    example: "Something weird is happening with Lido withdrawals.\n\nAnd I don't think it's coincidence:",
+    template: "Something interesting is happening with [topic].\n\nAnd I don't think it's coincidence:",
+    example: "Something interesting is happening with enterprise AI adoption.\n\nAnd I don't think it's coincidence:",
     why: "Mystery hook, suggests the author has noticed something others haven't",
   },
 ];
@@ -227,7 +227,7 @@ export const ALPHA_THREAD_CTAS = [
   "What's your read on this? Am I missing something?",
   "Anyone else tracking this? What are you seeing?",
   "What would change your mind on this?",
-  "How are you positioning for this?",
+  "How are you thinking about this?",
   "What's the bear case I'm not seeing?",
   "Who's done deeper research here? Tag them.",
   "What's the counter-argument?",

@@ -275,7 +275,7 @@ export default function VoiceSettingsPage() {
             <textarea
               value={tweetInput}
               onChange={(e) => setTweetInput(e.target.value)}
-              placeholder={`Paste your tweets here...\n\nExample:\nJust deployed a new contract on Arbitrum. Gas fees are insanely low. The future is L2.\n\nSolana devs shipping faster than anyone in crypto rn. Not even close. 🔥\n\nHot take: most "AI + crypto" projects are just wrappers around ChatGPT with a token attached`}
+              placeholder={`Paste your tweets here...\n\nExample:\nJust shipped a new feature using Claude's API. The context window handling is game-changing.\n\nOpen source AI is moving faster than anyone expected. Not even close. 🔥\n\nHot take: most AI startups are just thin wrappers around API calls. The real value is in the UX.`}
               rows={8}
               className="w-full px-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none resize-none text-sm font-mono"
             />

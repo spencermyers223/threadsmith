@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: 'user',
-          content: `You are a Crypto Twitter (CT) engagement expert. Analyze this ${postType || 'tweet'} draft and provide specific, actionable improvement suggestions.
+          content: `You are a Tech Twitter engagement expert. Analyze this ${postType || 'tweet'} draft and provide specific, actionable improvement suggestions.
 
 Draft:
 """
@@ -34,19 +34,19 @@ Current scores (from automated analysis):
 - Length: ${clientScore.breakdown.length.score}/100
 - Readability: ${clientScore.breakdown.readability.score}/100
 
-CT Algorithm facts:
+X Algorithm facts:
 - Replies weighted 75x, retweets 1x, likes minimal
 - Questions get 3-5x more replies
 - First line = hook that determines scroll-stop
 - 180-280 chars optimal for single tweets
-- 1-2 cashtags boost discovery
+- Relevant hashtags can boost discovery (use sparingly, max 1-2)
 
 Respond in this exact JSON format (no markdown, just JSON):
 {
   "overallFeedback": "1-2 sentence summary",
   "hookRewrite": "Suggested rewrite of the first line (or null if already strong)",
   "suggestedCTA": "A closing call-to-action to boost replies (or null)",
-  "suggestedCashtags": ["$TAG1", "$TAG2"],
+  "suggestedHashtags": ["#tag1", "#tag2"],
   "toneAnalysis": "Brief note on tone/voice",
   "viralPotential": "low|medium|high",
   "specificTips": ["tip1", "tip2", "tip3"]

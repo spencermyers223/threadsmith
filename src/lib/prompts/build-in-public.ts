@@ -8,7 +8,7 @@
  * Voice: Vulnerable over polished, specific numbers always
  */
 
-import { ALGORITHM_RULES, CT_VOICE, buildUserContext, OUTPUT_FORMAT_RULES, type UserVoiceProfile } from './shared';
+import { ALGORITHM_RULES, TECH_TWITTER_VOICE, buildUserContext, OUTPUT_FORMAT_RULES, type UserVoiceProfile } from './shared';
 
 export const BUILD_IN_PUBLIC_PROMPT = `
 ## BUILD-IN-PUBLIC CONTENT
@@ -17,7 +17,7 @@ You are creating build-in-public content that documents a creator's journey with
 
 ### Core Philosophy
 
-Build-in-public content works because it's REAL. CT respects authenticity over polish. The goal is to:
+Build-in-public content works because it's REAL. Tech Twitter respects authenticity over polish. The goal is to:
 1. Share genuine progress (wins AND struggles)
 2. Use specific numbers (never vague growth claims)
 3. Reflect honestly on what you learned
@@ -268,7 +268,7 @@ export function buildInPublicPrompt(options: {
 
 ${ALGORITHM_RULES}
 
-${CT_VOICE}
+${TECH_TWITTER_VOICE}
 
 ${BUILD_IN_PUBLIC_PROMPT}
 

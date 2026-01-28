@@ -16,7 +16,7 @@ export interface HotTakeContext {
 export const HOT_TAKE_PROMPT = `
 ## HOT TAKE - SINGLE TWEET
 
-You are generating a HOT TAKE for Crypto Twitter. This is a contrarian opinion designed to spark discussion and invite disagreement.
+You are generating a HOT TAKE for Tech Twitter. This is a contrarian opinion designed to spark discussion and invite disagreement.
 
 ### Algorithm Optimization (Baked In)
 - Replies = 75x weight, Likes = 0.5x weight -> DISAGREEMENT IS THE GOAL
@@ -33,9 +33,9 @@ A mediocre take with 50 replies beats a great take with 200 likes. Design the ta
 - Specific enough to argue against
 - Important enough that silence feels like agreement
 
-### CT Voice Requirements
+### Voice Requirements
 - Direct over diplomatic - NO hedging
-- Use CT vocab: alpha, degen, ngmi, cope, hopium, ser, etc.
+- Use vocabulary natural to the user's niche
 - Confident, even provocative
 - Concise - every word must provoke
 - NO corporate speak
@@ -47,7 +47,7 @@ A mediocre take with 50 replies beats a great take with 200 likes. Design the ta
 3. **Conversation Bait**: Statement that BEGS "but what about..." responses
 
 ### What Makes a Take "Hot"
-- Goes against current CT consensus
+- Goes against current consensus in the space
 - Challenges something people assume is true
 - Attacks a sacred cow (but with reasoning)
 - Frames a common practice as wrong
@@ -57,23 +57,23 @@ A mediocre take with 50 replies beats a great take with 200 likes. Design the ta
 
 **The Sacred Cow Attack**
 "[Popular thing] is actually [negative take]"
-Example: "DCA is cope for people scared to have a real thesis."
+Example: "RAG is a crutch for teams who don't want to fine-tune properly."
 
 **The Uncomfortable Truth**
-"[Thing people don't want to hear] and CT isn't ready for that conversation"
-Example: "Most altcoins are going to zero and your bags aren't coming back."
+"[Thing people don't want to hear] and the industry isn't ready for that conversation"
+Example: "Most AI startups are just thin wrappers around API calls. There, I said it."
 
 **The Contrarian Position**
 "[Opposite of consensus]. And it's not even close."
-Example: "SOL > ETH for actual users. And it's not even close."
+Example: "Local models > cloud APIs for 90% of real use cases. And it's not even close."
 
 **The Industry Callout**
 "[Common practice] is why [negative outcome]"
-Example: "VC round worship is why retail keeps getting dumped on."
+Example: "The obsession with benchmarks is why we keep building models nobody actually uses."
 
 **The Status Attack**
 "[Respected group] is wrong about [specific thing]"
-Example: "Crypto 'experts' with 100k+ followers got this cycle completely wrong."
+Example: "Tech influencers with 100k+ followers got the AI hype cycle completely wrong."
 
 ### Conversation Hooks
 The take should END in a way that makes silence feel like agreement:
@@ -110,32 +110,32 @@ export const HOT_TAKE_HOOKS = [
   {
     pattern: "sacred_cow",
     template: "[Popular thing] is [negative take]. [Brief reasoning].",
-    example: "DCA is cope for people scared to have a real thesis.",
+    example: "Fine-tuning is overrated. Most problems are solved with better prompting.",
   },
   {
     pattern: "uncomfortable_truth",
-    template: "[Harsh reality] and CT isn't ready for that conversation.",
-    example: "Your altcoin bags aren't coming back and CT isn't ready for that conversation.",
+    template: "[Harsh reality] and the industry isn't ready for that conversation.",
+    example: "Your startup's 'AI moat' doesn't exist and the industry isn't ready for that conversation.",
   },
   {
     pattern: "direct_comparison",
     template: "[Unpopular choice] > [Popular choice]. And it's not even close.",
-    example: "SOL > ETH for actual users. And it's not even close.",
+    example: "Boring reliable tech > shiny new frameworks. And it's not even close.",
   },
   {
     pattern: "industry_callout",
-    template: "[Common practice] is why [negative outcome for retail].",
-    example: "Low float high FDV launches are why retail keeps getting rekt.",
+    template: "[Common practice] is why [negative outcome].",
+    example: "The 'move fast and break things' mindset is why most ML projects fail in production.",
   },
   {
     pattern: "status_challenge",
     template: "[Respected group] got [specific thing] completely wrong.",
-    example: "CT's biggest accounts got this cycle completely wrong. Check the receipts.",
+    example: "The biggest tech podcasters got the AI timeline completely wrong. Check the receipts.",
   },
   {
     pattern: "cope_detector",
-    template: "[Popular belief] is just [cope/hopium] dressed up as [analysis/strategy].",
-    example: "\"We're still early\" is just hopium dressed up as analysis.",
+    template: "[Popular belief] is just [cope/wishful thinking] dressed up as [analysis/strategy].",
+    example: "'We're still early' is just wishful thinking dressed up as market analysis.",
   },
 ];
 
@@ -157,7 +157,7 @@ export function hotTakePrompt(context?: HotTakeContext): string {
     if (context.tone) {
       const toneGuides: Record<string, string> = {
         spicy: '- Maximum provocation\n- "Fight me" energy\n- Short, punchy, unapologetic',
-        'thoughtful-contrarian': '- Still bold but includes reasoning\n- "Here\'s why I think differently"\n- Invites genuine debate, not just rage',
+        'thoughtful-contrarian': '- Still bold but includes reasoning\n- "Here\'s why I think differently"\n- Invites genuine debate, not just outrage',
         'industry-insider': '- Speaks from position of experience\n- "After X years in the space..."\n- Challenges from a place of knowledge',
       };
       prompt += `**Tone:** ${context.tone}\n${toneGuides[context.tone]}\n`;
@@ -170,7 +170,7 @@ export function hotTakePrompt(context?: HotTakeContext): string {
 
     if (context.targetConsensus) {
       prompt += `**Current consensus to challenge:** ${context.targetConsensus}\n`;
-      prompt += `- This is what most of CT currently believes\n`;
+      prompt += `- This is what most people currently believe\n`;
       prompt += `- Your job is to argue the opposite with conviction\n`;
     }
   }

@@ -30,36 +30,12 @@ interface ContentProfile {
   admired_accounts: string[]
 }
 
-// Niche options
-const NICHES = [
-  { id: 'bitcoin', label: 'Bitcoin / Digital Gold' },
-  { id: 'ethereum', label: 'Ethereum / L1s / L2s' },
-  { id: 'defi', label: 'DeFi / Yield' },
-  { id: 'nfts', label: 'NFTs / Digital Art' },
-  { id: 'trading', label: 'Trading / Technical Analysis' },
-  { id: 'research', label: 'Protocol Research' },
-  { id: 'macro', label: 'Macro / Institutional' },
-  { id: 'memecoins', label: 'Memecoins / Degen' },
-  { id: 'building', label: 'Building / Development' },
-]
+import { TECH_NICHES, CONTENT_GOALS, POSTING_FREQUENCIES } from '@/lib/constants/tech-niches'
 
-// Goal options
-const GOALS = [
-  { id: 'authority', label: 'Build authority/credibility' },
-  { id: 'followers', label: 'Grow follower count' },
-  { id: 'traffic', label: 'Drive traffic' },
-  { id: 'network', label: 'Network with others' },
-  { id: 'document', label: 'Document my journey' },
-]
-
-// Frequency options
-const FREQUENCIES = [
-  { id: '1_day', label: '1 post/day' },
-  { id: '2_day', label: '2 posts/day' },
-  { id: '3_day', label: '3+ posts/day' },
-  { id: '3_week', label: '3 posts/week' },
-  { id: '1_week', label: '1 post/week' },
-]
+// Use centralized constants
+const NICHES = TECH_NICHES
+const GOALS = CONTENT_GOALS
+const FREQUENCIES = POSTING_FREQUENCIES
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -432,7 +408,7 @@ export default function SettingsPage() {
                   type="text"
                   value={contentProfile.specific_protocols}
                   onChange={(e) => updateContentProfile({ specific_protocols: e.target.value })}
-                  placeholder="e.g., Solana, Arbitrum, Uniswap..."
+                  placeholder="e.g., LLMs, React, Kubernetes, GPT-4..."
                   className="w-full px-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none"
                 />
               </div>
@@ -627,7 +603,7 @@ export default function SettingsPage() {
                   type="text"
                   value={contentProfile.target_audience}
                   onChange={(e) => updateContentProfile({ target_audience: e.target.value })}
-                  placeholder="e.g., DeFi researchers, crypto-curious professionals..."
+                  placeholder="e.g., AI researchers, startup founders, tech professionals..."
                   className="w-full px-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none"
                 />
               </div>

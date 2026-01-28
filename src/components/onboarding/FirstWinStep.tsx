@@ -4,27 +4,43 @@ import { useState } from 'react'
 import { Sparkles, Loader2, Copy, Check, RefreshCw } from 'lucide-react'
 import type { OnboardingData } from './OnboardingModal'
 
-// Post type suggestions based on niche
+// Post type suggestions based on niche (tech-focused)
 const NICHE_POST_SUGGESTIONS: Record<string, { type: string; topic: string }> = {
-  bitcoin: { type: 'market_take', topic: "Bitcoin's current macro setup and what it means for the next 6 months" },
-  ethereum: { type: 'alpha_thread', topic: 'The most promising L2s to watch this cycle and why' },
-  defi: { type: 'on_chain_insight', topic: 'Unusual DeFi yield opportunities most people are missing' },
-  nfts: { type: 'hot_take', topic: 'Why 99% of NFT projects will fail but the 1% will be massive' },
-  trading: { type: 'market_take', topic: 'The setup I look for before entering any trade' },
-  research: { type: 'protocol_breakdown', topic: 'A protocol that flew under the radar but deserves attention' },
-  macro: { type: 'alpha_thread', topic: "How traditional finance is positioning for crypto's next leg up" },
-  memecoins: { type: 'hot_take', topic: 'The memecoin meta right now and how to play it' },
-  building: { type: 'build_in_public', topic: 'What I learned building in crypto this week' },
+  // Tech niches
+  'ai-ml': { type: 'alpha_thread', topic: 'The most underrated AI development that will shape the next 12 months' },
+  'crypto-web3': { type: 'market_take', topic: 'The current state of Web3 and where the real innovation is happening' },
+  'robotics': { type: 'alpha_thread', topic: 'The robotics breakthrough that nobody is talking about yet' },
+  'quantum': { type: 'protocol_breakdown', topic: 'Quantum computing explained: what it actually means for tech' },
+  'biotech': { type: 'alpha_thread', topic: 'The biotech trend that will impact everyone in the next decade' },
+  'space': { type: 'hot_take', topic: 'Why the space industry is about to have its biggest year ever' },
+  'climate': { type: 'alpha_thread', topic: 'The climate tech solution that deserves more attention' },
+  'fintech': { type: 'market_take', topic: 'The fintech shift happening that most people are missing' },
+  'cybersecurity': { type: 'hot_take', topic: 'The security vulnerability that keeps me up at night' },
+  'devtools': { type: 'build_in_public', topic: 'The developer tools that transformed my workflow this year' },
+  'gaming': { type: 'alpha_thread', topic: 'The gaming technology that will change how we play' },
+  'general-tech': { type: 'hot_take', topic: 'The tech trend everyone is overcomplicating' },
+  // Legacy mappings
+  'bitcoin': { type: 'market_take', topic: 'The current state of Bitcoin and what it means for the industry' },
+  'ethereum': { type: 'alpha_thread', topic: 'The most promising developments in the Ethereum ecosystem' },
+  'defi': { type: 'alpha_thread', topic: 'The DeFi innovation that deserves more attention' },
+  'nfts': { type: 'hot_take', topic: 'The real future of NFTs beyond the hype' },
+  'trading': { type: 'market_take', topic: 'The setup I look for before entering any trade' },
+  'research': { type: 'protocol_breakdown', topic: 'A technology that flew under the radar but deserves attention' },
+  'macro': { type: 'alpha_thread', topic: 'How macro trends are shaping the tech industry right now' },
+  'memecoins': { type: 'hot_take', topic: 'The cultural phenomenon behind memecoin communities' },
+  'building': { type: 'build_in_public', topic: 'What I learned building this week' },
 }
 
 // Post type labels
 const POST_TYPE_LABELS: Record<string, string> = {
-  alpha_thread: 'Alpha Thread',
-  market_take: 'Market Take',
+  alpha_thread: 'Insight Thread',
+  market_take: 'Industry Take',
   hot_take: 'Hot Take',
-  on_chain_insight: 'On-Chain Insight',
-  protocol_breakdown: 'Protocol Breakdown',
+  data_insight: 'Data Insight',
+  protocol_breakdown: 'Technical Deep Dive',
   build_in_public: 'Build in Public',
+  // Legacy mappings
+  on_chain_insight: 'Data Insight',
 }
 
 interface FirstWinStepProps {
@@ -45,8 +61,8 @@ export default function FirstWinStep({
   // Get suggestion based on first selected niche
   const primaryNiche = data.primaryNiches[0] || ''
   const suggestion = NICHE_POST_SUGGESTIONS[primaryNiche] || {
-    type: 'market_take',
-    topic: 'Your unique perspective on the current crypto market',
+    type: 'hot_take',
+    topic: 'Your unique perspective on the technology shaping the future',
   }
 
   // Set default post type if not already set (but don't pre-fill topic - use placeholder)
@@ -103,6 +119,11 @@ export default function FirstWinStep({
     }
   }
 
+  // Format niche for display
+  const formatNiche = (niche: string) => {
+    return niche.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+  }
+
   return (
     <div className="space-y-8">
       <div className="text-center mb-8">
@@ -138,7 +159,7 @@ export default function FirstWinStep({
           "
         />
         <p className="text-xs text-[var(--muted)]">
-          Based on your {primaryNiche ? `${primaryNiche} niche` : 'profile'}, we suggest starting with a {POST_TYPE_LABELS[suggestion.type]?.toLowerCase()}.
+          Based on your {primaryNiche ? `${formatNiche(primaryNiche)} focus` : 'profile'}, we suggest starting with a {POST_TYPE_LABELS[suggestion.type]?.toLowerCase()}.
         </p>
       </div>
 

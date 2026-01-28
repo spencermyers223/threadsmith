@@ -47,9 +47,20 @@ const TIMEZONES = [
 
 // Niche-specific placeholder examples for content goal
 const goalPlaceholders: Record<string, string> = {
-  'web3-crypto': "I'm a crypto researcher growing my X following with insights on new protocols and DeFi trends",
-  'finance-investing': "I share market analysis and investment insights to build credibility as a financial advisor",
+  'ai-ml': "I'm an AI researcher sharing insights on LLMs and ML developments to build thought leadership",
+  'crypto-web3': "I share insights on blockchain and Web3 to establish credibility in the space",
+  'robotics': "I cover robotics and hardware innovations to build my following as an industry voice",
+  'quantum': "I make quantum computing accessible to build authority in an emerging field",
+  'biotech': "I share biotech and health tech insights to grow my professional network",
+  'space': "I cover space tech and aerospace to build a following of enthusiasts and professionals",
+  'climate': "I share climate tech insights and solutions to establish myself as a sustainability voice",
+  'fintech': "I cover fintech trends and innovations to build credibility in financial technology",
+  'cybersecurity': "I share security research and insights to establish my expertise",
+  'devtools': "I review dev tools and share coding insights to grow my developer audience",
+  'gaming': "I cover gaming and VR/AR to build my following in the games industry",
+  'general-tech': "I share tech industry insights and startup lessons to grow my professional brand",
   'saas-tech': "I'm a founder building in public, sharing our startup journey to attract customers and investors",
+  'finance-investing': "I share market analysis and investment insights to build credibility as a financial advisor",
   'marketing-agency': "I help brands grow on social media and share case studies to attract new clients",
   'fitness-health': "I'm a personal trainer sharing workout tips and transformations to grow my online coaching business",
   'creator-economy': "I teach creators how to monetize their audience and build sustainable income streams",
@@ -230,7 +241,7 @@ export default function ProfileSetupPage() {
               type="text"
               value={targetAudience}
               onChange={(e) => setTargetAudience(e.target.value)}
-              placeholder="e.g., 'Crypto and DeFi native people'"
+              placeholder="e.g., 'AI researchers and tech enthusiasts'"
               className="
                 w-full px-4 py-3 rounded-lg
                 bg-[var(--card)] border border-[var(--border)]
