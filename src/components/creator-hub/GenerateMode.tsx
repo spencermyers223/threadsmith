@@ -11,6 +11,7 @@ import { EditingTools } from '@/components/editing'
 import { GenerationCounter } from '@/components/subscription/GenerationCounter'
 import { UpgradeModal } from '@/components/subscription/UpgradeModal'
 import type { FileRecord } from '@/components/generate/FilesSidebar'
+import { postTweet, postThread, openXIntent, openTweet } from '@/lib/x-posting'
 
 // Post types for content generation
 const POST_TYPES = [
@@ -272,10 +273,33 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
     setTimeout(() => setCopiedIndex(null), 2000)
   }
 
-  const handlePostNow = (content: string) => {
-    const url = `https://x.com/intent/post?text=${encodeURIComponent(content)}`
-    window.open(url, '_blank')
-  }
+  const handlePostNow = async (content: string) => {
+    
+    try {
+      const isThread = selectedLength === 'thread'
+      
+      if (isThread) {
+        const tweets = parseThreadContent(content).map(t => t.text)
+        const result = await postThread(tweets)
+        
+        if (result.success && result.first_tweet_id) {
+            openTweet(result.first_tweet_id)
+          } else {
+            openXIntent(tweets[0]) // Fallback
+          }
+        } else {
+          const result = await postTweet(content)
+          
+          if (result.success && result.tweet_id) {
+            openTweet(result.tweet_id)
+          } else {
+            openXIntent(content) // Fallback
+          }
+        }
+      } catch {
+        openXIntent(content) // Fallback on any error
+      }
+    }
 
   const handleEditInWorkspace = async (post: GeneratedPost) => {
     setSavingIndex(post.index)

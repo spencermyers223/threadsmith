@@ -23,6 +23,7 @@ import { GenerationCounter } from '@/components/subscription/GenerationCounter'
 import { UpgradeModal } from '@/components/subscription/UpgradeModal'
 import TagSelector from '@/components/tags/TagSelector'
 import TagBadge, { Tag as TagType } from '@/components/tags/TagBadge'
+import { postTweet, postThread, openXIntent, openTweet } from '@/lib/x-posting'
 
 // Types
 type Length = 'punchy' | 'standard' | 'developed' | 'thread'
@@ -368,9 +369,31 @@ export default function GeneratePage() {
     setSelectedFile(file)
   }
 
-  const handlePostNow = (content: string) => {
-    const url = `https://x.com/intent/post?text=${encodeURIComponent(content)}`
-    window.open(url, '_blank')
+  const handlePostNow = async (content: string, isThread: boolean = false) => {
+    try {
+      if (isThread) {
+        const tweets = content.split('\n\n').filter(t => t.trim())
+        const result = await postThread(tweets)
+        
+        if (result.success && result.first_tweet_id) {
+          setToast('Thread posted to X! 🎉')
+          openTweet(result.first_tweet_id)
+        } else {
+          openXIntent(tweets[0]) // Fallback
+        }
+      } else {
+        const result = await postTweet(content)
+        
+        if (result.success && result.tweet_id) {
+          setToast('Posted to X! 🎉')
+          openTweet(result.tweet_id)
+        } else {
+          openXIntent(content) // Fallback
+        }
+      }
+    } catch {
+      openXIntent(content) // Fallback on any error
+    }
   }
 
   const handleAddToCalendar = () => {
