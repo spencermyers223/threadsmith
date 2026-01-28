@@ -69,23 +69,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check premium status
-    const { data: subscription } = await supabase
-      .from('subscriptions')
-      .select('status, plan_id')
-      .eq('user_id', user.id)
-      .single();
-
-    const isPremium = subscription?.status === 'active' || 
-                      subscription?.status === 'trialing' ||
-                      subscription?.plan_id === 'lifetime';
-
-    if (!isPremium) {
-      return NextResponse.json(
-        { error: 'Premium subscription required' },
-        { status: 403 }
-      );
-    }
+    // Account Analyzer is FREE for all users!
+    // Premium check removed to drive adoption
 
     // Parse request body
     const body = await request.json();
