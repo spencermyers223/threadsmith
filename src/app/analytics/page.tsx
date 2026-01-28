@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard'
+import { XAnalyticsDashboard } from '@/components/analytics/XAnalyticsDashboard'
 
 export default async function AnalyticsPage() {
   const supabase = await createClient()
@@ -10,11 +10,5 @@ export default async function AnalyticsPage() {
     redirect('/')
   }
 
-  const { data: analytics } = await supabase
-    .from('post_analytics')
-    .select('*, posts:post_id(title, post_type, scheduled_date, scheduled_time)')
-    .eq('user_id', user.id)
-    .order('recorded_at', { ascending: false })
-
-  return <AnalyticsDashboard data={analytics || []} />
+  return <XAnalyticsDashboard />
 }
