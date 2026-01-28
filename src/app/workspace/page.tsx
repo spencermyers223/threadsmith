@@ -13,7 +13,8 @@ import { Save, Calendar, ArrowLeft, Check, AlertCircle, Tag, Image as ImageIcon,
 import PostTypeIcon from '@/components/calendar/PostTypeIcon'
 import Link from 'next/link'
 import { markdownToHtml } from '@/lib/markdown'
-import { getPostTweetText, openTwitterIntent } from '@/lib/twitter'
+import { getPostTweetText } from '@/lib/twitter'
+import { postTweet, postThread, openXIntent, openTweet } from '@/lib/x-posting'
 import TagSelector from '@/components/tags/TagSelector'
 import TagBadge, { Tag as TagType } from '@/components/tags/TagBadge'
 import { MediaUpload, type MediaItem } from '@/components/workspace/MediaUpload'
@@ -426,9 +427,26 @@ export default function WorkspacePage() {
 
       if (!res.ok) throw new Error('Failed to post')
 
-      // Open X/Twitter compose window with the content
+      // Post to X via API or fallback to intent
       if (tweetText) {
-        openTwitterIntent(tweetText)
+        if (contentType === 'thread' && 'tweets' in currentContent && Array.isArray(currentContent.tweets)) {
+          // Post thread
+          const tweets = currentContent.tweets.map((t: { content?: string }) => getPostTweetText(t.content || ''))
+          const result = await postThread(tweets)
+          if (result.success && result.first_tweet_id) {
+            openTweet(result.first_tweet_id)
+          } else {
+            openXIntent(tweetText) // Fallback
+          }
+        } else {
+          // Post single tweet
+          const result = await postTweet(tweetText)
+          if (result.success && result.tweet_id) {
+            openTweet(result.tweet_id)
+          } else {
+            openXIntent(tweetText) // Fallback
+          }
+        }
       }
 
       setPosted(true)
