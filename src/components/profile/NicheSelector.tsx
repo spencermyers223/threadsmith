@@ -1,145 +1,197 @@
 'use client'
 
 import {
-  Brain,
-  Coins,
-  Cpu,
-  Atom,
-  HeartPulse,
-  Rocket,
-  Leaf,
-  Landmark,
-  Shield,
-  Code,
-  Gamepad2,
   Monitor,
   TrendingUp,
   Megaphone,
   Dumbbell,
   Users,
-  ShoppingBag,
+  Gamepad2,
+  GraduationCap,
+  Heart,
   Briefcase,
-  Trophy,
-  Newspaper,
+  Palette,
   MoreHorizontal,
   LucideIcon
 } from 'lucide-react'
 
 export type Niche =
-  // Tech niches (primary focus)
+  | 'technology'
+  | 'finance'
+  | 'marketing'
+  | 'sports-fitness'
+  | 'entertainment'
+  | 'education'
+  | 'health-wellness'
+  | 'business'
+  | 'creative'
+  | 'lifestyle'
+  | 'other'
+  // Legacy aliases for backwards compatibility
   | 'ai-ml'
   | 'crypto-web3'
-  | 'robotics'
-  | 'quantum'
-  | 'biotech'
-  | 'space'
-  | 'climate'
-  | 'fintech'
-  | 'cybersecurity'
-  | 'devtools'
-  | 'gaming'
-  | 'general-tech'
-  // Legacy/general niches
-  | 'saas-tech'
-  | 'finance-investing'
-  | 'marketing-agency'
-  | 'fitness-health'
-  | 'creator-economy'
-  | 'ecommerce-dtc'
-  | 'career-job-advice'
-  | 'sports'
-  | 'news'
-  | 'other'
-  // Legacy alias
   | 'web3-crypto'
+  | 'saas-tech'
+  | 'general-tech'
 
 interface NicheOption {
   id: Niche
   label: string
   icon: LucideIcon
+  description: string
 }
 
-// Tech-focused niches (shown first)
-const techNiches: NicheOption[] = [
-  { id: 'ai-ml', label: 'AI / ML', icon: Brain },
-  { id: 'crypto-web3', label: 'Crypto / Web3', icon: Coins },
-  { id: 'robotics', label: 'Robotics / Hardware', icon: Cpu },
-  { id: 'quantum', label: 'Quantum Computing', icon: Atom },
-  { id: 'biotech', label: 'Biotech / Health Tech', icon: HeartPulse },
-  { id: 'space', label: 'Space / Aerospace', icon: Rocket },
-  { id: 'climate', label: 'Climate Tech', icon: Leaf },
-  { id: 'fintech', label: 'Fintech', icon: Landmark },
-  { id: 'cybersecurity', label: 'Cybersecurity', icon: Shield },
-  { id: 'devtools', label: 'Developer Tools', icon: Code },
-  { id: 'gaming', label: 'Gaming / VR / AR', icon: Gamepad2 },
-  { id: 'general-tech', label: 'General Tech', icon: Monitor },
+const niches: NicheOption[] = [
+  { 
+    id: 'technology', 
+    label: 'Technology', 
+    icon: Monitor,
+    description: 'AI, crypto, dev tools, startups, gadgets'
+  },
+  { 
+    id: 'finance', 
+    label: 'Finance & Investing', 
+    icon: TrendingUp,
+    description: 'Markets, trading, personal finance, crypto'
+  },
+  { 
+    id: 'marketing', 
+    label: 'Marketing & Sales', 
+    icon: Megaphone,
+    description: 'Growth, social media, copywriting, ads'
+  },
+  { 
+    id: 'business', 
+    label: 'Business & Startups', 
+    icon: Briefcase,
+    description: 'Entrepreneurship, leadership, productivity'
+  },
+  { 
+    id: 'sports-fitness', 
+    label: 'Sports & Fitness', 
+    icon: Dumbbell,
+    description: 'Athletics, training, nutrition, sports news'
+  },
+  { 
+    id: 'entertainment', 
+    label: 'Entertainment & Media', 
+    icon: Gamepad2,
+    description: 'Gaming, movies, music, pop culture'
+  },
+  { 
+    id: 'education', 
+    label: 'Education & Career', 
+    icon: GraduationCap,
+    description: 'Learning, career advice, skill building'
+  },
+  { 
+    id: 'health-wellness', 
+    label: 'Health & Wellness', 
+    icon: Heart,
+    description: 'Mental health, self-care, medical'
+  },
+  { 
+    id: 'creative', 
+    label: 'Creative & Design', 
+    icon: Palette,
+    description: 'Art, photography, writing, design'
+  },
+  { 
+    id: 'lifestyle', 
+    label: 'Lifestyle & Creator', 
+    icon: Users,
+    description: 'Travel, food, fashion, personal brand'
+  },
+  { 
+    id: 'other', 
+    label: 'Other', 
+    icon: MoreHorizontal,
+    description: 'Something else entirely'
+  },
 ]
-
-// General niches
-const generalNiches: NicheOption[] = [
-  { id: 'saas-tech', label: 'SaaS / Startups', icon: Monitor },
-  { id: 'finance-investing', label: 'Finance / Investing', icon: TrendingUp },
-  { id: 'marketing-agency', label: 'Marketing / Agency', icon: Megaphone },
-  { id: 'fitness-health', label: 'Fitness / Health', icon: Dumbbell },
-  { id: 'creator-economy', label: 'Creator Economy', icon: Users },
-  { id: 'ecommerce-dtc', label: 'E-commerce / DTC', icon: ShoppingBag },
-  { id: 'career-job-advice', label: 'Career / Job Advice', icon: Briefcase },
-  { id: 'sports', label: 'Sports', icon: Trophy },
-  { id: 'news', label: 'News', icon: Newspaper },
-  { id: 'other', label: 'Other', icon: MoreHorizontal },
-]
-
-// Combined list for backwards compatibility
-const niches: NicheOption[] = [...techNiches, ...generalNiches]
 
 interface NicheSelectorProps {
-  selectedNiche: Niche | null
+  selectedNiches?: Niche[]
+  selectedNiche?: Niche | null
   onSelect: (niche: Niche) => void
-  showTechOnly?: boolean
+  multiSelect?: boolean
 }
 
 export default function NicheSelector({ 
-  selectedNiche, 
+  selectedNiches = [],
+  selectedNiche,
   onSelect,
-  showTechOnly = false 
+  multiSelect = true
 }: NicheSelectorProps) {
-  const displayNiches = showTechOnly ? techNiches : niches
+  // Support both single and multi-select modes
+  const isSelected = (id: Niche) => {
+    if (multiSelect) {
+      return selectedNiches.includes(id)
+    }
+    // Handle legacy aliases
+    if (id === 'technology') {
+      return selectedNiche === id || 
+        selectedNiche === 'ai-ml' || 
+        selectedNiche === 'crypto-web3' ||
+        selectedNiche === 'web3-crypto' ||
+        selectedNiche === 'saas-tech' ||
+        selectedNiche === 'general-tech'
+    }
+    return selectedNiche === id
+  }
 
   return (
-    <div className="space-y-3">
-      <label className="block text-sm font-medium text-[var(--foreground)]">
-        What&apos;s your content niche?
-      </label>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        {displayNiches.map((niche) => {
-          const Icon = niche.icon
-          // Handle legacy 'web3-crypto' alias
-          const isSelected = selectedNiche === niche.id || 
-            (niche.id === 'crypto-web3' && selectedNiche === 'web3-crypto')
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      {niches.map((niche) => {
+        const Icon = niche.icon
+        const selected = isSelected(niche.id)
 
-          return (
-            <button
-              key={niche.id}
-              type="button"
-              onClick={() => onSelect(niche.id)}
-              className={`
-                flex flex-col items-center justify-center gap-2 p-4 rounded-lg
-                border transition-all duration-150
-                ${isSelected
-                  ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
-                  : 'border-[var(--border)] bg-[var(--card)] text-[var(--muted)] hover:border-[var(--accent)]/50 hover:text-[var(--foreground)]'
+        return (
+          <button
+            key={niche.id}
+            type="button"
+            onClick={() => onSelect(niche.id)}
+            className={`
+              flex items-start gap-3 p-4 rounded-lg text-left
+              border transition-all duration-150
+              ${selected
+                ? 'border-[var(--accent)] bg-[var(--accent)]/10'
+                : 'border-[var(--border)] bg-[var(--card)] hover:border-[var(--accent)]/50'
+              }
+            `}
+          >
+            <div className={`mt-0.5 ${selected ? 'text-[var(--accent)]' : 'text-[var(--muted)]'}`}>
+              <Icon size={20} strokeWidth={1.5} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className={`font-medium ${selected ? 'text-[var(--accent)]' : 'text-[var(--foreground)]'}`}>
+                {niche.label}
+              </div>
+              <div className="text-xs text-[var(--muted)] mt-0.5 truncate">
+                {niche.description}
+              </div>
+            </div>
+            {multiSelect && (
+              <div className={`
+                w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0
+                ${selected 
+                  ? 'border-[var(--accent)] bg-[var(--accent)]' 
+                  : 'border-[var(--border)]'
                 }
-              `}
-            >
-              <Icon size={24} strokeWidth={1.5} />
-              <span className="text-sm font-medium text-center">{niche.label}</span>
-            </button>
-          )
-        })}
-      </div>
+              `}>
+                {selected && (
+                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+            )}
+          </button>
+        )
+      })}
     </div>
   )
 }
 
 // Export for use in other components
-export { techNiches, generalNiches, niches }
+export { niches }

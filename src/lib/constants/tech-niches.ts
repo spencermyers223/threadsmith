@@ -1,8 +1,8 @@
 /**
- * Tech Niches - Shared across onboarding, settings, and profile components
+ * Content Niches - Shared across onboarding, settings, and profile components
  * 
- * xthread supports creators across all areas of emerging technology,
- * not just crypto. Users select their focus areas to personalize content generation.
+ * xthread supports creators across ALL niches, not just tech.
+ * These broad categories help personalize content generation.
  */
 
 export interface TechNiche {
@@ -12,22 +12,22 @@ export interface TechNiche {
 }
 
 /**
- * Primary tech niches available for user selection
- * These represent the major areas of emerging technology
+ * Primary niches available for user selection
+ * Broad categories that fit any creator
  */
 export const TECH_NICHES: TechNiche[] = [
-  { id: 'ai-ml', label: 'AI / Machine Learning', description: 'Artificial intelligence, LLMs, ML research' },
-  { id: 'crypto-web3', label: 'Crypto / Web3', description: 'Blockchain, DeFi, digital assets' },
-  { id: 'robotics', label: 'Robotics / Hardware', description: 'Robots, drones, physical AI, hardware' },
-  { id: 'quantum', label: 'Quantum Computing', description: 'Quantum computers, algorithms, research' },
-  { id: 'biotech', label: 'Biotech / Health Tech', description: 'Genomics, longevity, medical tech' },
-  { id: 'space', label: 'Space / Aerospace', description: 'Rockets, satellites, space exploration' },
-  { id: 'climate', label: 'Climate Tech', description: 'Clean energy, sustainability, carbon tech' },
-  { id: 'fintech', label: 'Fintech', description: 'Payments, banking tech, trading systems' },
-  { id: 'cybersecurity', label: 'Cybersecurity', description: 'Security, privacy, threat research' },
-  { id: 'devtools', label: 'Developer Tools', description: 'IDEs, APIs, infrastructure, open source' },
-  { id: 'gaming', label: 'Gaming / VR / AR', description: 'Game dev, virtual reality, metaverse' },
-  { id: 'general-tech', label: 'General Tech', description: 'Startups, product, tech industry trends' },
+  { id: 'technology', label: 'Technology', description: 'AI, startups, dev tools, gadgets, software' },
+  { id: 'finance', label: 'Finance & Investing', description: 'Markets, trading, crypto, personal finance' },
+  { id: 'business', label: 'Business & Startups', description: 'Entrepreneurship, leadership, productivity' },
+  { id: 'marketing', label: 'Marketing & Sales', description: 'Growth, social media, copywriting, ads' },
+  { id: 'sports-fitness', label: 'Sports & Fitness', description: 'Athletics, training, nutrition, sports news' },
+  { id: 'entertainment', label: 'Entertainment', description: 'Gaming, movies, music, pop culture' },
+  { id: 'education', label: 'Education & Career', description: 'Learning, career advice, skill building' },
+  { id: 'health-wellness', label: 'Health & Wellness', description: 'Mental health, self-care, medical' },
+  { id: 'creative', label: 'Creative & Design', description: 'Art, photography, writing, design' },
+  { id: 'lifestyle', label: 'Lifestyle', description: 'Travel, food, fashion, personal brand' },
+  { id: 'news-politics', label: 'News & Politics', description: 'Current events, commentary, analysis' },
+  { id: 'other', label: 'Other', description: 'Something else entirely' },
 ];
 
 /**
@@ -37,8 +37,9 @@ export const CONTENT_GOALS = [
   { id: 'authority', label: 'Build authority/credibility', description: 'Become a trusted voice in your niche' },
   { id: 'followers', label: 'Grow follower count', description: 'Expand your reach and audience' },
   { id: 'traffic', label: 'Drive traffic', description: 'Newsletter, Discord, product, etc.' },
-  { id: 'network', label: 'Network with others', description: 'Connect with people in the space' },
+  { id: 'network', label: 'Network with others', description: 'Connect with people in your space' },
   { id: 'document', label: 'Document my journey', description: 'Build in public, share learnings' },
+  { id: 'sales', label: 'Generate leads/sales', description: 'Drive business results from content' },
 ];
 
 /**

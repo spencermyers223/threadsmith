@@ -330,7 +330,7 @@ export default function ProfileSetupSteps({
             Accounts you admire
           </h2>
           <p className="text-[var(--muted)]">
-            Who on Tech Twitter do you want to sound like? This helps us learn patterns.
+            Who on X do you want to sound like? We&apos;ll learn from their style.
           </p>
         </div>
 
