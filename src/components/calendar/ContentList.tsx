@@ -6,7 +6,8 @@ import { FileText, MessageSquare, Newspaper, Trash2, Edit, Calendar as CalendarI
 import PostTypeIcon, { GenerationType } from './PostTypeIcon'
 import type { CalendarFilterState } from './CalendarFilters'
 import TagBadge, { Tag } from '@/components/tags/TagBadge'
-import { getPostTweetText, openTwitterIntent } from '@/lib/twitter'
+import { getPostTweetText } from '@/lib/twitter'
+import { postTweet, postThread, openXIntent, openTweet } from '@/lib/x-posting'
 
 interface Post {
   id: string
@@ -156,16 +157,27 @@ export function ContentList({ onSelectPost, filters }: ContentListProps) {
       const updatedPost = await res.json()
       setPosts(posts.map(p => p.id === id ? updatedPost : p))
 
-      // Open X/Twitter compose window with the post content
+      // Post to X via API or fallback to intent
       if (post) {
-        let tweetText = ''
         if (post.type === 'thread' && Array.isArray(post.content?.tweets)) {
-          const firstTweet = (post.content.tweets as Array<{ content?: string }>)[0]
-          if (firstTweet) tweetText = getPostTweetText(firstTweet.content || '')
+          const tweets = (post.content.tweets as Array<{ content?: string }>).map(t => getPostTweetText(t.content || ''))
+          const result = await postThread(tweets)
+          if (result.success && result.first_tweet_id) {
+            openTweet(result.first_tweet_id)
+          } else {
+            openXIntent(tweets[0] || '') // Fallback
+          }
         } else {
-          tweetText = getPostTweetText((post.content?.html as string) || (post.content?.text as string) || '')
+          const tweetText = getPostTweetText((post.content?.html as string) || (post.content?.text as string) || '')
+          if (tweetText) {
+            const result = await postTweet(tweetText)
+            if (result.success && result.tweet_id) {
+              openTweet(result.tweet_id)
+            } else {
+              openXIntent(tweetText) // Fallback
+            }
+          }
         }
-        if (tweetText) openTwitterIntent(tweetText)
       }
     }
   }
