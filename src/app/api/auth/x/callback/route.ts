@@ -85,13 +85,19 @@ export async function GET(request: NextRequest) {
     let userId: string
     
     if (existingUser) {
-      // Existing user - update their password to ensure it matches
+      // Existing user - update their password and metadata
       userId = existingUser.id
       console.log('Existing user found:', userId)
       
-      // Update password to ensure sign-in works
+      // Update password and refresh metadata from X
       await supabaseAdmin.auth.admin.updateUserById(userId, {
         password: userPassword,
+        user_metadata: {
+          x_user_id: xUser.id,
+          x_username: xUser.username,
+          name: xUser.name,
+          avatar_url: xUser.profile_image_url,
+        },
       })
     } else {
       // New user - create with deterministic password
