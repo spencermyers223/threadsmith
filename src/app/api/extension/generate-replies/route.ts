@@ -90,8 +90,10 @@ export async function POST(request: NextRequest) {
       .single();
 
     // Parse request body
+    console.log('[generate-replies] Parsing request body...');
     const body = await request.json();
     const post: PostData = body.post;
+    console.log('[generate-replies] Post data received:', { author: post?.author, textLength: post?.text?.length });
 
     if (!post?.text) {
       return NextResponse.json(
@@ -185,6 +187,7 @@ GUIDELINES:
 - Be specific to THIS post, not generic advice
 - CT cultural fluency matters — use appropriate shorthand when the context calls for it`;
 
+    console.log('[generate-replies] Calling Claude API...');
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1500,
@@ -192,6 +195,7 @@ GUIDELINES:
         { role: 'user', content: prompt }
       ],
     });
+    console.log('[generate-replies] Claude API response received, tokens:', response.usage);
 
     // Parse Claude's response
     const content = response.content[0];
@@ -250,13 +254,19 @@ GUIDELINES:
     });
 
   } catch (error) {
-    console.error('Generate coaching API error:', error);
+    // Log full error details for debugging
+    console.error('Generate coaching API error:', {
+      message: error instanceof Error ? error.message : 'Unknown',
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : undefined,
+      error: JSON.stringify(error, Object.getOwnPropertyNames(error as object))
+    });
     
     // Provide more specific error messages
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     // Check for common issues
-    if (errorMessage.includes('API key')) {
+    if (errorMessage.includes('API key') || errorMessage.includes('authentication') || errorMessage.includes('401')) {
       return NextResponse.json(
         { error: 'API configuration error. Please contact support.' },
         { status: 500 }
@@ -269,9 +279,16 @@ GUIDELINES:
         { status: 429 }
       );
     }
+
+    if (errorMessage.includes('model') || errorMessage.includes('not found')) {
+      return NextResponse.json(
+        { error: 'Model configuration error. Please contact support.' },
+        { status: 500 }
+      );
+    }
     
     return NextResponse.json(
-      { error: 'Failed to generate coaching. Please try again.' },
+      { error: `Failed to generate coaching: ${errorMessage}` },
       { status: 500 }
     );
   }
