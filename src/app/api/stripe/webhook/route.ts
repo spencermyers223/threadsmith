@@ -49,10 +49,7 @@ export async function POST(request: NextRequest) {
           break
         }
 
-        // Determine status based on plan type
-        const status = planType === 'lifetime' ? 'lifetime' : 'active'
-
-        // Get subscription ID if it's a recurring subscription
+        // Get subscription ID
         let stripeSubscriptionId: string | null = null
         if (session.subscription) {
           stripeSubscriptionId = typeof session.subscription === 'string'
@@ -64,12 +61,10 @@ export async function POST(request: NextRequest) {
         const { error } = await supabase
           .from('subscriptions')
           .update({
-            status,
+            status: 'active',
             stripe_subscription_id: stripeSubscriptionId,
             current_period_start: new Date().toISOString(),
-            current_period_end: planType === 'lifetime'
-              ? null // Lifetime has no end date
-              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // ~30 days
+            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             updated_at: new Date().toISOString(),
           })
           .eq('user_id', userId)

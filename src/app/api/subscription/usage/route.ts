@@ -20,7 +20,7 @@ export async function GET() {
         .from('subscriptions')
         .select('status, plan_type, current_period_end')
         .eq('user_id', user.id)
-        .in('status', ['active', 'lifetime'])
+        .in('status', ['active'])
         .single()
 
       subscription = data

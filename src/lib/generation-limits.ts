@@ -21,7 +21,7 @@ export async function checkCanGenerate(
     .from('subscriptions')
     .select('status')
     .eq('user_id', userId)
-    .in('status', ['active', 'lifetime'])
+    .in('status', ['active'])
     .single()
 
   if (subscription) {

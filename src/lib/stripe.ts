@@ -9,7 +9,7 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 // Price IDs are validated at runtime when accessed
 export const PRICES = {
   monthly: process.env.STRIPE_MONTHLY_PRICE_ID || '',
-  lifetime: process.env.STRIPE_LIFETIME_PRICE_ID || '',
+  annual: process.env.STRIPE_ANNUAL_PRICE_ID || '',
 } as const
 
 export type PlanType = keyof typeof PRICES

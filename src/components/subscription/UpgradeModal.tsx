@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { X, Sparkles, Zap, Loader2 } from 'lucide-react'
 
-type PlanType = 'monthly' | 'lifetime'
+type PlanType = 'monthly' | 'annual'
 
 interface UpgradeModalProps {
   isOpen: boolean
@@ -107,9 +107,9 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
               </div>
             </button>
 
-            {/* Lifetime */}
+            {/* Annual */}
             <button
-              onClick={() => handleSelectPlan('lifetime')}
+              onClick={() => handleSelectPlan('annual')}
               disabled={loading}
               className="w-full p-4 bg-accent/10 border border-accent/30 rounded-xl hover:bg-accent/20 transition-all text-left flex items-center gap-4 disabled:opacity-50 relative"
             >
@@ -120,16 +120,16 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
                 <Sparkles className="w-5 h-5 text-accent" />
               </div>
               <div className="flex-1">
-                <div className="font-semibold">Lifetime</div>
-                <div className="text-sm text-[var(--muted)]">Pay once, use forever</div>
+                <div className="font-semibold">Annual</div>
+                <div className="text-sm text-[var(--muted)]">Save with yearly billing</div>
               </div>
               <div className="text-right">
-                {loadingPlan === 'lifetime' ? (
+                {loadingPlan === 'annual' ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
                     <div className="font-bold text-accent">$99.99</div>
-                    <div className="text-xs text-[var(--muted)]">one-time</div>
+                    <div className="text-xs text-[var(--muted)]">/year</div>
                   </>
                 )}
               </div>

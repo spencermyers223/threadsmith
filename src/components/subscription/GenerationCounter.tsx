@@ -61,10 +61,9 @@ export function GenerationCounter() {
 
   // Paid user - show unlimited
   if (usage.isSubscribed) {
-    const isLifetime = usage.subscription?.status === 'lifetime'
     return (
       <span className="text-lg font-medium text-accent">
-        {isLifetime ? 'Lifetime' : 'Pro'} — Unlimited generations
+        Pro — Unlimited generations
       </span>
     )
   }

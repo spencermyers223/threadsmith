@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { planType } = body as { planType: PlanType }
 
-    if (!planType || !['monthly', 'lifetime'].includes(planType)) {
+    if (!planType || !['monthly', 'annual'].includes(planType)) {
       return NextResponse.json({ error: 'Invalid plan type' }, { status: 400 })
     }
 
@@ -77,20 +77,13 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         },
       ],
-      mode: planType === 'lifetime' ? 'payment' : 'subscription',
+      mode: 'subscription',
       success_url: `${appUrl}/settings?subscription=success`,
       cancel_url: `${appUrl}/settings?subscription=cancelled`,
       metadata: {
         user_id: user.id,
         plan_type: planType,
       },
-    }
-
-    // For lifetime, add invoice creation settings
-    if (planType === 'lifetime') {
-      sessionParams.invoice_creation = {
-        enabled: true,
-      }
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams)
