@@ -55,10 +55,10 @@
   gap: 6px;
   padding: 0 16px;
   height: 36px;
-  border: 1px solid #7c3aed;
+  border: 1px solid #10b981;
   border-radius: 9999px;
   background: transparent;
-  color: #7c3aed;
+  color: #10b981;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
@@ -76,14 +76,14 @@
 }
 
 .xthread-watch-btn.xthread-watching {
-  background: #7c3aed;
+  background: #10b981;
   color: white;
-  border-color: #7c3aed;
+  border-color: #10b981;
 }
 
 .xthread-watch-btn.xthread-watching:hover {
-  background: #6d28d9;
-  border-color: #6d28d9;
+  background: #059669;
+  border-color: #059669;
 }
 
 .xthread-watch-icon {
@@ -97,8 +97,8 @@
 /* Light mode adjustments for watch button */
 @media (prefers-color-scheme: light) {
   .xthread-watch-btn {
-    border-color: #7c3aed;
-    color: #7c3aed;
+    border-color: #10b981;
+    color: #10b981;
   }
   
   .xthread-watch-btn:hover {
@@ -106,7 +106,7 @@
   }
   
   .xthread-watch-btn.xthread-watching {
-    background: #7c3aed;
+    background: #10b981;
     color: white;
   }
 }
@@ -131,7 +131,7 @@
   padding: 4px 12px;
   border: none;
   border-radius: 9999px;
-  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   font-size: 13px;
   font-weight: 600;
@@ -141,7 +141,7 @@
 }
 
 .xthread-coach-btn:hover {
-  background: linear-gradient(135deg, #6d28d9 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
   transform: scale(1.05);
 }
 
@@ -195,16 +195,16 @@
 }
 
 .xthread-save-btn:hover {
-  background: rgba(124, 58, 237, 0.1);
-  color: #7c3aed;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
 }
 
 .xthread-save-btn.xthread-saved {
-  color: #7c3aed;
+  color: #10b981;
 }
 
 .xthread-save-btn.xthread-saved svg {
-  fill: #7c3aed;
+  fill: #10b981;
 }
 
 /* Coaching Panel */
@@ -212,7 +212,7 @@
   margin: 12px 16px;
   padding: 16px;
   background: #16181c;
-  border: 1px solid #7c3aed;
+  border: 1px solid #10b981;
   border-radius: 16px;
   animation: xthread-slideIn 0.3s ease;
 }
@@ -375,7 +375,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: white;
-  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   padding: 4px 10px;
   border-radius: 6px;
   margin-bottom: 6px;
@@ -408,12 +408,12 @@
 }
 
 .xthread-angle-card:hover {
-  border-color: #7c3aed;
+  border-color: #10b981;
   background: #1a1c20;
 }
 
 .xthread-angle-card.xthread-expanded {
-  border-color: #7c3aed;
+  border-color: #10b981;
   background: #1a1c20;
 }
 
@@ -485,7 +485,7 @@
 }
 
 .xthread-hook:hover {
-  border-color: #7c3aed;
+  border-color: #10b981;
   background: #1a1c20;
 }
 
@@ -546,7 +546,7 @@
   padding: 10px 24px;
   border: none;
   border-radius: 9999px;
-  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   font-size: 14px;
   font-weight: 600;
@@ -555,7 +555,7 @@
 }
 
 .xthread-start-reply-btn:hover {
-  background: linear-gradient(135deg, #6d28d9 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
   transform: scale(1.02);
 }
 
@@ -565,7 +565,7 @@
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%) translateY(100px);
-  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   padding: 12px 24px;
   border-radius: 8px;
@@ -585,7 +585,7 @@
 @media (prefers-color-scheme: light) {
   .xthread-coach-panel {
     background: #ffffff;
-    border-color: #7c3aed;
+    border-color: #10b981;
   }
   
   .xthread-panel-header {
@@ -833,7 +833,7 @@
   font-size: 14px;
   font-weight: 600;
   color: white;
-  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   padding: 6px 14px;
   border-radius: 8px;
   margin-bottom: 10px;
@@ -1399,10 +1399,10 @@
   gap: 6px;
   padding: 0 14px;
   height: 34px;
-  border: 1px solid #8b5cf6;
+  border: 1px solid #10b981;
   border-radius: 9999px;
   background: transparent;
-  color: #8b5cf6;
+  color: #10b981;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -1441,7 +1441,7 @@
   margin: 12px;
   padding: 16px;
   background: #16181c;
-  border: 1px solid #8b5cf6;
+  border: 1px solid #10b981;
   border-radius: 16px;
   animation: xthread-slideIn 0.3s ease;
   max-width: 100%;
@@ -1560,7 +1560,7 @@
 }
 
 .xthread-idea-card:hover {
-  border-color: #8b5cf6;
+  border-color: #10b981;
   background: #1a1c20;
 }
 
@@ -1575,7 +1575,7 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #8b5cf6;
+  color: #10b981;
   background: rgba(139, 92, 246, 0.1);
   padding: 2px 8px;
   border-radius: 4px;
@@ -1695,7 +1695,7 @@
   margin-bottom: 8px;
   padding: 8px 12px;
   background: rgba(139, 92, 246, 0.1);
-  border-left: 3px solid #8b5cf6;
+  border-left: 3px solid #10b981;
   border-radius: 0 6px 6px 0;
 }
 
@@ -1717,7 +1717,7 @@
   content: '→';
   position: absolute;
   left: -16px;
-  color: #8b5cf6;
+  color: #10b981;
 }
 
 /* Content Gaps Section */
@@ -1758,8 +1758,8 @@
 /* Light mode for Content Coach */
 @media (prefers-color-scheme: light) {
   .xthread-ideas-btn {
-    border-color: #7c3aed;
-    color: #7c3aed;
+    border-color: #10b981;
+    color: #10b981;
   }
   
   .xthread-ideas-btn:hover {
@@ -1768,7 +1768,7 @@
   
   .xthread-coach-panel-ideas {
     background: #ffffff;
-    border-color: #8b5cf6;
+    border-color: #10b981;
   }
   
   .xthread-coach-header {
@@ -1844,7 +1844,7 @@
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%);
   border-bottom: 1px solid rgba(124, 58, 237, 0.2);
   font-size: 12px;
-  color: #a78bfa;
+  color: #34d399;
 }
 
 .xthread-watched-icon {

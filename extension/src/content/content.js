@@ -4,6 +4,9 @@
 const XTHREAD_API = 'https://xthread.io/api';
 const POST_HISTORY_MAX = 20;
 
+// Sidebar module will be loaded via sidebar.js
+// Access via window.xthreadSidebar
+
 // ============================================================
 // Watchlist Module (inline to avoid module loading issues)
 // ============================================================
@@ -408,6 +411,12 @@ async function init() {
   const stored = await chrome.storage.local.get(['xthreadToken', 'isPremium']);
   userToken = stored.xthreadToken;
   isPremium = stored.isPremium || false;
+  
+  // Initialize sidebar
+  if (window.xthreadSidebar) {
+    window.xthreadSidebar.init();
+    console.debug('[xthread] Sidebar initialized');
+  }
   
   // Start observing for DOM changes (posts + profile pages)
   observeDOM();
@@ -2029,13 +2038,30 @@ async function handleGetCoaching(post, btn) {
   isProcessing = true;
   btn.classList.add('xthread-loading');
   
+  // Open sidebar and show loading state
+  if (window.xthreadSidebar) {
+    window.xthreadSidebar.open();
+    window.xthreadSidebar.setContent('loading', { message: 'Analyzing tweet...' });
+  }
+  
   try {
     const postData = extractPostData(post);
     const coaching = await generateCoaching(postData);
-    showCoachingPanel(post, coaching, postData);
+    
+    // Show coaching in sidebar
+    if (window.xthreadSidebar) {
+      window.xthreadSidebar.setContent('coach', { coaching, postData, post });
+    } else {
+      // Fallback to inline panel if sidebar not loaded
+      showCoachingPanel(post, coaching, postData);
+    }
   } catch (err) {
     console.error('[xthread] Error getting coaching:', err);
-    showToast('Failed to get coaching. Please try again.');
+    if (window.xthreadSidebar && window.xthreadSidebar.isOpen()) {
+      window.xthreadSidebar.setContent('error', { message: 'Failed to get coaching. Please try again.' });
+    } else {
+      showToast('Failed to get coaching. Please try again.');
+    }
   } finally {
     isProcessing = false;
     btn.classList.remove('xthread-loading');

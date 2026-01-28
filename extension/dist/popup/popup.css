@@ -35,14 +35,14 @@ body {
   gap: 8px;
   font-size: 18px;
   font-weight: 700;
-  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .logo svg {
-  color: #7c3aed;
+  color: #10b981;
 }
 
 .version {
@@ -106,7 +106,7 @@ body {
   padding: 12px 24px;
   border: none;
   border-radius: 9999px;
-  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   font-size: 15px;
   font-weight: 600;
@@ -115,7 +115,7 @@ body {
 }
 
 .primary-btn:hover {
-  background: linear-gradient(135deg, #6d28d9 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
   transform: scale(1.02);
 }
 
@@ -130,7 +130,7 @@ body {
 }
 
 .note a {
-  color: #7c3aed;
+  color: #10b981;
   text-decoration: none;
 }
 
@@ -153,7 +153,7 @@ body {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -273,7 +273,7 @@ body {
 }
 
 .tab.active {
-  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
 }
 
@@ -335,7 +335,7 @@ body {
 .stat-value {
   font-size: 24px;
   font-weight: 700;
-  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -412,7 +412,7 @@ body {
 }
 
 .saved-post:hover {
-  border-color: #7c3aed;
+  border-color: #10b981;
 }
 
 .saved-post-author {
@@ -442,7 +442,7 @@ body {
 
 .saved-post-link {
   font-size: 11px;
-  color: #7c3aed;
+  color: #10b981;
   text-decoration: none;
   font-weight: 500;
 }
@@ -493,7 +493,7 @@ body {
 }
 
 .instructions strong {
-  color: #7c3aed;
+  color: #10b981;
 }
 
 .tip {
@@ -526,7 +526,7 @@ body {
 }
 
 .footer a:hover {
-  color: #7c3aed;
+  color: #10b981;
 }
 
 /* ============================================================
@@ -563,7 +563,7 @@ body {
 }
 
 .watchlist-item:hover {
-  border-color: #7c3aed;
+  border-color: #10b981;
   background: #1a1c20;
 }
 
@@ -571,7 +571,7 @@ body {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -611,7 +611,7 @@ body {
 }
 
 .watchlist-handle a {
-  color: #7c3aed;
+  color: #10b981;
   text-decoration: none;
   font-weight: 500;
 }
@@ -678,7 +678,7 @@ body {
 }
 
 .watchlist-empty .empty-desc strong {
-  color: #7c3aed;
+  color: #10b981;
 }
 
 /* Saved section adjustments */
@@ -717,12 +717,12 @@ body {
 
 .token-input:focus {
   outline: none;
-  border-color: #7c3aed;
+  border-color: #10b981;
 }
 
 .token-submit-btn {
   padding: 10px 16px;
-  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   border: none;
   border-radius: 8px;
   color: white;
@@ -733,7 +733,7 @@ body {
 }
 
 .token-submit-btn:hover {
-  background: linear-gradient(135deg, #6d28d9 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
 }
 
 /* ============================================================
@@ -785,7 +785,7 @@ body {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -856,7 +856,7 @@ body {
   right: 12px;
   width: 8px;
   height: 8px;
-  background: #7c3aed;
+  background: #10b981;
   border-radius: 50%;
 }
 
@@ -931,7 +931,7 @@ body {
 }
 
 .stat-card.highlight .stat-card-value {
-  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -990,7 +990,7 @@ body {
 .reply-author {
   font-weight: 600;
   font-size: 13px;
-  color: #7c3aed;
+  color: #10b981;
   text-decoration: none;
 }
 
@@ -1012,7 +1012,7 @@ body {
 
 .reply-your-text {
   font-size: 12px;
-  color: #a78bfa;
+  color: #34d399;
   font-style: italic;
   margin-bottom: 8px;
 }
@@ -1035,13 +1035,13 @@ body {
 }
 
 .reply-action-btn:hover {
-  border-color: #7c3aed;
+  border-color: #10b981;
   color: #e7e9ea;
 }
 
 .reply-action-btn.active {
-  background: #7c3aed;
-  border-color: #7c3aed;
+  background: #10b981;
+  border-color: #10b981;
   color: white;
 }
 
@@ -1058,7 +1058,7 @@ body {
 .reply-view-btn {
   margin-left: auto;
   font-size: 11px;
-  color: #7c3aed;
+  color: #10b981;
   text-decoration: none;
 }
 
@@ -1105,10 +1105,10 @@ body {
   background: rgba(124, 58, 237, 0.1);
   border-radius: 8px;
   font-size: 12px;
-  color: #a78bfa;
+  color: #34d399;
   line-height: 1.4;
 }
 
 .stats-tip strong {
-  color: #c4b5fd;
+  color: #6ee7b7;
 }

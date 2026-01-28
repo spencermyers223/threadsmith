@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "xthread Reply Coach",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Learn HOW to craft killer replies on X. Strategic angles, not full replies. Grow your following with AI coaching.",
   "permissions": [
     "storage",
@@ -33,8 +33,8 @@
   "content_scripts": [
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["content/content.js"],
-      "css": ["styles/content.css"],
+      "js": ["content/sidebar.js", "content/content.js"],
+      "css": ["styles/sidebar.css", "styles/content.css"],
       "run_at": "document_idle"
     }
   ],
