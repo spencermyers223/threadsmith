@@ -17,6 +17,7 @@ import { getPostTweetText, openTwitterIntent } from '@/lib/twitter'
 import TagSelector from '@/components/tags/TagSelector'
 import TagBadge, { Tag as TagType } from '@/components/tags/TagBadge'
 import { MediaUpload, type MediaItem } from '@/components/workspace/MediaUpload'
+import { EngagementPanel } from '@/components/workspace/EngagementPanel'
 
 type ContentType = 'tweet' | 'thread' | 'article'
 import type { GenerationType } from '@/components/calendar/PostTypeIcon'
@@ -514,6 +515,31 @@ export default function WorkspacePage() {
     return <TiptapEditor content={content} onChange={handleContentChange} />
   }
 
+  // Plain text for engagement scoring
+  const getPlainText = useCallback(() => {
+    if (contentType === 'thread') {
+      return threadTweets.map(t => t.content).join('\n\n')
+    }
+    // Strip HTML tags for plain text
+    return content.replace(/<[^>]*>/g, '').trim()
+  }, [contentType, content, threadTweets])
+
+  const handleInsertText = useCallback((text: string) => {
+    if (contentType === 'thread') {
+      // Append to last tweet
+      const updated = [...threadTweets]
+      const last = updated[updated.length - 1]
+      if (last) {
+        updated[updated.length - 1] = { ...last, content: last.content + text }
+        setThreadTweets(updated)
+        setHasUnsavedChanges(true)
+      }
+    } else {
+      setContent(prev => prev + text)
+      setHasUnsavedChanges(true)
+    }
+  }, [contentType, threadTweets])
+
   const renderPreview = () => {
     switch (contentType) {
       case 'tweet':
@@ -706,12 +732,19 @@ export default function WorkspacePage() {
           </div>
         </div>
 
-        {/* Preview */}
-        <div className="w-[400px] border-l border-[var(--border)] p-4 overflow-y-auto bg-[var(--background)]">
-          <h3 className="font-semibold mb-4 text-sm text-[var(--muted)] uppercase tracking-wider">
-            Preview
-          </h3>
-          {renderPreview()}
+        {/* Preview + Engagement */}
+        <div className="w-[400px] border-l border-[var(--border)] overflow-y-auto bg-[var(--background)] flex flex-col">
+          <div className="p-4 flex-1">
+            <h3 className="font-semibold mb-4 text-sm text-[var(--muted)] uppercase tracking-wider">
+              Preview
+            </h3>
+            {renderPreview()}
+          </div>
+          <EngagementPanel
+            text={getPlainText()}
+            postType={contentType}
+            onInsertText={handleInsertText}
+          />
         </div>
       </div>
 
