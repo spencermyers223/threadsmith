@@ -704,27 +704,36 @@ async function injectWatchButton(handle) {
   // Check if user is watching this account
   const watching = await isWatching(handle);
   
+  // SVG icons for cleaner look
+  const icons = {
+    eye: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
+    check: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+    search: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+    chart: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+    loader: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="xthread-spinner"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" opacity="1"/></svg>`,
+  };
+
   // Create watch button
   const watchBtn = document.createElement('button');
   watchBtn.className = 'xthread-watch-btn' + (watching ? ' xthread-watching' : '');
   watchBtn.setAttribute('data-handle', handle);
   watchBtn.innerHTML = watching 
-    ? `<span class="xthread-watch-icon">✓</span><span class="xthread-watch-text">Watching</span>`
-    : `<span class="xthread-watch-icon">👁</span><span class="xthread-watch-text">Watch</span>`;
+    ? `<span class="xthread-watch-icon">${icons.check}</span><span class="xthread-watch-text">Watching</span>`
+    : `<span class="xthread-watch-icon">${icons.eye}</span><span class="xthread-watch-text">Watch</span>`;
   watchBtn.title = watching ? 'Remove from watchlist' : 'Add to watchlist';
   
   // Create analyze button
   const analyzeBtn = document.createElement('button');
   analyzeBtn.className = 'xthread-analyze-btn';
   analyzeBtn.setAttribute('data-handle', handle);
-  analyzeBtn.innerHTML = `<span class="xthread-analyze-icon">🔍</span><span class="xthread-analyze-text">Analyze</span>`;
+  analyzeBtn.innerHTML = `<span class="xthread-analyze-icon">${icons.search}</span><span class="xthread-analyze-text">Analyze</span>`;
   analyzeBtn.title = 'Analyze this account';
 
   // Create top tweets button
   const topTweetsBtn = document.createElement('button');
   topTweetsBtn.className = 'xthread-top-tweets-btn';
   topTweetsBtn.setAttribute('data-handle', handle);
-  topTweetsBtn.innerHTML = `<span class="xthread-top-tweets-icon">📊</span><span class="xthread-top-tweets-text">Top Tweets</span>`;
+  topTweetsBtn.innerHTML = `<span class="xthread-top-tweets-icon">${icons.chart}</span><span class="xthread-top-tweets-text">Top Tweets</span>`;
   topTweetsBtn.title = 'See their top performing tweets';
   
   // Insert before follow button (top tweets, analyze, watch)
@@ -765,9 +774,21 @@ async function updateWatchButtonState(handle) {
   const watching = await isWatching(handle);
   watchBtn.className = 'xthread-watch-btn' + (watching ? ' xthread-watching' : '');
   watchBtn.innerHTML = watching 
-    ? `<span class="xthread-watch-icon">✓</span><span class="xthread-watch-text">Watching</span>`
-    : `<span class="xthread-watch-icon">👁</span><span class="xthread-watch-text">Watch</span>`;
+    ? `<span class="xthread-watch-icon">${getIcon('check')}</span><span class="xthread-watch-text">Watching</span>`
+    : `<span class="xthread-watch-icon">${getIcon('eye')}</span><span class="xthread-watch-text">Watch</span>`;
   watchBtn.title = watching ? 'Remove from watchlist' : 'Add to watchlist';
+}
+
+// SVG icon helper
+function getIcon(name) {
+  const icons = {
+    eye: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
+    check: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+    search: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+    chart: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+    loader: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="xthread-spinner"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`,
+  };
+  return icons[name] || '';
 }
 
 // Handle watch button click
@@ -779,7 +800,7 @@ async function handleWatchClick(btn, handle) {
     const result = await removeFromWatchlist(handle);
     if (result.success) {
       btn.className = 'xthread-watch-btn';
-      btn.innerHTML = `<span class="xthread-watch-icon">👁</span><span class="xthread-watch-text">Watch</span>`;
+      btn.innerHTML = `<span class="xthread-watch-icon">${getIcon('eye')}</span><span class="xthread-watch-text">Watch</span>`;
       btn.title = 'Add to watchlist';
       showToast('Removed from watchlist');
     } else {
@@ -796,9 +817,9 @@ async function handleWatchClick(btn, handle) {
     
     if (result.success) {
       btn.className = 'xthread-watch-btn xthread-watching';
-      btn.innerHTML = `<span class="xthread-watch-icon">✓</span><span class="xthread-watch-text">Watching</span>`;
+      btn.innerHTML = `<span class="xthread-watch-icon">${getIcon('check')}</span><span class="xthread-watch-text">Watching</span>`;
       btn.title = 'Remove from watchlist';
-      showToast('Added to watchlist! 👁');
+      showToast('Added to watchlist!');
       
       // Update badge
       updateWatchlistBadge();
@@ -851,7 +872,7 @@ async function handleAnalyzeClick(btn, handle, forceRefresh = false) {
   
   isAnalyzing = true;
   btn.classList.add('xthread-loading');
-  btn.innerHTML = `<span class="xthread-analyze-icon">⏳</span><span class="xthread-analyze-text">Analyzing...</span>`;
+  btn.innerHTML = `<span class="xthread-analyze-icon">${getIcon('loader')}</span><span class="xthread-analyze-text">Analyzing...</span>`;
   
   try {
     // Scrape tweets from profile
@@ -879,7 +900,7 @@ async function handleAnalyzeClick(btn, handle, forceRefresh = false) {
   } finally {
     isAnalyzing = false;
     btn.classList.remove('xthread-loading');
-    btn.innerHTML = `<span class="xthread-analyze-icon">🔍</span><span class="xthread-analyze-text">Analyze</span>`;
+    btn.innerHTML = `<span class="xthread-analyze-icon">${getIcon('search')}</span><span class="xthread-analyze-text">Analyze</span>`;
   }
 }
 
@@ -1166,7 +1187,7 @@ async function handleTopTweetsClick(btn, handle) {
   
   isLoadingTopTweets = true;
   btn.classList.add('xthread-loading');
-  btn.innerHTML = `<span class="xthread-top-tweets-icon">⏳</span><span class="xthread-top-tweets-text">Loading...</span>`;
+  btn.innerHTML = `<span class="xthread-top-tweets-icon">${getIcon('loader')}</span><span class="xthread-top-tweets-text">Loading...</span>`;
   
   try {
     const response = await fetch(`${XTHREAD_API}/extension/user-top-tweets?username=${encodeURIComponent(handle)}`, {
@@ -1189,7 +1210,7 @@ async function handleTopTweetsClick(btn, handle) {
   } finally {
     isLoadingTopTweets = false;
     btn.classList.remove('xthread-loading');
-    btn.innerHTML = `<span class="xthread-top-tweets-icon">📊</span><span class="xthread-top-tweets-text">Top Tweets</span>`;
+    btn.innerHTML = `<span class="xthread-top-tweets-icon">${getIcon('chart')}</span><span class="xthread-top-tweets-text">Top Tweets</span>`;
   }
 }
 
