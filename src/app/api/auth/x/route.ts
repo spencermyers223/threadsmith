@@ -2,10 +2,11 @@
  * X OAuth 2.0 - Initiate Authorization
  * 
  * GET /api/auth/x
+ * GET /api/auth/x?action=link  (for adding additional X accounts)
  * Redirects user to X authorization page
  */
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { 
   generateCodeVerifier, 
@@ -14,7 +15,7 @@ import {
   buildAuthUrl 
 } from '@/lib/x-auth'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const clientId = process.env.X_CLIENT_ID
   const redirectUri = process.env.X_CALLBACK_URL
   
@@ -24,6 +25,10 @@ export async function GET() {
       { status: 500 }
     )
   }
+  
+  // Check if this is a "link account" request
+  const action = request.nextUrl.searchParams.get('action')
+  const isLinkMode = action === 'link'
   
   // Generate PKCE values
   const codeVerifier = generateCodeVerifier()
@@ -48,6 +53,20 @@ export async function GET() {
     maxAge: 60 * 10,
     path: '/',
   })
+  
+  // Store link mode flag if linking additional account
+  if (isLinkMode) {
+    cookieStore.set('x_oauth_action', 'link', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 10,
+      path: '/',
+    })
+  } else {
+    // Clear any existing link mode cookie
+    cookieStore.delete('x_oauth_action')
+  }
   
   // Build authorization URL and redirect
   const authUrl = buildAuthUrl({
