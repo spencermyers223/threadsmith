@@ -51,8 +51,11 @@ export {
 export {
   HUMANNESS_PHRASES,
   ROBOTIC_PHRASES,
+  SEVERE_AI_PATTERNS,
   getRandomPhrase,
   containsRoboticPatterns,
+  containsSevereAIPatterns,
+  scoreContentQuality,
 } from './humanness';
 
 // ============================================

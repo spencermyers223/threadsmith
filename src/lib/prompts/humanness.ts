@@ -107,6 +107,12 @@ export const ROBOTIC_PHRASES = [
   "I wanted to share",
   "I'm going to break down",
   "Allow me to elaborate",
+  "In the world of",
+  "In today's fast-paced",
+  "As we navigate",
+  "I'm excited to",
+  "Here's my take on",
+  "Breaking down",
   
   // Transitions
   "Furthermore",
@@ -115,6 +121,10 @@ export const ROBOTIC_PHRASES = [
   "In addition to this",
   "It's worth noting",
   "Interestingly enough",
+  "That being said",
+  "With that in mind",
+  "Moving forward",
+  "Needless to say",
   
   // Conclusions
   "In conclusion",
@@ -123,12 +133,43 @@ export const ROBOTIC_PHRASES = [
   "To wrap things up",
   "All in all",
   "At the end of the day",
+  "The bottom line is",
+  "To wrap up",
   
   // Hedging
   "It's important to note",
   "One could argue",
   "It should be mentioned",
   "It goes without saying",
+  "It could be said that",
+  "It's important to remember",
+  
+  // Generic hype words (often overused by AI)
+  "game-changing",
+  "groundbreaking",
+  "revolutionary",
+  "paradigm shift",
+  "cutting-edge",
+  "unlock the power",
+  "leverage",
+  "utilize",
+  "robust",
+  "seamless",
+  "synergy",
+];
+
+/**
+ * Severe patterns that almost always indicate AI slop
+ */
+export const SEVERE_AI_PATTERNS = [
+  "In this thread, I'll",
+  "Let me break down",
+  "Here's a thread on",
+  "🧵 Thread:",
+  "I'm excited to share",
+  "Allow me to explain",
+  "In the ever-evolving",
+  "As we stand at the",
 ];
 
 /**
@@ -153,4 +194,60 @@ export function containsRoboticPatterns(text: string): string[] {
   }
   
   return found;
+}
+
+/**
+ * Check for severe AI patterns (almost always slop)
+ */
+export function containsSevereAIPatterns(text: string): string[] {
+  const found: string[] = [];
+  const lowerText = text.toLowerCase();
+  
+  for (const phrase of SEVERE_AI_PATTERNS) {
+    if (lowerText.includes(phrase.toLowerCase())) {
+      found.push(phrase);
+    }
+  }
+  
+  return found;
+}
+
+/**
+ * Score content for AI slop (0-100, lower is better)
+ * Returns { score, issues } where issues are the detected problems
+ */
+export function scoreContentQuality(text: string): { score: number; issues: string[] } {
+  const issues: string[] = [];
+  let score = 0;
+  
+  // Check severe patterns (high penalty)
+  const severePatterns = containsSevereAIPatterns(text);
+  if (severePatterns.length > 0) {
+    score += severePatterns.length * 25;
+    issues.push(...severePatterns.map(p => `Severe AI pattern: "${p}"`));
+  }
+  
+  // Check regular robotic patterns (medium penalty)
+  const roboticPatterns = containsRoboticPatterns(text);
+  if (roboticPatterns.length > 0) {
+    score += roboticPatterns.length * 10;
+    issues.push(...roboticPatterns.map(p => `Robotic phrase: "${p}"`));
+  }
+  
+  // Check for excessive emoji (more than 5 in a single tweet)
+  const emojiCount = (text.match(/[\u{1F300}-\u{1F9FF}]/gu) || []).length;
+  if (emojiCount > 5) {
+    score += 15;
+    issues.push(`Excessive emoji (${emojiCount} found)`);
+  }
+  
+  // Check for ALL CAPS words (more than 3)
+  const capsWords = text.match(/\b[A-Z]{4,}\b/g) || [];
+  if (capsWords.length > 3) {
+    score += 10;
+    issues.push(`Too many ALL CAPS words (${capsWords.length})`);
+  }
+  
+  // Cap at 100
+  return { score: Math.min(100, score), issues };
 }
