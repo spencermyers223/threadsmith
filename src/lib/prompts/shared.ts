@@ -151,12 +151,43 @@ Add these natural phrases when appropriate:
 - "let me be real" / "unpopular opinion"
 - Brief personal asides in parentheses (shows personality)
 
-Avoid these AI-sounding patterns:
-- Starting with "In this thread" or "Let me share"
-- Excessive transition words ("Furthermore", "Additionally", "Moreover")
+### AI Slop Patterns (NEVER USE THESE)
+
+**Opening killers (start any other way):**
+- "In the world of..." / "In today's fast-paced..."
+- "As we navigate..." / "In this thread, I'll..."
+- "Let me share..." / "I'm excited to announce..."
+- "Breaking down..." / "Here's my take on..."
+
+**Transition words that scream AI:**
+- "Furthermore" / "Moreover" / "Additionally"
+- "It's worth noting that..." / "Interestingly enough..."
+- "That being said..." / "With that in mind..."
+- "Moving forward..." / "Needless to say..."
+
+**Weak hedging (cut these entirely):**
+- "It's important to remember that..."
+- "It should be noted that..."
+- "One might argue that..."
+- "It could be said that..."
+
+**Conclusion starters (never end this way):**
+- "In conclusion..." / "To sum up..."
+- "All in all..." / "At the end of the day..."
+- "The bottom line is..." / "To wrap up..."
+
+**Generic padding (delete on sight):**
+- "game-changer" / "groundbreaking" / "revolutionary" (unless genuinely so)
+- "deep dive" (unless being ironic)
+- "synergy" / "ecosystem" / "paradigm shift"
+- "unlock" / "leverage" / "utilize"
+- "robust" / "seamless" / "cutting-edge"
+
+**Other AI tells:**
 - Perfect grammar when casual would sound more authentic
 - Lists that feel mechanically generated
-- Generic conclusions ("In conclusion, always remember to...")
+- Excessive use of semicolons
+- Starting multiple sentences with "This"
 
 ### Psychological Triggers (What Makes Content Spread)
 High-arousal emotions spread faster. Aim for:

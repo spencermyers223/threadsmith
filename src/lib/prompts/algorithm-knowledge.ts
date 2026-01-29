@@ -86,6 +86,7 @@ export const ALGORITHM_WARNINGS = {
 };
 
 export const HOOK_PATTERNS = [
+  // Classic patterns
   "Number + Outcome: '7 ways I grew to 100K followers'",
   "Contrarian: 'Most advice about X is wrong'",
   "Story: 'I lost everything in 2019. Here's what happened next.'",
@@ -95,29 +96,51 @@ export const HOOK_PATTERNS = [
   "Transformation: '[Time] ago I was [bad state]. Today I'm [good state]. Here's what changed:'",
   "Bold claim: 'Everything you've been told about X is wrong. Here's why.'",
   "Insider knowledge: 'I found a weird [topic] hack that no one talks about...'",
+  
+  // New high-converting patterns
+  "Confession: 'I've been lying to myself about X. Here's what I finally realized.'",
+  "Time-boxed urgency: 'In 6 months, [prediction]. Here's why.'",
+  "Social proof flip: 'Everyone's doing X. That's exactly why you shouldn't.'",
+  "Earned wisdom: 'After [time/experience], here's the one thing that actually matters.'",
+  "Pattern interrupt (number start): '47% of...' or '3 things that...'",
+  "Admission of weakness: 'I used to think X. I was completely wrong.'",
+  "Observation: 'Nobody talks about [obvious thing]. Here's why that's a problem.'",
+  "Hot take opener: 'Unpopular opinion:' or 'Hot take:'",
+  "Direct address: 'If you're [doing X], stop. Here's why.'",
+  "Outcome tease: 'This is how I [achieved result] without [expected method].'",
 ];
 
 export const ENDING_CTA_PATTERNS = [
-  // Questions that invite specific responses
+  // Specific questions that require thinking (best for replies)
+  "What's the biggest mistake you made learning this?",
+  "What's one thing you'd do differently if you were starting today?",
+  "Where does this break down for you?",
+  "What am I missing here?",
   "Which of these surprised you most?",
   "What would you add to this list?",
-  "Have you experienced this?",
-  "What's your take?",
   
-  // Statements that beg contradiction (stronger than questions)
+  // Polarizing statements (beg disagreement - high engagement)
   "And it's not even close.",
-  "Fight me on this.",
+  "Fight me.",
+  "I'll die on this hill.",
+  "Disagree? Prove me wrong.",
   "Change my mind.",
   "The data doesn't lie.",
+  
+  // Invitation to share (community building)
+  "Drop your [X] below. I'll RT the best ones.",
+  "Reply with your take — I respond to everyone.",
+  "What's yours? Best answer gets a shoutout.",
   
   // Soft CTAs that don't feel desperate
   "More threads like this → follow",
   "Save this for later.",
   "Bookmark if you found this useful.",
   
-  // AVOID these weak endings
-  // "Thoughts?" (too generic)
-  // "Like and retweet!" (engagement bait)
-  // "Follow for more!" (desperate)
-  // "Let me know in the comments" (no urgency)
+  // AVOID these weak endings (never use)
+  // "Thoughts?" ← too vague, gets ignored
+  // "What do you think?" ← too generic
+  // "Let me know!" ← desperate energy
+  // "Like and retweet!" ← engagement bait (algorithm penalizes)
+  // "Follow for more!" ← desperate
 ];

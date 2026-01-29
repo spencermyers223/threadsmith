@@ -42,7 +42,18 @@ export {
   ALGORITHM_KNOWLEDGE,
   ALGORITHM_WARNINGS,
   HOOK_PATTERNS,
+  ENDING_CTA_PATTERNS,
 } from './algorithm-knowledge';
+
+// ============================================
+// Humanness library
+// ============================================
+export {
+  HUMANNESS_PHRASES,
+  ROBOTIC_PHRASES,
+  getRandomPhrase,
+  containsRoboticPatterns,
+} from './humanness';
 
 // ============================================
 // Archetype prompts (legacy archetypes)
