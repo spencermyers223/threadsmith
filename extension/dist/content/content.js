@@ -478,6 +478,12 @@ function startWatchlistScanner() {
 }
 
 async function scanForWatchedPosts() {
+  // ONLY scan on home feed - not on profile pages or individual tweets
+  // This prevents capturing every historical tweet when browsing someone's profile
+  const path = location.pathname;
+  const isHomeFeed = path === '/home' || path === '/' || path === '/following';
+  if (!isHomeFeed) return;
+  
   const watchlist = await getCachedWatchlist();
   if (watchlist.length === 0) return;
   
