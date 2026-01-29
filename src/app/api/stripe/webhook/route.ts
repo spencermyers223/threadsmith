@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getTierFromPriceId, type SubscriptionTier } from '@/lib/subscription'
 import Stripe from 'stripe'
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
 
         const userId = session.metadata?.user_id
         const planType = session.metadata?.plan_type
+        const priceId = session.metadata?.price_id
 
         if (!userId) {
           console.error('No user_id in session metadata')
@@ -57,14 +59,30 @@ export async function POST(request: NextRequest) {
             : session.subscription.id
         }
 
-        // Update subscription status
+        // Determine tier from price ID
+        let tier: SubscriptionTier = 'premium';
+        if (priceId) {
+          tier = getTierFromPriceId(priceId);
+        } else if (planType === 'lifetime') {
+          // Legacy: lifetime purchases default to premium
+          tier = 'premium';
+        }
+
+        // Get max accounts for tier
+        const maxAccounts = tier === 'pro' ? 5 : 1;
+
+        // Update subscription status with tier info
         const { error } = await supabase
           .from('subscriptions')
           .update({
-            status: 'active',
+            status: planType === 'lifetime' ? 'lifetime' : 'active',
             stripe_subscription_id: stripeSubscriptionId,
+            tier,
+            max_x_accounts: maxAccounts,
             current_period_start: new Date().toISOString(),
-            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            current_period_end: planType === 'lifetime' 
+              ? null // Lifetime has no end
+              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             updated_at: new Date().toISOString(),
           })
           .eq('user_id', userId)
@@ -72,7 +90,7 @@ export async function POST(request: NextRequest) {
         if (error) {
           console.error('Error updating subscription:', error)
         } else {
-          console.log(`Subscription activated for user ${userId} with plan ${planType}`)
+          console.log(`Subscription activated for user ${userId}: tier=${tier}, plan=${planType}`)
         }
         break
       }
