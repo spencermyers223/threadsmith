@@ -4,9 +4,24 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   ArrowLeft, Mic, Upload, Trash2, RefreshCw, AlertCircle, Check,
-  ChevronDown, ChevronUp, Sparkles, MessageSquare, Download
+  ChevronDown, ChevronUp, Sparkles, MessageSquare, Download,
+  Bookmark, ExternalLink, MessageCircle, Heart, Repeat2
 } from 'lucide-react'
 import Link from 'next/link'
+
+interface InspirationTweet {
+  id: string
+  tweet_id: string
+  tweet_text: string
+  tweet_url: string | null
+  author_username: string
+  author_name: string | null
+  author_profile_image_url: string | null
+  reply_count: number
+  like_count: number
+  repost_count: number
+  saved_at: string
+}
 
 interface VoiceSample {
   id: string
@@ -42,6 +57,7 @@ interface VoiceProfile {
 export default function VoiceSettingsPage() {
   const supabase = createClient()
   const [samples, setSamples] = useState<VoiceSample[]>([])
+  const [inspirationTweets, setInspirationTweets] = useState<InspirationTweet[]>([])
   const [voiceProfile, setVoiceProfile] = useState<VoiceProfile | null>(null)
   const [voiceTrainedAt, setVoiceTrainedAt] = useState<string | null>(null)
   const [tweetInput, setTweetInput] = useState('')
@@ -52,6 +68,7 @@ export default function VoiceSettingsPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [showSamples, setShowSamples] = useState(false)
+  const [showInspirationTweets, setShowInspirationTweets] = useState(false)
   const hasLoadedRef = useRef(false)
 
   // Tweak state (overrides on top of analyzed profile)
@@ -69,6 +86,13 @@ export default function VoiceSettingsPage() {
       if (samplesRes.ok) {
         const data = await samplesRes.json()
         setSamples(data)
+      }
+
+      // Load inspiration tweets
+      const inspirationRes = await fetch('/api/inspiration-tweets')
+      if (inspirationRes.ok) {
+        const data = await inspirationRes.json()
+        setInspirationTweets(data.tweets || [])
       }
 
       // Load voice profile from content_profiles
@@ -209,6 +233,21 @@ export default function VoiceSettingsPage() {
     if (res.ok) {
       setSamples(samples.filter(s => s.id !== id))
     }
+  }
+
+  async function handleDeleteInspirationTweet(id: string) {
+    const res = await fetch(`/api/inspiration-tweets/${id}`, { method: 'DELETE' })
+    if (res.ok) {
+      setInspirationTweets(inspirationTweets.filter(t => t.id !== id))
+      setSuccess('Inspiration tweet removed')
+      setTimeout(() => setSuccess(null), 3000)
+    }
+  }
+
+  function formatNumber(num: number): string {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
+    return num.toString()
   }
 
   async function handleClearAll() {
@@ -652,6 +691,113 @@ export default function VoiceSettingsPage() {
             </div>
           </section>
         )}
+
+        {/* Inspiration Tweets Section */}
+        <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
+          <button
+            onClick={() => setShowInspirationTweets(!showInspirationTweets)}
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-[var(--card-hover)] transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Bookmark className="w-4 h-4 text-violet-500" />
+              <div className="text-left">
+                <span className="font-semibold">Inspiration Tweets</span>
+                <span className="text-xs text-[var(--muted)] ml-2">
+                  {inspirationTweets.length} saved
+                </span>
+              </div>
+            </div>
+            {showInspirationTweets ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+          
+          {showInspirationTweets && (
+            <div className="border-t border-[var(--border)]">
+              {/* Explainer */}
+              <div className="px-4 py-3 bg-violet-500/5 border-b border-[var(--border)]">
+                <p className="text-xs text-[var(--muted)]">
+                  💡 Saved tweets from other creators influence your AI-generated content. 
+                  The AI learns from their hooks, phrasing, and engagement patterns to improve your posts.
+                </p>
+              </div>
+
+              {inspirationTweets.length === 0 ? (
+                <div className="px-4 py-8 text-center">
+                  <Bookmark className="w-8 h-8 text-[var(--muted)] mx-auto mb-2 opacity-50" />
+                  <p className="text-sm text-[var(--muted)]">No inspiration tweets saved yet</p>
+                  <p className="text-xs text-[var(--muted)] mt-1">
+                    Use the Chrome extension to save high-performing tweets from other creators
+                  </p>
+                </div>
+              ) : (
+                <div className="max-h-96 overflow-y-auto divide-y divide-[var(--border)]">
+                  {inspirationTweets.map((tweet) => (
+                    <div key={tweet.id} className="px-4 py-3 group hover:bg-[var(--card-hover)] transition-colors">
+                      {/* Author info */}
+                      <div className="flex items-center gap-2 mb-2">
+                        {tweet.author_profile_image_url ? (
+                          <img 
+                            src={tweet.author_profile_image_url} 
+                            alt="" 
+                            className="w-6 h-6 rounded-full"
+                          />
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-[var(--border)]" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-medium">{tweet.author_name || tweet.author_username}</span>
+                          <span className="text-xs text-[var(--muted)] ml-1">@{tweet.author_username}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {tweet.tweet_url && (
+                            <a 
+                              href={tweet.tweet_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="p-1 rounded hover:bg-[var(--background)] text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                          <button
+                            onClick={() => handleDeleteInspirationTweet(tweet.id)}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 text-red-400 transition-all"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Tweet text */}
+                      <p className="text-sm text-[var(--foreground)] mb-2 line-clamp-3">
+                        {tweet.tweet_text}
+                      </p>
+
+                      {/* Engagement metrics */}
+                      <div className="flex items-center gap-4 text-xs text-[var(--muted)]">
+                        <span className="flex items-center gap-1">
+                          <MessageCircle className="w-3 h-3" />
+                          {formatNumber(tweet.reply_count)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Repeat2 className="w-3 h-3" />
+                          {formatNumber(tweet.repost_count)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Heart className="w-3 h-3" />
+                          {formatNumber(tweet.like_count)}
+                        </span>
+                        <span className="ml-auto">
+                          Saved {new Date(tweet.saved_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   )
