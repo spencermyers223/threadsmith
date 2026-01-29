@@ -94,11 +94,20 @@ export async function GET(request: NextRequest) {
     }
     
     // Transform and calculate analytics
-    const tweets = (tweetsData.data || []).map((tweet: XTweet) => {
+    // Filter: only include thread starters (standalone tweets or first tweet of a thread)
+    // This excludes thread continuation tweets which skew engagement metrics
+    const allTweets = (tweetsData.data || [])
+    const threadStartTweets = allTweets.filter((tweet: XTweet) => 
+      tweet.conversation_id === tweet.id
+    )
+    
+    const tweets = threadStartTweets.map((tweet: XTweet) => {
       const metrics = tweet.public_metrics || {}
+      
+      // Don't count replies in engagement - they often include thread continuations
+      // which inflate the metric. Focus on likes, retweets, and quotes as true engagement.
       const engagement = (metrics.like_count || 0) + 
                         (metrics.retweet_count || 0) + 
-                        (metrics.reply_count || 0) +
                         (metrics.quote_count || 0)
       const impressions = metrics.impression_count || 0
       const engagementRate = impressions > 0 
@@ -109,11 +118,11 @@ export async function GET(request: NextRequest) {
         id: tweet.id,
         text: tweet.text,
         created_at: tweet.created_at,
-        is_thread_start: tweet.conversation_id === tweet.id,
+        is_thread_start: true,
         metrics: {
           likes: metrics.like_count || 0,
           retweets: metrics.retweet_count || 0,
-          replies: metrics.reply_count || 0,
+          replies: metrics.reply_count || 0, // Keep for display, but not in engagement calc
           quotes: metrics.quote_count || 0,
           impressions: impressions,
           engagement: engagement,
@@ -123,6 +132,7 @@ export async function GET(request: NextRequest) {
     })
     
     // Calculate aggregate stats
+    // Note: totalTweets now only counts thread starters (standalone posts + first tweet of threads)
     const totalTweets = tweets.length
     const totalImpressions = tweets.reduce((sum: number, t: typeof tweets[0]) => sum + t.metrics.impressions, 0)
     const totalEngagement = tweets.reduce((sum: number, t: typeof tweets[0]) => sum + t.metrics.engagement, 0)

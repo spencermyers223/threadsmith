@@ -10,6 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getValidXTokens } from '@/lib/x-tokens'
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,27 +21,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    // Get user's X tokens
-    const { data: tokens, error: tokensError } = await supabase
-      .from('x_tokens')
-      .select('access_token, expires_at')
-      .eq('user_id', user.id)
-      .single()
+    // Get valid X tokens (with auto-refresh)
+    const tokenResult = await getValidXTokens(user.id)
     
-    if (tokensError || !tokens) {
+    if (!tokenResult.success) {
       return NextResponse.json(
-        { error: 'X account not connected. Please sign in with X.' },
-        { status: 400 }
+        { error: tokenResult.error, needsReauth: tokenResult.needsReauth },
+        { status: tokenResult.needsReauth ? 401 : 400 }
       )
     }
     
-    // Check if token is expired
-    if (new Date(tokens.expires_at) < new Date()) {
-      return NextResponse.json(
-        { error: 'X token expired. Please sign in again.' },
-        { status: 401 }
-      )
-    }
+    const { tokens } = tokenResult
     
     // Parse request body
     const body = await request.json()
