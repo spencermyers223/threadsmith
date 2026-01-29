@@ -115,6 +115,9 @@ async function loadTabData(tabName) {
     case 'saved':
       await loadSaved();
       break;
+    case 'queue':
+      await loadQueue();
+      break;
   }
 }
 
@@ -232,6 +235,13 @@ function showCoaching(coaching, postData) {
         Start Writing Reply →
       </button>
     </div>
+    
+    <div class="save-draft-section">
+      <textarea id="draft-textarea" class="draft-textarea" placeholder="Write your reply here to save as a draft..." rows="3"></textarea>
+      <button class="save-draft-btn" id="save-draft-btn">
+        💾 Save to xthread Drafts
+      </button>
+    </div>
   `;
   
   // Hook click to copy
@@ -251,6 +261,51 @@ function showCoaching(coaching, postData) {
           type: 'OPEN_REPLY',
           postUrl: postData.url
         });
+      }
+    });
+  });
+  
+  // Save draft button
+  document.getElementById('save-draft-btn')?.addEventListener('click', async () => {
+    const textarea = document.getElementById('draft-textarea');
+    const content = textarea?.value?.trim();
+    
+    if (!content) {
+      alert('Please write something before saving');
+      return;
+    }
+    
+    const btn = document.getElementById('save-draft-btn');
+    const originalText = btn.textContent;
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+    
+    const success = await saveDraftToXthread(
+      content,
+      extractHandle(postData.author),
+      postData.url
+    );
+    
+    if (success) {
+      btn.textContent = '✓ Saved!';
+      textarea.value = '';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }, 2000);
+    } else {
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
+  });
+  
+  // Pre-fill textarea when clicking a hook
+  coachContent.querySelectorAll('.hook-item').forEach(item => {
+    item.addEventListener('dblclick', () => {
+      const textarea = document.getElementById('draft-textarea');
+      if (textarea) {
+        textarea.value = item.dataset.text + ' ';
+        textarea.focus();
       }
     });
   });
@@ -437,6 +492,143 @@ async function loadSaved() {
 }
 
 // ============================================================
+// Queue Tab (Scheduled Posts from xthread)
+// ============================================================
+
+async function loadQueue() {
+  const queueList = document.getElementById('queue-list');
+  const queueEmpty = document.getElementById('queue-empty');
+  const queueLoading = document.getElementById('queue-loading');
+  const queueCount = document.getElementById('queue-count');
+  
+  if (!userToken) {
+    queueList.classList.add('hidden');
+    queueLoading.classList.add('hidden');
+    queueEmpty.classList.remove('hidden');
+    queueEmpty.querySelector('.empty-desc').textContent = 'Sign in to see your scheduled posts.';
+    return;
+  }
+  
+  // Show loading
+  queueList.classList.add('hidden');
+  queueEmpty.classList.add('hidden');
+  queueLoading.classList.remove('hidden');
+  
+  try {
+    const response = await fetch(`${XTHREAD_API}/extension/scheduled?status=scheduled&upcoming=true&limit=15`, {
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch scheduled posts');
+    }
+    
+    const data = await response.json();
+    const posts = data.posts || [];
+    
+    queueLoading.classList.add('hidden');
+    
+    if (posts.length === 0) {
+      queueList.classList.add('hidden');
+      queueEmpty.classList.remove('hidden');
+      queueCount.textContent = 'No upcoming posts';
+      return;
+    }
+    
+    queueList.classList.remove('hidden');
+    queueEmpty.classList.add('hidden');
+    queueCount.textContent = `${posts.length} scheduled`;
+    
+    queueList.innerHTML = posts.map(post => `
+      <div class="list-item queue-item" data-id="${escapeHtml(post.id)}">
+        <div class="item-header">
+          <span class="item-type">${getTypeEmoji(post.generationType)} ${escapeHtml(formatGenerationType(post.generationType))}</span>
+          <span class="item-time">${escapeHtml(post.scheduledDisplay || 'Not scheduled')}</span>
+        </div>
+        <div class="item-text">${escapeHtml(truncateText(post.content, 120))}</div>
+      </div>
+    `).join('');
+    
+    // Click to open in xthread
+    queueList.querySelectorAll('.queue-item').forEach(item => {
+      item.addEventListener('click', () => {
+        chrome.tabs.create({ url: `https://xthread.io/calendar` });
+      });
+    });
+    
+  } catch (error) {
+    console.error('[xthread] Error loading queue:', error);
+    queueLoading.classList.add('hidden');
+    queueEmpty.classList.remove('hidden');
+    queueEmpty.querySelector('.empty-desc').textContent = 'Failed to load scheduled posts. Try again later.';
+  }
+}
+
+function getTypeEmoji(type) {
+  const emojiMap = {
+    'scroll_stopper': '🛑',
+    'debate_starter': '🔥',
+    'viral_catalyst': '🚀',
+    'market_take': '📊',
+    'hot_take': '🌶️',
+    'on_chain_insight': '⛓️',
+    'alpha_thread': '💎',
+    'protocol_breakdown': '🔬',
+    'build_in_public': '🔨',
+    'user_generated': '✍️'
+  };
+  return emojiMap[type] || '📝';
+}
+
+function formatGenerationType(type) {
+  if (!type) return 'Post';
+  return type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+// ============================================================
+// Save Draft to xthread
+// ============================================================
+
+async function saveDraftToXthread(content, replyTo, sourceUrl) {
+  if (!userToken) {
+    alert('Please sign in to save drafts to xthread');
+    return false;
+  }
+  
+  try {
+    const response = await fetch(`${XTHREAD_API}/extension/save-draft`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        content,
+        replyTo,
+        sourceUrl,
+        source: 'extension-coach'
+      })
+    });
+    
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || 'Failed to save draft');
+    }
+    
+    const data = await response.json();
+    return data.success;
+    
+  } catch (error) {
+    console.error('[xthread] Error saving draft:', error);
+    alert('Failed to save draft: ' + error.message);
+    return false;
+  }
+}
+
+// ============================================================
 // Event Listeners
 // ============================================================
 
@@ -466,6 +658,11 @@ function setupEventListeners() {
   document.getElementById('clear-saved-btn')?.addEventListener('click', async () => {
     await chrome.storage.local.set({ savedPosts: [] });
     loadSaved();
+  });
+  
+  // Refresh queue
+  document.getElementById('refresh-queue-btn')?.addEventListener('click', () => {
+    loadQueue();
   });
 }
 

@@ -14,7 +14,7 @@
         <img src="../icons/icon32.png" alt="xthread" class="panel-logo">
         <span class="panel-title">xthread</span>
       </div>
-      <span class="panel-version">v1.8.1</span>
+      <span class="panel-version">v1.9.0</span>
     </div>
     
     <!-- User Info -->
@@ -60,6 +60,10 @@
       <button class="panel-tab" data-tab="saved">
         <span class="tab-icon">📌</span>
         <span class="tab-label">Saved</span>
+      </button>
+      <button class="panel-tab" data-tab="queue">
+        <span class="tab-icon">📅</span>
+        <span class="tab-label">Queue</span>
       </button>
     </div>
     
@@ -146,6 +150,26 @@
           <div class="empty-icon">📌</div>
           <div class="empty-title">No saved posts</div>
           <div class="empty-desc">Click the bookmark icon on any tweet to save it.</div>
+        </div>
+      </div>
+      
+      <!-- Queue Tab (Scheduled Posts from xthread) -->
+      <div class="tab-content" id="tab-queue">
+        <div class="tab-header">
+          <span class="tab-subtitle" id="queue-count">Upcoming posts</span>
+          <button class="text-btn" id="refresh-queue-btn">Refresh</button>
+        </div>
+        <div class="queue-list" id="queue-list">
+          <!-- Filled dynamically -->
+        </div>
+        <div class="empty-state" id="queue-empty">
+          <div class="empty-icon">📅</div>
+          <div class="empty-title">No scheduled posts</div>
+          <div class="empty-desc">Schedule posts at <a href="https://xthread.io/calendar" target="_blank">xthread.io</a> to see them here.</div>
+        </div>
+        <div class="queue-loading hidden" id="queue-loading">
+          <div class="spinner"></div>
+          <span>Loading...</span>
         </div>
       </div>
     </div>
