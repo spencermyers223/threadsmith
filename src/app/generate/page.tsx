@@ -16,6 +16,11 @@ import {
   AlertCircle,
   PenLine,
   Crown,
+  Bookmark,
+  RefreshCw,
+  Heart,
+  Repeat2,
+  ExternalLink,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { FilesSidebar, FileRecord } from '@/components/generate/FilesSidebar'
@@ -36,6 +41,20 @@ interface GeneratedPost {
   characterCount: number
   savedPostId?: string
   tags?: TagType[]
+}
+
+interface InspirationTweet {
+  id: string
+  tweet_id: string
+  tweet_text: string
+  tweet_url: string | null
+  author_username: string
+  author_name: string | null
+  author_profile_image_url: string | null
+  reply_count: number
+  like_count: number
+  repost_count: number
+  saved_at: string
 }
 
 // Archetype styling
@@ -273,6 +292,11 @@ export default function GeneratePage() {
   const [tagModalSelectedIds, setTagModalSelectedIds] = useState<string[]>([])
   const [savingTags, setSavingTags] = useState(false)
 
+  // Repurpose modal state
+  const [showRepurposeModal, setShowRepurposeModal] = useState(false)
+  const [inspirationTweets, setInspirationTweets] = useState<InspirationTweet[]>([])
+  const [loadingInspirationTweets, setLoadingInspirationTweets] = useState(false)
+
   // Load persisted state on mount
   useEffect(() => {
     try {
@@ -398,6 +422,34 @@ export default function GeneratePage() {
 
   const handleAddToCalendar = () => {
     setToast('Coming soon: Add to Calendar')
+  }
+
+  const handleOpenRepurposeModal = async () => {
+    setShowRepurposeModal(true)
+    setLoadingInspirationTweets(true)
+    try {
+      const res = await fetch('/api/inspiration-tweets')
+      if (res.ok) {
+        const data = await res.json()
+        setInspirationTweets(data.tweets || [])
+      }
+    } catch {
+      // Ignore errors
+    }
+    setLoadingInspirationTweets(false)
+  }
+
+  const handleSelectInspirationTweet = (tweet: InspirationTweet) => {
+    // Populate the topic input with the tweet text
+    setTopic(`Repurpose this tweet:\n\n"${tweet.tweet_text}"\n\n— @${tweet.author_username}`)
+    setShowRepurposeModal(false)
+    setToast('Tweet loaded! Customize and generate.')
+  }
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
+    return num.toString()
   }
 
   const handleAddTags = async (post: GeneratedPost, index: number) => {
@@ -628,17 +680,29 @@ export default function GeneratePage() {
 
             {/* Controls */}
             <div className="space-y-6">
-              <ToggleGroup
-                label="Length"
-                value={length}
-                onChange={setLength}
-                options={[
-                  { value: 'punchy', label: 'Punchy', description: 'Under 140 characters' },
-                  { value: 'standard', label: 'Standard', description: '140-200 characters' },
-                  { value: 'developed', label: 'Developed', description: '200-280 characters' },
-                  { value: 'thread', label: 'Thread', description: 'Multi-tweet thread' },
-                ]}
-              />
+              {/* Length + Repurpose Row */}
+              <div className="flex items-end gap-4">
+                <div className="flex-1">
+                  <ToggleGroup
+                    label="Length"
+                    value={length}
+                    onChange={setLength}
+                    options={[
+                      { value: 'punchy', label: 'Punchy', description: 'Under 140 characters' },
+                      { value: 'standard', label: 'Standard', description: '140-200 characters' },
+                      { value: 'developed', label: 'Developed', description: '200-280 characters' },
+                      { value: 'thread', label: 'Thread', description: 'Multi-tweet thread' },
+                    ]}
+                  />
+                </div>
+                <button
+                  onClick={handleOpenRepurposeModal}
+                  className="flex items-center gap-2 px-4 py-2 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/30 text-violet-400 rounded-lg transition-colors text-sm font-medium whitespace-nowrap"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Repurpose Tweet
+                </button>
+              </div>
 
               <ToggleGroup
                 label="Tone"
@@ -773,6 +837,116 @@ export default function GeneratePage() {
                   'Save Tags'
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Repurpose Modal */}
+      {showRepurposeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl w-full max-w-2xl mx-4 shadow-xl max-h-[80vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-[var(--border)]">
+              <div className="flex items-center gap-2">
+                <Bookmark className="w-5 h-5 text-violet-500" />
+                <h3 className="text-lg font-semibold">Repurpose a Tweet</h3>
+              </div>
+              <button
+                onClick={() => setShowRepurposeModal(false)}
+                className="p-2 hover:bg-[var(--border)] rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {loadingInspirationTweets ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-6 h-6 animate-spin text-[var(--muted)]" />
+                </div>
+              ) : inspirationTweets.length === 0 ? (
+                <div className="text-center py-12">
+                  <Bookmark className="w-10 h-10 text-[var(--muted)] mx-auto mb-3 opacity-50" />
+                  <p className="text-[var(--muted)]">No saved tweets yet</p>
+                  <p className="text-sm text-[var(--muted)] mt-1">
+                    Save high-performing tweets with the Chrome extension to repurpose them here.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-[var(--muted)] mb-4">
+                    Select a tweet to use as inspiration for your content:
+                  </p>
+                  {inspirationTweets.map((tweet) => (
+                    <button
+                      key={tweet.id}
+                      onClick={() => handleSelectInspirationTweet(tweet)}
+                      className="w-full text-left p-4 bg-[var(--background)] hover:bg-[var(--border)] border border-[var(--border)] hover:border-violet-500/50 rounded-lg transition-all group"
+                    >
+                      {/* Author */}
+                      <div className="flex items-center gap-2 mb-2">
+                        {tweet.author_profile_image_url ? (
+                          <img
+                            src={tweet.author_profile_image_url}
+                            alt=""
+                            className="w-6 h-6 rounded-full"
+                          />
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-[var(--border)]" />
+                        )}
+                        <span className="text-sm font-medium">
+                          {tweet.author_name || tweet.author_username}
+                        </span>
+                        <span className="text-xs text-[var(--muted)]">
+                          @{tweet.author_username}
+                        </span>
+                        {tweet.tweet_url && (
+                          <a
+                            href={tweet.tweet_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ml-auto p-1 rounded hover:bg-[var(--card)] text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                      </div>
+
+                      {/* Tweet text */}
+                      <p className="text-sm mb-3 line-clamp-3">{tweet.tweet_text}</p>
+
+                      {/* Metrics */}
+                      <div className="flex items-center gap-4 text-xs text-[var(--muted)]">
+                        <span className="flex items-center gap-1">
+                          <MessageSquare className="w-3 h-3" />
+                          {formatNumber(tweet.reply_count)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Repeat2 className="w-3 h-3" />
+                          {formatNumber(tweet.repost_count)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Heart className="w-3 h-3" />
+                          {formatNumber(tweet.like_count)}
+                        </span>
+                        <span className="ml-auto text-violet-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                          Click to use →
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-[var(--border)] bg-[var(--background)]">
+              <p className="text-xs text-[var(--muted)] text-center">
+                💡 Tip: The AI will generate fresh content inspired by the tweet&apos;s style and structure
+              </p>
             </div>
           </div>
         </div>
