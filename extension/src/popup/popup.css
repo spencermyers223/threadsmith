@@ -35,14 +35,11 @@ body {
   gap: 8px;
   font-size: 18px;
   font-weight: 700;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #C9B896;
 }
 
 .logo svg {
-  color: #10b981;
+  color: #C9B896;
 }
 
 .version {
@@ -106,7 +103,7 @@ body {
   padding: 12px 24px;
   border: none;
   border-radius: 9999px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #C9B896 0%, #D4C4A8 100%);
   color: white;
   font-size: 15px;
   font-weight: 600;
@@ -115,7 +112,7 @@ body {
 }
 
 .primary-btn:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  background: linear-gradient(135deg, #D4C4A8 0%, #BBA87F 100%);
   transform: scale(1.02);
 }
 
@@ -130,7 +127,7 @@ body {
 }
 
 .note a {
-  color: #10b981;
+  color: #C9B896;
   text-decoration: none;
 }
 
@@ -153,7 +150,7 @@ body {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #C9B896 0%, #D4C4A8 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -273,7 +270,7 @@ body {
 }
 
 .tab.active {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #C9B896 0%, #D4C4A8 100%);
   color: white;
 }
 
@@ -335,7 +332,7 @@ body {
 .stat-value {
   font-size: 24px;
   font-weight: 700;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #C9B896 0%, #D4C4A8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -412,7 +409,7 @@ body {
 }
 
 .saved-post:hover {
-  border-color: #10b981;
+  border-color: #C9B896;
 }
 
 .saved-post-author {
@@ -442,7 +439,7 @@ body {
 
 .saved-post-link {
   font-size: 11px;
-  color: #10b981;
+  color: #C9B896;
   text-decoration: none;
   font-weight: 500;
 }
@@ -493,7 +490,7 @@ body {
 }
 
 .instructions strong {
-  color: #10b981;
+  color: #C9B896;
 }
 
 .tip {
@@ -526,7 +523,7 @@ body {
 }
 
 .footer a:hover {
-  color: #10b981;
+  color: #C9B896;
 }
 
 /* ============================================================
@@ -563,7 +560,7 @@ body {
 }
 
 .watchlist-item:hover {
-  border-color: #10b981;
+  border-color: #C9B896;
   background: #1a1c20;
 }
 
@@ -571,7 +568,7 @@ body {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #C9B896 0%, #D4C4A8 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -611,7 +608,7 @@ body {
 }
 
 .watchlist-handle a {
-  color: #10b981;
+  color: #C9B896;
   text-decoration: none;
   font-weight: 500;
 }
@@ -678,7 +675,7 @@ body {
 }
 
 .watchlist-empty .empty-desc strong {
-  color: #10b981;
+  color: #C9B896;
 }
 
 /* Saved section adjustments */
@@ -717,12 +714,12 @@ body {
 
 .token-input:focus {
   outline: none;
-  border-color: #10b981;
+  border-color: #C9B896;
 }
 
 .token-submit-btn {
   padding: 10px 16px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #C9B896 0%, #D4C4A8 100%);
   border: none;
   border-radius: 8px;
   color: white;
@@ -733,7 +730,7 @@ body {
 }
 
 .token-submit-btn:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  background: linear-gradient(135deg, #D4C4A8 0%, #BBA87F 100%);
 }
 
 /* ============================================================
@@ -785,7 +782,7 @@ body {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #C9B896 0%, #D4C4A8 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -856,7 +853,7 @@ body {
   right: 12px;
   width: 8px;
   height: 8px;
-  background: #10b981;
+  background: #C9B896;
   border-radius: 50%;
 }
 
@@ -931,7 +928,7 @@ body {
 }
 
 .stat-card.highlight .stat-card-value {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #C9B896 0%, #D4C4A8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -972,7 +969,7 @@ body {
 }
 
 .reply-item.converted {
-  border-left-color: #10b981;
+  border-left-color: #C9B896;
   background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, #16181c 50%);
 }
 
@@ -990,7 +987,7 @@ body {
 .reply-author {
   font-weight: 600;
   font-size: 13px;
-  color: #10b981;
+  color: #C9B896;
   text-decoration: none;
 }
 
@@ -1012,7 +1009,7 @@ body {
 
 .reply-your-text {
   font-size: 12px;
-  color: #34d399;
+  color: #D4C4A8;
   font-style: italic;
   margin-bottom: 8px;
 }
@@ -1035,19 +1032,19 @@ body {
 }
 
 .reply-action-btn:hover {
-  border-color: #10b981;
+  border-color: #C9B896;
   color: #e7e9ea;
 }
 
 .reply-action-btn.active {
-  background: #10b981;
-  border-color: #10b981;
+  background: #C9B896;
+  border-color: #C9B896;
   color: white;
 }
 
 .reply-action-btn[data-action="yes"].active {
-  background: #10b981;
-  border-color: #10b981;
+  background: #C9B896;
+  border-color: #C9B896;
 }
 
 .reply-action-btn[data-action="no"].active {
@@ -1058,7 +1055,7 @@ body {
 .reply-view-btn {
   margin-left: auto;
   font-size: 11px;
-  color: #10b981;
+  color: #C9B896;
   text-decoration: none;
 }
 
@@ -1105,10 +1102,10 @@ body {
   background: rgba(124, 58, 237, 0.1);
   border-radius: 8px;
   font-size: 12px;
-  color: #34d399;
+  color: #D4C4A8;
   line-height: 1.4;
 }
 
 .stats-tip strong {
-  color: #6ee7b7;
+  color: #E5D5B5;
 }
