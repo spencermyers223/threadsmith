@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
         
         // Opportunity score: high engagement, not too many replies yet
         let score = 0
-        let reasons: string[] = []
+        const reasons: string[] = []
         
         // Boost for large accounts
         if (followers > 100000) { score += 30; reasons.push('Large account') }
