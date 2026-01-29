@@ -10,6 +10,7 @@ import {
 import { EditingTools } from '@/components/editing'
 import { GenerationCounter } from '@/components/subscription/GenerationCounter'
 import { UpgradeModal } from '@/components/subscription/UpgradeModal'
+import { TemplateSelector } from '@/components/creator-hub/TemplateSelector'
 import type { FileRecord } from '@/components/generate/FilesSidebar'
 import { postTweet, postThread, openXIntent, openTweet } from '@/lib/x-posting'
 
@@ -397,9 +398,16 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 mb-6">
           {/* Topic Input */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
-              What do you want to post about?
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-[var(--foreground)]">
+                What do you want to post about?
+              </label>
+              <TemplateSelector
+                onSelectTemplate={(filledPrompt) => {
+                  setTopic(filledPrompt)
+                }}
+              />
+            </div>
             <div className="relative">
               <textarea
                 value={topic}
