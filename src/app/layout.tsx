@@ -24,14 +24,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: "xthread - Grow Your X Audience",
     description: "Generate viral posts in seconds. Our AI creates Scroll Stoppers, Debate Starters, and Viral Catalysts designed to maximize engagement.",
-    images: ["/og-image.svg"],
+    images: ["/og-image.png"],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "xthread - Grow Your X Audience",
     description: "Generate viral posts in seconds. Our AI creates Scroll Stoppers, Debate Starters, and Viral Catalysts designed to maximize engagement.",
-    images: ["/og-image.svg"],
+    images: ["/og-image.png"],
   },
 };
 
