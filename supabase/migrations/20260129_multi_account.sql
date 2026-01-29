@@ -31,19 +31,23 @@ CREATE INDEX IF NOT EXISTS idx_x_accounts_x_user_id ON public.x_accounts(x_user_
 -- Enable RLS
 ALTER TABLE public.x_accounts ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies
+-- RLS Policies (drop if exists, then create)
+DROP POLICY IF EXISTS "Users can view own x_accounts" ON public.x_accounts;
 CREATE POLICY "Users can view own x_accounts"
   ON public.x_accounts FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own x_accounts" ON public.x_accounts;
 CREATE POLICY "Users can insert own x_accounts"
   ON public.x_accounts FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own x_accounts" ON public.x_accounts;
 CREATE POLICY "Users can update own x_accounts"
   ON public.x_accounts FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete own x_accounts" ON public.x_accounts;
 CREATE POLICY "Users can delete own x_accounts"
   ON public.x_accounts FOR DELETE
   USING (auth.uid() = user_id);
@@ -60,88 +64,153 @@ WHERE x_user_id IS NOT NULL
 ON CONFLICT DO NOTHING;
 
 -- ============================================================================
--- 3. UPDATE X_TOKENS TO REFERENCE X_ACCOUNTS
+-- 3. UPDATE X_TOKENS TO REFERENCE X_ACCOUNTS (if table exists)
 -- ============================================================================
 
--- Add x_account_id column to x_tokens
-ALTER TABLE public.x_tokens ADD COLUMN IF NOT EXISTS x_account_id uuid REFERENCES public.x_accounts(id) ON DELETE CASCADE;
-
--- Populate x_account_id from existing data
-UPDATE public.x_tokens t
-SET x_account_id = xa.id
-FROM public.x_accounts xa
-WHERE t.user_id = xa.user_id AND t.x_user_id = xa.x_user_id;
-
--- Create index
-CREATE INDEX IF NOT EXISTS idx_x_tokens_x_account_id ON public.x_tokens(x_account_id);
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'x_tokens') THEN
+    -- Add x_account_id column to x_tokens
+    ALTER TABLE public.x_tokens ADD COLUMN IF NOT EXISTS x_account_id uuid REFERENCES public.x_accounts(id) ON DELETE CASCADE;
+    
+    -- Populate x_account_id from existing data
+    UPDATE public.x_tokens t
+    SET x_account_id = xa.id
+    FROM public.x_accounts xa
+    WHERE t.user_id = xa.user_id AND t.x_user_id = xa.x_user_id AND t.x_account_id IS NULL;
+    
+    -- Create index
+    CREATE INDEX IF NOT EXISTS idx_x_tokens_x_account_id ON public.x_tokens(x_account_id);
+  END IF;
+END $$;
 
 -- ============================================================================
--- 4. ADD X_ACCOUNT_ID TO CONTENT TABLES
+-- 4. ADD X_ACCOUNT_ID TO CONTENT TABLES (only if tables exist)
 -- ============================================================================
 
 -- Posts
-ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS x_account_id uuid REFERENCES public.x_accounts(id) ON DELETE CASCADE;
-CREATE INDEX IF NOT EXISTS idx_posts_x_account_id ON public.posts(x_account_id);
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'posts') THEN
+    ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS x_account_id uuid REFERENCES public.x_accounts(id) ON DELETE CASCADE;
+    CREATE INDEX IF NOT EXISTS idx_posts_x_account_id ON public.posts(x_account_id);
+  END IF;
+END $$;
 
 -- Folders
-ALTER TABLE public.folders ADD COLUMN IF NOT EXISTS x_account_id uuid REFERENCES public.x_accounts(id) ON DELETE CASCADE;
-CREATE INDEX IF NOT EXISTS idx_folders_x_account_id ON public.folders(x_account_id);
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'folders') THEN
+    ALTER TABLE public.folders ADD COLUMN IF NOT EXISTS x_account_id uuid REFERENCES public.x_accounts(id) ON DELETE CASCADE;
+    CREATE INDEX IF NOT EXISTS idx_folders_x_account_id ON public.folders(x_account_id);
+  END IF;
+END $$;
 
 -- Files
-ALTER TABLE public.files ADD COLUMN IF NOT EXISTS x_account_id uuid REFERENCES public.x_accounts(id) ON DELETE CASCADE;
-CREATE INDEX IF NOT EXISTS idx_files_x_account_id ON public.files(x_account_id);
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'files') THEN
+    ALTER TABLE public.files ADD COLUMN IF NOT EXISTS x_account_id uuid REFERENCES public.x_accounts(id) ON DELETE CASCADE;
+    CREATE INDEX IF NOT EXISTS idx_files_x_account_id ON public.files(x_account_id);
+  END IF;
+END $$;
 
 -- Tags
-ALTER TABLE public.tags ADD COLUMN IF NOT EXISTS x_account_id uuid REFERENCES public.x_accounts(id) ON DELETE CASCADE;
-CREATE INDEX IF NOT EXISTS idx_tags_x_account_id ON public.tags(x_account_id);
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'tags') THEN
+    ALTER TABLE public.tags ADD COLUMN IF NOT EXISTS x_account_id uuid REFERENCES public.x_accounts(id) ON DELETE CASCADE;
+    CREATE INDEX IF NOT EXISTS idx_tags_x_account_id ON public.tags(x_account_id);
+  END IF;
+END $$;
 
--- Voice Samples
-ALTER TABLE public.voice_samples ADD COLUMN IF NOT EXISTS x_account_id uuid REFERENCES public.x_accounts(id) ON DELETE CASCADE;
-CREATE INDEX IF NOT EXISTS idx_voice_samples_x_account_id ON public.voice_samples(x_account_id);
+-- Voice Samples (may not exist yet)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'voice_samples') THEN
+    ALTER TABLE public.voice_samples ADD COLUMN IF NOT EXISTS x_account_id uuid REFERENCES public.x_accounts(id) ON DELETE CASCADE;
+    CREATE INDEX IF NOT EXISTS idx_voice_samples_x_account_id ON public.voice_samples(x_account_id);
+  END IF;
+END $$;
 
--- Content Profiles (voice settings, niche, etc.)
-ALTER TABLE public.content_profiles ADD COLUMN IF NOT EXISTS x_account_id uuid REFERENCES public.x_accounts(id) ON DELETE CASCADE;
-CREATE INDEX IF NOT EXISTS idx_content_profiles_x_account_id ON public.content_profiles(x_account_id);
+-- Content Profiles
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'content_profiles') THEN
+    ALTER TABLE public.content_profiles ADD COLUMN IF NOT EXISTS x_account_id uuid REFERENCES public.x_accounts(id) ON DELETE CASCADE;
+    CREATE INDEX IF NOT EXISTS idx_content_profiles_x_account_id ON public.content_profiles(x_account_id);
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 5. MIGRATE EXISTING DATA TO DEFAULT X_ACCOUNT
 -- ============================================================================
 
 -- Update posts to use primary x_account
-UPDATE public.posts p
-SET x_account_id = xa.id
-FROM public.x_accounts xa
-WHERE p.user_id = xa.user_id AND xa.is_primary = true AND p.x_account_id IS NULL;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'posts') THEN
+    UPDATE public.posts p
+    SET x_account_id = xa.id
+    FROM public.x_accounts xa
+    WHERE p.user_id = xa.user_id AND xa.is_primary = true AND p.x_account_id IS NULL;
+  END IF;
+END $$;
 
 -- Update folders to use primary x_account
-UPDATE public.folders f
-SET x_account_id = xa.id
-FROM public.x_accounts xa
-WHERE f.user_id = xa.user_id AND xa.is_primary = true AND f.x_account_id IS NULL;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'folders') THEN
+    UPDATE public.folders f
+    SET x_account_id = xa.id
+    FROM public.x_accounts xa
+    WHERE f.user_id = xa.user_id AND xa.is_primary = true AND f.x_account_id IS NULL;
+  END IF;
+END $$;
 
 -- Update files to use primary x_account
-UPDATE public.files f
-SET x_account_id = xa.id
-FROM public.x_accounts xa
-WHERE f.user_id = xa.user_id AND xa.is_primary = true AND f.x_account_id IS NULL;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'files') THEN
+    UPDATE public.files f
+    SET x_account_id = xa.id
+    FROM public.x_accounts xa
+    WHERE f.user_id = xa.user_id AND xa.is_primary = true AND f.x_account_id IS NULL;
+  END IF;
+END $$;
 
 -- Update tags to use primary x_account
-UPDATE public.tags t
-SET x_account_id = xa.id
-FROM public.x_accounts xa
-WHERE t.user_id = xa.user_id AND xa.is_primary = true AND t.x_account_id IS NULL;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'tags') THEN
+    UPDATE public.tags t
+    SET x_account_id = xa.id
+    FROM public.x_accounts xa
+    WHERE t.user_id = xa.user_id AND xa.is_primary = true AND t.x_account_id IS NULL;
+  END IF;
+END $$;
 
 -- Update voice_samples to use primary x_account
-UPDATE public.voice_samples vs
-SET x_account_id = xa.id
-FROM public.x_accounts xa
-WHERE vs.user_id = xa.user_id AND xa.is_primary = true AND vs.x_account_id IS NULL;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'voice_samples') THEN
+    UPDATE public.voice_samples vs
+    SET x_account_id = xa.id
+    FROM public.x_accounts xa
+    WHERE vs.user_id = xa.user_id AND xa.is_primary = true AND vs.x_account_id IS NULL;
+  END IF;
+END $$;
 
 -- Update content_profiles to use primary x_account
-UPDATE public.content_profiles cp
-SET x_account_id = xa.id
-FROM public.x_accounts xa
-WHERE cp.user_id = xa.user_id AND xa.is_primary = true AND cp.x_account_id IS NULL;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'content_profiles') THEN
+    UPDATE public.content_profiles cp
+    SET x_account_id = xa.id
+    FROM public.x_accounts xa
+    WHERE cp.user_id = xa.user_id AND xa.is_primary = true AND cp.x_account_id IS NULL;
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 6. FUNCTION TO CREATE DEFAULT FOLDERS FOR NEW X_ACCOUNT
@@ -150,12 +219,14 @@ WHERE cp.user_id = xa.user_id AND xa.is_primary = true AND cp.x_account_id IS NU
 CREATE OR REPLACE FUNCTION public.create_default_folders_for_x_account()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Create default folders for the new X account
-  INSERT INTO public.folders (user_id, x_account_id, name, position)
-  VALUES
-    (NEW.user_id, NEW.id, 'Drafts', 0),
-    (NEW.user_id, NEW.id, 'Research', 1),
-    (NEW.user_id, NEW.id, 'Published', 2);
+  -- Create default folders for the new X account (only if folders table exists)
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'folders') THEN
+    INSERT INTO public.folders (user_id, x_account_id, name, position)
+    VALUES
+      (NEW.user_id, NEW.id, 'Drafts', 0),
+      (NEW.user_id, NEW.id, 'Research', 1),
+      (NEW.user_id, NEW.id, 'Published', 2);
+  END IF;
 
   RETURN NEW;
 END;
@@ -170,14 +241,18 @@ CREATE TRIGGER on_x_account_created_create_folders
   FOR EACH ROW EXECUTE FUNCTION public.create_default_folders_for_x_account();
 
 -- ============================================================================
--- 7. ADD SUBSCRIPTION LIMITS FOR MULTI-ACCOUNT
+-- 7. ADD SUBSCRIPTION LIMITS FOR MULTI-ACCOUNT (if table exists)
 -- ============================================================================
 
--- Add max_x_accounts to track account limits per subscription tier
-ALTER TABLE public.subscriptions ADD COLUMN IF NOT EXISTS max_x_accounts integer DEFAULT 1;
-
--- Update existing subscriptions to have 1 account limit
-UPDATE public.subscriptions SET max_x_accounts = 1 WHERE max_x_accounts IS NULL;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'subscriptions') THEN
+    -- Add max_x_accounts to track account limits per subscription tier
+    ALTER TABLE public.subscriptions ADD COLUMN IF NOT EXISTS max_x_accounts integer DEFAULT 1;
+    -- Update existing subscriptions to have 1 account limit
+    UPDATE public.subscriptions SET max_x_accounts = 1 WHERE max_x_accounts IS NULL;
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 8. HELPER FUNCTION TO GET USER'S X_ACCOUNTS
