@@ -235,10 +235,13 @@ export function scoreContentQuality(text: string): { score: number; issues: stri
   }
   
   // Check for excessive emoji (more than 5 in a single tweet)
-  const emojiCount = (text.match(/[\u{1F300}-\u{1F9FF}]/gu) || []).length;
+  // Using a simpler regex that doesn't require the 'u' flag
+  const emojiRegex = /[\uD83C-\uDBFF\uDC00-\uDFFF]+/g;
+  const emojiMatches = text.match(emojiRegex) || [];
+  const emojiCount = emojiMatches.join('').length / 2; // Approximate count (surrogate pairs)
   if (emojiCount > 5) {
     score += 15;
-    issues.push(`Excessive emoji (${emojiCount} found)`);
+    issues.push(`Excessive emoji (${Math.floor(emojiCount)} found)`);
   }
   
   // Check for ALL CAPS words (more than 3)
