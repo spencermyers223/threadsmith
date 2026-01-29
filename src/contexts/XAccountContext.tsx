@@ -66,29 +66,39 @@ export function XAccountProvider({ children }: { children: React.ReactNode }) {
 
   // Add a new account to state (after OAuth flow)
   const addAccount = useCallback((account: XAccount) => {
-    setAccounts(prev => [...prev, account]);
-    // If this is the first account, make it active
-    if (accounts.length === 0) {
-      setActiveAccountState(account);
-      localStorage.setItem(ACTIVE_ACCOUNT_KEY, account.id);
-    }
-  }, [accounts.length]);
+    setAccounts(prev => {
+      const newAccounts = [...prev, account];
+      // If this is the first account, make it active
+      if (prev.length === 0) {
+        setActiveAccountState(account);
+        localStorage.setItem(ACTIVE_ACCOUNT_KEY, account.id);
+      }
+      return newAccounts;
+    });
+  }, []);
 
   // Remove account from state
   const removeAccount = useCallback((accountId: string) => {
-    setAccounts(prev => prev.filter(a => a.id !== accountId));
-    // If we removed the active account, switch to primary or first
-    if (activeAccount?.id === accountId) {
-      const remaining = accounts.filter(a => a.id !== accountId);
-      const next = remaining.find(a => a.is_primary) || remaining[0] || null;
-      setActiveAccountState(next);
-      if (next) {
-        localStorage.setItem(ACTIVE_ACCOUNT_KEY, next.id);
-      } else {
-        localStorage.removeItem(ACTIVE_ACCOUNT_KEY);
-      }
-    }
-  }, [accounts, activeAccount]);
+    setAccounts(prev => {
+      const remaining = prev.filter(a => a.id !== accountId);
+      
+      // If we removed the active account, switch to primary or first
+      setActiveAccountState(current => {
+        if (current?.id === accountId) {
+          const next = remaining.find(a => a.is_primary) || remaining[0] || null;
+          if (next) {
+            localStorage.setItem(ACTIVE_ACCOUNT_KEY, next.id);
+          } else {
+            localStorage.removeItem(ACTIVE_ACCOUNT_KEY);
+          }
+          return next;
+        }
+        return current;
+      });
+      
+      return remaining;
+    });
+  }, []);
 
   // Load accounts on mount
   useEffect(() => {
