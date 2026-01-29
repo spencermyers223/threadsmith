@@ -37,7 +37,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 }
 
 interface TemplateSelectorProps {
-  onSelectTemplate: (filledPrompt: string, templateTitle: string) => void
+  onSelectTemplate: (filledPrompt: string, templateTitle: string, category: string) => void
 }
 
 export function TemplateSelector({ onSelectTemplate }: TemplateSelectorProps) {
@@ -80,7 +80,7 @@ export function TemplateSelector({ onSelectTemplate }: TemplateSelectorProps) {
       filledPrompt = filledPrompt.replace(new RegExp(`\\{\\{${v.name}\\}\\}`, 'g'), value)
     }
 
-    onSelectTemplate(filledPrompt, selectedTemplate.title)
+    onSelectTemplate(filledPrompt, selectedTemplate.title, selectedTemplate.category)
     setIsOpen(false)
     setSelectedTemplate(null)
     setVariableValues({})

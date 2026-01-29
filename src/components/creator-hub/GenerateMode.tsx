@@ -99,6 +99,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   const [topic, setTopic] = useState('')
   const [selectedPostType, setSelectedPostType] = useState<string>('market_take')
   const [selectedLength, setSelectedLength] = useState<string>('standard')
+  const [isTemplatePrompt, setIsTemplatePrompt] = useState(false)
 
   // UI state
   const [isGenerating, setIsGenerating] = useState(false)
@@ -242,6 +243,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
           tone: 'casual',
           postType: selectedPostType, // Pass the actual post type (e.g., 'build_in_public', 'market_take', etc.)
           sourceFileId: selectedFile?.id || undefined,
+          isTemplatePrompt, // When true, use topic as-is instead of wrapping it
         }),
       })
 
@@ -403,15 +405,29 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
                 What do you want to post about?
               </label>
               <TemplateSelector
-                onSelectTemplate={(filledPrompt) => {
+                onSelectTemplate={(filledPrompt, _title, category) => {
                   setTopic(filledPrompt)
+                  setIsTemplatePrompt(true) // Mark as template-driven
+                  // Auto-select matching post type based on template category
+                  const categoryToPostType: Record<string, string> = {
+                    'build-in-public': 'build_in_public',
+                    'contrarian': 'hot_take',
+                    'alpha': 'market_take',
+                    'engagement': 'market_take',
+                  }
+                  if (category && categoryToPostType[category]) {
+                    setSelectedPostType(categoryToPostType[category])
+                  }
                 }}
               />
             </div>
             <div className="relative">
               <textarea
                 value={topic}
-                onChange={(e) => setTopic(e.target.value.slice(0, 500))}
+                onChange={(e) => {
+                  setTopic(e.target.value.slice(0, 500))
+                  setIsTemplatePrompt(false) // User is typing manually, not using template
+                }}
                 placeholder="Enter your topic, idea, or paste notes..."
                 rows={3}
                 className="

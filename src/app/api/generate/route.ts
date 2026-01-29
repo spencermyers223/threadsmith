@@ -49,6 +49,7 @@ interface GenerateRequest {
   tone: InputTone
   postType: InputPostType
   sourceFileId?: string
+  isTemplatePrompt?: boolean // When true, topic is a template instruction - use as-is
 }
 
 interface GeneratedPost {
@@ -259,30 +260,38 @@ async function generateForCTNativePostType(
   topic: string,
   postType: CTNativePostType,
   userProfile: UserProfile | undefined,
-  additionalContext: string | undefined
+  additionalContext: string | undefined,
+  isTemplatePrompt?: boolean
 ): Promise<GeneratedPost[]> {
   const voiceProfile = toUserVoiceProfile(userProfile)
   let systemPrompt: string
   let userPrompt: string
 
   // Select the appropriate prompt builder based on post type
+  // When isTemplatePrompt is true, the topic is a template instruction - use it directly
   switch (postType) {
     case 'market_take': {
       const context = voiceProfile?.niche ? { niche: voiceProfile.niche } : undefined
       systemPrompt = marketTakePrompt(context)
-      userPrompt = `Create a market take about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}`
+      userPrompt = isTemplatePrompt
+        ? `${topic}${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ''}`
+        : `Create a market take about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}`
       break
     }
     case 'hot_take': {
       const context = voiceProfile?.niche ? { niche: voiceProfile.niche } : undefined
       systemPrompt = hotTakePrompt(context)
-      userPrompt = `Create a hot take about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}`
+      userPrompt = isTemplatePrompt
+        ? `${topic}${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ''}`
+        : `Create a hot take about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}`
       break
     }
     case 'on_chain_insight': {
       const context = voiceProfile?.niche ? { niche: voiceProfile.niche } : undefined
       systemPrompt = onChainInsightPrompt(context)
-      userPrompt = `Create an on-chain insight about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}`
+      userPrompt = isTemplatePrompt
+        ? `${topic}${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ''}`
+        : `Create an on-chain insight about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}`
       break
     }
     case 'alpha_thread': {
@@ -414,7 +423,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: GenerateRequest = await request.json()
-    const { topic, length, tone, postType, sourceFileId } = body
+    const { topic, length, tone, postType, sourceFileId, isTemplatePrompt } = body
 
     // Validate topic
     if (!topic || topic.trim().length === 0) {
@@ -501,7 +510,8 @@ Write as if YOU are this person. Mirror their exact tone, vocabulary level, emoj
         topic,
         postType,
         userProfile,
-        additionalContext
+        additionalContext,
+        isTemplatePrompt
       )
       // Limit to 3 posts
       allPosts = allPosts.slice(0, 3)
