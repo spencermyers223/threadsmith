@@ -11,9 +11,11 @@ interface ThreadPreviewProps {
   tweets: ThreadTweet[]
   onAddTweet?: () => void
   onDeleteTweet?: (id: string) => void
+  userName?: string
+  userHandle?: string
 }
 
-export function ThreadPreview({ tweets, onAddTweet, onDeleteTweet }: ThreadPreviewProps) {
+export function ThreadPreview({ tweets, onAddTweet, onDeleteTweet, userName = 'Your Name', userHandle = 'yourhandle' }: ThreadPreviewProps) {
   const maxChars = 280
   const hasOverLimit = tweets.some(t => t.content.length > maxChars)
   const hasLink = tweets.some(t => /(https?:\/\/[^\s]+)/.test(t.content))
@@ -52,8 +54,8 @@ export function ThreadPreview({ tweets, onAddTweet, onDeleteTweet }: ThreadPrevi
                     {/* Profile info on first tweet only */}
                     {index === 0 && (
                       <div className="mb-2">
-                        <div className="font-bold text-[var(--foreground)]">Your Name</div>
-                        <div className="text-sm text-[var(--muted)]">@yourhandle</div>
+                        <div className="font-bold text-[var(--foreground)]">{userName}</div>
+                        <div className="text-sm text-[var(--muted)]">@{userHandle.replace('@', '')}</div>
                       </div>
                     )}
 
