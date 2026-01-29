@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useTheme } from '@/components/providers/ThemeProvider'
+import { VoiceProfileCard } from '@/components/profile/VoiceProfileCard'
 
 interface Settings {
   notifications: boolean
@@ -64,6 +65,7 @@ export default function SettingsPage() {
     admired_accounts: [],
   })
   const [newAccount, setNewAccount] = useState('')
+  const [userId, setUserId] = useState<string | null>(null)
 
   // Collapsible sections
   const [expandedSections, setExpandedSections] = useState({
@@ -85,6 +87,7 @@ export default function SettingsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
+      setUserId(user.id)
       setEmail(user.email || '')
 
       const { data: profile } = await supabase
@@ -327,25 +330,19 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Voice Training Link */}
+        {/* Voice Profile - Auto-learned from X */}
         <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--background)]">
             <h2 className="font-semibold flex items-center gap-2">
               <Mic className="w-4 h-4" />
-              AI Voice Training
+              Your Voice Profile
             </h2>
           </div>
           <div className="p-4">
-            <p className="text-sm text-[var(--muted)] mb-3">
-              Import your tweets so the AI learns your unique writing voice. Generated posts will sound like you, not generic.
+            <p className="text-sm text-[var(--muted)] mb-4">
+              We analyze your X posts to learn your unique writing style. Generated content will sound like you wrote it.
             </p>
-            <Link
-              href="/settings/voice"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-[var(--accent-text)] rounded-lg transition-colors text-sm font-medium"
-            >
-              <Mic className="w-4 h-4" />
-              Train Your Voice
-            </Link>
+            {userId && <VoiceProfileCard userId={userId} />}
           </div>
         </section>
 
