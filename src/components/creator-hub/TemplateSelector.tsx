@@ -155,12 +155,18 @@ export function TemplateSelector({ onSelectTemplate }: TemplateSelectorProps) {
                         {v.label}
                         {v.required && <span className="text-red-400 ml-1">*</span>}
                       </label>
-                      <input
-                        type="text"
+                      <textarea
                         placeholder={v.placeholder}
                         value={variableValues[v.name] || ''}
-                        onChange={e => setVariableValues(prev => ({ ...prev, [v.name]: e.target.value }))}
-                        className="w-full px-3 py-2 text-sm rounded-lg bg-[var(--background)] border border-[var(--border)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+                        onChange={e => {
+                          setVariableValues(prev => ({ ...prev, [v.name]: e.target.value }))
+                          // Auto-resize textarea
+                          e.target.style.height = 'auto'
+                          e.target.style.height = `${e.target.scrollHeight}px`
+                        }}
+                        rows={1}
+                        className="w-full px-3 py-2 text-sm rounded-lg bg-[var(--background)] border border-[var(--border)] focus:outline-none focus:border-[var(--accent)] transition-colors resize-none overflow-hidden"
+                        style={{ minHeight: '38px' }}
                       />
                     </div>
                   ))}
