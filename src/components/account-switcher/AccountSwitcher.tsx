@@ -6,13 +6,26 @@ import { ChevronDown, Plus, Check } from 'lucide-react';
 import Image from 'next/image';
 
 interface AccountSwitcherProps {
+  /** Custom handler for add account - if not provided, uses default OAuth flow */
   onAddAccount?: () => void;
+  /** Hide the add account button entirely */
+  hideAddAccount?: boolean;
 }
 
-export function AccountSwitcher({ onAddAccount }: AccountSwitcherProps) {
+export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: AccountSwitcherProps) {
   const { accounts, activeAccount, isLoading, setActiveAccount } = useXAccount();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Default add account handler - redirect to OAuth link flow
+  const handleAddAccount = () => {
+    if (onAddAccount) {
+      onAddAccount();
+    } else {
+      // Redirect to X OAuth with link action
+      window.location.href = '/api/auth/x?action=link';
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -138,13 +151,13 @@ export function AccountSwitcher({ onAddAccount }: AccountSwitcherProps) {
           </div>
 
           {/* Add Account Button */}
-          {onAddAccount && (
+          {!hideAddAccount && (
             <>
               <div className="border-t border-white/10" />
               <button
                 onClick={() => {
                   setIsOpen(false);
-                  onAddAccount();
+                  handleAddAccount();
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-[#D4A574]"
               >
