@@ -719,8 +719,16 @@ async function injectWatchButton(handle) {
   analyzeBtn.setAttribute('data-handle', handle);
   analyzeBtn.innerHTML = `<span class="xthread-analyze-icon">🔍</span><span class="xthread-analyze-text">Analyze</span>`;
   analyzeBtn.title = 'Analyze this account';
+
+  // Create top tweets button
+  const topTweetsBtn = document.createElement('button');
+  topTweetsBtn.className = 'xthread-top-tweets-btn';
+  topTweetsBtn.setAttribute('data-handle', handle);
+  topTweetsBtn.innerHTML = `<span class="xthread-top-tweets-icon">📊</span><span class="xthread-top-tweets-text">Top Tweets</span>`;
+  topTweetsBtn.title = 'See their top performing tweets';
   
-  // Insert before follow button (analyze first, then watch)
+  // Insert before follow button (top tweets, analyze, watch)
+  buttonContainer.insertBefore(topTweetsBtn, followContainer);
   buttonContainer.insertBefore(analyzeBtn, followContainer);
   buttonContainer.insertBefore(watchBtn, followContainer);
   
@@ -736,6 +744,13 @@ async function injectWatchButton(handle) {
     e.preventDefault();
     e.stopPropagation();
     await handleAnalyzeClick(analyzeBtn, handle);
+  });
+
+  // Top Tweets button click handler
+  topTweetsBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await handleTopTweetsClick(topTweetsBtn, handle);
   });
 }
 
@@ -1132,6 +1147,239 @@ function showAnalysisPanel(handle, analysis, cachedAt) {
       await handleAnalyzeClick(analyzeBtn, handle, true);
     }
   });
+}
+
+// ============================================================
+// Top Tweets Feature - Show user's best performing tweets
+// ============================================================
+
+let isLoadingTopTweets = false;
+
+// Handle Top Tweets button click
+async function handleTopTweetsClick(btn, handle) {
+  if (isLoadingTopTweets) return;
+  
+  if (!userToken) {
+    showToast('Please sign in to xthread first. Click the extension icon.');
+    return;
+  }
+  
+  isLoadingTopTweets = true;
+  btn.classList.add('xthread-loading');
+  btn.innerHTML = `<span class="xthread-top-tweets-icon">⏳</span><span class="xthread-top-tweets-text">Loading...</span>`;
+  
+  try {
+    const response = await fetch(`${XTHREAD_API}/extension/user-top-tweets?username=${encodeURIComponent(handle)}`, {
+      headers: {
+        'Authorization': `Bearer ${userToken}`
+      }
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Failed to fetch tweets');
+    }
+    
+    const data = await response.json();
+    showTopTweetsPanel(handle, data.user, data.tweets);
+    
+  } catch (err) {
+    console.error('[xthread] Error fetching top tweets:', err);
+    showToast(err.message || 'Failed to load top tweets. Please try again.');
+  } finally {
+    isLoadingTopTweets = false;
+    btn.classList.remove('xthread-loading');
+    btn.innerHTML = `<span class="xthread-top-tweets-icon">📊</span><span class="xthread-top-tweets-text">Top Tweets</span>`;
+  }
+}
+
+// Show Top Tweets panel
+function showTopTweetsPanel(handle, user, tweets) {
+  // Remove any existing panel
+  const existing = document.querySelector('.xthread-top-tweets-panel');
+  if (existing) existing.remove();
+  
+  // Also close analysis panel if open
+  const analysisPanel = document.querySelector('.xthread-analysis-panel');
+  if (analysisPanel) analysisPanel.remove();
+  
+  const panel = document.createElement('div');
+  panel.className = 'xthread-top-tweets-panel';
+  
+  // Build tweets HTML
+  const tweetsHtml = tweets.length === 0 
+    ? '<div class="xthread-no-tweets">No tweets found for this account.</div>'
+    : tweets.slice(0, 20).map((tweet, i) => `
+      <div class="xthread-tweet-card" data-tweet-id="${escapeHtml(tweet.id)}" data-tweet-text="${escapeHtml(tweet.text)}" data-tweet-url="${escapeHtml(tweet.url)}">
+        <div class="xthread-tweet-rank">#${i + 1}</div>
+        <div class="xthread-tweet-content">
+          <div class="xthread-tweet-text">${escapeHtml(tweet.text).substring(0, 200)}${tweet.text.length > 200 ? '...' : ''}</div>
+          <div class="xthread-tweet-metrics">
+            <span class="xthread-metric" title="Replies">💬 ${formatMetric(tweet.reply_count)}</span>
+            <span class="xthread-metric" title="Reposts">🔄 ${formatMetric(tweet.repost_count)}</span>
+            <span class="xthread-metric" title="Likes">❤️ ${formatMetric(tweet.like_count)}</span>
+          </div>
+        </div>
+        <div class="xthread-tweet-actions">
+          <button class="xthread-save-btn" title="Save to inspiration">💾 Save</button>
+          <button class="xthread-repurpose-btn" title="Repurpose this tweet">✨ Repurpose</button>
+          <a href="${escapeHtml(tweet.url)}" target="_blank" class="xthread-view-btn" title="View on X">↗️</a>
+        </div>
+      </div>
+    `).join('');
+  
+  panel.innerHTML = `
+    <div class="xthread-top-tweets-header">
+      <div class="xthread-header-left">
+        ${user.profile_image_url ? `<img src="${escapeHtml(user.profile_image_url)}" class="xthread-user-avatar" alt="">` : ''}
+        <div>
+          <span class="xthread-logo">📊 Top Tweets</span>
+          <span class="xthread-handle">@${escapeHtml(handle)}</span>
+        </div>
+      </div>
+      <div class="xthread-header-right">
+        <span class="xthread-tweet-count">${tweets.length} tweets • sorted by replies</span>
+        <button class="xthread-close-btn">×</button>
+      </div>
+    </div>
+    
+    <div class="xthread-top-tweets-info">
+      💡 Save tweets to your Inspiration library, or click Repurpose to generate your own version.
+    </div>
+    
+    <div class="xthread-tweets-list">
+      ${tweetsHtml}
+    </div>
+    
+    <div class="xthread-top-tweets-footer">
+      <span class="xthread-powered-by">Powered by xthread.io</span>
+    </div>
+  `;
+  
+  // Insert panel into page
+  const profileHeader = document.querySelector('[data-testid="UserName"]')?.closest('div[data-testid="UserProfileHeader_Items"]')?.parentElement?.parentElement;
+  if (profileHeader) {
+    profileHeader.parentElement.insertBefore(panel, profileHeader.nextSibling);
+  } else {
+    const primaryColumn = document.querySelector('[data-testid="primaryColumn"]');
+    if (primaryColumn) {
+      primaryColumn.insertBefore(panel, primaryColumn.firstChild.nextSibling);
+    } else {
+      document.body.appendChild(panel);
+    }
+  }
+  
+  // Close button handler
+  panel.querySelector('.xthread-close-btn').addEventListener('click', () => {
+    panel.remove();
+  });
+  
+  // Save button handlers
+  panel.querySelectorAll('.xthread-save-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const card = btn.closest('.xthread-tweet-card');
+      await handleSaveInspirationTweet(btn, card, user);
+    });
+  });
+  
+  // Repurpose button handlers
+  panel.querySelectorAll('.xthread-repurpose-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const card = btn.closest('.xthread-tweet-card');
+      handleRepurposeTweet(card, user);
+    });
+  });
+}
+
+// Save tweet to inspiration library
+async function handleSaveInspirationTweet(btn, card, user) {
+  const tweetId = card.getAttribute('data-tweet-id');
+  const tweetText = card.getAttribute('data-tweet-text');
+  const tweetUrl = card.getAttribute('data-tweet-url');
+  
+  // Get metrics from the card
+  const metricsEl = card.querySelector('.xthread-tweet-metrics');
+  const replyMatch = metricsEl?.textContent?.match(/💬\s*([\d.]+[KM]?)/);
+  const repostMatch = metricsEl?.textContent?.match(/🔄\s*([\d.]+[KM]?)/);
+  const likeMatch = metricsEl?.textContent?.match(/❤️\s*([\d.]+[KM]?)/);
+  
+  btn.disabled = true;
+  btn.textContent = '⏳';
+  
+  try {
+    const response = await fetch(`${XTHREAD_API}/inspiration-tweets`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({
+        tweet_id: tweetId,
+        tweet_text: tweetText,
+        tweet_url: tweetUrl,
+        author_id: user.id,
+        author_username: user.username,
+        author_name: user.name,
+        author_profile_image_url: user.profile_image_url,
+        reply_count: parseMetric(replyMatch?.[1] || '0'),
+        like_count: parseMetric(likeMatch?.[1] || '0'),
+        repost_count: parseMetric(repostMatch?.[1] || '0'),
+      })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      if (response.status === 409) {
+        showToast('Already saved!');
+        btn.textContent = '✓ Saved';
+        btn.classList.add('xthread-saved');
+        return;
+      }
+      throw new Error(error.error || 'Failed to save');
+    }
+    
+    btn.textContent = '✓ Saved';
+    btn.classList.add('xthread-saved');
+    showToast('Saved to Inspiration! 💾');
+    
+  } catch (err) {
+    console.error('[xthread] Error saving inspiration tweet:', err);
+    showToast(err.message || 'Failed to save tweet');
+    btn.disabled = false;
+    btn.textContent = '💾 Save';
+  }
+}
+
+// Open xthread with tweet for repurposing
+function handleRepurposeTweet(card, user) {
+  const tweetText = card.getAttribute('data-tweet-text');
+  const repurposeUrl = `https://xthread.io/generate?repurpose=${encodeURIComponent(tweetText)}&author=${encodeURIComponent(user.username)}`;
+  window.open(repurposeUrl, '_blank');
+  showToast('Opening xthread to repurpose... ✨');
+}
+
+// Parse metric string like "1.2K" to number
+function parseMetric(str) {
+  if (!str) return 0;
+  str = str.toString().trim();
+  if (str.endsWith('K') || str.endsWith('k')) {
+    return Math.round(parseFloat(str) * 1000);
+  }
+  if (str.endsWith('M') || str.endsWith('m')) {
+    return Math.round(parseFloat(str) * 1000000);
+  }
+  return parseInt(str) || 0;
+}
+
+// Format metric number for display
+function formatMetric(num) {
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+  return num.toString();
 }
 
 // Extract profile information from the page

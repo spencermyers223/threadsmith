@@ -112,6 +112,304 @@
 }
 
 /* ============================================================
+   Top Tweets Button (Profile Pages)
+   ============================================================ */
+
+.xthread-top-tweets-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 36px;
+  border: 1px solid #8B5CF6;
+  border-radius: 9999px;
+  background: transparent;
+  color: #8B5CF6;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin-right: 8px;
+}
+
+.xthread-top-tweets-btn:hover {
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.xthread-top-tweets-btn:active {
+  transform: scale(0.96);
+}
+
+.xthread-top-tweets-btn.xthread-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.xthread-top-tweets-icon {
+  font-size: 16px;
+}
+
+.xthread-top-tweets-text {
+  font-size: 15px;
+}
+
+/* ============================================================
+   Top Tweets Panel
+   ============================================================ */
+
+.xthread-top-tweets-panel {
+  background: #1a1a1a;
+  border: 1px solid #2f2f2f;
+  border-radius: 16px;
+  margin: 12px 16px;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.xthread-top-tweets-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #2f2f2f;
+  background: linear-gradient(to right, rgba(139, 92, 246, 0.1), transparent);
+}
+
+.xthread-top-tweets-header .xthread-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.xthread-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.xthread-top-tweets-header .xthread-logo {
+  font-weight: 700;
+  color: #8B5CF6;
+  font-size: 15px;
+}
+
+.xthread-top-tweets-header .xthread-handle {
+  color: #6b7280;
+  font-size: 14px;
+  margin-left: 4px;
+}
+
+.xthread-top-tweets-header .xthread-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.xthread-tweet-count {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.xthread-top-tweets-info {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #9ca3af;
+  background: rgba(139, 92, 246, 0.05);
+  border-bottom: 1px solid #2f2f2f;
+}
+
+.xthread-tweets-list {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.xthread-tweet-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #2f2f2f;
+  transition: background 0.2s ease;
+}
+
+.xthread-tweet-card:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.xthread-tweet-card:last-child {
+  border-bottom: none;
+}
+
+.xthread-tweet-rank {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.xthread-tweet-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.xthread-tweet-text {
+  color: #e5e7eb;
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.xthread-tweet-metrics {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.xthread-metric {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.xthread-tweet-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.xthread-save-btn,
+.xthread-repurpose-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  white-space: nowrap;
+}
+
+.xthread-save-btn {
+  background: #374151;
+  color: #e5e7eb;
+}
+
+.xthread-save-btn:hover {
+  background: #4b5563;
+}
+
+.xthread-save-btn.xthread-saved {
+  background: #10b981;
+  color: white;
+  cursor: default;
+}
+
+.xthread-repurpose-btn {
+  background: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+  color: white;
+}
+
+.xthread-repurpose-btn:hover {
+  opacity: 0.9;
+}
+
+.xthread-view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: transparent;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  color: #9ca3af;
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.xthread-view-btn:hover {
+  background: #374151;
+  color: #e5e7eb;
+}
+
+.xthread-top-tweets-footer {
+  padding: 12px 16px;
+  text-align: center;
+  border-top: 1px solid #2f2f2f;
+  background: #141414;
+}
+
+.xthread-no-tweets {
+  padding: 40px 20px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* Light mode adjustments for top tweets panel */
+@media (prefers-color-scheme: light) {
+  .xthread-top-tweets-panel {
+    background: white;
+    border-color: #e5e7eb;
+  }
+  
+  .xthread-top-tweets-header {
+    border-color: #e5e7eb;
+  }
+  
+  .xthread-top-tweets-info {
+    border-color: #e5e7eb;
+    color: #6b7280;
+  }
+  
+  .xthread-tweet-card {
+    border-color: #e5e7eb;
+  }
+  
+  .xthread-tweet-card:hover {
+    background: rgba(0, 0, 0, 0.02);
+  }
+  
+  .xthread-tweet-text {
+    color: #1f2937;
+  }
+  
+  .xthread-top-tweets-footer {
+    background: #f9fafb;
+    border-color: #e5e7eb;
+  }
+  
+  .xthread-save-btn {
+    background: #f3f4f6;
+    color: #374151;
+  }
+  
+  .xthread-save-btn:hover {
+    background: #e5e7eb;
+  }
+  
+  .xthread-view-btn {
+    border-color: #e5e7eb;
+    color: #6b7280;
+  }
+  
+  .xthread-view-btn:hover {
+    background: #f3f4f6;
+    color: #374151;
+  }
+}
+
+/* ============================================================
    Coach & Save Buttons (Posts)
    ============================================================ */
 

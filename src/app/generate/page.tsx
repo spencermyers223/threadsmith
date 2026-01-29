@@ -22,7 +22,7 @@ import {
   Repeat2,
   ExternalLink,
 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { FilesSidebar, FileRecord } from '@/components/generate/FilesSidebar'
 import { GenerationCounter } from '@/components/subscription/GenerationCounter'
 import { UpgradeModal } from '@/components/subscription/UpgradeModal'
@@ -267,6 +267,7 @@ interface PersistedState {
 // Main Page Component
 export default function GeneratePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   // Form state
   const [topic, setTopic] = useState('')
@@ -296,6 +297,26 @@ export default function GeneratePage() {
   const [showRepurposeModal, setShowRepurposeModal] = useState(false)
   const [inspirationTweets, setInspirationTweets] = useState<InspirationTweet[]>([])
   const [loadingInspirationTweets, setLoadingInspirationTweets] = useState(false)
+
+  // Handle repurpose URL parameter (from Chrome extension)
+  useEffect(() => {
+    const repurposeText = searchParams.get('repurpose')
+    const author = searchParams.get('author')
+    
+    if (repurposeText) {
+      const prompt = author 
+        ? `Repurpose this tweet:\n\n"${repurposeText}"\n\n— @${author}`
+        : `Repurpose this tweet:\n\n"${repurposeText}"`;
+      setTopic(prompt)
+      setToast('Tweet loaded! Customize and generate.')
+      
+      // Clear the URL params without reload
+      const url = new URL(window.location.href)
+      url.searchParams.delete('repurpose')
+      url.searchParams.delete('author')
+      router.replace(url.pathname, { scroll: false })
+    }
+  }, [searchParams, router])
 
   // Load persisted state on mount
   useEffect(() => {
