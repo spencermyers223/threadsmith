@@ -6,6 +6,7 @@ import { Settings, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
 import type { User } from '@supabase/supabase-js'
+import { AccountSwitcher } from '@/components/account-switcher'
 
 interface HeaderProps {
   user: User
@@ -78,11 +79,14 @@ export function Header({ user }: HeaderProps) {
         </Link>
       </nav>
 
-      <div className="relative" ref={menuRef}>
-        <button
-          onClick={() => setShowMenu(!showMenu)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[var(--card)] transition-colors"
-        >
+      <div className="flex items-center gap-3">
+        <AccountSwitcher />
+        
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[var(--card)] transition-colors"
+          >
           {avatarUrl ? (
             <img 
               src={avatarUrl} 
@@ -120,7 +124,8 @@ export function Header({ user }: HeaderProps) {
               Sign out
             </button>
           </div>
-        )}
+          )}
+        </div>
       </div>
     </header>
   )
