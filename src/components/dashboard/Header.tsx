@@ -65,22 +65,10 @@ export function Header({ user }: HeaderProps) {
           Calendar
         </Link>
         <Link
-          href="/templates"
-          className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
-        >
-          📋 Templates
-        </Link>
-        <Link
           href="/analytics"
           className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
         >
-          📊 Analytics
-        </Link>
-        <Link
-          href="/settings/voice"
-          className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
-        >
-          🎙️ Voice
+          Analytics
         </Link>
         <Link
           href="/settings"

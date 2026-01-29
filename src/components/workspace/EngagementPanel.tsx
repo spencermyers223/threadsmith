@@ -17,15 +17,15 @@ function getScoreColor(score: number): string {
 }
 
 function getScoreBg(score: number): string {
-  if (score >= 80) return 'bg-green-50 border-green-200'
-  if (score >= 50) return 'bg-yellow-50 border-yellow-200'
-  return 'bg-red-50 border-red-200'
+  if (score >= 80) return 'bg-green-500/10 border-green-500/30 dark:bg-green-500/10 dark:border-green-500/30'
+  if (score >= 50) return 'bg-yellow-500/10 border-yellow-500/30 dark:bg-yellow-500/10 dark:border-yellow-500/30'
+  return 'bg-red-500/10 border-red-500/30 dark:bg-red-500/10 dark:border-red-500/30'
 }
 
 function getScoreTextColor(score: number): string {
-  if (score >= 80) return 'text-green-700'
-  if (score >= 50) return 'text-yellow-700'
-  return 'text-red-700'
+  if (score >= 80) return 'text-green-600 dark:text-green-400'
+  if (score >= 50) return 'text-yellow-600 dark:text-yellow-400'
+  return 'text-red-600 dark:text-red-400'
 }
 
 function ScoreGauge({ score }: { score: number }) {
@@ -41,8 +41,9 @@ function ScoreGauge({ score }: { score: number }) {
         <circle
           cx="60" cy="60" r={radius}
           fill="none"
-          stroke="#e5e7eb"
+          stroke="currentColor"
           strokeWidth="8"
+          className="text-[var(--border)]"
         />
         {/* Score arc */}
         <circle
@@ -85,44 +86,52 @@ const factorNames: Record<string, string> = {
 function FactorCard({ name, detail, onInsertTag }: { name: string; detail: ScoreDetail; onInsertTag?: (tag: string) => void }) {
   const [expanded, setExpanded] = useState(false)
   const color = getScoreColor(detail.score)
+  const hasExpandableContent = detail.suggestion || (detail.explanation && detail.score > 0)
 
   return (
     <div className={`border rounded-lg p-3 ${getScoreBg(detail.score)} transition-all`}>
       <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between"
+        onClick={() => hasExpandableContent && setExpanded(!expanded)}
+        className={`w-full flex items-center justify-between ${hasExpandableContent ? 'cursor-pointer' : 'cursor-default'}`}
       >
         <div className="flex items-center gap-2">
           <span style={{ color }}>{factorIcons[name]}</span>
-          <span className="text-sm font-medium text-gray-800">{factorNames[name]}</span>
+          <span className="text-sm font-medium text-[var(--foreground)]">{factorNames[name]}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className={`text-sm font-bold ${getScoreTextColor(detail.score)}`}>
-            {detail.score}
+            {Math.round(detail.score / 10)}/10
           </span>
-          <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+          <div className="w-16 h-1.5 bg-[var(--border)] rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{ width: `${detail.score}%`, backgroundColor: color }}
             />
           </div>
-          {detail.suggestion ? (
-            expanded ? <ChevronUp className="w-3 h-3 text-gray-400" /> : <ChevronDown className="w-3 h-3 text-gray-400" />
+          {hasExpandableContent ? (
+            expanded ? <ChevronUp className="w-3 h-3 text-[var(--muted)]" /> : <ChevronDown className="w-3 h-3 text-[var(--muted)]" />
           ) : (
             <span className="w-3" />
           )}
         </div>
       </button>
-      {expanded && detail.suggestion && (
-        <div className="mt-2 pt-2 border-t border-black/5">
-          <p className="text-xs text-gray-600">{detail.suggestion}</p>
+      {expanded && (
+        <div className="mt-2 pt-2 border-t border-[var(--border)]/50 space-y-2">
+          {/* Explanation - what we observed */}
+          {detail.explanation && (
+            <p className="text-xs text-[var(--foreground)]/80">{detail.explanation}</p>
+          )}
+          {/* Suggestion - how to improve */}
+          {detail.suggestion && (
+            <p className="text-xs text-[var(--muted)] italic">💡 {detail.suggestion}</p>
+          )}
           {detail.suggested && detail.suggested.length > 0 && onInsertTag && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {detail.suggested.map(tag => (
                 <button
                   key={tag}
                   onClick={(e) => { e.stopPropagation(); onInsertTag(tag) }}
-                  className="px-2 py-0.5 text-xs font-medium bg-white border border-gray-300 rounded-full hover:bg-accent hover:text-white hover:border-accent transition-colors cursor-pointer"
+                  className="px-2 py-0.5 text-xs font-medium bg-[var(--background)] border border-[var(--border)] rounded-full hover:bg-accent hover:text-white hover:border-accent transition-colors cursor-pointer"
                 >
                   {tag}
                 </button>
@@ -197,15 +206,15 @@ export function EngagementPanel({ text, postType, onInsertText }: EngagementPane
   const bd = score.breakdown
 
   return (
-    <div className="border-t border-[var(--border)] bg-white">
+    <div className="border-t border-[var(--border)] bg-[var(--card)]">
       {/* Header */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+        className="w-full px-4 py-3 flex items-center justify-between hover:bg-[var(--border)]/50 transition-colors"
       >
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-accent" />
-          <span className="text-sm font-semibold text-gray-800">Engagement Score</span>
+          <span className="text-sm font-semibold text-[var(--foreground)]">Engagement Score</span>
         </div>
         <div className="flex items-center gap-3">
           <span
@@ -214,7 +223,7 @@ export function EngagementPanel({ text, postType, onInsertText }: EngagementPane
           >
             {score.score}
           </span>
-          {collapsed ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronUp className="w-4 h-4 text-gray-400" />}
+          {collapsed ? <ChevronDown className="w-4 h-4 text-[var(--muted)]" /> : <ChevronUp className="w-4 h-4 text-[var(--muted)]" />}
         </div>
       </button>
 
@@ -236,11 +245,11 @@ export function EngagementPanel({ text, postType, onInsertText }: EngagementPane
           </div>
 
           {/* Best Time */}
-          <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <Clock className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+            <Clock className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-sm font-medium text-blue-800">{bd.bestTime.recommendation}</p>
-              <p className="text-xs text-blue-600">{bd.bestTime.reason}</p>
+              <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{bd.bestTime.recommendation}</p>
+              <p className="text-xs text-blue-500/80 dark:text-blue-400/70">{bd.bestTime.reason}</p>
             </div>
           </div>
 
@@ -269,16 +278,16 @@ export function EngagementPanel({ text, postType, onInsertText }: EngagementPane
 
           {/* AI Analysis Results */}
           {aiAnalysis && (
-            <div className="space-y-3 p-3 bg-purple-50 border border-purple-200 rounded-lg relative">
+            <div className="space-y-3 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg relative">
               <button
                 onClick={() => setAiAnalysis(null)}
-                className="absolute top-2 right-2 p-1 hover:bg-purple-100 rounded"
+                className="absolute top-2 right-2 p-1 hover:bg-purple-500/20 rounded"
               >
                 <X className="w-3 h-3 text-purple-400" />
               </button>
               <div className="flex items-center gap-2 mb-1">
-                <Sparkles className="w-4 h-4 text-purple-600" />
-                <span className="text-sm font-semibold text-purple-800">AI Analysis</span>
+                <Sparkles className="w-4 h-4 text-purple-500" />
+                <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">AI Analysis</span>
                 {aiAnalysis.viralPotential && (
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                     aiAnalysis.viralPotential === 'high' ? 'bg-green-100 text-green-700' :
@@ -291,15 +300,15 @@ export function EngagementPanel({ text, postType, onInsertText }: EngagementPane
               </div>
 
               {aiAnalysis.overallFeedback && (
-                <p className="text-xs text-purple-700">{aiAnalysis.overallFeedback}</p>
+                <p className="text-xs text-purple-600 dark:text-purple-300">{aiAnalysis.overallFeedback}</p>
               )}
 
               {aiAnalysis.hookRewrite && (
                 <div className="space-y-1">
-                  <p className="text-xs font-medium text-purple-800">✏️ Suggested hook:</p>
+                  <p className="text-xs font-medium text-purple-600 dark:text-purple-400">✏️ Suggested hook:</p>
                   <button
                     onClick={() => onInsertText?.(aiAnalysis.hookRewrite || '')}
-                    className="text-xs bg-white border border-purple-200 rounded p-2 w-full text-left hover:bg-purple-100 transition-colors text-purple-700"
+                    className="text-xs bg-[var(--background)] border border-purple-500/30 rounded p-2 w-full text-left hover:bg-purple-500/20 transition-colors text-purple-600 dark:text-purple-300"
                     title="Click to insert"
                   >
                     {aiAnalysis.hookRewrite}
@@ -309,10 +318,10 @@ export function EngagementPanel({ text, postType, onInsertText }: EngagementPane
 
               {aiAnalysis.suggestedCTA && (
                 <div className="space-y-1">
-                  <p className="text-xs font-medium text-purple-800">💬 Suggested CTA:</p>
+                  <p className="text-xs font-medium text-purple-600 dark:text-purple-400">💬 Suggested CTA:</p>
                   <button
                     onClick={() => onInsertText?.('\n\n' + (aiAnalysis.suggestedCTA || ''))}
-                    className="text-xs bg-white border border-purple-200 rounded p-2 w-full text-left hover:bg-purple-100 transition-colors text-purple-700"
+                    className="text-xs bg-[var(--background)] border border-purple-500/30 rounded p-2 w-full text-left hover:bg-purple-500/20 transition-colors text-purple-600 dark:text-purple-300"
                     title="Click to append"
                   >
                     {aiAnalysis.suggestedCTA}
@@ -326,7 +335,7 @@ export function EngagementPanel({ text, postType, onInsertText }: EngagementPane
                     <button
                       key={tag}
                       onClick={() => onInsertText?.(' ' + tag)}
-                      className="px-2 py-0.5 text-xs font-medium bg-white border border-purple-200 rounded-full hover:bg-accent hover:text-white hover:border-accent transition-colors"
+                      className="px-2 py-0.5 text-xs font-medium bg-[var(--background)] border border-purple-500/30 rounded-full hover:bg-accent hover:text-white hover:border-accent transition-colors"
                     >
                       {tag}
                     </button>
@@ -336,10 +345,10 @@ export function EngagementPanel({ text, postType, onInsertText }: EngagementPane
 
               {aiAnalysis.specificTips && aiAnalysis.specificTips.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-xs font-medium text-purple-800">💡 Tips:</p>
+                  <p className="text-xs font-medium text-purple-600 dark:text-purple-400">💡 Tips:</p>
                   <ul className="space-y-1">
                     {aiAnalysis.specificTips.map((tip, i) => (
-                      <li key={i} className="text-xs text-purple-700 flex items-start gap-1">
+                      <li key={i} className="text-xs text-purple-600 dark:text-purple-300 flex items-start gap-1">
                         <span className="text-purple-400 mt-0.5">•</span>
                         {tip}
                       </li>
