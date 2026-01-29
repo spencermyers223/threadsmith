@@ -662,11 +662,21 @@ function checkProfilePage() {
 
 // Inject the watch button and analyze button on profile page
 async function injectWatchButton(handle) {
-  // Don't re-inject if already present
-  if (document.querySelector('.xthread-watch-btn')) {
-    // But do update state if handle changed
+  // Don't re-inject if already present ANYWHERE on page
+  const existingBtns = document.querySelectorAll('.xthread-watch-btn');
+  if (existingBtns.length > 0) {
+    // Update state if handle changed, but don't add more buttons
     updateWatchButtonState(handle);
     updateAnalyzeButtonState(handle);
+    // Also remove any duplicates that may have been created
+    if (existingBtns.length > 1) {
+      for (let i = 1; i < existingBtns.length; i++) {
+        existingBtns[i].remove();
+      }
+      document.querySelectorAll('.xthread-analyze-btn').forEach((btn, i) => {
+        if (i > 0) btn.remove();
+      });
+    }
     return;
   }
   
@@ -681,6 +691,9 @@ async function injectWatchButton(handle) {
   // Find parent to insert our button alongside
   const buttonContainer = followContainer.parentElement;
   if (!buttonContainer) return;
+  
+  // Double-check this specific container doesn't already have our buttons
+  if (buttonContainer.querySelector('.xthread-watch-btn')) return;
   
   // Check if user is watching this account
   const watching = await isWatching(handle);
