@@ -141,6 +141,34 @@ Different tech communities have their own language. The AI should:
 - Vague claims with no specifics
 - Pressure tactics
 - Misleading technical claims
+
+### Humanness Markers (Sound Like a Real Person)
+Add these natural phrases when appropriate:
+- "here's the thing" / "the truth is"
+- "this blew my mind" / "this changed everything"
+- "I was wrong about this" / "I used to think..."
+- "nobody tells you this, but" / "the quiet part out loud"
+- "let me be real" / "unpopular opinion"
+- Brief personal asides in parentheses (shows personality)
+
+Avoid these AI-sounding patterns:
+- Starting with "In this thread" or "Let me share"
+- Excessive transition words ("Furthermore", "Additionally", "Moreover")
+- Perfect grammar when casual would sound more authentic
+- Lists that feel mechanically generated
+- Generic conclusions ("In conclusion, always remember to...")
+
+### Psychological Triggers (What Makes Content Spread)
+High-arousal emotions spread faster. Aim for:
+- **Awe**: "This changed everything I thought I knew"
+- **Surprise**: Contradict common wisdom with evidence
+- **Humor**: Unexpected, relatable observations
+- **Validation**: Make readers feel seen or smart
+
+Specificity beats vagueness:
+- ❌ "I made good money" → ✅ "I made $2,347"
+- ❌ "I grew fast" → ✅ "I grew from 0 to 10K in 57 days"
+- ❌ "Many people" → ✅ "83% of accounts I analyzed"
 `;
 
 // Legacy alias for backwards compatibility

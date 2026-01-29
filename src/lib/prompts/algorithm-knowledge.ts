@@ -92,4 +92,32 @@ export const HOOK_PATTERNS = [
   "Curiosity gap: 'The one thing successful people never talk about'",
   "Specific result: 'This email template got me 47 responses'",
   "Challenge assumption: 'You don't need 10K followers to make money'",
+  "Transformation: '[Time] ago I was [bad state]. Today I'm [good state]. Here's what changed:'",
+  "Bold claim: 'Everything you've been told about X is wrong. Here's why.'",
+  "Insider knowledge: 'I found a weird [topic] hack that no one talks about...'",
+];
+
+export const ENDING_CTA_PATTERNS = [
+  // Questions that invite specific responses
+  "Which of these surprised you most?",
+  "What would you add to this list?",
+  "Have you experienced this?",
+  "What's your take?",
+  
+  // Statements that beg contradiction (stronger than questions)
+  "And it's not even close.",
+  "Fight me on this.",
+  "Change my mind.",
+  "The data doesn't lie.",
+  
+  // Soft CTAs that don't feel desperate
+  "More threads like this → follow",
+  "Save this for later.",
+  "Bookmark if you found this useful.",
+  
+  // AVOID these weak endings
+  // "Thoughts?" (too generic)
+  // "Like and retweet!" (engagement bait)
+  // "Follow for more!" (desperate)
+  // "Let me know in the comments" (no urgency)
 ];
