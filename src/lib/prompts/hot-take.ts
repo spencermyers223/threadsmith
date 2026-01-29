@@ -137,6 +137,26 @@ export const HOT_TAKE_HOOKS = [
     template: "[Popular belief] is just [cope/wishful thinking] dressed up as [analysis/strategy].",
     example: "'We're still early' is just wishful thinking dressed up as market analysis.",
   },
+  {
+    pattern: "silent_majority",
+    template: "Nobody wants to say it, but [uncomfortable observation].",
+    example: "Nobody wants to say it, but most 'AI-first' startups are just ChatGPT with a wrapper.",
+  },
+  {
+    pattern: "false_dichotomy",
+    template: "The [X vs Y] debate is a distraction. The real issue is [Z].",
+    example: "The local vs cloud AI debate is a distraction. The real issue is that most teams can't even define their use case.",
+  },
+  {
+    pattern: "overrated_underrated",
+    template: "Overrated: [popular thing]\nUnderrated: [overlooked thing]",
+    example: "Overrated: prompt engineering courses\nUnderrated: actually reading the documentation",
+  },
+  {
+    pattern: "prediction_flip",
+    template: "[Consensus prediction] won't happen. Here's what will instead:",
+    example: "AGI by 2027 won't happen. Here's what will instead: increasingly capable narrow AI that everyone keeps calling AGI anyway.",
+  },
 ];
 
 /**
