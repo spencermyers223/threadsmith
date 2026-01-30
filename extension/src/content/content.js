@@ -711,6 +711,7 @@ async function injectWatchButton(handle) {
     search: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
     chart: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
     loader: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="xthread-spinner"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" opacity="1"/></svg>`,
+    message: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
   };
 
   // Create watch button
@@ -735,8 +736,16 @@ async function injectWatchButton(handle) {
   topTweetsBtn.setAttribute('data-handle', handle);
   topTweetsBtn.innerHTML = `<span class="xthread-top-tweets-icon">${icons.chart}</span><span class="xthread-top-tweets-text">Top Tweets</span>`;
   topTweetsBtn.title = 'See their top performing tweets';
+
+  // Create message button for DM outreach
+  const messageBtn = document.createElement('button');
+  messageBtn.className = 'xthread-message-btn';
+  messageBtn.setAttribute('data-handle', handle);
+  messageBtn.innerHTML = `<span class="xthread-message-icon">${icons.message}</span><span class="xthread-message-text">Message</span>`;
+  messageBtn.title = 'Send a DM using templates';
   
-  // Insert before follow button (top tweets, analyze, watch)
+  // Insert before follow button (message, top tweets, analyze, watch)
+  buttonContainer.insertBefore(messageBtn, followContainer);
   buttonContainer.insertBefore(topTweetsBtn, followContainer);
   buttonContainer.insertBefore(analyzeBtn, followContainer);
   buttonContainer.insertBefore(watchBtn, followContainer);
@@ -760,6 +769,13 @@ async function injectWatchButton(handle) {
     e.preventDefault();
     e.stopPropagation();
     await handleTopTweetsClick(topTweetsBtn, handle);
+  });
+
+  // Message button click handler
+  messageBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await handleMessageClick(messageBtn, handle);
   });
 }
 
@@ -787,6 +803,7 @@ function getIcon(name) {
     search: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
     chart: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
     loader: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="xthread-spinner"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`,
+    message: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
   };
   return icons[name] || '';
 }
@@ -1407,7 +1424,8 @@ function formatMetric(num) {
 function extractProfileInfo() {
   const info = {
     displayName: currentProfileHandle,
-    avatar: null
+    avatar: null,
+    bio: ''
   };
   
   // Try to get display name from the profile header
@@ -1424,7 +1442,227 @@ function extractProfileInfo() {
     info.avatar = avatarEl.src;
   }
   
+  // Try to get bio
+  const bioEl = document.querySelector('[data-testid="UserDescription"]');
+  if (bioEl) {
+    info.bio = bioEl.textContent.trim();
+  }
+  
   return info;
+}
+
+// ============================================================
+// DM Message Templates
+// ============================================================
+
+let isLoadingTemplates = false;
+
+async function handleMessageClick(btn, handle) {
+  if (isLoadingTemplates) return;
+  
+  if (!userToken) {
+    showToast('Please sign in to xthread first. Click the extension icon.');
+    return;
+  }
+  
+  isLoadingTemplates = true;
+  btn.classList.add('xthread-loading');
+  btn.innerHTML = `<span class="xthread-message-icon">${getIcon('loader')}</span><span class="xthread-message-text">Loading...</span>`;
+  
+  try {
+    const response = await fetch(`${XTHREAD_API}/extension/dm-templates`, {
+      headers: {
+        'Authorization': `Bearer ${userToken}`
+      }
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Failed to fetch templates');
+    }
+    
+    const data = await response.json();
+    const templates = data.templates || [];
+    
+    if (templates.length === 0) {
+      showToast('No templates yet. Create one at xthread.io/settings');
+      return;
+    }
+    
+    showMessageTemplateModal(handle, templates);
+    
+  } catch (err) {
+    console.error('[xthread] Error fetching templates:', err);
+    showToast(err.message || 'Failed to load templates. Please try again.');
+  } finally {
+    isLoadingTemplates = false;
+    btn.classList.remove('xthread-loading');
+    btn.innerHTML = `<span class="xthread-message-icon">${getIcon('message')}</span><span class="xthread-message-text">Message</span>`;
+  }
+}
+
+// Show message template selector modal
+function showMessageTemplateModal(handle, templates) {
+  // Remove any existing modal
+  const existing = document.querySelector('.xthread-message-modal');
+  if (existing) existing.remove();
+  
+  const profileInfo = extractProfileInfo();
+  
+  const modal = document.createElement('div');
+  modal.className = 'xthread-message-modal';
+  
+  const templatesHtml = templates.map((template, i) => `
+    <div class="xthread-template-card" data-template-id="${escapeHtml(template.id)}">
+      <div class="xthread-template-title">${escapeHtml(template.title)}</div>
+      <div class="xthread-template-preview">${escapeHtml(template.message_body).substring(0, 100)}${template.message_body.length > 100 ? '...' : ''}</div>
+      ${template.times_used > 0 ? `<div class="xthread-template-usage">Used ${template.times_used}x</div>` : ''}
+    </div>
+  `).join('');
+  
+  modal.innerHTML = `
+    <div class="xthread-modal-backdrop"></div>
+    <div class="xthread-modal-content">
+      <div class="xthread-modal-header">
+        <span class="xthread-modal-title">💬 Send DM to @${escapeHtml(handle)}</span>
+        <button class="xthread-modal-close">×</button>
+      </div>
+      
+      <div class="xthread-modal-body">
+        <div class="xthread-template-list">
+          ${templatesHtml}
+        </div>
+        
+        <div class="xthread-template-create">
+          <a href="https://xthread.io/settings" target="_blank">+ Create new template</a>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Close button handler
+  modal.querySelector('.xthread-modal-close').addEventListener('click', () => {
+    modal.remove();
+  });
+  
+  // Backdrop click handler
+  modal.querySelector('.xthread-modal-backdrop').addEventListener('click', () => {
+    modal.remove();
+  });
+  
+  // Template card click handlers
+  modal.querySelectorAll('.xthread-template-card').forEach(card => {
+    card.addEventListener('click', async () => {
+      const templateId = card.getAttribute('data-template-id');
+      const template = templates.find(t => t.id === templateId);
+      if (template) {
+        showMessagePreviewModal(handle, template, profileInfo);
+        modal.remove();
+      }
+    });
+  });
+}
+
+// Show message preview/edit modal before sending
+function showMessagePreviewModal(handle, template, profileInfo) {
+  // Remove any existing modal
+  const existing = document.querySelector('.xthread-message-modal');
+  if (existing) existing.remove();
+  
+  // Replace variables in message
+  let message = template.message_body;
+  message = message.replace(/\{\{username\}\}/gi, handle);
+  message = message.replace(/\{\{display_name\}\}/gi, profileInfo.displayName || handle);
+  message = message.replace(/\{\{bio_snippet\}\}/gi, profileInfo.bio ? profileInfo.bio.substring(0, 100) : '');
+  
+  const modal = document.createElement('div');
+  modal.className = 'xthread-message-modal';
+  
+  modal.innerHTML = `
+    <div class="xthread-modal-backdrop"></div>
+    <div class="xthread-modal-content xthread-preview-modal">
+      <div class="xthread-modal-header">
+        <span class="xthread-modal-title">✉️ Preview DM to @${escapeHtml(handle)}</span>
+        <button class="xthread-modal-close">×</button>
+      </div>
+      
+      <div class="xthread-modal-body">
+        <div class="xthread-message-preview">
+          <textarea class="xthread-message-textarea">${escapeHtml(message)}</textarea>
+        </div>
+        
+        <div class="xthread-preview-footer">
+          <button class="xthread-copy-btn">📋 Copy</button>
+          <button class="xthread-send-btn">✉️ Open DM</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  const textarea = modal.querySelector('.xthread-message-textarea');
+  
+  // Auto-resize textarea
+  textarea.style.height = 'auto';
+  textarea.style.height = textarea.scrollHeight + 'px';
+  
+  // Close button handler
+  modal.querySelector('.xthread-modal-close').addEventListener('click', () => {
+    modal.remove();
+  });
+  
+  // Backdrop click handler
+  modal.querySelector('.xthread-modal-backdrop').addEventListener('click', () => {
+    modal.remove();
+  });
+  
+  // Copy button handler
+  modal.querySelector('.xthread-copy-btn').addEventListener('click', async () => {
+    const finalMessage = textarea.value;
+    await navigator.clipboard.writeText(finalMessage);
+    showToast('Message copied to clipboard! 📋');
+    
+    // Track usage
+    incrementTemplateUsage(template.id);
+  });
+  
+  // Send button handler - opens X DM compose with message
+  modal.querySelector('.xthread-send-btn').addEventListener('click', async () => {
+    const finalMessage = textarea.value;
+    
+    // Copy to clipboard first
+    await navigator.clipboard.writeText(finalMessage);
+    
+    // Track usage
+    incrementTemplateUsage(template.id);
+    
+    // Navigate to DM compose page
+    // X DM deep link format: https://twitter.com/messages/compose?recipient_id=USER_ID
+    // Since we don't have user_id, we'll use the messages page
+    const dmUrl = `https://twitter.com/messages/${handle}`;
+    window.open(dmUrl, '_blank');
+    
+    showToast('Message copied! Paste it in the DM. 📋');
+    modal.remove();
+  });
+}
+
+// Increment template usage counter
+async function incrementTemplateUsage(templateId) {
+  try {
+    await fetch(`${XTHREAD_API}/dm-templates/${templateId}/used`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch (err) {
+    console.debug('[xthread] Error incrementing template usage:', err);
+  }
 }
 
 // Update watchlist badge count

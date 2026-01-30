@@ -145,6 +145,58 @@
 }
 
 /* ============================================================
+   Message Button - Teal/Cyan (Communication)
+   ============================================================ */
+
+.xthread-message-btn {
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(6, 182, 212, 0.08) 100%);
+  border: 1px solid rgba(20, 184, 166, 0.4);
+  color: #2DD4BF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 34px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin-right: 8px;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.xthread-message-btn:hover {
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.25) 0%, rgba(6, 182, 212, 0.15) 100%);
+  border-color: #14B8A6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+}
+
+.xthread-message-btn:active {
+  transform: scale(0.96);
+}
+
+.xthread-message-btn.xthread-loading {
+  opacity: 0.6;
+  pointer-events: none;
+  cursor: wait;
+}
+
+.xthread-message-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.xthread-message-text {
+  font-size: 14px;
+}
+
+/* ============================================================
    Light Mode Adjustments (Profile Buttons)
    ============================================================ */
 
@@ -2449,4 +2501,254 @@
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+}
+
+/* ============================================================
+   DM Message Template Modal
+   ============================================================ */
+
+.xthread-message-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.xthread-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.xthread-modal-content {
+  position: relative;
+  background: #16181c;
+  border: 1px solid #2f3336;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 480px;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.xthread-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #2f3336;
+}
+
+.xthread-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e7e9ea;
+}
+
+.xthread-modal-close {
+  background: none;
+  border: none;
+  color: #71767b;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+
+.xthread-modal-close:hover {
+  background: rgba(239, 243, 244, 0.1);
+  color: #e7e9ea;
+}
+
+.xthread-modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.xthread-template-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.xthread-template-card {
+  background: #1e2125;
+  border: 1px solid #2f3336;
+  border-radius: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.xthread-template-card:hover {
+  background: #22262b;
+  border-color: #14B8A6;
+  box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.1);
+}
+
+.xthread-template-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e7e9ea;
+  margin-bottom: 6px;
+}
+
+.xthread-template-preview {
+  font-size: 13px;
+  color: #71767b;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.xthread-template-usage {
+  font-size: 12px;
+  color: #536471;
+  margin-top: 8px;
+}
+
+.xthread-template-create {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.xthread-template-create a {
+  color: #14B8A6;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.xthread-template-create a:hover {
+  text-decoration: underline;
+}
+
+/* Preview Modal */
+.xthread-preview-modal .xthread-modal-body {
+  padding: 20px;
+}
+
+.xthread-message-preview {
+  margin-bottom: 16px;
+}
+
+.xthread-message-textarea {
+  width: 100%;
+  min-height: 150px;
+  padding: 14px;
+  background: #1e2125;
+  border: 1px solid #2f3336;
+  border-radius: 12px;
+  color: #e7e9ea;
+  font-size: 15px;
+  line-height: 1.5;
+  resize: vertical;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.xthread-message-textarea:focus {
+  outline: none;
+  border-color: #14B8A6;
+}
+
+.xthread-preview-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.xthread-copy-btn,
+.xthread-send-btn {
+  padding: 10px 20px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.xthread-copy-btn {
+  background: #2f3336;
+  color: #e7e9ea;
+}
+
+.xthread-copy-btn:hover {
+  background: #3a3f44;
+}
+
+.xthread-send-btn {
+  background: linear-gradient(135deg, #14B8A6 0%, #06B6D4 100%);
+  color: white;
+}
+
+.xthread-send-btn:hover {
+  opacity: 0.9;
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+}
+
+/* Light Mode for Modal */
+@media (prefers-color-scheme: light) {
+  .xthread-modal-content {
+    background: #ffffff;
+    border-color: #e0e0e0;
+  }
+  
+  .xthread-modal-header {
+    border-color: #e0e0e0;
+  }
+  
+  .xthread-modal-title {
+    color: #0f1419;
+  }
+  
+  .xthread-template-card {
+    background: #f7f9f9;
+    border-color: #e0e0e0;
+  }
+  
+  .xthread-template-card:hover {
+    background: #eef2f3;
+  }
+  
+  .xthread-template-title {
+    color: #0f1419;
+  }
+  
+  .xthread-template-preview {
+    color: #536471;
+  }
+  
+  .xthread-message-textarea {
+    background: #f7f9f9;
+    border-color: #e0e0e0;
+    color: #0f1419;
+  }
+  
+  .xthread-copy-btn {
+    background: #e0e0e0;
+    color: #0f1419;
+  }
+  
+  .xthread-message-btn {
+    background: linear-gradient(135deg, rgba(13, 148, 136, 0.12) 0%, rgba(6, 182, 212, 0.06) 100%);
+    border-color: rgba(13, 148, 136, 0.35);
+    color: #0D9488;
+  }
+  
+  .xthread-message-btn:hover {
+    background: linear-gradient(135deg, rgba(13, 148, 136, 0.2) 0%, rgba(6, 182, 212, 0.1) 100%);
+    border-color: #0D9488;
+  }
 }
