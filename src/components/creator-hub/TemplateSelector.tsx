@@ -28,121 +28,231 @@ const CATEGORY_COLORS: Record<string, string> = {
   engagement: 'text-purple-400',
 }
 
-// Tweet template frameworks - actual structures users fill in
+// World-class tweet frameworks - actual structures that work
+// Users fill in [bracketed text] with their specifics
 const TEMPLATE_FRAMEWORKS: Record<string, string> = {
-  // Mistakes / Lessons
-  'Mistakes to Avoid': `I wasted [time period] doing [common mistake].
+  // BUILD IN PUBLIC
+  'Weekly Progress Update': `Week [X] of building [project]:
 
-Do [better approach] instead.
+📈 [Key metric] → [new number]
+✅ Shipped: [main accomplishment]
+❌ Failed: [what didn't work]
+💡 Learned: [key insight]
 
-Here's why it works:`,
-  
-  // Contrarian / Hot Takes
-  'Hot Take': `Unpopular opinion: [bold claim]
+Next week: [what's coming]`,
 
-Most people think [common belief].
+  'Lesson Learned Post': `I learned this the hard way:
 
-But here's the truth: [your reasoning]
+[The lesson in one sentence]
 
-Agree or disagree?`,
-  
-  'Contrarian Take': `Stop [common practice].
+What happened:
+[Brief context]
 
-It's not working.
+What I should have done:
+[The better approach]
 
-Do [alternative] instead.`,
-  
-  // Build in Public
-  'Build in Public Update': `[Time period] ago I started [project/journey].
+Save yourself the pain.`,
 
-Today: [current milestone]
+  'Feature Launch Announcement': `Just shipped: [feature name] 🚀
 
-Biggest lesson: [key learning]
+What it does:
+→ [Benefit 1]
+→ [Benefit 2]
+→ [Benefit 3]
 
-Next up:`,
-  
-  'Weekly Update': `Week [X] of building [project]:
+Why I built it:
+[User pain point it solves]
 
-✅ Shipped: [accomplishment]
-🔨 Working on: [current task]  
-💡 Learned: [insight]`,
-  
-  // Insights / Alpha
-  'Alpha Thread': `I spent [time] researching [topic].
+What should I build next?`,
 
-Here's what 99% of people miss:
+  'Revenue/Growth Milestone': `[Project] just hit [milestone] 🎉
 
-[key insight]
+Timeline:
+• Month 1: [starting point]
+• Month [X]: [progress point]
+• Today: [milestone]
 
-Let me explain 🧵`,
-  
-  'Trend Analysis': `[Trend/topic] is changing fast.
+What actually moved the needle:
+[2-3 key decisions]
 
-What's really happening: [analysis]
+Next goal: [what's next]`,
 
-Why this matters: [implication]
+  'Behind the Scenes': `What building [project] actually looks like:
 
-My prediction:`,
-  
-  // Data
-  'Data Insight': `[Striking statistic or data point]
+The glamorous version: [what people think]
 
-What this tells us: [interpretation]
+The reality: [what it actually is]
 
-Why it matters for you: [actionable takeaway]`,
-  
-  // Technical
-  'Technical Breakdown': `[Complex topic] explained simply:
+[Specific example]
 
-Most people overcomplicate this.
+Anyone else? Or just me?`,
 
-Here's all you need to know:
+  // HOT TAKES / CONTRARIAN
+  'Unpopular Opinion': `Unpopular opinion:
 
-[simple explanation]
+[Bold, specific claim]
 
-Bookmark for later.`,
-  
-  // Stories
-  'Story Thread': `[Time] ago, [dramatic setup].
+Everyone says [conventional wisdom].
 
-What happened next changed everything.
+But here's what I've seen:
+[Your evidence or experience]
 
-🧵`,
-  
-  // Engagement
-  'Engagement Bait': `What's your take on [topic]?
+Agree or am I crazy?`,
 
-I'll go first: [your answer]
+  "Everyone's Wrong About X": `Most people have [topic] completely backwards.
 
-Reply with yours 👇`,
-  
-  'Debate Starter': `[Option A] or [Option B]?
+Common advice: "[what everyone says]"
 
-My take: [your choice + brief why]
+Reality: [what actually works]
 
-This is going to start a war...`,
-  
-  // How-To
-  'Tutorial': `How to [achieve outcome] (step-by-step):
+Stop [bad approach]. Start [good approach].`,
 
-1. [First step]
-2. [Second step]
-3. [Third step]
+  'The Real Reason X Happened': `Everyone thinks [event] happened because [surface reason].
 
-The key most people miss: [pro tip]
+That's not it.
 
-Bookmark this.`,
-  
-  // Market
-  'Market Analysis': `[Market/asset] just [did something notable].
+The real reason: [actual cause]
 
-What's really happening: [analysis]
+This matters because [implication].`,
 
-My take: [prediction]`,
+  'Myth-Busting': `Myth: "[common belief]"
+
+Reality: [the truth]
+
+The data:
+• [Evidence point 1]
+• [Evidence point 2]
+
+What you should actually do: [action]`,
+
+  'Hot Take with Stakes': `Hot take: [bold prediction or claim]
+
+I'm willing to be wrong.
+
+But here's why I believe it:
+1. [Reason 1]
+2. [Reason 2]
+3. [Reason 3]
+
+Remind me in [timeframe] if I'm wrong.`,
+
+  // INSIGHTS / VALUE (alpha)
+  'How I Did X': `How I [achieved result]:
+
+• Before: [starting point]
+• After: [end result]
+• Time: [how long]
+
+The strategy:
+
+1. [Step 1]
+2. [Step 2]
+3. [Step 3]
+
+The biggest unlock: [key insight]
+
+Questions?`,
+
+  'Tools I Actually Use': `My actual [purpose] stack:
+
+[Tool 1] - [what I use it for]
+[Tool 2] - [what I use it for]
+[Tool 3] - [what I use it for]
+
+Total cost: [$X]/month
+
+What I stopped using: [tool and why]
+
+What's in your stack?`,
+
+  'Framework or Mental Model': `The [framework name] changed how I [area]:
+
+How it works:
+[Simple explanation]
+
+Example:
+[Concrete application]
+
+Use this when: [situation]`,
+
+  'Mistakes to Avoid': `[X] mistakes I made with [topic]:
+
+1. [Mistake 1]
+   → Should have: [better approach]
+
+2. [Mistake 2]
+   → Should have: [better approach]
+
+3. [Mistake 3]
+   → Should have: [better approach]
+
+Learn from my pain.`,
+
+  'Industry Trend Analysis': `[Trend] is changing [industry] faster than people realize.
+
+What I'm seeing:
+• [Observation 1]
+• [Observation 2]
+• [Observation 3]
+
+My prediction: [specific forecast]
+
+Winners will be those who [action].`,
+
+  // ENGAGEMENT
+  'Question for the Timeline': `Genuine question:
+
+[Your question about topic]
+
+I'll go first:
+[Your honest answer]
+
+What's yours?`,
+
+  'This or That': `Settle this debate:
+
+[Option A] or [Option B]?
+
+My take: [your choice]
+
+Because: [one-sentence reason]
+
+Pick one. No fence-sitting.`,
+
+  'Rate This 1-10': `Rate your [thing to rate] right now (1-10).
+
+I'll start: [X]/10
+
+[One sentence explaining your rating]
+
+Your turn. Be honest.`,
+
+  'Fill in the Blank': `Fill in the blank:
+
+"The best [category] that nobody talks about is ___________."
+
+Mine: [your answer]
+
+[One line on why]
+
+Drop yours 👇`,
+
+  'Underrated Thing': `Most underrated [category]:
+
+[Your pick]
+
+Why it's slept on:
+[Brief explanation]
+
+Everyone talks about [popular alternative].
+
+But [your pick] is better because [reason].
+
+What's yours?`,
 }
 
 interface TemplateSelectorProps {
-  onSelectTemplate: (placeholder: string, promptTemplate: string, category: string, title: string) => void
+  onSelectTemplate: (framework: string, promptTemplate: string, category: string, title: string) => void
   activeTemplate: string | null
 }
 
@@ -158,7 +268,7 @@ export function TemplateSelector({ onSelectTemplate, activeTemplate }: TemplateS
         .from('post_templates')
         .select('id, title, category, description, prompt_template')
         .order('category', { ascending: true })
-        .limit(20)
+        .limit(30)
 
       if (error) {
         console.error('Failed to fetch templates:', error)
@@ -172,17 +282,16 @@ export function TemplateSelector({ onSelectTemplate, activeTemplate }: TemplateS
   }, [])
 
   const handleSelectTemplate = (template: PostTemplate) => {
-    // Get the framework for this template, or create a simple one
+    // Get the world-class framework for this template
     const framework = TEMPLATE_FRAMEWORKS[template.title] || 
-                      `[Your ${template.title.toLowerCase()} goes here]`
+                      `[Write your ${template.title.toLowerCase()} here]`
     
-    // Pass the framework as the content to populate the input
     onSelectTemplate(framework, template.prompt_template, template.category, template.title)
     setIsOpen(false)
   }
 
   const clearTemplate = () => {
-    onSelectTemplate('Enter your topic, idea, or paste notes...', '', '', '')
+    onSelectTemplate('', '', '', '')
     setIsOpen(false)
   }
 
