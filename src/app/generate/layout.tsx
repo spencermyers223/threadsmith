@@ -20,7 +20,7 @@ export default async function GenerateLayout({
     <XAccountProvider>
       <OnboardingCheck>
         <div className="h-screen flex flex-col">
-          <Header user={user} />
+          <Header />
           <main className="flex-1 overflow-auto">
             {children}
           </main>

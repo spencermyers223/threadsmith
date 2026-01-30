@@ -18,7 +18,7 @@ export default async function WorkspaceLayout({
   return (
     <XAccountProvider>
       <div className="h-screen flex flex-col">
-        <Header user={user} />
+        <Header />
         <main className="flex-1 overflow-hidden">
           {children}
         </main>

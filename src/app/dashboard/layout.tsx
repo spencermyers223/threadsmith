@@ -18,7 +18,7 @@ export default async function DashboardLayout({
   return (
     <XAccountProvider>
       <div className="h-screen flex flex-col">
-        <Header user={user} />
+        <Header />
         {children}
       </div>
     </XAccountProvider>

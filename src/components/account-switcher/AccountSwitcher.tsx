@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useXAccount } from '@/contexts/XAccountContext';
-import { ChevronDown, Plus, Check, X, Sparkles } from 'lucide-react';
+import { ChevronDown, Plus, Check, X, Sparkles, Settings, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 
@@ -220,6 +220,28 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
                 </button>
               </>
             )}
+
+            {/* Settings & Sign Out */}
+            <div className="border-t border-white/10" />
+            <a
+              href="/settings"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-gray-300"
+              onClick={() => setIsOpen(false)}
+            >
+              <Settings className="w-5 h-5" />
+              <span className="text-sm">Settings</span>
+            </a>
+            <button
+              onClick={async () => {
+                setIsOpen(false);
+                await supabase.auth.signOut();
+                window.location.href = '/';
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-red-400"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="text-sm">Sign out</span>
+            </button>
           </div>
         )}
       </div>
