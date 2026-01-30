@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Bell, Moon, Sun, User, Check, AlertCircle, LogOut,
-  Target, Mic, Users, Plus, X, ChevronDown, ChevronUp
+  Target, Mic, Users, Plus, X, ChevronDown, ChevronUp, MessageSquare,
+  Edit2, Trash2, Copy
 } from 'lucide-react'
 import Link from 'next/link'
 import { useTheme } from '@/components/providers/ThemeProvider'
@@ -29,6 +30,15 @@ interface ContentProfile {
   content_frequency: string
   target_audience: string
   admired_accounts: string[]
+}
+
+interface DMTemplate {
+  id: string
+  title: string
+  message_body: string
+  times_used: number
+  created_at: string
+  updated_at: string
 }
 
 import { TECH_NICHES, CONTENT_GOALS, POSTING_FREQUENCIES } from '@/lib/constants/tech-niches'
@@ -72,11 +82,122 @@ export default function SettingsPage() {
     niche: true,
     voice: false,
     goals: false,
+    outreach: false,
   })
+
+  // DM Templates state
+  const [dmTemplates, setDmTemplates] = useState<DMTemplate[]>([])
+  const [loadingTemplates, setLoadingTemplates] = useState(false)
+  const [showTemplateModal, setShowTemplateModal] = useState(false)
+  const [editingTemplate, setEditingTemplate] = useState<DMTemplate | null>(null)
+  const [templateForm, setTemplateForm] = useState({ title: '', message_body: '' })
+  const [savingTemplate, setSavingTemplate] = useState(false)
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
   }
+
+  // DM Templates functions
+  const loadDMTemplates = async () => {
+    setLoadingTemplates(true)
+    try {
+      const res = await fetch('/api/dm-templates')
+      if (res.ok) {
+        const data = await res.json()
+        setDmTemplates(data.templates || [])
+      }
+    } catch (err) {
+      console.error('Failed to load DM templates:', err)
+    } finally {
+      setLoadingTemplates(false)
+    }
+  }
+
+  const openCreateModal = () => {
+    setEditingTemplate(null)
+    setTemplateForm({ title: '', message_body: '' })
+    setShowTemplateModal(true)
+  }
+
+  const openEditModal = (template: DMTemplate) => {
+    setEditingTemplate(template)
+    setTemplateForm({ title: template.title, message_body: template.message_body })
+    setShowTemplateModal(true)
+  }
+
+  const closeTemplateModal = () => {
+    setShowTemplateModal(false)
+    setEditingTemplate(null)
+    setTemplateForm({ title: '', message_body: '' })
+  }
+
+  const insertVariable = (variable: string) => {
+    setTemplateForm(prev => ({
+      ...prev,
+      message_body: prev.message_body + variable
+    }))
+  }
+
+  const saveTemplate = async () => {
+    if (!templateForm.title.trim() || !templateForm.message_body.trim()) return
+    
+    setSavingTemplate(true)
+    try {
+      if (editingTemplate) {
+        // Update existing
+        const res = await fetch(`/api/dm-templates/${editingTemplate.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(templateForm)
+        })
+        if (res.ok) {
+          const updated = await res.json()
+          setDmTemplates(prev => prev.map(t => t.id === updated.id ? updated : t))
+        }
+      } else {
+        // Create new
+        const res = await fetch('/api/dm-templates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(templateForm)
+        })
+        if (res.ok) {
+          const created = await res.json()
+          setDmTemplates(prev => [...prev, created])
+        }
+      }
+      closeTemplateModal()
+    } catch (err) {
+      console.error('Failed to save template:', err)
+    } finally {
+      setSavingTemplate(false)
+    }
+  }
+
+  const deleteTemplate = async (id: string) => {
+    if (!confirm('Delete this template?')) return
+    
+    try {
+      const res = await fetch(`/api/dm-templates/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setDmTemplates(prev => prev.filter(t => t.id !== id))
+      }
+    } catch (err) {
+      console.error('Failed to delete template:', err)
+    }
+  }
+
+  const copyTemplate = (messageBody: string) => {
+    navigator.clipboard.writeText(messageBody)
+  }
+
+  // Load templates when outreach section is expanded
+  useEffect(() => {
+    if (expandedSections.outreach && dmTemplates.length === 0 && !loadingTemplates) {
+      loadDMTemplates()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expandedSections.outreach])
 
   // Load settings only once on mount
   useEffect(() => {
@@ -607,6 +728,181 @@ export default function SettingsPage() {
             </div>
           )}
         </section>
+
+        {/* Outreach Templates */}
+        <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
+          <button
+            onClick={() => toggleSection('outreach')}
+            className="w-full px-4 py-3 border-b border-[var(--border)] bg-[var(--background)] flex items-center justify-between"
+          >
+            <h2 className="font-semibold flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Outreach Templates
+            </h2>
+            {expandedSections.outreach ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+          {expandedSections.outreach && (
+            <div className="p-4 space-y-4">
+              <p className="text-sm text-[var(--muted)]">
+                Create DM templates for cold outreach. Use variables like {'{'}{'{'}<code>username</code>{'}'}{'}'},
+                {'{'}{'{'}<code>display_name</code>{'}'}{'}'},
+                {'{'}{'{'}<code>bio_snippet</code>{'}'}{'}'}
+                to personalize messages.
+              </p>
+
+              {/* Template List */}
+              {loadingTemplates ? (
+                <div className="text-center py-8 text-[var(--muted)]">
+                  <div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  Loading templates...
+                </div>
+              ) : dmTemplates.length === 0 ? (
+                <div className="text-center py-8 text-[var(--muted)]">
+                  <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>No templates yet</p>
+                  <p className="text-sm">Create your first outreach template</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {dmTemplates.map(template => (
+                    <div
+                      key={template.id}
+                      className="p-3 rounded-lg bg-[var(--background)] border border-[var(--border)]"
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <h3 className="font-medium">{template.title}</h3>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => copyTemplate(template.message_body)}
+                            className="p-1.5 rounded hover:bg-[var(--card)] transition-colors"
+                            title="Copy message"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => openEditModal(template)}
+                            className="p-1.5 rounded hover:bg-[var(--card)] transition-colors"
+                            title="Edit template"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteTemplate(template.id)}
+                            className="p-1.5 rounded hover:bg-red-400/10 text-red-400 transition-colors"
+                            title="Delete template"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-[var(--muted)] whitespace-pre-wrap line-clamp-3">
+                        {template.message_body}
+                      </p>
+                      {template.times_used > 0 && (
+                        <p className="text-xs text-[var(--muted)] mt-2">
+                          Used {template.times_used} time{template.times_used !== 1 ? 's' : ''}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add Template Button */}
+              <button
+                onClick={openCreateModal}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-[var(--border)] hover:border-accent hover:bg-accent/5 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Create Template
+              </button>
+            </div>
+          )}
+        </section>
+
+        {/* Template Modal */}
+        {showTemplateModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl w-full max-w-lg">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
+                <h3 className="font-semibold">
+                  {editingTemplate ? 'Edit Template' : 'Create Template'}
+                </h3>
+                <button
+                  onClick={closeTemplateModal}
+                  className="p-1 rounded hover:bg-[var(--background)] transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-4 space-y-4">
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Template Name</label>
+                  <input
+                    type="text"
+                    value={templateForm.title}
+                    onChange={(e) => setTemplateForm(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="e.g., Collab Request, Intro DM..."
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none"
+                  />
+                </div>
+
+                {/* Message Body */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Message</label>
+                  <textarea
+                    value={templateForm.message_body}
+                    onChange={(e) => setTemplateForm(prev => ({ ...prev, message_body: e.target.value }))}
+                    placeholder="Hey {{display_name}}, I noticed you..."
+                    rows={6}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none resize-none"
+                  />
+                </div>
+
+                {/* Variable Buttons */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Insert Variable</label>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => insertVariable('{{username}}')}
+                      className="px-2 py-1 text-sm rounded bg-[var(--background)] border border-[var(--border)] hover:border-accent transition-colors"
+                    >
+                      {'{{username}}'}
+                    </button>
+                    <button
+                      onClick={() => insertVariable('{{display_name}}')}
+                      className="px-2 py-1 text-sm rounded bg-[var(--background)] border border-[var(--border)] hover:border-accent transition-colors"
+                    >
+                      {'{{display_name}}'}
+                    </button>
+                    <button
+                      onClick={() => insertVariable('{{bio_snippet}}')}
+                      className="px-2 py-1 text-sm rounded bg-[var(--background)] border border-[var(--border)] hover:border-accent transition-colors"
+                    >
+                      {'{{bio_snippet}}'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 px-4 py-3 border-t border-[var(--border)]">
+                <button
+                  onClick={closeTemplateModal}
+                  className="px-4 py-2 rounded-lg hover:bg-[var(--background)] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveTemplate}
+                  disabled={savingTemplate || !templateForm.title.trim() || !templateForm.message_body.trim()}
+                  className="px-4 py-2 rounded-lg bg-accent text-[var(--accent-text)] hover:opacity-90 disabled:opacity-50 transition-colors"
+                >
+                  {savingTemplate ? 'Saving...' : editingTemplate ? 'Update' : 'Create'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Save Button */}
         <div className="flex items-center justify-between">
