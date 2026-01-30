@@ -135,6 +135,34 @@ export async function POST(request: NextRequest) {
 
     const niche = contentProfile?.niche || 'general';
 
+    // Get user's learned engagement patterns (if available)
+    const { data: engagementPatterns } = await supabase
+      .from('engagement_patterns')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    // Build personalized context if patterns exist
+    let personalizedContext = '';
+    if (engagementPatterns && engagementPatterns.tweets_analyzed >= 10) {
+      const topHooks = Array.isArray(engagementPatterns.top_hooks) 
+        ? engagementPatterns.top_hooks 
+        : JSON.parse(engagementPatterns.top_hooks || '[]');
+      
+      personalizedContext = `
+PERSONALIZED INSIGHTS (learned from analyzing ${engagementPatterns.tweets_analyzed} of this user's actual tweets):
+- Optimal length for their audience: ${engagementPatterns.optimal_length_min}-${engagementPatterns.optimal_length_max} characters
+- Questions effectiveness: ${engagementPatterns.questions_effectiveness}/100 (${engagementPatterns.questions_effectiveness > 60 ? 'HIGH - questions work well' : engagementPatterns.questions_effectiveness < 40 ? 'LOW - questions underperform' : 'average'})
+- Numbers/lists effectiveness: ${engagementPatterns.numbers_effectiveness}/100
+- Bold claims effectiveness: ${engagementPatterns.bold_claims_effectiveness}/100
+- Emojis effectiveness: ${engagementPatterns.emojis_effectiveness}/100
+- Their average engagement rate: ${engagementPatterns.avg_engagement_rate}%
+${topHooks.length > 0 ? `- Their top-performing hooks: "${topHooks.slice(0, 2).join('", "')}"` : ''}
+
+IMPORTANT: Adjust your scoring based on what ACTUALLY works for this specific user's audience, not just generic best practices.
+`;
+    }
+
     // Build the scoring prompt
     const prompt = `You are an X/Twitter algorithm expert. Analyze this draft tweet and score it based on what the algorithm rewards.
 
@@ -148,7 +176,7 @@ THIS IS A REPLY TO:
 
 POST TYPE: ${postType}
 USER'S NICHE: ${niche}
-
+${personalizedContext}
 X ALGORITHM SCORING CRITERIA (based on research):
 
 1. **Hook Strength** (Critical - first line is everything)
@@ -261,14 +289,28 @@ IMPORTANT:
     const parsed = JSON.parse(jsonMatch[0]);
 
     // Calculate overall score (weighted average)
-    // Hook Strength and Reply Potential are weighted higher
-    const weights: Record<string, number> = {
-      'Hook Strength': 2.5,
-      'Reply Potential': 2.5,
-      'Length Optimization': 1.5,
-      'Readability': 1.5,
-      'Engagement Triggers': 2.0
-    };
+    // Use personalized weights if available, otherwise default weights
+    let weights: Record<string, number>;
+    
+    if (engagementPatterns && engagementPatterns.tweets_analyzed >= 10) {
+      // Personalized weights based on learned patterns
+      weights = {
+        'Hook Strength': engagementPatterns.weight_hook / 10,
+        'Reply Potential': engagementPatterns.weight_reply_potential / 10,
+        'Length Optimization': engagementPatterns.weight_length / 10,
+        'Readability': engagementPatterns.weight_readability / 10,
+        'Engagement Triggers': (engagementPatterns.weight_hashtags + engagementPatterns.weight_emojis) / 10
+      };
+    } else {
+      // Default weights
+      weights = {
+        'Hook Strength': 2.5,
+        'Reply Potential': 2.5,
+        'Length Optimization': 1.5,
+        'Readability': 1.5,
+        'Engagement Triggers': 2.0
+      };
+    }
 
     let weightedSum = 0;
     let totalWeight = 0;
@@ -323,6 +365,8 @@ IMPORTANT:
 
     return NextResponse.json({
       result,
+      personalized: !!(engagementPatterns && engagementPatterns.tweets_analyzed >= 10),
+      tweetsAnalyzed: engagementPatterns?.tweets_analyzed || 0,
       usage: {
         tokens: response.usage.input_tokens + response.usage.output_tokens
       }
