@@ -1197,3 +1197,239 @@ body {
   color: #a78bfa;
   border: 1px solid rgba(124, 58, 237, 0.3);
 }
+
+/* ============================================================
+   Onboarding Flow Styles
+   ============================================================ */
+
+#onboarding-view {
+  padding: 20px 16px;
+}
+
+.onboarding-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-height: 360px;
+}
+
+/* Step indicators (dots) */
+.onboarding-dots {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.onboarding-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2f3336;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.onboarding-dots .dot.active {
+  background: linear-gradient(135deg, #C9B896 0%, #D4C4A8 100%);
+  width: 24px;
+  border-radius: 4px;
+}
+
+.onboarding-dots .dot.completed {
+  background: #C9B896;
+}
+
+/* Individual steps */
+.onboarding-step {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.onboarding-step.active {
+  display: flex;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.onboarding-emoji {
+  font-size: 48px;
+  margin-bottom: 16px;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.onboarding-step h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #e7e9ea;
+  margin-bottom: 8px;
+}
+
+.onboarding-subtitle {
+  font-size: 14px;
+  color: #71767b;
+  margin-bottom: 20px;
+}
+
+.onboarding-desc {
+  font-size: 13px;
+  color: #8b949e;
+  line-height: 1.6;
+  max-width: 260px;
+}
+
+/* Highlight box (e.g., 75x stat) */
+.onboarding-highlight {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, rgba(201, 184, 150, 0.15) 0%, rgba(212, 196, 168, 0.1) 100%);
+  border: 1px solid rgba(201, 184, 150, 0.3);
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.highlight-number {
+  font-size: 36px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #C9B896 0%, #D4C4A8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.highlight-text {
+  font-size: 12px;
+  color: #C9B896;
+  font-weight: 500;
+}
+
+/* Feature lists in onboarding */
+.onboarding-features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.onboarding-feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #16181c;
+  border-radius: 10px;
+  border: 1px solid #2f3336;
+  text-align: left;
+  font-size: 13px;
+  color: #e7e9ea;
+}
+
+.onboarding-feature .feature-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.onboarding-feature.pro {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(99, 102, 241, 0.05) 100%);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+}
+
+/* Badge (FREE / PRO) */
+.onboarding-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.onboarding-badge.free-badge {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.onboarding-badge.pro-badge {
+  background: rgba(124, 58, 237, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+}
+
+.onboarding-trial {
+  font-size: 13px;
+  color: #a78bfa;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+/* Navigation buttons */
+.onboarding-nav {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+.onboarding-btn {
+  flex: 1;
+  padding: 12px 20px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.onboarding-btn.primary {
+  background: linear-gradient(135deg, #C9B896 0%, #D4C4A8 100%);
+  color: white;
+}
+
+.onboarding-btn.primary:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 16px rgba(201, 184, 150, 0.3);
+}
+
+.onboarding-btn.secondary {
+  background: #16181c;
+  color: #71767b;
+  border: 1px solid #2f3336;
+}
+
+.onboarding-btn.secondary:hover {
+  border-color: #C9B896;
+  color: #e7e9ea;
+}
+
+.onboarding-skip {
+  background: none;
+  border: none;
+  color: #71767b;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 12px;
+  padding: 4px 8px;
+  transition: color 0.2s;
+}
+
+.onboarding-skip:hover {
+  color: #e7e9ea;
+}

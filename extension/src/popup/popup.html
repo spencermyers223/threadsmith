@@ -16,7 +16,106 @@
         </svg>
         <span>xthread</span>
       </div>
-      <span class="version">v1.7.1</span>
+      <span class="version">v1.9.1</span>
+    </div>
+
+    <!-- Onboarding view (first-time users) -->
+    <div id="onboarding-view" class="view hidden">
+      <div class="onboarding-container">
+        <!-- Step indicators -->
+        <div class="onboarding-dots">
+          <span class="dot active" data-step="1"></span>
+          <span class="dot" data-step="2"></span>
+          <span class="dot" data-step="3"></span>
+          <span class="dot" data-step="4"></span>
+        </div>
+        
+        <!-- Step 1: Welcome -->
+        <div class="onboarding-step active" data-step="1">
+          <div class="onboarding-emoji">🧵</div>
+          <h2>Welcome to xthread</h2>
+          <p class="onboarding-subtitle">Your AI-powered X growth companion</p>
+          <div class="onboarding-highlight">
+            <span class="highlight-number">75x</span>
+            <span class="highlight-text">Replies are weighted 75x in X's algorithm</span>
+          </div>
+          <p class="onboarding-desc">We help you write better replies, faster — so you can grow your following without spending hours on X.</p>
+        </div>
+        
+        <!-- Step 2: Reply Coach -->
+        <div class="onboarding-step" data-step="2">
+          <div class="onboarding-emoji">🎯</div>
+          <h2>Reply Coach</h2>
+          <p class="onboarding-subtitle">Strategic angles, not canned responses</p>
+          <div class="onboarding-features">
+            <div class="onboarding-feature">
+              <span class="feature-icon">💡</span>
+              <span>Get strategic angles for any post</span>
+            </div>
+            <div class="onboarding-feature">
+              <span class="feature-icon">🪝</span>
+              <span>Hook starters to beat writer's block</span>
+            </div>
+            <div class="onboarding-feature">
+              <span class="feature-icon">📊</span>
+              <span>See if a post is worth replying to</span>
+            </div>
+          </div>
+          <div class="onboarding-badge free-badge">✓ FREE feature</div>
+        </div>
+        
+        <!-- Step 3: Track & Learn -->
+        <div class="onboarding-step" data-step="3">
+          <div class="onboarding-emoji">📈</div>
+          <h2>Track Your Growth</h2>
+          <p class="onboarding-subtitle">See what's actually working</p>
+          <div class="onboarding-features">
+            <div class="onboarding-feature">
+              <span class="feature-icon">👁</span>
+              <span>Watch accounts you want to engage with</span>
+            </div>
+            <div class="onboarding-feature">
+              <span class="feature-icon">📌</span>
+              <span>Save posts for later replies</span>
+            </div>
+            <div class="onboarding-feature">
+              <span class="feature-icon">🎯</span>
+              <span>Track which replies lead to follows</span>
+            </div>
+          </div>
+          <div class="onboarding-badge free-badge">✓ All FREE</div>
+        </div>
+        
+        <!-- Step 4: Pro Features -->
+        <div class="onboarding-step" data-step="4">
+          <div class="onboarding-emoji">👑</div>
+          <h2>Go Pro</h2>
+          <p class="onboarding-subtitle">Unlock advanced AI features</p>
+          <div class="onboarding-features">
+            <div class="onboarding-feature pro">
+              <span class="feature-icon">📊</span>
+              <span>Algo Analyzer — score before you post</span>
+            </div>
+            <div class="onboarding-feature pro">
+              <span class="feature-icon">💡</span>
+              <span>Content Coach — unlimited tweet ideas</span>
+            </div>
+            <div class="onboarding-feature pro">
+              <span class="feature-icon">🧠</span>
+              <span>Personalized scoring from YOUR tweets</span>
+            </div>
+          </div>
+          <p class="onboarding-trial">Try free for 7 days — no credit card required</p>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="onboarding-nav">
+          <button id="onboarding-back" class="onboarding-btn secondary hidden">Back</button>
+          <button id="onboarding-next" class="onboarding-btn primary">Next →</button>
+        </div>
+        
+        <button id="onboarding-skip" class="onboarding-skip">Skip intro</button>
+      </div>
     </div>
 
     <!-- Not authenticated view -->

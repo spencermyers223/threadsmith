@@ -5,6 +5,7 @@ const XTHREAD_API = 'https://xthread.io/api';
 const WATCHLIST_MAX = 50;
 
 // DOM Elements
+const onboardingView = document.getElementById('onboarding-view');
 const authView = document.getElementById('auth-view');
 const mainView = document.getElementById('main-view');
 const signInBtn = document.getElementById('sign-in-btn');
@@ -44,25 +45,140 @@ const clearRepliesBtn = document.getElementById('clear-replies-btn');
 const tabs = document.querySelectorAll('.tab');
 const tabContents = document.querySelectorAll('.tab-content');
 
+// Onboarding elements
+const onboardingNextBtn = document.getElementById('onboarding-next');
+const onboardingBackBtn = document.getElementById('onboarding-back');
+const onboardingSkipBtn = document.getElementById('onboarding-skip');
+const onboardingDots = document.querySelectorAll('.onboarding-dots .dot');
+const onboardingSteps = document.querySelectorAll('.onboarding-step');
+
+let currentOnboardingStep = 1;
+const totalOnboardingSteps = 4;
+
 // Initialize
 async function init() {
-  const stored = await chrome.storage.local.get(['xthreadToken', 'xthreadUser', 'isPremium']);
+  const stored = await chrome.storage.local.get(['xthreadToken', 'xthreadUser', 'isPremium', 'onboardingCompleted']);
   
   if (stored.xthreadToken && stored.xthreadUser) {
+    // User is authenticated, show main view
     showMainView(stored.xthreadUser, stored.isPremium);
     refreshUserData(stored.xthreadToken);
+  } else if (!stored.onboardingCompleted) {
+    // First-time user, show onboarding
+    showOnboardingView();
   } else {
+    // Onboarding done, but not authenticated
     showAuthView();
   }
   
   // Setup tab switching
   setupTabs();
   
+  // Setup onboarding navigation
+  setupOnboarding();
+  
   // Load watchlist
   loadWatchlist();
   
   // Update badges
   updateBadges();
+}
+
+// ============================================================
+// Onboarding Functions
+// ============================================================
+
+function showOnboardingView() {
+  onboardingView.classList.remove('hidden');
+  authView.classList.add('hidden');
+  mainView.classList.add('hidden');
+}
+
+function setupOnboarding() {
+  // Next button handler
+  if (onboardingNextBtn) {
+    onboardingNextBtn.addEventListener('click', () => {
+      if (currentOnboardingStep < totalOnboardingSteps) {
+        goToOnboardingStep(currentOnboardingStep + 1);
+      } else {
+        // Last step - complete onboarding
+        completeOnboarding();
+      }
+    });
+  }
+  
+  // Back button handler
+  if (onboardingBackBtn) {
+    onboardingBackBtn.addEventListener('click', () => {
+      if (currentOnboardingStep > 1) {
+        goToOnboardingStep(currentOnboardingStep - 1);
+      }
+    });
+  }
+  
+  // Skip button handler
+  if (onboardingSkipBtn) {
+    onboardingSkipBtn.addEventListener('click', () => {
+      completeOnboarding();
+    });
+  }
+  
+  // Dot click handlers
+  onboardingDots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      const step = parseInt(dot.dataset.step);
+      goToOnboardingStep(step);
+    });
+  });
+}
+
+function goToOnboardingStep(step) {
+  currentOnboardingStep = step;
+  
+  // Update steps visibility
+  onboardingSteps.forEach(s => {
+    s.classList.remove('active');
+    if (parseInt(s.dataset.step) === step) {
+      s.classList.add('active');
+    }
+  });
+  
+  // Update dots
+  onboardingDots.forEach(dot => {
+    const dotStep = parseInt(dot.dataset.step);
+    dot.classList.remove('active', 'completed');
+    if (dotStep === step) {
+      dot.classList.add('active');
+    } else if (dotStep < step) {
+      dot.classList.add('completed');
+    }
+  });
+  
+  // Update back button visibility
+  if (onboardingBackBtn) {
+    if (step === 1) {
+      onboardingBackBtn.classList.add('hidden');
+    } else {
+      onboardingBackBtn.classList.remove('hidden');
+    }
+  }
+  
+  // Update next button text
+  if (onboardingNextBtn) {
+    if (step === totalOnboardingSteps) {
+      onboardingNextBtn.textContent = 'Get Started →';
+    } else {
+      onboardingNextBtn.textContent = 'Next →';
+    }
+  }
+}
+
+async function completeOnboarding() {
+  // Mark onboarding as completed
+  await chrome.storage.local.set({ onboardingCompleted: true });
+  
+  // Transition to auth view
+  showAuthView();
 }
 
 // Setup tab switching
