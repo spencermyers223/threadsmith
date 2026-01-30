@@ -114,30 +114,8 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
         >
-          {/* Active Account Avatar */}
-          <div className="relative">
-            {activeAccount?.x_profile_image_url ? (
-              <Image
-                src={activeAccount.x_profile_image_url}
-                alt={activeAccount.x_username}
-                width={32}
-                height={32}
-                className="rounded-full"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-[#D4A574]/20 flex items-center justify-center text-[#D4A574] text-sm font-medium">
-                {activeAccount?.x_username?.charAt(0).toUpperCase() || '?'}
-              </div>
-            )}
-            {accounts.length > 1 && (
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#0A0A0A] rounded-full flex items-center justify-center">
-                <span className="text-[10px] text-gray-400">{accounts.length}</span>
-              </div>
-            )}
-          </div>
-
           {/* Account Handle */}
-          <span className="text-sm text-gray-300 hidden sm:block max-w-[120px] truncate">
+          <span className="text-sm text-gray-300 max-w-[120px] truncate">
             @{activeAccount?.x_username}
           </span>
 
