@@ -98,6 +98,9 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   // Form state
   const [topic, setTopic] = useState('')
   const [selectedPostType, setSelectedPostType] = useState<string>('market_take')
+  const [placeholderText, setPlaceholderText] = useState('Enter your topic, idea, or paste notes...')
+  const [activeTemplate, setActiveTemplate] = useState<string | null>(null)
+  const [promptTemplate, setPromptTemplate] = useState('')
   const [selectedLength, setSelectedLength] = useState<string>('standard')
   const [isTemplatePrompt, setIsTemplatePrompt] = useState(false)
 
@@ -234,16 +237,25 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
 
       // Pass the CT-native post type directly to the API
       // The API now supports both legacy archetypes and CT-native post types
+      // If using a template, substitute the user's input into the prompt template
+      let finalTopic = topic.trim()
+      if (isTemplatePrompt && promptTemplate) {
+        // Replace {{topic}} or similar placeholders with user input
+        finalTopic = promptTemplate.replace(/\{\{topic\}\}/gi, finalTopic)
+                                    .replace(/\{\{input\}\}/gi, finalTopic)
+                                    .replace(/\{\{content\}\}/gi, finalTopic)
+      }
+
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          topic: topic.trim(),
+          topic: finalTopic,
           length: selectedLength,
           tone: 'casual',
-          postType: selectedPostType, // Pass the actual post type (e.g., 'build_in_public', 'market_take', etc.)
+          postType: selectedPostType,
           sourceFileId: selectedFile?.id || undefined,
-          isTemplatePrompt, // When true, use topic as-is instead of wrapping it
+          isTemplatePrompt,
         }),
       })
 
@@ -405,14 +417,20 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
                 What do you want to post about?
               </label>
               <TemplateSelector
-                onSelectTemplate={(filledPrompt, _title, category) => {
-                  setTopic(filledPrompt)
-                  setIsTemplatePrompt(true) // Mark as template-driven
+                activeTemplate={activeTemplate}
+                onSelectTemplate={(placeholder, template, category, title) => {
+                  setPlaceholderText(placeholder)
+                  setPromptTemplate(template)
+                  setActiveTemplate(title || null)
+                  // Clear topic when selecting a template (user starts fresh with guidance)
+                  setTopic('')
+                  setIsTemplatePrompt(!!template)
                   // Auto-select matching post type based on template category
                   const categoryToPostType: Record<string, string> = {
                     'build-in-public': 'build_in_public',
                     'contrarian': 'hot_take',
                     'alpha': 'market_take',
+                    'data': 'on_chain_insight',
                     'engagement': 'market_take',
                   }
                   if (category && categoryToPostType[category]) {
@@ -426,9 +444,9 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
                 value={topic}
                 onChange={(e) => {
                   setTopic(e.target.value.slice(0, 500))
-                  setIsTemplatePrompt(false) // User is typing manually, not using template
+                  // Keep template context while user types
                 }}
-                placeholder="Enter your topic, idea, or paste notes..."
+                placeholder={placeholderText}
                 rows={3}
                 className="
                   w-full px-4 py-3 rounded-xl resize-none

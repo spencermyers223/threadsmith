@@ -68,63 +68,95 @@ interface Message {
 
 // Editing tool prompts
 const EDITING_PROMPTS: Record<string, string> = {
-  add_hook: `You are an expert at writing scroll-stopping hooks for X/Twitter. Your task is to add a powerful opening line to the given content.
+  add_hook: `You are a viral content expert. Add ONE powerful hook to the beginning of this content that makes people stop scrolling.
 
-RULES:
-- Add ONE hook line at the very beginning of the content
-- The hook should make people STOP scrolling
-- Use patterns like: counterintuitive statements, bold claims, "Most people think X, but Y", numbers/data, direct challenges
-- Keep the rest of the content EXACTLY intact — do not modify, reorder, or remove anything
-- Do NOT add quotes around the hook
-- Return ONLY the modified content, nothing else
+ABSOLUTE RULES:
+1. Add exactly ONE hook line at the very start
+2. Do NOT modify, reorder, or remove ANY other content
+3. Do NOT wrap the hook in quotes
+4. Return ONLY the modified content (hook + original content unchanged)
 
-FOR THREADS (content with numbered tweets like "1/ ...", "2/ ..."):
-- Replace or enhance the FIRST LINE of tweet 1/ with a stronger hook
-- Keep the "1/" prefix and all other tweets exactly as they are
-- Do NOT change the numbering or structure
-- Example: if tweet 1/ starts with a weak line, rewrite just that opening while keeping the rest of 1/ and all subsequent tweets
+FOR THREADS (1/, 2/, etc.):
+- Replace/enhance ONLY the first line of 1/
+- Keep "1/" prefix intact
+- Keep ALL other tweets exactly as-is
 
-HOOK PATTERNS THAT WORK:
-- "Most people have this completely backwards..."
-- "[Number]% of people get this wrong about [topic]"
-- "Hot take: [bold statement]"
-- "The [industry/topic] doesn't want you to know this..."
-- "I spent [time] studying [topic]. Here's what I found:"
-- "Stop doing [common thing]. Here's why:"`,
+HOOK FORMULAS THAT WORK:
+- Counterintuitive: "Everyone thinks [X]. They're wrong."
+- Data hook: "[Number]% of [people] fail at this"
+- Challenge: "Stop [common thing]. Here's why:"
+- Curiosity gap: "There's a reason [surprising observation]..."
+- Authority: "After [experience], I learned this:"
+- Contrarian: "Unpopular opinion: [bold claim]"
+- Direct address: "You're making this mistake right now"
+- Story hook: "Last week, [brief setup]..."
 
-  humanize: `You are an expert at making social media content sound natural and authentic. Your task is to rewrite the content to sound more human and less AI-generated.
+HOOKS TO AVOID (overused/AI-sounding):
+- "Let me tell you..."
+- "Here's the thing..."
+- "I need to talk about..."
+- "Can we talk about..."
+- Starting with "So," or "Look,"
 
-RULES:
-- Remove corporate/formal language
-- Add natural speech patterns (contractions, casual tone)
-- Keep the same core message and length
-- Sound like a real person talking to friends
-- Avoid buzzwords and jargon
-- Return ONLY the modified content, nothing else
+The hook should be 5-15 words. Short and punchy.`,
 
-THINGS TO FIX:
+  humanize: `You are an expert at making social media content sound like a real person wrote it, not AI. Rewrite the content to be authentic and conversational.
+
+ABSOLUTE RULES:
+1. Same core message, similar length
+2. Sound like someone talking to a friend, not writing an essay
+3. Return ONLY the rewritten content, nothing else
+
+DETECT AND FIX THESE AI TELLS:
 - "Utilize" → "use"
+- "In order to" → "to"  
+- "It's important to" → delete or rephrase
+- "Leverage" → "use"
+- "Dive into" / "delve into" → just get into it
+- "Navigate" (when not literal) → "deal with" / "handle"
+- "Landscape" (business context) → "world" / "space" or delete
+- "Robust" → "strong" / "solid"
+- "Seamless" → "smooth" / "easy"
+- "Unlock" / "Unleash" → "get" / "find"
+- Lists that start with "Here's the thing:" or "The truth is:"
+- Overly balanced "On one hand... on the other hand"
+- Perfect parallel structure (real people are messier)
+
+ADD HUMAN ELEMENTS:
+- Contractions (it's, don't, can't, won't)
+- Incomplete sentences sometimes
+- Personal observations ("I've noticed...", "In my experience...")
+- Casual connectors ("Look,", "Here's the deal:", "Real talk:")
+- Occasional imperfect grammar if it sounds natural
+
+The goal: If someone read this, they should NOT think "this sounds like ChatGPT wrote it."`,
+
+  sharpen: `You are an expert editor who makes social media content shorter and punchier. Your PRIMARY job is to REDUCE the word count significantly.
+
+ABSOLUTE RULES:
+1. OUTPUT MUST BE SHORTER than input - this is non-negotiable
+2. Target: 30-50% fewer words while keeping the core message
+3. Every single word must earn its place
+4. Return ONLY the shortened content, nothing else
+
+CUT RUTHLESSLY:
+- "I think that", "I believe", "In my opinion" → just state it directly
+- "It's important to note that", "It's worth mentioning" → delete entirely
 - "In order to" → "to"
-- Overly perfect grammar → natural speech
-- Generic statements → specific observations
-- Passive voice → active voice`,
+- "The fact that" → delete
+- "Actually", "basically", "literally", "really", "very" → delete
+- Redundant adjectives (pick one, delete rest)
+- Repetitive ideas (say it once)
+- Weak openings like "So," or "Well,"
+- Hedging language ("maybe", "perhaps", "sort of", "kind of")
 
-  sharpen: `You are an expert at making social media content punchy and concise. Your task is to tighten up the given content.
+TECHNIQUE:
+- Combine sentences where possible
+- Use active voice (shorter than passive)
+- Replace phrases with single words
+- If a sentence doesn't add new value, delete it
 
-RULES:
-- Cut unnecessary words ruthlessly
-- Each word must earn its place
-- Keep the core message intact
-- Make every sentence punchy
-- Aim for 20-30% shorter if possible
-- Return ONLY the modified content, nothing else
-
-THINGS TO CUT:
-- "I think that" → just state it
-- "It's important to note" → just say it
-- "In my opinion" → implied
-- Filler phrases and hedging
-- Redundant adjectives`,
+The output must be noticeably shorter. If you can't make it at least 20% shorter, you're not cutting enough.`,
 
   make_thread: `You are an expert at turning content into engaging X/Twitter threads. Your task is to expand the given content into a numbered thread.
 
@@ -145,44 +177,65 @@ THREAD STRUCTURE:
 8-9/ Implications or takeaways
 10/ Summary + question for replies`,
 
-  add_question: `You are an expert at adding engagement-driving questions to X/Twitter content. Your task is to add a compelling question that encourages replies.
+  add_question: `Add ONE engaging question to the end of this content that drives replies.
 
-RULES:
-- Add ONE question to the end of the content
-- The question should invite discussion and replies
-- Make it specific, not generic
-- It should relate directly to the content
-- Keep the rest of the content intact
-- Return ONLY the modified content, nothing else
+ABSOLUTE RULES:
+1. Add exactly ONE question at the very end
+2. Keep ALL existing content exactly intact
+3. The question must relate to what the post is about
+4. Return ONLY the modified content (original + question)
 
-QUESTION PATTERNS THAT DRIVE REPLIES:
-- "What's your experience with [topic]?"
-- "Do you agree, or am I off base here?"
-- "What am I missing?"
-- "Has anyone else noticed this?"
-- "Curious - what would you do differently?"
-- "Hot take or obvious truth?"
-- "Which camp are you in?"`,
+QUESTIONS THAT GET REPLIES (ranked by engagement):
+- Binary choice: "X or Y?" / "Which one are you?"
+- Personal experience: "Has this happened to you?"
+- Opinion poll: "Agree or disagree?"
+- Challenge: "Prove me wrong"
+- Curiosity: "What's yours?" / "What's your [version]?"
+- Confession prompt: "Anyone else guilty of this?"
+- Debate starter: "Hot take or obvious truth?"
 
-  make_spicy: `You are an expert at adding edge and personality to social media content. Your task is to make the content more provocative and attention-grabbing.
+AVOID THESE (low engagement):
+- "What do you think?" (too generic)
+- "Thoughts?" (lazy, overused)
+- "Let me know in the comments" (sounds like YouTube)
+- Questions that require long answers (people scroll past)
 
-RULES:
-- Keep the core message but add more edge
-- Be bold and opinionated, not rude or offensive
-- Challenge conventional wisdom
-- Add contrarian angles where appropriate
-- Use stronger language and bolder claims
-- Make it memorable and quotable
-- Return ONLY the modified content, nothing else
+FORMATTING:
+- Put the question on its own line at the end
+- Keep it SHORT (under 10 words is ideal)
+- Use "?" at the end`,
 
-WAYS TO ADD SPICE:
-- Turn soft opinions into bold claims
-- Challenge "everybody knows" assumptions
-- Add "uncomfortable truth" framing
-- Use more direct, punchy language
-- Name what others are afraid to say
-- Add stakes ("This is costing you...")
-- Create us vs them dynamics ("Most people do X. Winners do Y.")`,
+  make_spicy: `Make this content more provocative and bold. Add edge without being offensive.
+
+ABSOLUTE RULES:
+1. Keep the core message/point
+2. Make it bolder and more opinionated
+3. Return ONLY the spicier content, nothing else
+
+TECHNIQUES TO ADD HEAT:
+- Remove hedging: "I think" → state it as fact
+- Strengthen claims: "might help" → "will change everything"
+- Add stakes: "This is costing you [something]"
+- Call out: "Everyone's doing [X]. Here's why that's stupid."
+- Create tension: "Most people... vs the successful few..."
+- Name enemies: "[Bad practice] needs to die"
+- Be direct: "Stop [doing thing]. It doesn't work."
+- Add urgency: "You're running out of time to [fix this]"
+
+WHAT MAKES CONTENT SPICY:
+- Strong opinions (not wishy-washy)
+- Naming what others won't say
+- Challenging popular beliefs
+- Creating in-group/out-group dynamics
+- Making people feel something (agreement, disagreement, shock)
+
+KEEP IT PROFESSIONAL:
+- Bold ≠ rude or mean
+- Provocative ≠ offensive
+- Confident ≠ arrogant
+- Challenge ideas, not people personally
+
+Make it the kind of post people screenshot and share because they either strongly agree or strongly disagree.`,
 }
 
 export async function POST(request: NextRequest) {

@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import {
   Wand2, Zap, Sparkles, ListTree, BarChart3, Loader2,
-  AlertTriangle, MessageCircle, Flame, X
+  AlertTriangle, MessageCircle, Flame, X, Clock
 } from 'lucide-react'
+import { scoreEngagement, type EngagementScore } from '@/lib/engagement-scorer'
 
 interface EditingToolsProps {
   content: string
@@ -90,20 +91,12 @@ const TOOLS: Tool[] = [
   },
 ]
 
-interface AlgorithmScore {
-  overall: number
-  factors: {
-    name: string
-    score: number
-    tip: string
-  }[]
-  warnings: string[]
-}
+// Using shared EngagementScore from engagement-scorer for consistency with Workspace
 
 export default function EditingTools({ content, onContentChange, isThread = false }: EditingToolsProps) {
   const [activeTool, setActiveTool] = useState<ToolId | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [algorithmScore, setAlgorithmScore] = useState<AlgorithmScore | null>(null)
+  const [engagementScore, setEngagementScore] = useState<EngagementScore | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const handleToolClick = async (toolId: ToolId) => {
@@ -113,18 +106,18 @@ export default function EditingTools({ content, onContentChange, isThread = fals
     setError(null)
 
     if (toolId === 'algorithm_check') {
-      // Toggle algorithm check - if already showing, hide it
-      if (algorithmScore) {
-        setAlgorithmScore(null)
+      // Toggle score check - if already showing, hide it
+      if (engagementScore) {
+        setEngagementScore(null)
         setActiveTool(null)
         return
       }
-      // Local algorithm check - no API needed
-      performAlgorithmCheck()
+      // Use shared scorer for consistency with Workspace
+      setEngagementScore(scoreEngagement(content))
       return
     }
 
-    setAlgorithmScore(null)
+    setEngagementScore(null)
     setIsLoading(true)
 
     try {
@@ -153,87 +146,6 @@ export default function EditingTools({ content, onContentChange, isThread = fals
     }
   }
 
-  const performAlgorithmCheck = () => {
-    const factors: AlgorithmScore['factors'] = []
-    const warnings: string[] = []
-    let totalScore = 0
-
-    // Check hook strength
-    const firstLine = content.split('\n')[0]
-    const hasStrongHook = /^(The|This|Here|I|If|Why|How|What|Stop|Attention|You|Everyone)/i.test(firstLine) ||
-                         /[!?]/.test(firstLine) ||
-                         firstLine.length < 60
-    factors.push({
-      name: 'Hook Strength',
-      score: hasStrongHook ? 85 : 50,
-      tip: hasStrongHook ? 'Good opening line' : 'Consider a more attention-grabbing first line',
-    })
-    totalScore += hasStrongHook ? 85 : 50
-
-    // Check for engagement prompt
-    const hasQuestion = /\?/.test(content)
-    const hasCTA = /(reply|comment|share|retweet|thoughts|agree|disagree)/i.test(content)
-    const engagementScore = hasQuestion ? 90 : hasCTA ? 75 : 40
-    factors.push({
-      name: 'Engagement Prompt',
-      score: engagementScore,
-      tip: hasQuestion ? 'Questions drive replies (150x more valuable)' :
-           hasCTA ? 'Good call to action' : 'Add a question to drive replies',
-    })
-    totalScore += engagementScore
-
-    // Check for external links
-    const hasExternalLink = /https?:\/\/[^\s]+/.test(content)
-    if (hasExternalLink) {
-      warnings.push('External links get 50% less reach. Consider putting links in a reply.')
-    }
-    factors.push({
-      name: 'Link Penalty',
-      score: hasExternalLink ? 30 : 100,
-      tip: hasExternalLink ? 'Move link to reply for better reach' : 'No links - good for reach',
-    })
-    totalScore += hasExternalLink ? 30 : 100
-
-    // Check character count
-    const charCount = content.length
-    let lengthScore = 70
-    let lengthTip = 'Standard length'
-    if (charCount < 100) {
-      lengthScore = 60
-      lengthTip = 'Very short - may lack substance'
-    } else if (charCount >= 140 && charCount <= 200) {
-      lengthScore = 95
-      lengthTip = 'Optimal length for engagement'
-    } else if (charCount > 280 && charCount < 500) {
-      lengthScore = 50
-      lengthTip = 'Awkward length - shorten or expand to long-form'
-    }
-    factors.push({
-      name: 'Content Length',
-      score: lengthScore,
-      tip: lengthTip,
-    })
-    totalScore += lengthScore
-
-    // Check hashtag usage
-    const hashtagCount = (content.match(/#\w+/g) || []).length
-    if (hashtagCount > 2) {
-      warnings.push('Too many hashtags can look spammy. Use 0-2 max.')
-    }
-    factors.push({
-      name: 'Hashtag Usage',
-      score: hashtagCount > 2 ? 40 : hashtagCount === 0 ? 90 : 80,
-      tip: hashtagCount > 2 ? 'Remove excess hashtags' :
-           hashtagCount === 0 ? 'No hashtags - clean look' : 'Moderate hashtag usage',
-    })
-    totalScore += hashtagCount > 2 ? 40 : hashtagCount === 0 ? 90 : 80
-
-    // Calculate overall score
-    const overall = Math.round(totalScore / factors.length)
-
-    setAlgorithmScore({ overall, factors, warnings })
-  }
-
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-emerald-400'
     if (score >= 60) return 'text-amber-400'
@@ -260,7 +172,7 @@ export default function EditingTools({ content, onContentChange, isThread = fals
         {visibleTools.map((tool) => {
           const Icon = tool.icon
           const isActive = activeTool === tool.id
-          const isScoreActive = tool.id === 'algorithm_check' && algorithmScore
+          const isScoreActive = tool.id === 'algorithm_check' && engagementScore
 
           return (
             <button
@@ -286,9 +198,9 @@ export default function EditingTools({ content, onContentChange, isThread = fals
               <span className={isActive || isScoreActive ? tool.color : ''}>
                 {tool.shortLabel}
               </span>
-              {isScoreActive && algorithmScore && (
-                <span className={`ml-1 px-1.5 py-0.5 rounded text-xs font-bold ${getScoreBg(algorithmScore.overall)} ${getScoreColor(algorithmScore.overall)}`}>
-                  {algorithmScore.overall}
+              {isScoreActive && engagementScore && (
+                <span className={`ml-1 px-1.5 py-0.5 rounded text-xs font-bold ${getScoreBg(engagementScore.score)} ${getScoreColor(engagementScore.score)}`}>
+                  {engagementScore.score}
                 </span>
               )}
             </button>
@@ -307,22 +219,22 @@ export default function EditingTools({ content, onContentChange, isThread = fals
         </div>
       )}
 
-      {/* Algorithm Score Display */}
-      {algorithmScore && (
+      {/* Engagement Score Display - matches Workspace panel */}
+      {engagementScore && (
         <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4 space-y-4">
           {/* Header with close button */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <BarChart3 size={16} className="text-emerald-400" />
-              <span className="font-medium text-sm">Algorithm Score</span>
+              <span className="font-medium text-sm">Engagement Score</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className={`px-3 py-1 rounded-full text-sm font-bold ${getScoreBg(algorithmScore.overall)} ${getScoreColor(algorithmScore.overall)}`}>
-                {algorithmScore.overall}/100
+              <div className={`px-3 py-1 rounded-full text-sm font-bold ${getScoreBg(engagementScore.score)} ${getScoreColor(engagementScore.score)}`}>
+                {engagementScore.score}/100
               </div>
               <button
                 onClick={() => {
-                  setAlgorithmScore(null)
+                  setEngagementScore(null)
                   setActiveTool(null)
                 }}
                 className="p-1 hover:bg-[var(--border)] rounded transition-colors"
@@ -332,39 +244,52 @@ export default function EditingTools({ content, onContentChange, isThread = fals
             </div>
           </div>
 
-          {/* Factor Breakdown */}
+          {/* Factor Breakdown - same factors as Workspace */}
           <div className="space-y-2">
-            {algorithmScore.factors.map((factor) => (
-              <div key={factor.name} className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-[var(--muted)]">{factor.name}</span>
-                  <span className={getScoreColor(factor.score)}>{factor.score}</span>
+            {[
+              { key: 'hookStrength', name: 'Hook Strength', icon: Zap },
+              { key: 'replyPotential', name: 'Reply Potential', icon: MessageCircle },
+              { key: 'length', name: 'Length', icon: BarChart3 },
+              { key: 'readability', name: 'Readability', icon: Sparkles },
+              { key: 'hashtagUsage', name: 'Hashtags / Links', icon: AlertTriangle },
+              { key: 'emojiUsage', name: 'Emoji Usage', icon: Sparkles },
+            ].map(({ key, name, icon: Icon }) => {
+              const factor = engagementScore.breakdown[key as keyof typeof engagementScore.breakdown]
+              if (!factor || typeof factor !== 'object' || !('score' in factor)) return null
+              return (
+                <div key={key} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <Icon size={12} className={getScoreColor(factor.score)} />
+                      <span className="text-[var(--muted)]">{name}</span>
+                    </div>
+                    <span className={getScoreColor(factor.score)}>{factor.score}</span>
+                  </div>
+                  <div className="h-1 bg-[var(--card)] rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        factor.score >= 80 ? 'bg-emerald-500' :
+                        factor.score >= 60 ? 'bg-amber-500' : 'bg-red-500'
+                      }`}
+                      style={{ width: `${factor.score}%` }}
+                    />
+                  </div>
+                  {factor.suggestion && (
+                    <p className="text-xs text-[var(--muted)]">💡 {factor.suggestion}</p>
+                  )}
                 </div>
-                <div className="h-1 bg-[var(--card)] rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all ${
-                      factor.score >= 80 ? 'bg-emerald-500' :
-                      factor.score >= 60 ? 'bg-amber-500' : 'bg-red-500'
-                    }`}
-                    style={{ width: `${factor.score}%` }}
-                  />
-                </div>
-                <p className="text-xs text-[var(--muted)]">{factor.tip}</p>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
-          {/* Warnings */}
-          {algorithmScore.warnings.length > 0 && (
-            <div className="space-y-2 pt-2 border-t border-[var(--border)]">
-              {algorithmScore.warnings.map((warning, i) => (
-                <div key={i} className="flex items-start gap-2 text-amber-400 text-xs">
-                  <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
-                  <span>{warning}</span>
-                </div>
-              ))}
+          {/* Best Time Recommendation */}
+          <div className="flex items-start gap-2 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+            <Clock size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-xs font-medium text-blue-400">{engagementScore.breakdown.bestTime.recommendation}</p>
+              <p className="text-xs text-blue-400/70">{engagementScore.breakdown.bestTime.reason}</p>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>
