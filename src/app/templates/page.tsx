@@ -28,6 +28,7 @@ interface PostTemplate {
   best_time: string | null
   difficulty: string | null
   is_system: boolean
+  why_it_works: string | null
 }
 
 // Category config
@@ -296,6 +297,19 @@ export default function TemplatesPage() {
               {/* Description */}
               {selectedTemplate.description && (
                 <p className="text-[var(--muted)]">{selectedTemplate.description}</p>
+              )}
+
+              {/* Why This Works */}
+              {selectedTemplate.why_it_works && (
+                <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                  <h3 className="text-sm font-semibold mb-2 text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Why This Works
+                  </h3>
+                  <p className="text-sm text-[var(--muted)] leading-relaxed">
+                    {selectedTemplate.why_it_works}
+                  </p>
+                </div>
               )}
 
               {/* Metadata */}
