@@ -14,7 +14,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     
-    // Support both old format (planType) and new format (tier + billing)
+    // Support multiple formats:
+    // 1. New format: tier (premium/pro) + billing (monthly/annual)
+    // 2. Combined format: planType like "premium_monthly", "pro_annual"
+    // 3. Legacy format: planType (monthly/annual) - defaults to premium tier
     let priceId: string
     let tier: TierType = 'premium'
     let billing: BillingPeriod = 'monthly'
@@ -33,13 +36,25 @@ export async function POST(request: NextRequest) {
       
       priceId = getPriceId(tier, billing)
     } else if (body.planType) {
-      // Legacy format: planType (monthly/annual) - defaults to premium tier
-      const planType = body.planType as PlanType
-      if (!['monthly', 'annual'].includes(planType)) {
-        return NextResponse.json({ error: 'Invalid plan type' }, { status: 400 })
+      const planType = body.planType as string
+      
+      // Check for combined format (premium_monthly, pro_annual, etc.)
+      if (planType.includes('_')) {
+        const [tierPart, billingPart] = planType.split('_') as [TierType, BillingPeriod]
+        if (!['premium', 'pro'].includes(tierPart) || !['monthly', 'annual'].includes(billingPart)) {
+          return NextResponse.json({ error: 'Invalid plan type' }, { status: 400 })
+        }
+        tier = tierPart
+        billing = billingPart
+        priceId = PRICES[planType as PlanType] || getPriceId(tier, billing)
+      } else {
+        // Legacy format: planType (monthly/annual) - defaults to premium tier
+        if (!['monthly', 'annual'].includes(planType)) {
+          return NextResponse.json({ error: 'Invalid plan type' }, { status: 400 })
+        }
+        billing = planType as BillingPeriod
+        priceId = PRICES[planType as PlanType]
       }
-      priceId = PRICES[planType]
-      billing = planType
     } else {
       return NextResponse.json({ error: 'Missing tier/billing or planType' }, { status: 400 })
     }

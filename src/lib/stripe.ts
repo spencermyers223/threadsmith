@@ -23,6 +23,11 @@ export const stripe = new Proxy({} as Stripe, {
 export const PRICES = {
   monthly: process.env.STRIPE_MONTHLY_PRICE_ID || process.env.STRIPE_PREMIUM_MONTHLY_PRICE_ID || '',
   annual: process.env.STRIPE_ANNUAL_PRICE_ID || process.env.STRIPE_PREMIUM_ANNUAL_PRICE_ID || '',
+  // New tiered pricing (flat keys for checkout API)
+  premium_monthly: process.env.STRIPE_PREMIUM_MONTHLY_PRICE_ID || process.env.STRIPE_MONTHLY_PRICE_ID || '',
+  premium_annual: process.env.STRIPE_PREMIUM_ANNUAL_PRICE_ID || process.env.STRIPE_ANNUAL_PRICE_ID || '',
+  pro_monthly: process.env.STRIPE_PRO_MONTHLY_PRICE_ID || '',
+  pro_annual: process.env.STRIPE_PRO_ANNUAL_PRICE_ID || '',
 } as const
 
 export type PlanType = keyof typeof PRICES
