@@ -31,7 +31,7 @@ const tiers = [
     plan: 'premium',
   },
   {
-    name: 'Pro',
+    name: 'Professional',
     monthlyPrice: 39.99,
     annualPrice: 384,
     annualMonthly: 32,
@@ -53,8 +53,8 @@ const tiers = [
       { name: 'Optimal posting times', included: true, highlight: true },
       { name: 'Priority support', included: true, highlight: true },
     ],
-    cta: 'Get Pro',
-    plan: 'pro',
+    cta: 'Get Professional',
+    plan: 'professional',
   },
 ];
 
@@ -229,7 +229,7 @@ export default function PricingPage() {
                   </span>
                 </th>
                 <th className="p-4 bg-violet-50 text-center">
-                  <span className="text-violet-900 font-bold">Pro</span>
+                  <span className="text-violet-900 font-bold">Professional</span>
                   <span className="block text-sm text-violet-600">
                     {billingPeriod === 'monthly' ? '$39.99/mo' : '$32/mo (billed annually)'}
                   </span>

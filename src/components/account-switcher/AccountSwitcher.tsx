@@ -214,7 +214,7 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
                   </span>
                   {!canAddAccount && (
                     <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-[#D4A574]/10 text-[#D4A574]">
-                      Pro
+                      Professional
                     </span>
                   )}
                 </button>
@@ -274,7 +274,7 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
               <div className="space-y-3 mb-6">
                 <div className="flex items-center gap-3">
                   <Check className="w-5 h-5 text-[#D4A574]" />
-                  <span className="text-gray-300">Connect unlimited X accounts</span>
+                  <span className="text-gray-300">Connect up to 5 X accounts</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Check className="w-5 h-5 text-[#D4A574]" />
@@ -292,16 +292,15 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
 
               <button
                 onClick={() => {
-                  // Navigate to upgrade page or trigger Stripe checkout
-                  window.location.href = '/settings?tab=billing&upgrade=pro';
+                  window.location.href = '/pricing';
                 }}
                 className="w-full py-3 px-4 bg-[#D4A574] hover:bg-[#C49664] text-black font-semibold rounded-lg transition-colors"
               >
-                Upgrade to Pro
+                Upgrade to Professional
               </button>
 
               <p className="text-center text-xs text-gray-500 mt-4">
-                Starting at $9.99/month • Cancel anytime
+                Starting at $39.99/month • Cancel anytime
               </p>
             </div>
           </div>
