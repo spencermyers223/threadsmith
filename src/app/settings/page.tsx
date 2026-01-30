@@ -53,7 +53,7 @@ export default function SettingsPage() {
   const supabase = createClient()
   const { theme, setTheme } = useTheme()
   const [notifications, setNotifications] = useState(true)
-  const [email, setEmail] = useState('')
+  const [xUsername, setXUsername] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -209,7 +209,24 @@ export default function SettingsPage() {
       if (!user) return
 
       setUserId(user.id)
-      setEmail(user.email || '')
+      
+      // Get X username from user metadata or x_accounts table
+      const xUsernameFromMeta = user.user_metadata?.x_username
+      if (xUsernameFromMeta) {
+        setXUsername(xUsernameFromMeta)
+      } else {
+        // Fallback: check x_accounts table
+        const { data: xAccount } = await supabase
+          .from('x_accounts')
+          .select('x_username')
+          .eq('user_id', user.id)
+          .limit(1)
+          .single()
+        
+        if (xAccount?.x_username) {
+          setXUsername(xAccount.x_username)
+        }
+      }
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -380,8 +397,10 @@ export default function SettingsPage() {
           <div className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">Email</p>
-                <p className="text-sm text-[var(--muted)]">{email}</p>
+                <p className="font-medium">X Account</p>
+                <p className="text-sm text-[var(--muted)]">
+                  {xUsername ? `@${xUsername}` : 'Not connected'}
+                </p>
               </div>
             </div>
           </div>

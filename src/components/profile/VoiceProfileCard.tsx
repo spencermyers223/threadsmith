@@ -34,14 +34,26 @@ export function VoiceProfileCard({ userId }: VoiceProfileCardProps) {
     async function loadVoiceProfile() {
       const supabase = createClient()
       
-      // Check if X is connected
+      // Check if X is connected (check both x_tokens and x_accounts tables)
       const { data: xTokens } = await supabase
         .from('x_tokens')
         .select('x_username')
         .eq('user_id', userId)
         .single()
       
-      setHasXConnection(!!xTokens?.x_username)
+      if (xTokens?.x_username) {
+        setHasXConnection(true)
+      } else {
+        // Also check x_accounts table (multi-account support)
+        const { data: xAccount } = await supabase
+          .from('x_accounts')
+          .select('x_username')
+          .eq('user_id', userId)
+          .limit(1)
+          .single()
+        
+        setHasXConnection(!!xAccount?.x_username)
+      }
 
       // Load voice profile
       const { data } = await supabase
