@@ -16,20 +16,35 @@ export async function checkCanGenerate(
   supabase: SupabaseClient,
   userId: string
 ): Promise<GenerationLimitResult> {
-  // First, check if user has an active subscription
+  // First, check if user has an active subscription or active trial
   const { data: subscription } = await supabase
     .from('subscriptions')
-    .select('status')
+    .select('status, trial_ends_at')
     .eq('user_id', userId)
-    .in('status', ['active'])
+    .in('status', ['active', 'trialing', 'lifetime'])
     .single()
 
   if (subscription) {
-    // User has an active subscription - unlimited generations
-    return {
-      canGenerate: true,
-      remaining: -1,
-      isSubscribed: true,
+    // Check if this is an active trial that hasn't expired
+    if (subscription.status === 'trialing' && subscription.trial_ends_at) {
+      const trialEnd = new Date(subscription.trial_ends_at)
+      if (trialEnd < new Date()) {
+        // Trial has expired - fall through to free tier check
+      } else {
+        // Active trial - unlimited generations
+        return {
+          canGenerate: true,
+          remaining: -1,
+          isSubscribed: true,
+        }
+      }
+    } else {
+      // Active or lifetime subscription - unlimited generations
+      return {
+        canGenerate: true,
+        remaining: -1,
+        isSubscribed: true,
+      }
     }
   }
 

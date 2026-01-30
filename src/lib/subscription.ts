@@ -5,6 +5,10 @@
  * - free: No subscription, limited features
  * - premium: $19.99/mo - 1 X account, core analytics, all post types
  * - pro: $39.99/mo - 5 X accounts, advanced analytics, priority support
+ * 
+ * Trial:
+ * - All new users get 7-day free trial with full premium access
+ * - After trial expires, reverts to free tier unless subscribed
  */
 
 export type SubscriptionTier = 'free' | 'premium' | 'pro';
@@ -12,6 +16,9 @@ export type SubscriptionTier = 'free' | 'premium' | 'pro';
 export interface SubscriptionStatus {
   tier: SubscriptionTier;
   isActive: boolean;
+  isTrial: boolean;
+  trialDaysRemaining: number | null;
+  trialEndsAt: Date | null;
   maxAccounts: number;
   features: {
     unlimitedGenerations: boolean;
@@ -75,17 +82,39 @@ const TIER_MAX_ACCOUNTS: Record<SubscriptionTier, number> = {
 };
 
 /**
+ * Calculate days remaining in trial
+ */
+function calculateTrialDaysRemaining(trialEndsAt: string | Date | null): number | null {
+  if (!trialEndsAt) return null;
+  
+  const endDate = new Date(trialEndsAt);
+  const now = new Date();
+  const diffMs = endDate.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  
+  return Math.max(0, diffDays);
+}
+
+/**
  * Get subscription status from subscription data
  */
 export function getSubscriptionStatus(subscription: {
   status?: string | null;
   tier?: string | null;
   max_x_accounts?: number | null;
+  trial_ends_at?: string | null;
 } | null): SubscriptionStatus {
+  const isTrial = subscription?.status === 'trialing';
+  const trialEndsAt = subscription?.trial_ends_at ? new Date(subscription.trial_ends_at) : null;
+  const trialDaysRemaining = calculateTrialDaysRemaining(subscription?.trial_ends_at || null);
+  
+  // Check if trial has expired (status might not be updated yet)
+  const trialExpired = isTrial && trialEndsAt && trialEndsAt < new Date();
+  
   // Determine if subscription is active
-  const isActive = subscription?.status === 'active' || 
+  const isActive = (subscription?.status === 'active' || 
                    subscription?.status === 'trialing' ||
-                   subscription?.status === 'lifetime';
+                   subscription?.status === 'lifetime') && !trialExpired;
   
   // Determine tier (default to free if no active subscription)
   let tier: SubscriptionTier = 'free';
@@ -99,6 +128,9 @@ export function getSubscriptionStatus(subscription: {
   return {
     tier,
     isActive,
+    isTrial: isTrial && !trialExpired,
+    trialDaysRemaining: isTrial && !trialExpired ? trialDaysRemaining : null,
+    trialEndsAt: isTrial && !trialExpired ? trialEndsAt : null,
     maxAccounts: TIER_MAX_ACCOUNTS[tier],
     features: TIER_FEATURES[tier],
   };
@@ -156,6 +188,47 @@ export function getUpgradePrompt(
   }
   
   return null;
+}
+
+/**
+ * Get trial-specific upgrade prompt
+ */
+export function getTrialUpgradePrompt(trialDaysRemaining: number | null): {
+  title: string;
+  description: string;
+  urgency: 'low' | 'medium' | 'high';
+} | null {
+  if (trialDaysRemaining === null) return null;
+  
+  if (trialDaysRemaining <= 0) {
+    return {
+      title: 'Trial Ended',
+      description: 'Your free trial has ended. Subscribe to keep all premium features.',
+      urgency: 'high',
+    };
+  }
+  
+  if (trialDaysRemaining <= 2) {
+    return {
+      title: `Trial ends in ${trialDaysRemaining} day${trialDaysRemaining === 1 ? '' : 's'}`,
+      description: 'Subscribe now to continue using all features without interruption.',
+      urgency: 'high',
+    };
+  }
+  
+  if (trialDaysRemaining <= 4) {
+    return {
+      title: `${trialDaysRemaining} days left in trial`,
+      description: 'Enjoying xthread? Subscribe to keep your content flowing.',
+      urgency: 'medium',
+    };
+  }
+  
+  return {
+    title: `${trialDaysRemaining} days left in trial`,
+    description: 'Explore all premium features free for 7 days.',
+    urgency: 'low',
+  };
 }
 
 function formatFeatureName(feature: keyof SubscriptionStatus['features']): string {

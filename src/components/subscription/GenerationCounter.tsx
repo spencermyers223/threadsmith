@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Clock, Sparkles } from 'lucide-react'
+import Link from 'next/link'
 
 interface UsageData {
   canGenerate: boolean
@@ -14,16 +15,37 @@ interface UsageData {
   } | null
 }
 
+interface TrialData {
+  isTrial: boolean
+  trialDaysRemaining: number | null
+  tier: string
+}
+
 export function GenerationCounter() {
   const [usage, setUsage] = useState<UsageData | null>(null)
+  const [trialData, setTrialData] = useState<TrialData | null>(null)
   const [loading, setLoading] = useState(true)
 
   const fetchUsage = useCallback(async () => {
     try {
-      const res = await fetch('/api/subscription/usage')
-      if (res.ok) {
-        const data = await res.json()
+      // Fetch both usage and trial status in parallel
+      const [usageRes, statusRes] = await Promise.all([
+        fetch('/api/subscription/usage'),
+        fetch('/api/subscription/status')
+      ])
+      
+      if (usageRes.ok) {
+        const data = await usageRes.json()
         setUsage(data)
+      }
+      
+      if (statusRes.ok) {
+        const data = await statusRes.json()
+        setTrialData({
+          isTrial: data.isTrial,
+          trialDaysRemaining: data.trialDaysRemaining,
+          tier: data.tier
+        })
       }
     } catch (err) {
       console.error('Failed to fetch usage:', err)
@@ -59,11 +81,38 @@ export function GenerationCounter() {
     return null
   }
 
+  // Trial user - show trial status with days remaining
+  if (trialData?.isTrial) {
+    const days = trialData.trialDaysRemaining ?? 0
+    const isUrgent = days <= 2
+    
+    return (
+      <Link 
+        href="/pricing"
+        className="flex items-center gap-2 group"
+      >
+        <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm font-medium transition-colors ${
+          isUrgent 
+            ? 'bg-red-500/20 text-red-400 group-hover:bg-red-500/30' 
+            : 'bg-accent/20 text-accent group-hover:bg-accent/30'
+        }`}>
+          <Clock className="w-3.5 h-3.5" />
+          {days === 0 ? 'Trial ends today' : `${days}d trial left`}
+        </span>
+        <span className="text-[var(--muted)] text-sm">
+          Unlimited generations
+        </span>
+      </Link>
+    )
+  }
+
   // Paid user - show unlimited
   if (usage.isSubscribed) {
+    const tierLabel = trialData?.tier === 'pro' ? 'Pro' : 'Premium'
     return (
-      <span className="text-lg font-medium text-accent">
-        Pro — Unlimited generations
+      <span className="flex items-center gap-2 text-lg font-medium text-accent">
+        <Sparkles className="w-4 h-4" />
+        {tierLabel} — Unlimited generations
       </span>
     )
   }
