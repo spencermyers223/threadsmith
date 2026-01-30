@@ -9,7 +9,6 @@ interface PostTemplate {
   title: string
   category: string
   description: string | null
-  placeholder_hint: string | null  // New field: guidance text for the user
   prompt_template: string
 }
 
@@ -58,11 +57,14 @@ export function TemplateSelector({ onSelectTemplate, activeTemplate }: TemplateS
       const supabase = createClient()
       const { data, error } = await supabase
         .from('post_templates')
-        .select('id, title, category, description, placeholder_hint, prompt_template')
+        .select('id, title, category, description, prompt_template')
         .order('category', { ascending: true })
         .limit(20)
 
-      if (!error && data) {
+      if (error) {
+        console.error('Failed to fetch templates:', error)
+      }
+      if (data) {
         setTemplates(data)
       }
       setLoading(false)
@@ -71,9 +73,8 @@ export function TemplateSelector({ onSelectTemplate, activeTemplate }: TemplateS
   }, [])
 
   const handleSelectTemplate = (template: PostTemplate) => {
-    // Use placeholder_hint from DB, or fallback to default hints, or generate from title
-    const hint = template.placeholder_hint || 
-                 DEFAULT_HINTS[template.title] || 
+    // Use default hints based on title, or generate from title
+    const hint = DEFAULT_HINTS[template.title] || 
                  `Write about ${template.title.toLowerCase()}...`
     
     onSelectTemplate(hint, template.prompt_template, template.category, template.title)
