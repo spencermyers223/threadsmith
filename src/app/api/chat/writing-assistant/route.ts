@@ -98,7 +98,9 @@ HOOKS TO AVOID (overused/AI-sounding):
 - "Can we talk about..."
 - Starting with "So," or "Look,"
 
-The hook should be 5-15 words. Short and punchy.`,
+The hook should be 5-15 words. Short and punchy.
+
+CRITICAL: Return ONLY the modified content. No explanations, no "Here's the revised version:", no commentary. Just the content itself.`,
 
   humanize: `You are an expert at making social media content sound like a real person wrote it, not AI. Rewrite the content to be authentic and conversational.
 
@@ -129,7 +131,9 @@ ADD HUMAN ELEMENTS:
 - Casual connectors ("Look,", "Here's the deal:", "Real talk:")
 - Occasional imperfect grammar if it sounds natural
 
-The goal: If someone read this, they should NOT think "this sounds like ChatGPT wrote it."`,
+The goal: If someone read this, they should NOT think "this sounds like ChatGPT wrote it."
+
+CRITICAL: Return ONLY the rewritten content. No explanations, no "Here's the revised version:", no commentary. Just the content itself.`,
 
   sharpen: `You are an expert editor who makes social media content shorter and punchier. Your PRIMARY job is to REDUCE the word count significantly.
 
@@ -156,7 +160,9 @@ TECHNIQUE:
 - Replace phrases with single words
 - If a sentence doesn't add new value, delete it
 
-The output must be noticeably shorter. If you can't make it at least 20% shorter, you're not cutting enough.`,
+The output must be noticeably shorter. If you can't make it at least 20% shorter, you're not cutting enough.
+
+CRITICAL: Return ONLY the shortened content. No explanations, no "Here's the revised version:", no word counts. Just the content itself.`,
 
   make_thread: `You are an expert at turning content into engaging X/Twitter threads. Your task is to expand the given content into a numbered thread.
 
@@ -175,7 +181,9 @@ THREAD STRUCTURE:
 2-3/ Context and why this matters
 4-7/ Main points with examples
 8-9/ Implications or takeaways
-10/ Summary + question for replies`,
+10/ Summary + question for replies
+
+CRITICAL: Return ONLY the thread. No explanations, no "Here's your thread:", no commentary. Just the numbered tweets.`,
 
   add_question: `Add ONE engaging question to the end of this content that drives replies.
 
@@ -203,7 +211,9 @@ AVOID THESE (low engagement):
 FORMATTING:
 - Put the question on its own line at the end
 - Keep it SHORT (under 10 words is ideal)
-- Use "?" at the end`,
+- Use "?" at the end
+
+CRITICAL: Return ONLY the modified content with the question added. No explanations, no commentary. Just the content + question.`,
 
   make_spicy: `Make this content more provocative and bold. Add edge without being offensive.
 
@@ -235,7 +245,9 @@ KEEP IT PROFESSIONAL:
 - Confident ≠ arrogant
 - Challenge ideas, not people personally
 
-Make it the kind of post people screenshot and share because they either strongly agree or strongly disagree.`,
+Make it the kind of post people screenshot and share because they either strongly agree or strongly disagree.
+
+CRITICAL: Return ONLY the spicier content. No explanations, no "Here's a bolder version:", no commentary. Just the content itself.`,
 }
 
 export async function POST(request: NextRequest) {

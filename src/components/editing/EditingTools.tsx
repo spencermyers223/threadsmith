@@ -11,6 +11,7 @@ interface EditingToolsProps {
   content: string
   onContentChange: (newContent: string) => void
   isThread?: boolean
+  hideScore?: boolean // Hide Score button when engagement panel is already visible (e.g., Workspace)
 }
 
 type ToolId = 'add_hook' | 'humanize' | 'sharpen' | 'add_question' | 'make_spicy' | 'make_thread' | 'algorithm_check'
@@ -93,7 +94,7 @@ const TOOLS: Tool[] = [
 
 // Using shared EngagementScore from engagement-scorer for consistency with Workspace
 
-export default function EditingTools({ content, onContentChange, isThread = false }: EditingToolsProps) {
+export default function EditingTools({ content, onContentChange, isThread = false, hideScore = false }: EditingToolsProps) {
   const [activeTool, setActiveTool] = useState<ToolId | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [engagementScore, setEngagementScore] = useState<EngagementScore | null>(null)
@@ -162,6 +163,8 @@ export default function EditingTools({ content, onContentChange, isThread = fals
   const visibleTools = TOOLS.filter(tool => {
     // Hide "Make Thread" if already a thread
     if (tool.id === 'make_thread' && isThread) return false
+    // Hide "Score" if engagement panel is already visible (Workspace)
+    if (tool.id === 'algorithm_check' && hideScore) return false
     return true
   })
 

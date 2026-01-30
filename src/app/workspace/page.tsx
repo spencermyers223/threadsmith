@@ -712,6 +712,7 @@ export default function WorkspacePage() {
                 setHasUnsavedChanges(true)
               }}
               isThread={contentType === 'thread'}
+              hideScore={true} // Engagement panel already visible in Workspace sidebar
             />
           </div>
 
