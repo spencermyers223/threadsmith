@@ -717,3 +717,83 @@ async function handleAuthCallback(token) {
 
 // Start
 init();
+
+// ============================================================
+// Learn From My Tweets Feature
+// ============================================================
+
+const learnTweetsBtn = document.getElementById('learn-tweets-btn');
+const learnStatus = document.getElementById('learn-status');
+
+if (learnTweetsBtn) {
+  learnTweetsBtn.addEventListener('click', async () => {
+    const stored = await chrome.storage.local.get(['xthreadToken', 'isPremium']);
+    
+    if (!stored.xthreadToken) {
+      showLearnStatus('Please sign in first', 'error');
+      return;
+    }
+    
+    // Disable button and show loading
+    learnTweetsBtn.disabled = true;
+    learnTweetsBtn.innerHTML = '<span class="learn-icon">⏳</span><span>Analyzing...</span>';
+    showLearnStatus('Fetching your top tweets and analyzing patterns...', 'loading');
+    
+    try {
+      const response = await fetch(`${XTHREAD_API}/engagement/learn`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${stored.xthreadToken}`
+        },
+        body: JSON.stringify({})
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to analyze tweets');
+      }
+      
+      // Show success
+      const tweetsAnalyzed = data.patterns?.tweets_analyzed || data.tweetsAnalyzed || 0;
+      showLearnStatus(
+        `✓ Analyzed ${tweetsAnalyzed} tweets! Your engagement scoring is now personalized.`,
+        'success'
+      );
+      
+      // Store that we've learned
+      await chrome.storage.local.set({ 
+        learnedFromTweets: true,
+        learnedAt: new Date().toISOString()
+      });
+      
+    } catch (err) {
+      console.error('[xthread] Error learning from tweets:', err);
+      showLearnStatus(err.message || 'Failed to analyze tweets. Please try again.', 'error');
+    } finally {
+      learnTweetsBtn.disabled = false;
+      learnTweetsBtn.innerHTML = '<span class="learn-icon">🧠</span><span>Learn from my tweets</span>';
+    }
+  });
+}
+
+function showLearnStatus(message, type) {
+  if (!learnStatus) return;
+  learnStatus.textContent = message;
+  learnStatus.className = `learn-status ${type}`;
+  learnStatus.classList.remove('hidden');
+}
+
+// Check if user has already learned and update UI accordingly
+async function checkLearnedStatus() {
+  const stored = await chrome.storage.local.get(['learnedFromTweets', 'learnedAt']);
+  if (stored.learnedFromTweets && learnStatus) {
+    const learnedDate = new Date(stored.learnedAt);
+    const formattedDate = learnedDate.toLocaleDateString();
+    showLearnStatus(`✓ Personalized on ${formattedDate}. Click to re-analyze.`, 'success');
+  }
+}
+
+// Call on init
+checkLearnedStatus();

@@ -2597,6 +2597,11 @@ function extractPostData(post) {
   const authorEl = post.querySelector('[data-testid="User-Name"]');
   const author = authorEl?.textContent || '';
   
+  // Extract author handle from profile link
+  const authorLink = post.querySelector('a[role="link"][href^="/"]');
+  const hrefMatch = authorLink?.getAttribute('href')?.match(/^\/([^\/]+)/);
+  const handle = hrefMatch ? hrefMatch[1] : '';
+  
   const textEl = post.querySelector('[data-testid="tweetText"]');
   const text = textEl?.textContent || '';
   
@@ -2624,6 +2629,7 @@ function extractPostData(post) {
   
   return {
     author,
+    handle,
     text,
     metrics,
     url: postLink,
