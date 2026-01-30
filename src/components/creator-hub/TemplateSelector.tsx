@@ -28,18 +28,117 @@ const CATEGORY_COLORS: Record<string, string> = {
   engagement: 'text-purple-400',
 }
 
-// Default placeholder hints for each template (fallback if not in DB)
-const DEFAULT_HINTS: Record<string, string> = {
-  'Trend Analysis': 'Describe the trend you\'re seeing and the industry/subject...',
-  'Alpha Thread': 'Share your unique insight or research finding...',
-  'Hot Take': 'State your controversial opinion on a topic...',
-  'Market Analysis': 'Describe the market movement or data you want to analyze...',
-  'Build in Public Update': 'Share what you built, learned, or shipped today...',
-  'Technical Breakdown': 'Name the concept or technology you want to explain...',
-  'Engagement Bait': 'Describe the topic you want people to debate...',
-  'Data Insight': 'Paste the data point or stat you want to break down...',
-  'Protocol Review': 'Name the protocol, tool, or product to review...',
-  'Story Thread': 'Briefly outline the story or experience you want to share...',
+// Tweet template frameworks - actual structures users fill in
+const TEMPLATE_FRAMEWORKS: Record<string, string> = {
+  // Mistakes / Lessons
+  'Mistakes to Avoid': `I wasted [time period] doing [common mistake].
+
+Do [better approach] instead.
+
+Here's why it works:`,
+  
+  // Contrarian / Hot Takes
+  'Hot Take': `Unpopular opinion: [bold claim]
+
+Most people think [common belief].
+
+But here's the truth: [your reasoning]
+
+Agree or disagree?`,
+  
+  'Contrarian Take': `Stop [common practice].
+
+It's not working.
+
+Do [alternative] instead.`,
+  
+  // Build in Public
+  'Build in Public Update': `[Time period] ago I started [project/journey].
+
+Today: [current milestone]
+
+Biggest lesson: [key learning]
+
+Next up:`,
+  
+  'Weekly Update': `Week [X] of building [project]:
+
+✅ Shipped: [accomplishment]
+🔨 Working on: [current task]  
+💡 Learned: [insight]`,
+  
+  // Insights / Alpha
+  'Alpha Thread': `I spent [time] researching [topic].
+
+Here's what 99% of people miss:
+
+[key insight]
+
+Let me explain 🧵`,
+  
+  'Trend Analysis': `[Trend/topic] is changing fast.
+
+What's really happening: [analysis]
+
+Why this matters: [implication]
+
+My prediction:`,
+  
+  // Data
+  'Data Insight': `[Striking statistic or data point]
+
+What this tells us: [interpretation]
+
+Why it matters for you: [actionable takeaway]`,
+  
+  // Technical
+  'Technical Breakdown': `[Complex topic] explained simply:
+
+Most people overcomplicate this.
+
+Here's all you need to know:
+
+[simple explanation]
+
+Bookmark for later.`,
+  
+  // Stories
+  'Story Thread': `[Time] ago, [dramatic setup].
+
+What happened next changed everything.
+
+🧵`,
+  
+  // Engagement
+  'Engagement Bait': `What's your take on [topic]?
+
+I'll go first: [your answer]
+
+Reply with yours 👇`,
+  
+  'Debate Starter': `[Option A] or [Option B]?
+
+My take: [your choice + brief why]
+
+This is going to start a war...`,
+  
+  // How-To
+  'Tutorial': `How to [achieve outcome] (step-by-step):
+
+1. [First step]
+2. [Second step]
+3. [Third step]
+
+The key most people miss: [pro tip]
+
+Bookmark this.`,
+  
+  // Market
+  'Market Analysis': `[Market/asset] just [did something notable].
+
+What's really happening: [analysis]
+
+My take: [prediction]`,
 }
 
 interface TemplateSelectorProps {
@@ -73,11 +172,12 @@ export function TemplateSelector({ onSelectTemplate, activeTemplate }: TemplateS
   }, [])
 
   const handleSelectTemplate = (template: PostTemplate) => {
-    // Use default hints based on title, or generate from title
-    const hint = DEFAULT_HINTS[template.title] || 
-                 `Write about ${template.title.toLowerCase()}...`
+    // Get the framework for this template, or create a simple one
+    const framework = TEMPLATE_FRAMEWORKS[template.title] || 
+                      `[Your ${template.title.toLowerCase()} goes here]`
     
-    onSelectTemplate(hint, template.prompt_template, template.category, template.title)
+    // Pass the framework as the content to populate the input
+    onSelectTemplate(framework, template.prompt_template, template.category, template.title)
     setIsOpen(false)
   }
 

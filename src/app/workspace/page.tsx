@@ -19,6 +19,7 @@ import TagSelector from '@/components/tags/TagSelector'
 import TagBadge, { Tag as TagType } from '@/components/tags/TagBadge'
 import { MediaUpload, type MediaItem } from '@/components/workspace/MediaUpload'
 import { EngagementPanel } from '@/components/workspace/EngagementPanel'
+import EditingTools from '@/components/editing/EditingTools'
 
 type ContentType = 'tweet' | 'thread' | 'article'
 import type { GenerationType } from '@/components/calendar/PostTypeIcon'
@@ -692,6 +693,27 @@ export default function WorkspacePage() {
         {/* Editor */}
         <div className="flex-1 p-4 overflow-y-auto">
           {renderEditor()}
+
+          {/* Editing Tools */}
+          <div className="mt-4">
+            <EditingTools
+              content={getPlainText()}
+              onContentChange={(newContent) => {
+                if (contentType === 'thread') {
+                  // For threads, replace first tweet content
+                  const updated = [...threadTweets]
+                  if (updated.length > 0) {
+                    updated[0] = { ...updated[0], content: newContent }
+                    setThreadTweets(updated)
+                  }
+                } else {
+                  setContent(newContent)
+                }
+                setHasUnsavedChanges(true)
+              }}
+              isThread={contentType === 'thread'}
+            />
+          </div>
 
           {/* Tags Section */}
           <div className="mt-6 pt-6 border-t border-[var(--border)]">
