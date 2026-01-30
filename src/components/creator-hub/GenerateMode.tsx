@@ -418,12 +418,13 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
               </label>
               <TemplateSelector
                 activeTemplate={activeTemplate}
-                onSelectTemplate={(framework, template, category, title) => {
-                  // Populate the input with the template framework (user fills in brackets)
-                  setTopic(framework)
+                onSelectTemplate={(placeholderGuide, template, category, title) => {
+                  // Set placeholder guidance (disappears when user types)
+                  // Do NOT set input value - user starts with blank input
+                  setPlaceholderText(placeholderGuide)
                   setPromptTemplate(template)
                   setActiveTemplate(title || null)
-                  setPlaceholderText('Enter your topic, idea, or paste notes...')
+                  setTopic('') // Clear any existing input - user starts fresh
                   setIsTemplatePrompt(!!template)
                   // Auto-select matching post type based on template category
                   const categoryToPostType: Record<string, string> = {

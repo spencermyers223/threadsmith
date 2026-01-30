@@ -28,231 +28,77 @@ const CATEGORY_COLORS: Record<string, string> = {
   engagement: 'text-purple-400',
 }
 
-// World-class tweet frameworks - actual structures that work
-// Users fill in [bracketed text] with their specifics
-const TEMPLATE_FRAMEWORKS: Record<string, string> = {
+// Placeholder guidance for each template
+// These appear in the input as placeholder text that disappears when user types
+// Should be genuinely helpful guidance, not lazy "[Write X here]"
+const TEMPLATE_PLACEHOLDERS: Record<string, string> = {
   // BUILD IN PUBLIC
-  'Weekly Progress Update': `Week [X] of building [project]:
-
-📈 [Key metric] → [new number]
-✅ Shipped: [main accomplishment]
-❌ Failed: [what didn't work]
-💡 Learned: [key insight]
-
-Next week: [what's coming]`,
-
-  'Lesson Learned Post': `I learned this the hard way:
-
-[The lesson in one sentence]
-
-What happened:
-[Brief context]
-
-What I should have done:
-[The better approach]
-
-Save yourself the pain.`,
-
-  'Feature Launch Announcement': `Just shipped: [feature name] 🚀
-
-What it does:
-→ [Benefit 1]
-→ [Benefit 2]
-→ [Benefit 3]
-
-Why I built it:
-[User pain point it solves]
-
-What should I build next?`,
-
-  'Revenue/Growth Milestone': `[Project] just hit [milestone] 🎉
-
-Timeline:
-• Month 1: [starting point]
-• Month [X]: [progress point]
-• Today: [milestone]
-
-What actually moved the needle:
-[2-3 key decisions]
-
-Next goal: [what's next]`,
-
-  'Behind the Scenes': `What building [project] actually looks like:
-
-The glamorous version: [what people think]
-
-The reality: [what it actually is]
-
-[Specific example]
-
-Anyone else? Or just me?`,
+  'Weekly Progress Update': 
+    'Share your week: key metric (before → after), what you shipped, what failed, what you learned, what\'s next...',
+  
+  'Lesson Learned Post': 
+    'Describe a hard lesson: what happened, what went wrong, what you learned, what you\'d tell others to do instead...',
+  
+  'Feature Launch Announcement': 
+    'Announce your feature: what it does, the user problem it solves, why you built it, what\'s the CTA...',
+  
+  'Revenue/Growth Milestone': 
+    'Celebrate your milestone: the number you hit, timeline to get there, the 2-3 decisions that made the difference...',
+  
+  'Behind the Scenes': 
+    'Show the reality: what people assume about your work vs what it\'s actually like, a specific messy example...',
 
   // HOT TAKES / CONTRARIAN
-  'Unpopular Opinion': `Unpopular opinion:
-
-[Bold, specific claim]
-
-Everyone says [conventional wisdom].
-
-But here's what I've seen:
-[Your evidence or experience]
-
-Agree or am I crazy?`,
-
-  "Everyone's Wrong About X": `Most people have [topic] completely backwards.
-
-Common advice: "[what everyone says]"
-
-Reality: [what actually works]
-
-Stop [bad approach]. Start [good approach].`,
-
-  'The Real Reason X Happened': `Everyone thinks [event] happened because [surface reason].
-
-That's not it.
-
-The real reason: [actual cause]
-
-This matters because [implication].`,
-
-  'Myth-Busting': `Myth: "[common belief]"
-
-Reality: [the truth]
-
-The data:
-• [Evidence point 1]
-• [Evidence point 2]
-
-What you should actually do: [action]`,
-
-  'Hot Take with Stakes': `Hot take: [bold prediction or claim]
-
-I'm willing to be wrong.
-
-But here's why I believe it:
-1. [Reason 1]
-2. [Reason 2]
-3. [Reason 3]
-
-Remind me in [timeframe] if I'm wrong.`,
+  'Unpopular Opinion': 
+    'State your contrarian take: what you believe that most people disagree with, and the evidence or experience behind it...',
+  
+  "Everyone's Wrong About X": 
+    'Challenge common advice: the thing everyone says to do, why it\'s actually wrong, what works instead...',
+  
+  'The Real Reason X Happened': 
+    'Share insider perspective: what people think caused something vs what actually drove it...',
+  
+  'Myth-Busting': 
+    'Correct a misconception: the common myth, the actual truth, evidence or data that proves it...',
+  
+  'Hot Take with Stakes': 
+    'Make a bold prediction: your specific claim, your reasoning (2-3 points), when you\'ll be proven right or wrong...',
 
   // INSIGHTS / VALUE (alpha)
-  'How I Did X': `How I [achieved result]:
-
-• Before: [starting point]
-• After: [end result]
-• Time: [how long]
-
-The strategy:
-
-1. [Step 1]
-2. [Step 2]
-3. [Step 3]
-
-The biggest unlock: [key insight]
-
-Questions?`,
-
-  'Tools I Actually Use': `My actual [purpose] stack:
-
-[Tool 1] - [what I use it for]
-[Tool 2] - [what I use it for]
-[Tool 3] - [what I use it for]
-
-Total cost: [$X]/month
-
-What I stopped using: [tool and why]
-
-What's in your stack?`,
-
-  'Framework or Mental Model': `The [framework name] changed how I [area]:
-
-How it works:
-[Simple explanation]
-
-Example:
-[Concrete application]
-
-Use this when: [situation]`,
-
-  'Mistakes to Avoid': `[X] mistakes I made with [topic]:
-
-1. [Mistake 1]
-   → Should have: [better approach]
-
-2. [Mistake 2]
-   → Should have: [better approach]
-
-3. [Mistake 3]
-   → Should have: [better approach]
-
-Learn from my pain.`,
-
-  'Industry Trend Analysis': `[Trend] is changing [industry] faster than people realize.
-
-What I'm seeing:
-• [Observation 1]
-• [Observation 2]
-• [Observation 3]
-
-My prediction: [specific forecast]
-
-Winners will be those who [action].`,
+  'How I Did X': 
+    'Share a specific result: your before/after numbers, the exact steps you took, the key insight that made it work...',
+  
+  'Tools I Actually Use': 
+    'List your real stack: the tools you use daily for [your purpose], why each one, total monthly cost...',
+  
+  'Framework or Mental Model': 
+    'Explain a thinking framework: name it, how it works in simple terms, a concrete example of applying it...',
+  
+  'Mistakes to Avoid': 
+    'Warn about pitfalls: 2-4 mistakes you made with [topic], what you should have done instead for each...',
+  
+  'Industry Trend Analysis': 
+    'Analyze a trend: what you\'re observing (2-3 data points), your prediction, what smart people should do about it...',
 
   // ENGAGEMENT
-  'Question for the Timeline': `Genuine question:
-
-[Your question about topic]
-
-I'll go first:
-[Your honest answer]
-
-What's yours?`,
-
-  'This or That': `Settle this debate:
-
-[Option A] or [Option B]?
-
-My take: [your choice]
-
-Because: [one-sentence reason]
-
-Pick one. No fence-sitting.`,
-
-  'Rate This 1-10': `Rate your [thing to rate] right now (1-10).
-
-I'll start: [X]/10
-
-[One sentence explaining your rating]
-
-Your turn. Be honest.`,
-
-  'Fill in the Blank': `Fill in the blank:
-
-"The best [category] that nobody talks about is ___________."
-
-Mine: [your answer]
-
-[One line on why]
-
-Drop yours 👇`,
-
-  'Underrated Thing': `Most underrated [category]:
-
-[Your pick]
-
-Why it's slept on:
-[Brief explanation]
-
-Everyone talks about [popular alternative].
-
-But [your pick] is better because [reason].
-
-What's yours?`,
+  'Question for the Timeline': 
+    'Ask a genuine question about [topic]. Include your own answer first to start the conversation...',
+  
+  'This or That': 
+    'Create a debate: [Option A] vs [Option B], which you pick and a one-line reason why...',
+  
+  'Rate This 1-10': 
+    'Ask people to rate [something specific] 1-10. Share your own rating and a quick reason why...',
+  
+  'Fill in the Blank': 
+    'Create a fill-in prompt: "The best ___ that nobody talks about is ___". Share your answer and why...',
+  
+  'Underrated Thing': 
+    'Share a hidden gem: your pick for most underrated [category], why it\'s slept on, what it beats...',
 }
 
 interface TemplateSelectorProps {
-  onSelectTemplate: (framework: string, promptTemplate: string, category: string, title: string) => void
+  onSelectTemplate: (placeholder: string, promptTemplate: string, category: string, title: string) => void
   activeTemplate: string | null
 }
 
@@ -282,16 +128,16 @@ export function TemplateSelector({ onSelectTemplate, activeTemplate }: TemplateS
   }, [])
 
   const handleSelectTemplate = (template: PostTemplate) => {
-    // Get the world-class framework for this template
-    const framework = TEMPLATE_FRAMEWORKS[template.title] || 
-                      `[Write your ${template.title.toLowerCase()} here]`
+    // Get placeholder guidance for this template
+    const placeholder = TEMPLATE_PLACEHOLDERS[template.title] || 
+                        `Describe your ${template.title.toLowerCase()}...`
     
-    onSelectTemplate(framework, template.prompt_template, template.category, template.title)
+    onSelectTemplate(placeholder, template.prompt_template, template.category, template.title)
     setIsOpen(false)
   }
 
   const clearTemplate = () => {
-    onSelectTemplate('', '', '', '')
+    onSelectTemplate('Enter your topic, idea, or paste notes...', '', '', '')
     setIsOpen(false)
   }
 
