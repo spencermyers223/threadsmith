@@ -112,12 +112,22 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
         {/* Trigger Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors"
         >
-          {/* Account Handle */}
-          <span className="text-sm text-gray-300 max-w-[120px] truncate">
-            @{activeAccount?.x_username}
-          </span>
+          {/* Profile Photo */}
+          {activeAccount?.x_profile_image_url ? (
+            <Image
+              src={activeAccount.x_profile_image_url}
+              alt={activeAccount.x_username}
+              width={32}
+              height={32}
+              className="rounded-full"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-[#D4A574]/20 flex items-center justify-center text-[#D4A574] text-sm font-medium">
+              {activeAccount?.x_username?.charAt(0).toUpperCase() || '?'}
+            </div>
+          )}
 
           {/* Dropdown Arrow */}
           <ChevronDown 
