@@ -26,13 +26,32 @@ export async function POST() {
   try {
     // Fetch user's recent tweets from X API
     // Using user timeline endpoint: GET /2/users/:id/tweets
+    // Check both x_tokens and x_accounts tables
+    let xUserId: string | null = null
+    
     const { data: xTokens } = await supabase
       .from('x_tokens')
       .select('x_user_id')
       .eq('user_id', user.id)
       .single()
 
-    if (!xTokens?.x_user_id) {
+    if (xTokens?.x_user_id) {
+      xUserId = xTokens.x_user_id
+    } else {
+      // Fallback: check x_accounts table (multi-account support)
+      const { data: xAccount } = await supabase
+        .from('x_accounts')
+        .select('x_user_id')
+        .eq('user_id', user.id)
+        .eq('is_primary', true)
+        .single()
+      
+      if (xAccount?.x_user_id) {
+        xUserId = xAccount.x_user_id
+      }
+    }
+
+    if (!xUserId) {
       return NextResponse.json(
         { error: 'X account not connected. Please sign in with X first.' },
         { status: 400 }
@@ -40,7 +59,7 @@ export async function POST() {
     }
 
     // Fetch last 50 tweets (excluding retweets and replies)
-    const tweetsUrl = new URL(`https://api.x.com/2/users/${xTokens.x_user_id}/tweets`)
+    const tweetsUrl = new URL(`https://api.x.com/2/users/${xUserId}/tweets`)
     tweetsUrl.searchParams.set('max_results', '50')
     tweetsUrl.searchParams.set('exclude', 'retweets,replies')
     tweetsUrl.searchParams.set('tweet.fields', 'created_at')
