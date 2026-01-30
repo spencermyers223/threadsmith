@@ -1737,14 +1737,15 @@ function injectScoreButton(toolbar, textarea) {
   
   // Create score button
   const scoreBtn = document.createElement('button');
-  scoreBtn.className = 'xthread-score-btn';
+  scoreBtn.className = 'xthread-score-btn' + (isPremium ? '' : ' xthread-needs-pro');
   scoreBtn.type = 'button';
   scoreBtn.setAttribute('aria-label', 'Score your tweet');
   scoreBtn.innerHTML = `
     <span class="xthread-score-icon">📊</span>
     <span class="xthread-score-text">Score</span>
+    ${!isPremium ? '<span class="xthread-pro-badge">PRO</span>' : ''}
   `;
-  scoreBtn.title = 'Analyze your tweet before posting';
+  scoreBtn.title = isPremium ? 'Analyze your tweet before posting' : 'PRO feature: Analyze your tweet before posting';
   
   // Insert into toolbar
   if (postButton && postButton.parentElement) {
@@ -2076,14 +2077,15 @@ function showScorePanel(btn, result, draftText) {
 function injectIdeasButton(toolbar, textarea) {
   // Create ideas button
   const ideasBtn = document.createElement('button');
-  ideasBtn.className = 'xthread-ideas-btn';
+  ideasBtn.className = 'xthread-ideas-btn' + (isPremium ? '' : ' xthread-needs-pro');
   ideasBtn.type = 'button';
   ideasBtn.setAttribute('aria-label', 'Get content ideas');
   ideasBtn.innerHTML = `
     <span class="xthread-ideas-icon">💡</span>
     <span class="xthread-ideas-text">Ideas</span>
+    ${!isPremium ? '<span class="xthread-pro-badge">PRO</span>' : ''}
   `;
-  ideasBtn.title = 'Get personalized content ideas';
+  ideasBtn.title = isPremium ? 'Get personalized content ideas' : 'PRO feature: Get personalized content ideas';
   
   // Find where to insert (before the score button if it exists, or at start of toolbar)
   const scoreBtn = toolbar.querySelector('.xthread-score-btn');
