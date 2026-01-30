@@ -1,8 +1,25 @@
 import XSignInButton from '@/components/auth/XSignInButton'
-import { Zap, Brain, Calendar, Target, Sparkles, Clock, BarChart3, PenTool, CheckCircle2 } from 'lucide-react'
+import HeroSection, { HeroVariant } from '@/components/landing/HeroVariants'
+import { Zap, Brain, Calendar, Target, Clock, BarChart3, PenTool, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 
-export default function LandingPage() {
+// A/B Test Landing Page
+// Variants can be tested via query param: ?v=control|problem|time|tech
+// Or by deploying different versions to different URLs
+
+interface PageProps {
+  searchParams: Promise<{ v?: string }>
+}
+
+export default async function LandingPage({ searchParams }: PageProps) {
+  const params = await searchParams
+  const variant = (params.v as HeroVariant) || 'control'
+  
+  // Validate variant
+  const validVariant = ['control', 'problem', 'time', 'tech'].includes(variant) 
+    ? variant as HeroVariant 
+    : 'control'
+
   return (
     <div className="min-h-screen flex flex-col bg-[#0A0A0A] text-white">
       {/* Header */}
@@ -20,70 +37,8 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Trust Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm text-gray-400 mb-8">
-            <Sparkles className="w-4 h-4 text-[#D4A574]" />
-            <span>AI-powered content that actually sounds like you</span>
-          </div>
-
-          {/* Main Headline */}
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] mb-6">
-            Your voice.
-            <br />
-            <span className="text-[#D4A574]">10x the reach.</span>
-          </h1>
-
-          {/* Subheadline */}
-          <p className="text-xl sm:text-2xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Create X content that sounds like you wrote it — because AI trained on your style did. 
-            Know if it&apos;ll perform before you post. Grow your audience on autopilot.
-          </p>
-
-          {/* CTA */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-            <XSignInButton className="!text-lg !px-8 !py-4" />
-            <a href="#how-it-works" className="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
-              See how it works →
-            </a>
-          </div>
-
-          {/* Trust Signals */}
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500">
-            <span className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-green-500" />
-              7-day free trial
-            </span>
-            <span className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-green-500" />
-              No credit card required
-            </span>
-            <span className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-green-500" />
-              Cancel anytime
-            </span>
-          </div>
-        </div>
-
-        {/* Product Screenshot/Video Placeholder */}
-        <div className="max-w-5xl mx-auto mt-16">
-          <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-b from-white/5 to-transparent shadow-2xl">
-            <div className="aspect-video bg-[#111] flex items-center justify-center">
-              {/* TODO: Replace with actual product video */}
-              <div className="text-center">
-                <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </div>
-                <p className="text-gray-500">Product demo video</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Hero Section - A/B Tested */}
+      <HeroSection variant={validVariant} />
 
       {/* Problem Section */}
       <section className="py-20 px-6 border-t border-white/5">
