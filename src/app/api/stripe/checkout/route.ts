@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe, PRICES, PlanType } from '@/lib/stripe'
+import { stripe, PRICES, PlanType, TierType, BillingPeriod, getPriceId } from '@/lib/stripe'
 import Stripe from 'stripe'
 
 export async function POST(request: NextRequest) {
@@ -13,13 +13,37 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { planType } = body as { planType: PlanType }
-
-    if (!planType || !['monthly', 'annual'].includes(planType)) {
-      return NextResponse.json({ error: 'Invalid plan type' }, { status: 400 })
+    
+    // Support both old format (planType) and new format (tier + billing)
+    let priceId: string
+    let tier: TierType = 'premium'
+    let billing: BillingPeriod = 'monthly'
+    
+    if (body.tier && body.billing) {
+      // New format: tier (premium/pro) + billing (monthly/annual)
+      tier = body.tier as TierType
+      billing = body.billing as BillingPeriod
+      
+      if (!['premium', 'pro'].includes(tier)) {
+        return NextResponse.json({ error: 'Invalid tier' }, { status: 400 })
+      }
+      if (!['monthly', 'annual'].includes(billing)) {
+        return NextResponse.json({ error: 'Invalid billing period' }, { status: 400 })
+      }
+      
+      priceId = getPriceId(tier, billing)
+    } else if (body.planType) {
+      // Legacy format: planType (monthly/annual) - defaults to premium tier
+      const planType = body.planType as PlanType
+      if (!['monthly', 'annual'].includes(planType)) {
+        return NextResponse.json({ error: 'Invalid plan type' }, { status: 400 })
+      }
+      priceId = PRICES[planType]
+      billing = planType
+    } else {
+      return NextResponse.json({ error: 'Missing tier/billing or planType' }, { status: 400 })
     }
 
-    const priceId = PRICES[planType]
     if (!priceId) {
       return NextResponse.json({ error: 'Price not configured' }, { status: 500 })
     }
@@ -50,17 +74,19 @@ export async function POST(request: NextRequest) {
           user_id: user.id,
           stripe_customer_id: customerId,
           status: 'pending',
-          plan_type: planType,
+          tier: tier,
+          plan_type: billing,
           updated_at: new Date().toISOString(),
         }, {
           onConflict: 'user_id',
         })
     } else {
-      // Update plan type being purchased
+      // Update plan being purchased
       await supabase
         .from('subscriptions')
         .update({
-          plan_type: planType,
+          tier: tier,
+          plan_type: billing,
           updated_at: new Date().toISOString(),
         })
         .eq('user_id', user.id)
@@ -82,7 +108,9 @@ export async function POST(request: NextRequest) {
       cancel_url: `${appUrl}/settings?subscription=cancelled`,
       metadata: {
         user_id: user.id,
-        plan_type: planType,
+        tier: tier,
+        billing: billing,
+        price_id: priceId,
       },
     }
 

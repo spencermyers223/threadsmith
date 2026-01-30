@@ -1,13 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { Check, X, Sparkles, Zap } from 'lucide-react';
 import Link from 'next/link';
 
 const tiers = [
   {
     name: 'Premium',
-    price: '$19.99',
-    period: '/month',
+    monthlyPrice: 19.99,
+    annualPrice: 192,
+    annualMonthly: 16,
     description: 'Everything you need to create viral content',
     icon: Sparkles,
     color: 'from-amber-500 to-orange-500',
@@ -26,12 +28,13 @@ const tiers = [
       { name: 'Priority support', included: false },
     ],
     cta: 'Get Premium',
-    ctaLink: '/signup?plan=premium',
+    plan: 'premium',
   },
   {
     name: 'Pro',
-    price: '$39.99',
-    period: '/month',
+    monthlyPrice: 39.99,
+    annualPrice: 384,
+    annualMonthly: 32,
     description: 'For power users managing multiple accounts',
     icon: Zap,
     color: 'from-violet-500 to-purple-600',
@@ -51,11 +54,13 @@ const tiers = [
       { name: 'Priority support', included: true, highlight: true },
     ],
     cta: 'Get Pro',
-    ctaLink: '/signup?plan=pro',
+    plan: 'pro',
   },
 ];
 
 export default function PricingPage() {
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white">
       {/* Header */}
@@ -79,7 +84,7 @@ export default function PricingPage() {
       </header>
 
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-4 pt-16 pb-12 text-center">
+      <section className="max-w-6xl mx-auto px-4 pt-16 pb-8 text-center">
         <h1 className="text-4xl md:text-5xl font-bold text-stone-900 mb-4">
           Simple, transparent pricing
         </h1>
@@ -88,11 +93,48 @@ export default function PricingPage() {
         </p>
       </section>
 
+      {/* Billing Toggle */}
+      <section className="max-w-6xl mx-auto px-4 pb-8">
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={() => setBillingPeriod('monthly')}
+            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              billingPeriod === 'monthly'
+                ? 'bg-stone-900 text-white'
+                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            }`}
+          >
+            Monthly
+          </button>
+          <button
+            onClick={() => setBillingPeriod('annual')}
+            className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
+              billingPeriod === 'annual'
+                ? 'bg-stone-900 text-white'
+                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            }`}
+          >
+            Annual
+            <span className={`text-xs px-2 py-0.5 rounded-full ${
+              billingPeriod === 'annual'
+                ? 'bg-green-500 text-white'
+                : 'bg-green-100 text-green-700'
+            }`}>
+              Save 20%
+            </span>
+          </button>
+        </div>
+      </section>
+
       {/* Pricing Cards */}
       <section className="max-w-5xl mx-auto px-4 pb-16">
         <div className="grid md:grid-cols-2 gap-8">
           {tiers.map((tier) => {
             const Icon = tier.icon;
+            const displayPrice = billingPeriod === 'monthly' ? tier.monthlyPrice : tier.annualMonthly;
+            const period = billingPeriod === 'monthly' ? '/month' : '/month';
+            const billedText = billingPeriod === 'annual' ? `Billed $${tier.annualPrice}/year` : '';
+            
             return (
               <div
                 key={tier.name}
@@ -118,14 +160,21 @@ export default function PricingPage() {
                 </div>
 
                 {/* Price */}
-                <div className="mb-6">
-                  <span className="text-5xl font-bold text-stone-900">{tier.price}</span>
-                  <span className="text-stone-500">{tier.period}</span>
+                <div className="mb-2">
+                  <span className="text-5xl font-bold text-stone-900">${displayPrice}</span>
+                  <span className="text-stone-500">{period}</span>
+                </div>
+                
+                {/* Billed annually note */}
+                <div className="mb-6 h-6">
+                  {billingPeriod === 'annual' && (
+                    <span className="text-sm text-green-600 font-medium">{billedText} — Save 20%</span>
+                  )}
                 </div>
 
                 {/* CTA */}
                 <Link
-                  href={tier.ctaLink}
+                  href={`/signup?plan=${tier.plan}&billing=${billingPeriod}`}
                   className={`w-full py-3 px-6 rounded-xl font-semibold text-center transition-all mb-8 ${
                     tier.popular
                       ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:shadow-lg hover:shadow-violet-200'
@@ -175,11 +224,15 @@ export default function PricingPage() {
                 <th className="text-left p-4 bg-stone-50 text-stone-600 font-medium">Feature</th>
                 <th className="p-4 bg-stone-50 text-center">
                   <span className="text-stone-900 font-bold">Premium</span>
-                  <span className="block text-sm text-stone-500">$19.99/mo</span>
+                  <span className="block text-sm text-stone-500">
+                    {billingPeriod === 'monthly' ? '$19.99/mo' : '$16/mo (billed annually)'}
+                  </span>
                 </th>
                 <th className="p-4 bg-violet-50 text-center">
                   <span className="text-violet-900 font-bold">Pro</span>
-                  <span className="block text-sm text-violet-600">$39.99/mo</span>
+                  <span className="block text-sm text-violet-600">
+                    {billingPeriod === 'monthly' ? '$39.99/mo' : '$32/mo (billed annually)'}
+                  </span>
                 </th>
               </tr>
             </thead>
@@ -252,12 +305,12 @@ export default function PricingPage() {
               a: 'Your content is always safe. If you downgrade from Pro to Premium, you\'ll keep one X account active and can choose which one. Your saved content, folders, and analytics history remain intact.',
             },
             {
-              q: 'Do you offer annual billing?',
-              a: 'Not yet, but it\'s coming soon! Sign up for updates and we\'ll let you know when annual plans with discounts are available.',
+              q: 'How much do I save with annual billing?',
+              a: 'Annual billing saves you 20% compared to monthly. Premium drops from $19.99/month to $16/month ($192/year), and Pro drops from $39.99/month to $32/month ($384/year).',
             },
             {
               q: 'Is there a free trial?',
-              a: 'We offer a 7-day money-back guarantee. Try xthread risk-free - if it\'s not for you, we\'ll refund your payment, no questions asked.',
+              a: 'We offer a 7-day money-back guarantee. Try xthread risk-free — if it\'s not for you, we\'ll refund your payment, no questions asked.',
             },
           ].map((faq) => (
             <details

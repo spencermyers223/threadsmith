@@ -175,6 +175,12 @@ function formatFeatureName(feature: keyof SubscriptionStatus['features']): strin
 
 /**
  * Stripe price IDs by tier (to be configured in .env)
+ * 
+ * Required env vars:
+ * - STRIPE_PREMIUM_MONTHLY_PRICE_ID: price_1Sv6LnKaJzMO9MxPb49sOGrx
+ * - STRIPE_PREMIUM_ANNUAL_PRICE_ID: price_1Sv6OfKaJzMO9MxPlXJhLHav
+ * - STRIPE_PRO_MONTHLY_PRICE_ID: price_1Sv6MsKaJzMO9MxPqlcbC63b
+ * - STRIPE_PRO_ANNUAL_PRICE_ID: price_1Sv6PMKaJzMO9MxP9wKf2IiY
  */
 export const STRIPE_PRICE_IDS = {
   premium: {
