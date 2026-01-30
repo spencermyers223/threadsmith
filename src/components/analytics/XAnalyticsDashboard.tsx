@@ -120,6 +120,11 @@ export function XAnalyticsDashboard() {
   }
 
   const { summary, top_performers, tweets } = data
+  
+  // Defensive: ensure summary values exist
+  const safeAvgEngagementRate = typeof summary?.avg_engagement_rate === 'number' 
+    ? summary.avg_engagement_rate 
+    : 0
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
@@ -174,7 +179,7 @@ export function XAnalyticsDashboard() {
         <SummaryCard
           icon={<TrendingUp className="w-5 h-5" />}
           label="Avg Engagement"
-          value={`${summary.avg_engagement_rate.toFixed(2)}%`}
+          value={`${safeAvgEngagementRate.toFixed(2)}%`}
           highlight
         />
       </div>
@@ -258,7 +263,7 @@ export function XAnalyticsDashboard() {
                   <td className="px-3 py-3 text-center">{tweet.metrics.retweets}</td>
                   <td className="px-3 py-3 text-center">{tweet.metrics.replies}</td>
                   <td className="px-3 py-3 font-medium text-accent">
-                    {tweet.metrics.engagement_rate.toFixed(2)}%
+                    {(tweet.metrics?.engagement_rate ?? 0).toFixed(2)}%
                   </td>
                 </tr>
               ))}
@@ -324,7 +329,7 @@ function TweetRow({
           </span>
           {showRate && (
             <span className="text-accent font-medium">
-              {tweet.metrics.engagement_rate.toFixed(2)}% engagement
+              {(tweet.metrics?.engagement_rate ?? 0).toFixed(2)}% engagement
             </span>
           )}
         </div>
