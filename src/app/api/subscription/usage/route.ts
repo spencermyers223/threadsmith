@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { checkCanGenerate, getFreeLimit } from '@/lib/generation-limits'
+import { checkCanGenerate } from '@/lib/generation-limits'
 
 export async function GET() {
   const supabase = await createClient()
@@ -18,9 +18,9 @@ export async function GET() {
     if (result.isSubscribed) {
       const { data } = await supabase
         .from('subscriptions')
-        .select('status, plan_type, current_period_end')
+        .select('status, plan_type, tier, current_period_end')
         .eq('user_id', user.id)
-        .in('status', ['active'])
+        .in('status', ['active', 'lifetime'])
         .single()
 
       subscription = data
@@ -30,7 +30,8 @@ export async function GET() {
       canGenerate: result.canGenerate,
       remaining: result.remaining,
       isSubscribed: result.isSubscribed,
-      freeLimit: getFreeLimit(),
+      isTrial: result.isTrial,
+      trialDaysRemaining: result.trialDaysRemaining,
       subscription,
     }
 

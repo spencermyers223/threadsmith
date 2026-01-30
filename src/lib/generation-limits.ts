@@ -1,76 +1,82 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 
-const FREE_GENERATION_LIMIT = 5
-
 export interface GenerationLimitResult {
   canGenerate: boolean
-  remaining: number // -1 means unlimited (subscribed)
+  remaining: number // -1 means unlimited (subscribed/trial)
   isSubscribed: boolean
+  isTrial: boolean
+  trialDaysRemaining: number | null
 }
 
 /**
- * Check if a user can generate content based on their subscription status
- * and usage limits.
+ * Check if a user can generate content.
+ * 
+ * With the 7-day trial model:
+ * - New users get 7-day trial with full premium access
+ * - After trial expires, must subscribe to generate
+ * - No more "5 free generations" counting
  */
 export async function checkCanGenerate(
   supabase: SupabaseClient,
   userId: string
 ): Promise<GenerationLimitResult> {
-  // First, check if user has an active subscription or active trial
+  // Check subscription status
   const { data: subscription } = await supabase
     .from('subscriptions')
-    .select('status, trial_ends_at')
+    .select('status, tier, trial_ends_at')
     .eq('user_id', userId)
-    .in('status', ['active', 'trialing', 'lifetime'])
     .single()
 
-  if (subscription) {
-    // Check if this is an active trial that hasn't expired
-    if (subscription.status === 'trialing' && subscription.trial_ends_at) {
-      const trialEnd = new Date(subscription.trial_ends_at)
-      if (trialEnd < new Date()) {
-        // Trial has expired - fall through to free tier check
-      } else {
-        // Active trial - unlimited generations
-        return {
-          canGenerate: true,
-          remaining: -1,
-          isSubscribed: true,
-        }
-      }
-    } else {
-      // Active or lifetime subscription - unlimited generations
+  // No subscription record at all - user needs to sign up
+  if (!subscription) {
+    return {
+      canGenerate: false,
+      remaining: 0,
+      isSubscribed: false,
+      isTrial: false,
+      trialDaysRemaining: null,
+    }
+  }
+
+  // Check if on active trial
+  if (subscription.status === 'trialing' && subscription.trial_ends_at) {
+    const trialEnd = new Date(subscription.trial_ends_at)
+    const now = new Date()
+    
+    if (trialEnd > now) {
+      // Active trial - full access
+      const diffMs = trialEnd.getTime() - now.getTime()
+      const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+      
       return {
         canGenerate: true,
-        remaining: -1,
-        isSubscribed: true,
+        remaining: -1, // Unlimited during trial
+        isSubscribed: false,
+        isTrial: true,
+        trialDaysRemaining: daysRemaining,
       }
     }
+    // Trial expired - fall through to check for subscription
   }
 
-  // No active subscription - check free tier usage
-  const { count, error } = await supabase
-    .from('generation_usage')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-
-  if (error) {
-    console.error('Error checking generation usage:', error)
-    // Default to allowing generation if there's an error
+  // Check for active/lifetime subscription
+  if (subscription.status === 'active' || subscription.status === 'lifetime') {
     return {
       canGenerate: true,
-      remaining: FREE_GENERATION_LIMIT,
-      isSubscribed: false,
+      remaining: -1,
+      isSubscribed: true,
+      isTrial: false,
+      trialDaysRemaining: null,
     }
   }
 
-  const usedCount = count || 0
-  const remaining = FREE_GENERATION_LIMIT - usedCount
-
+  // No active subscription or trial - cannot generate
   return {
-    canGenerate: remaining > 0,
-    remaining: Math.max(0, remaining),
+    canGenerate: false,
+    remaining: 0,
     isSubscribed: false,
+    isTrial: false,
+    trialDaysRemaining: null,
   }
 }
 
@@ -78,6 +84,7 @@ export type SourceType = 'manual' | 'file_based'
 
 /**
  * Record a generation in the usage table
+ * (Still useful for analytics even without limits)
  */
 export async function recordGeneration(
   supabase: SupabaseClient,
@@ -95,14 +102,5 @@ export async function recordGeneration(
 
   if (error) {
     console.error('Error recording generation:', error)
-    // Don't throw - we don't want to fail the generation just because
-    // we couldn't record it
   }
-}
-
-/**
- * Get the free generation limit
- */
-export function getFreeLimit(): number {
-  return FREE_GENERATION_LIMIT
 }

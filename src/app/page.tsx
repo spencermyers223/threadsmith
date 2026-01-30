@@ -54,7 +54,7 @@ export default function LandingPage() {
           <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500">
             <span className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-green-500" />
-              5 free generations
+              7-day free trial
             </span>
             <span className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-green-500" />
@@ -298,7 +298,7 @@ export default function LandingPage() {
           </div>
 
           <p className="text-center text-gray-500 mt-8 text-sm">
-            Start with 5 free generations. No credit card required.
+            Start with a 7-day free trial. Full access, no credit card required.
           </p>
         </div>
       </section>

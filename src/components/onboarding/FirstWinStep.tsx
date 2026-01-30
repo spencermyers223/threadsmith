@@ -266,13 +266,9 @@ export default function FirstWinStep({
             </button>
           </div>
 
-          {/* Remaining generations notice */}
+          {/* Trial notice */}
           <p className="text-center text-sm text-[var(--muted)]">
-            You have free generations remaining.{' '}
-            <button className="text-[var(--accent)] hover:underline">
-              Upgrade to Pro
-            </button>{' '}
-            for unlimited.
+            Enjoying your free trial? Unlimited generations for 7 days.
           </p>
         </div>
       )}
