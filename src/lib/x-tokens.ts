@@ -37,14 +37,38 @@ export async function getValidXTokens(userId: string): Promise<TokenResult> {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
   
-  // Fetch current tokens
-  const { data: tokens, error: fetchError } = await supabaseAdmin
+  // Fetch current tokens - check x_tokens first, then x_accounts as fallback
+  let tokens = null
+  
+  const { data: xTokens } = await supabaseAdmin
     .from('x_tokens')
     .select('access_token, refresh_token, x_user_id, x_username, expires_at')
     .eq('user_id', userId)
     .single()
   
-  if (fetchError || !tokens) {
+  if (xTokens?.access_token) {
+    tokens = xTokens
+  } else {
+    // Fallback: check x_accounts table (multi-account support)
+    const { data: xAccount } = await supabaseAdmin
+      .from('x_accounts')
+      .select('access_token, refresh_token, x_user_id, x_username, token_expires_at')
+      .eq('user_id', userId)
+      .eq('is_primary', true)
+      .single()
+    
+    if (xAccount?.access_token) {
+      tokens = {
+        access_token: xAccount.access_token,
+        refresh_token: xAccount.refresh_token,
+        x_user_id: xAccount.x_user_id,
+        x_username: xAccount.x_username,
+        expires_at: xAccount.token_expires_at,
+      }
+    }
+  }
+  
+  if (!tokens) {
     return {
       success: false,
       error: 'X account not connected',
