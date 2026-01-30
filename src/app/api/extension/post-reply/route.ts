@@ -53,14 +53,35 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Get user's X tokens
-    const { data: tokens, error: tokensError } = await supabaseAdmin
+    // Get user's X tokens - check x_tokens first, then x_accounts
+    let tokens = null
+    
+    const { data: xTokens } = await supabaseAdmin
       .from('x_tokens')
       .select('access_token, expires_at')
       .eq('user_id', user.id)
       .single()
     
-    if (tokensError || !tokens) {
+    if (xTokens?.access_token) {
+      tokens = xTokens
+    } else {
+      // Fallback: check x_accounts table
+      const { data: xAccount } = await supabaseAdmin
+        .from('x_accounts')
+        .select('access_token, token_expires_at')
+        .eq('user_id', user.id)
+        .eq('is_primary', true)
+        .single()
+      
+      if (xAccount?.access_token) {
+        tokens = {
+          access_token: xAccount.access_token,
+          expires_at: xAccount.token_expires_at,
+        }
+      }
+    }
+    
+    if (!tokens) {
       return NextResponse.json(
         { error: 'X account not connected. Please sign in again.' },
         { status: 400 }

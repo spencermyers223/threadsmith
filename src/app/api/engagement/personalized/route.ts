@@ -38,11 +38,34 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
     
-    const { data: tokens } = await supabaseAdmin
+    // Check x_tokens first, then x_accounts as fallback
+    let tokens = null
+    
+    const { data: xTokens } = await supabaseAdmin
       .from('x_tokens')
       .select('access_token, x_user_id, expires_at')
       .eq('user_id', user.id)
       .single()
+    
+    if (xTokens?.access_token) {
+      tokens = xTokens
+    } else {
+      // Fallback: check x_accounts table
+      const { data: xAccount } = await supabaseAdmin
+        .from('x_accounts')
+        .select('access_token, x_user_id, token_expires_at')
+        .eq('user_id', user.id)
+        .eq('is_primary', true)
+        .single()
+      
+      if (xAccount?.access_token) {
+        tokens = {
+          access_token: xAccount.access_token,
+          x_user_id: xAccount.x_user_id,
+          expires_at: xAccount.token_expires_at,
+        }
+      }
+    }
     
     // If no X connection or expired token, return base score
     if (!tokens || new Date(tokens.expires_at) < new Date()) {
