@@ -121,10 +121,19 @@ export function XAnalyticsDashboard() {
 
   const { summary, top_performers, tweets } = data
   
-  // Defensive: ensure summary values exist
+  // Defensive: ensure values exist
   const safeAvgEngagementRate = typeof summary?.avg_engagement_rate === 'number' 
     ? summary.avg_engagement_rate 
     : 0
+  const safeTopByLikes = top_performers?.by_likes || []
+  const safeTopByEngagementRate = top_performers?.by_engagement_rate || []
+  const safeSummary = {
+    total_tweets: summary?.total_tweets || 0,
+    total_impressions: summary?.total_impressions || 0,
+    total_likes: summary?.total_likes || 0,
+    total_retweets: summary?.total_retweets || 0,
+    total_replies: summary?.total_replies || 0,
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8">
@@ -154,27 +163,27 @@ export function XAnalyticsDashboard() {
         <SummaryCard
           icon={<BarChart3 className="w-5 h-5" />}
           label="Tweets"
-          value={summary.total_tweets.toString()}
+          value={safeSummary.total_tweets.toString()}
         />
         <SummaryCard
           icon={<Eye className="w-5 h-5" />}
           label="Impressions"
-          value={formatNumber(summary.total_impressions)}
+          value={formatNumber(safeSummary.total_impressions)}
         />
         <SummaryCard
           icon={<Heart className="w-5 h-5" />}
           label="Total Likes"
-          value={formatNumber(summary.total_likes)}
+          value={formatNumber(safeSummary.total_likes)}
         />
         <SummaryCard
           icon={<Repeat2 className="w-5 h-5" />}
           label="Retweets"
-          value={formatNumber(summary.total_retweets)}
+          value={formatNumber(safeSummary.total_retweets)}
         />
         <SummaryCard
           icon={<MessageSquare className="w-5 h-5" />}
           label="Replies"
-          value={formatNumber(summary.total_replies)}
+          value={formatNumber(safeSummary.total_replies)}
         />
         <SummaryCard
           icon={<TrendingUp className="w-5 h-5" />}
@@ -185,37 +194,47 @@ export function XAnalyticsDashboard() {
       </div>
 
       {/* Top Performers */}
-      <div className="grid lg:grid-cols-2 gap-6 mb-8">
-        {/* Top by Likes */}
-        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-[var(--border)]">
-            <h2 className="font-semibold flex items-center gap-2">
-              <Heart className="w-4 h-4 text-red-400" />
-              Top by Likes
-            </h2>
+      {(safeTopByLikes.length > 0 || safeTopByEngagementRate.length > 0) && (
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          {/* Top by Likes */}
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-[var(--border)]">
+              <h2 className="font-semibold flex items-center gap-2">
+                <Heart className="w-4 h-4 text-red-400" />
+                Top by Likes
+              </h2>
+            </div>
+            <div className="divide-y divide-[var(--border)]">
+              {safeTopByLikes.length > 0 ? (
+                safeTopByLikes.map((tweet, i) => (
+                  <TweetRow key={tweet.id} tweet={tweet} rank={i + 1} />
+                ))
+              ) : (
+                <div className="px-5 py-4 text-[var(--muted)] text-sm">No data yet</div>
+              )}
+            </div>
           </div>
-          <div className="divide-y divide-[var(--border)]">
-            {top_performers.by_likes.map((tweet, i) => (
-              <TweetRow key={tweet.id} tweet={tweet} rank={i + 1} />
-            ))}
-          </div>
-        </div>
 
-        {/* Top by Engagement Rate */}
-        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-[var(--border)]">
-            <h2 className="font-semibold flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-green-400" />
-              Top by Engagement Rate
-            </h2>
-          </div>
-          <div className="divide-y divide-[var(--border)]">
-            {top_performers.by_engagement_rate.map((tweet, i) => (
-              <TweetRow key={tweet.id} tweet={tweet} rank={i + 1} showRate />
-            ))}
+          {/* Top by Engagement Rate */}
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-[var(--border)]">
+              <h2 className="font-semibold flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-green-400" />
+                Top by Engagement Rate
+              </h2>
+            </div>
+            <div className="divide-y divide-[var(--border)]">
+              {safeTopByEngagementRate.length > 0 ? (
+                safeTopByEngagementRate.map((tweet, i) => (
+                  <TweetRow key={tweet.id} tweet={tweet} rank={i + 1} showRate />
+                ))
+              ) : (
+                <div className="px-5 py-4 text-[var(--muted)] text-sm">No data yet</div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* All Tweets Table */}
       <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
