@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import AdmiredAccountsManager from '@/components/profile/AdmiredAccountsManager'
 
 interface InspirationTweet {
   id: string
@@ -70,6 +71,7 @@ export default function VoiceSettingsPage() {
   const [success, setSuccess] = useState<string | null>(null)
   const [showSamples, setShowSamples] = useState(false)
   const [showInspirationTweets, setShowInspirationTweets] = useState(false)
+  const [admiredAccounts, setAdmiredAccounts] = useState<string[]>([])
   const hasLoadedRef = useRef(false)
 
   // Tweak state (overrides on top of analyzed profile)
@@ -96,18 +98,21 @@ export default function VoiceSettingsPage() {
         setInspirationTweets(data.tweets || [])
       }
 
-      // Load voice profile from content_profiles
+      // Load voice profile and admired accounts from content_profiles
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data: profile } = await supabase
           .from('content_profiles')
-          .select('voice_profile, voice_trained_at')
+          .select('voice_profile, voice_trained_at, admired_accounts')
           .eq('user_id', user.id)
           .single()
 
         if (profile?.voice_profile) {
           setVoiceProfile(profile.voice_profile as VoiceProfile)
           setVoiceTrainedAt(profile.voice_trained_at)
+        }
+        if (profile?.admired_accounts) {
+          setAdmiredAccounts(profile.admired_accounts as string[])
         }
       }
     } catch {
@@ -294,6 +299,74 @@ export default function VoiceSettingsPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Save failed')
     }
+  }
+
+  // Handle admired accounts changes
+  async function handleAdmiredAccountsChange(accounts: string[]) {
+    setAdmiredAccounts(accounts)
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      await supabase
+        .from('content_profiles')
+        .upsert({
+          user_id: user.id,
+          admired_accounts: accounts,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' })
+    } catch (err) {
+      console.error('Failed to save admired accounts:', err)
+    }
+  }
+
+  // Handle importing tweets from admired accounts
+  async function handleImportAdmiredTweets(username: string, tweets: string[]) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    // Get user's primary X account (if connected)
+    const { data: xAccount } = await supabase
+      .from('x_accounts')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('is_primary', true)
+      .single()
+
+    // Save tweets as inspiration tweets
+    const tweetsToInsert = tweets.map(text => ({
+      user_id: user.id,
+      x_account_id: xAccount?.id || null,
+      tweet_id: `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      tweet_text: text,
+      tweet_url: null,
+      author_id: `manual_${username}`,
+      author_username: username,
+      author_name: username,
+      author_profile_image_url: null,
+      reply_count: 0,
+      like_count: 0,
+      repost_count: 0,
+      quote_count: 0,
+      notes: 'Manually added via admired accounts',
+    }))
+
+    const { data: inserted, error } = await supabase
+      .from('inspiration_tweets')
+      .insert(tweetsToInsert)
+      .select()
+
+    if (error) throw error
+
+    // Refresh inspiration tweets
+    const inspirationRes = await fetch('/api/inspiration-tweets')
+    if (inspirationRes.ok) {
+      const data = await inspirationRes.json()
+      setInspirationTweets(data.tweets || [])
+    }
+
+    return inserted
   }
 
   const effectiveFormality = tweaks.formalityLevel ?? voiceProfile?.formalityLevel ?? 5
@@ -692,6 +765,15 @@ export default function VoiceSettingsPage() {
             </div>
           </section>
         )}
+
+        {/* Admired Accounts Section */}
+        <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4">
+          <AdmiredAccountsManager
+            accounts={admiredAccounts}
+            onAccountsChange={handleAdmiredAccountsChange}
+            onImportTweets={handleImportAdmiredTweets}
+          />
+        </section>
 
         {/* Inspiration Tweets Section */}
         <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
