@@ -449,6 +449,14 @@ export async function POST(request: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(10) // Get up to 10 most recent samples
 
+    // Fetch inspiration tweets from admired accounts
+    const { data: inspirationTweets } = await supabase
+      .from('inspiration_tweets')
+      .select('tweet_text, author_username, like_count')
+      .eq('user_id', user.id)
+      .order('like_count', { ascending: false }) // Prioritize high-engagement tweets
+      .limit(8) // Get top 8 inspiration tweets
+
     // Build voice profile context
     let additionalContext: string | undefined
     if (voiceProfileData) {
@@ -500,6 +508,32 @@ Match their:
       additionalContext = additionalContext 
         ? `${additionalContext}\n\n${tweetExamplesContext}` 
         : tweetExamplesContext
+    }
+
+    // Add inspiration tweets from admired accounts if available
+    if (inspirationTweets && inspirationTweets.length > 0) {
+      const inspirationExamples = inspirationTweets
+        .map((t, i) => `${i + 1}. @${t.author_username} (${t.like_count?.toLocaleString() || '?'} likes): "${t.tweet_text}"`)
+        .join('\n')
+      
+      const inspirationContext = `<admired_account_examples>
+STYLE INSPIRATION: These are high-performing tweets from accounts this user admires. Study their patterns.
+
+${inspirationExamples}
+
+Learn from these examples:
+- How they open their tweets (hooks)
+- Their sentence rhythm and length
+- How they create engagement
+- Their use of questions, statements, or calls-to-action
+- The energy and confidence level
+
+Blend these stylistic elements with the user's own voice. Don't copy - adapt.
+</admired_account_examples>`
+
+      additionalContext = additionalContext 
+        ? `${additionalContext}\n\n${inspirationContext}` 
+        : inspirationContext
     }
 
     // Fetch source file content if provided
