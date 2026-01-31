@@ -361,30 +361,32 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
               <div className="bg-white/5 rounded-lg p-4 mb-5">
                 <p className="text-sm text-gray-400 mb-3">To add a different X account:</p>
                 <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside">
-                  <li>Click &quot;Continue&quot; below to open X in a popup</li>
-                  <li>In the popup, click your <strong>profile icon</strong> (top right)</li>
-                  <li>Select &quot;Log out&quot; or &quot;Add an existing account&quot;</li>
-                  <li>Log into the account you want to connect</li>
-                  <li>Then click &quot;Authorize app&quot;</li>
+                  <li>Click &quot;Log out of X&quot; below</li>
+                  <li>Log into the X account you want to add</li>
+                  <li>Come back and click &quot;Connect Account&quot;</li>
                 </ol>
               </div>
 
-              <p className="text-xs text-gray-500 mb-5">
-                💡 The popup lets you switch accounts within X before authorizing.
-              </p>
-
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3">
                 <button
-                  onClick={() => setShowAddAccountModal(false)}
-                  className="flex-1 py-2.5 px-4 border border-white/10 hover:bg-white/5 text-gray-300 font-medium rounded-lg transition-colors"
+                  onClick={() => {
+                    window.open('https://x.com/logout', '_blank', 'width=600,height=500');
+                  }}
+                  className="w-full py-2.5 px-4 border border-white/10 hover:bg-white/5 text-gray-300 font-medium rounded-lg transition-colors"
                 >
-                  Cancel
+                  Step 1: Log out of X →
                 </button>
                 <button
                   onClick={proceedWithOAuth}
-                  className="flex-1 py-2.5 px-4 bg-[#D4A574] hover:bg-[#C49664] text-black font-semibold rounded-lg transition-colors"
+                  className="w-full py-2.5 px-4 bg-[#D4A574] hover:bg-[#C49664] text-black font-semibold rounded-lg transition-colors"
                 >
-                  Continue to X
+                  Step 2: Connect Account
+                </button>
+                <button
+                  onClick={() => setShowAddAccountModal(false)}
+                  className="w-full py-2 px-4 text-gray-500 hover:text-gray-300 text-sm transition-colors"
+                >
+                  Cancel
                 </button>
               </div>
             </div>
