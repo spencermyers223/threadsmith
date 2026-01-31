@@ -470,7 +470,7 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Voice Profile - Auto-learned from X */}
+        {/* Voice Profile - Combined Section */}
         <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--background)]">
             <h2 className="font-semibold flex items-center gap-2">
@@ -478,11 +478,127 @@ export default function SettingsPage() {
               Your Voice Profile
             </h2>
           </div>
-          <div className="p-4">
-            <p className="text-sm text-[var(--muted)] mb-4">
-              We analyze your X posts to learn your unique writing style. Generated content will sound like you wrote it.
-            </p>
-            {userId && <VoiceProfileCard userId={userId} />}
+          <div className="p-4 space-y-6">
+            {/* Auto-learned voice */}
+            <div>
+              <p className="text-sm text-[var(--muted)] mb-4">
+                We analyze your X posts to learn your unique writing style. Generated content will sound like you wrote it.
+              </p>
+              {userId && <VoiceProfileCard userId={userId} />}
+            </div>
+
+            {/* Describe your style */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Describe your style</label>
+              <textarea
+                value={contentProfile.voice_description}
+                onChange={(e) => updateContentProfile({ voice_description: e.target.value })}
+                placeholder="e.g., I write with technical depth but keep it accessible. I use humor sparingly but effectively..."
+                rows={3}
+                className="w-full px-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none resize-none"
+              />
+            </div>
+
+            {/* Tone Sliders */}
+            <div className="space-y-4">
+              <label className="block text-sm font-medium">Tone Preferences</label>
+              <div>
+                <div className="flex justify-between text-sm text-[var(--muted)] mb-1">
+                  <span>Formal</span>
+                  <span>Casual</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  value={contentProfile.tone_formal_casual}
+                  onChange={(e) => updateContentProfile({ tone_formal_casual: parseInt(e.target.value) })}
+                  className="w-full accent-accent"
+                />
+              </div>
+              <div>
+                <div className="flex justify-between text-sm text-[var(--muted)] mb-1">
+                  <span>Hedged</span>
+                  <span>Direct</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  value={contentProfile.tone_hedged_direct}
+                  onChange={(e) => updateContentProfile({ tone_hedged_direct: parseInt(e.target.value) })}
+                  className="w-full accent-accent"
+                />
+              </div>
+              <div>
+                <div className="flex justify-between text-sm text-[var(--muted)] mb-1">
+                  <span>Serious</span>
+                  <span>Playful</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  value={contentProfile.tone_serious_playful}
+                  onChange={(e) => updateContentProfile({ tone_serious_playful: parseInt(e.target.value) })}
+                  className="w-full accent-accent"
+                />
+              </div>
+            </div>
+
+            {/* Accounts You Admire - Prominent section */}
+            <div className="pt-4 border-t border-[var(--border)]">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="w-4 h-4 text-accent" />
+                <label className="text-sm font-medium">Accounts You Admire</label>
+              </div>
+              <p className="text-sm text-[var(--muted)] mb-3">
+                We&apos;ll analyze their best-performing tweets to incorporate elements of their style into your generated content. You can also add accounts through the Chrome extension.
+              </p>
+              <div className="flex gap-2 mb-3">
+                <div className="flex-1 relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]">@</span>
+                  <input
+                    type="text"
+                    value={newAccount}
+                    onChange={(e) => setNewAccount(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && addAdmiredAccount()}
+                    placeholder="handle"
+                    className="w-full pl-8 pr-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none"
+                  />
+                </div>
+                <button
+                  onClick={addAdmiredAccount}
+                  disabled={!newAccount.trim()}
+                  className="px-4 py-2 rounded-lg bg-accent text-[var(--accent-text)] hover:opacity-90 disabled:opacity-50 font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+              {contentProfile.admired_accounts.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {contentProfile.admired_accounts.map(handle => (
+                    <div
+                      key={handle}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/30 text-sm"
+                    >
+                      <span className="text-accent">@</span>
+                      <span className="font-medium">{handle}</span>
+                      <button
+                        onClick={() => removeAdmiredAccount(handle)}
+                        className="ml-1 text-[var(--muted)] hover:text-red-400"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-[var(--muted)] text-sm border border-dashed border-[var(--border)] rounded-lg">
+                  No accounts added yet. Add creators whose style you admire!
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
@@ -548,137 +664,6 @@ export default function SettingsPage() {
                   placeholder="e.g., LLMs, React, Kubernetes, GPT-4..."
                   className="w-full px-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none"
                 />
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* Content Profile - Voice */}
-        <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
-          <button
-            onClick={() => toggleSection('voice')}
-            className="w-full px-4 py-3 border-b border-[var(--border)] bg-[var(--background)] flex items-center justify-between"
-          >
-            <h2 className="font-semibold flex items-center gap-2">
-              <Mic className="w-4 h-4" />
-              Voice & Style
-            </h2>
-            {expandedSections.voice ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
-          {expandedSections.voice && (
-            <div className="p-4 space-y-4">
-              {/* Voice Examples */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Example Tweets (your style)</label>
-                <textarea
-                  value={contentProfile.voice_examples}
-                  onChange={(e) => updateContentProfile({ voice_examples: e.target.value })}
-                  placeholder="Paste 5-10 of your best tweets to help us learn your voice..."
-                  rows={4}
-                  className="w-full px-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none resize-none"
-                />
-              </div>
-
-              {/* Voice Description */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Or describe your style</label>
-                <textarea
-                  value={contentProfile.voice_description}
-                  onChange={(e) => updateContentProfile({ voice_description: e.target.value })}
-                  placeholder="e.g., I write with technical depth but keep it accessible..."
-                  rows={3}
-                  className="w-full px-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none resize-none"
-                />
-              </div>
-
-              {/* Tone Sliders */}
-              <div className="space-y-4 pt-2">
-                <div>
-                  <div className="flex justify-between text-sm text-[var(--muted)] mb-1">
-                    <span>Formal</span>
-                    <span>Casual</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="5"
-                    value={contentProfile.tone_formal_casual}
-                    onChange={(e) => updateContentProfile({ tone_formal_casual: parseInt(e.target.value) })}
-                    className="w-full accent-accent"
-                  />
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm text-[var(--muted)] mb-1">
-                    <span>Hedged</span>
-                    <span>Direct</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="5"
-                    value={contentProfile.tone_hedged_direct}
-                    onChange={(e) => updateContentProfile({ tone_hedged_direct: parseInt(e.target.value) })}
-                    className="w-full accent-accent"
-                  />
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm text-[var(--muted)] mb-1">
-                    <span>Serious</span>
-                    <span>Playful</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="5"
-                    value={contentProfile.tone_serious_playful}
-                    onChange={(e) => updateContentProfile({ tone_serious_playful: parseInt(e.target.value) })}
-                    className="w-full accent-accent"
-                  />
-                </div>
-              </div>
-
-              {/* Admired Accounts */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Accounts You Admire</label>
-                <div className="flex gap-2 mb-2">
-                  <div className="flex-1 relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]">@</span>
-                    <input
-                      type="text"
-                      value={newAccount}
-                      onChange={(e) => setNewAccount(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && addAdmiredAccount()}
-                      placeholder="handle"
-                      className="w-full pl-8 pr-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none"
-                    />
-                  </div>
-                  <button
-                    onClick={addAdmiredAccount}
-                    disabled={!newAccount.trim()}
-                    className="px-3 py-2 rounded-lg bg-accent text-[var(--accent-text)] hover:opacity-90 disabled:opacity-50"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                </div>
-                {contentProfile.admired_accounts.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {contentProfile.admired_accounts.map(handle => (
-                      <div
-                        key={handle}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--background)] border border-[var(--border)] text-sm"
-                      >
-                        <span className="text-[var(--muted)]">@</span>
-                        {handle}
-                        <button
-                          onClick={() => removeAdmiredAccount(handle)}
-                          className="ml-1 hover:text-red-400"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           )}
