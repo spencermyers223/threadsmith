@@ -235,35 +235,55 @@ export default function EditingTools({ content, onContentChange, isThread = fals
           setPreviousContent(null) // Clear undo since nothing changed
         }
       } else {
-        // Single tool application
-        const res = await fetch('/api/chat/writing-assistant', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content,
-            action: toolId,
-            isThread,
-          }),
-        })
-
-        if (!res.ok) {
-          const data = await res.json()
-          throw new Error(data.error || 'Failed to process')
-        }
-
-        const data = await res.json()
+        // Single tool application with retry if score doesn't improve
+        const toolLabel = TOOLS.find(t => t.id === toolId)?.shortLabel || toolId
+        let bestContent = content
+        let bestScore = beforeScore.score
+        const maxRetries = 2
         
-        // Calculate score AFTER the edit
-        const afterScore = scoreEngagement(data.content).score
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          const res = await fetch('/api/chat/writing-assistant', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              content,
+              action: toolId,
+              isThread,
+            }),
+          })
+
+          if (!res.ok) {
+            const data = await res.json()
+            throw new Error(data.error || 'Failed to process')
+          }
+
+          const data = await res.json()
+          const newScore = scoreEngagement(data.content).score
+          
+          // Keep this result if it improves the score
+          if (newScore > bestScore) {
+            bestContent = data.content
+            bestScore = newScore
+            break // Success! Stop retrying
+          }
+          
+          // On last attempt, use best result we got (even if not improved)
+          if (attempt === maxRetries) {
+            if (newScore >= bestScore) {
+              bestContent = data.content
+              bestScore = newScore
+            }
+            // Otherwise keep original content
+          }
+        }
         
         // Show score change feedback
-        const toolLabel = TOOLS.find(t => t.id === toolId)?.shortLabel || toolId
-        setScoreChange({ before: beforeScore.score, after: afterScore, tool: toolLabel })
+        setScoreChange({ before: beforeScore.score, after: bestScore, tool: toolLabel })
         
         // Auto-hide the score change after 4 seconds
         setTimeout(() => setScoreChange(null), 4000)
         
-        onContentChange(data.content)
+        onContentChange(bestContent)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')

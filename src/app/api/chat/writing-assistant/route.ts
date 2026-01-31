@@ -66,6 +66,20 @@ interface Message {
   content: string
 }
 
+// Common formatting instruction for all prompts
+const FORMATTING_RULE = `
+
+⚠️ CRITICAL FORMATTING RULE:
+PRESERVE ALL LINE BREAKS EXACTLY AS THEY APPEAR IN THE INPUT.
+If the input has text like:
+"Line one
+
+Line two
+
+Line three"
+Your output MUST maintain those exact line breaks. Never collapse multiple lines into a single paragraph.
+`
+
 // Editing tool prompts
 const EDITING_PROMPTS: Record<string, string> = {
   add_hook: `You are a viral content expert. Add ONE scroll-stopping hook to boost the engagement score.
@@ -94,11 +108,12 @@ RULES:
 1. Hook must be 10-80 characters (measured by scorer)
 2. Use at least ONE score trigger (number, question, bold claim, caps)
 3. Do NOT modify any other content
-4. Return ONLY the modified content
+4. PRESERVE ALL LINE BREAKS - do not collapse formatting
+5. Return ONLY the modified content
 
 FOR THREADS: Replace/enhance ONLY the first line of 1/, keep numbering intact.
 
-CRITICAL: Return ONLY the content. No explanations.`,
+CRITICAL: Return ONLY the content. Preserve all line breaks exactly.`,
 
   humanize: `Make this sound human to boost Readability score (+10-20 points for natural language).
 
@@ -133,12 +148,13 @@ HARD REQUIREMENTS:
 2. Under 280 characters for single tweets
 3. Under 280 chars per tweet for threads
 4. Must sound natural, not polished/robotic
+5. ⚠️ PRESERVE ALL LINE BREAKS - if input has line breaks, output must too
 
 THE TEST: Read it out loud. If you wouldn't SAY it that way, rewrite it.
 
 FOR THREADS: Humanize each tweet. Keep numbering. Each under 280 chars.
 
-CRITICAL: Return ONLY the rewritten content.`,
+CRITICAL: Return ONLY the rewritten content. PRESERVE ALL LINE BREAKS.`,
 
   sharpen: `Shorten content to hit the optimal engagement score length: 180-280 characters.
 
@@ -169,14 +185,16 @@ WORDS TO DELETE (instant cuts):
 - "Sort of", "kind of", "a bit" → DELETE
 
 TECHNIQUES:
-- Combine sentences
+- Combine sentences (but keep line breaks between ideas)
 - Active voice (shorter than passive)
 - Replace phrases with single words
 - Delete anything that doesn't add value
 
+⚠️ PRESERVE LINE BREAKS: If input has multiple lines, keep that structure. Don't collapse into one paragraph.
+
 FOR THREADS: Each tweet must be under 280 chars. Maintain numbering (1/, 2/, etc.).
 
-CRITICAL: Return ONLY the shortened content. Aim for 180-280 chars for max score.`,
+CRITICAL: Return ONLY the shortened content. Aim for 180-280 chars. PRESERVE LINE BREAKS.`,
 
   make_thread: `Turn content into an engaging thread optimized for engagement scores.
 
@@ -236,14 +254,15 @@ HIGH-SCORING QUESTION PATTERNS (ranked):
 5. "Change my mind" ← triggers engagement phrase
 
 RULES:
-1. Add question at the VERY END (own line)
+1. Add question at the VERY END (on its own line after a blank line)
 2. Question MUST end with "?" (this is worth +30 points)
 3. Keep total under 280 characters - shorten content if needed
 4. Use one of the engagement phrases above when possible
+5. ⚠️ PRESERVE ALL EXISTING LINE BREAKS in the content
 
 FOR THREADS: Add question to the LAST tweet only.
 
-CRITICAL: Return ONLY the modified content. Must end with "?" for the score boost.`,
+CRITICAL: Return ONLY the modified content. PRESERVE LINE BREAKS. Must end with "?".`,
 
   make_spicy: `Make this content more provocative to boost Reply Potential score (+15 points for controversial markers).
 
@@ -258,6 +277,7 @@ HARD REQUIREMENTS:
 2. For single tweets: Stay under 280 characters
 3. For threads: Each tweet under 280 characters
 4. Add at least ONE controversial marker phrase
+5. ⚠️ PRESERVE ALL LINE BREAKS - do not collapse multiple lines into one paragraph
 
 SPICY TRANSFORMATIONS (that maintain or reduce length):
 BEFORE → AFTER
@@ -315,8 +335,8 @@ export async function POST(request: NextRequest) {
       const response = await anthropic.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2048,
-        system: editingPrompt,
-        messages: [{ role: 'user', content: `Here is the content to modify:\n\n${content}${threadContext}` }],
+        system: editingPrompt + FORMATTING_RULE,
+        messages: [{ role: 'user', content: `Here is the content to modify:\n\n${content}${threadContext}\n\n⚠️ IMPORTANT: Preserve all line breaks exactly as shown above.` }],
       })
 
       const textContent = response.content
