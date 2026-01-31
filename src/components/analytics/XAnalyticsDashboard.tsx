@@ -53,6 +53,7 @@ export function XAnalyticsDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [expandedTweetId, setExpandedTweetId] = useState<string | null>(null)
 
   const fetchAnalytics = async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true)
@@ -145,7 +146,7 @@ export function XAnalyticsDashboard() {
             X Analytics
           </h1>
           <p className="text-[var(--muted)] text-sm mt-1">
-            Real-time performance data from your X account
+            Real-time performance data from your X account · Shows your most recent 50 posts
           </p>
         </div>
         <button
@@ -263,29 +264,38 @@ export function XAnalyticsDashboard() {
               </tr>
             </thead>
             <tbody>
-              {tweets.map(tweet => (
-                <tr key={tweet.id} className="border-b border-[var(--border)] hover:bg-[var(--card-hover)] transition-colors">
-                  <td className="px-5 py-3 max-w-[300px]">
-                    <p className="truncate">{tweet.text}</p>
-                    {tweet.is_thread_start && (
-                      <span className="text-xs text-accent">Thread</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-3 text-[var(--muted)] whitespace-nowrap">
-                    {new Date(tweet.created_at).toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      day: 'numeric' 
-                    })}
-                  </td>
-                  <td className="px-3 py-3 text-center">{formatNumber(tweet.metrics.impressions)}</td>
-                  <td className="px-3 py-3 text-center">{tweet.metrics.likes}</td>
-                  <td className="px-3 py-3 text-center">{tweet.metrics.retweets}</td>
-                  <td className="px-3 py-3 text-center">{tweet.metrics.replies}</td>
-                  <td className="px-3 py-3 font-medium text-accent">
-                    {(tweet.metrics?.engagement_rate ?? 0).toFixed(2)}%
-                  </td>
-                </tr>
-              ))}
+              {tweets.map(tweet => {
+                const isExpanded = expandedTweetId === tweet.id
+                return (
+                  <tr 
+                    key={tweet.id} 
+                    onClick={() => setExpandedTweetId(isExpanded ? null : tweet.id)}
+                    className="border-b border-[var(--border)] hover:bg-[var(--card-hover)] transition-colors cursor-pointer"
+                  >
+                    <td className="px-5 py-3 max-w-[300px]">
+                      <p className={isExpanded ? 'whitespace-pre-wrap' : 'truncate'}>
+                        {tweet.text}
+                      </p>
+                      {!isExpanded && tweet.text.length > 50 && (
+                        <span className="text-xs text-accent">Click to expand</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-3 text-[var(--muted)] whitespace-nowrap align-top">
+                      {new Date(tweet.created_at).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                      })}
+                    </td>
+                    <td className="px-3 py-3 text-center align-top">{formatNumber(tweet.metrics.impressions)}</td>
+                    <td className="px-3 py-3 text-center align-top">{tweet.metrics.likes}</td>
+                    <td className="px-3 py-3 text-center align-top">{tweet.metrics.retweets}</td>
+                    <td className="px-3 py-3 text-center align-top">{tweet.metrics.replies}</td>
+                    <td className="px-3 py-3 font-medium text-accent align-top">
+                      {(tweet.metrics?.engagement_rate ?? 0).toFixed(2)}%
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -331,12 +341,22 @@ function TweetRow({
   rank: number
   showRate?: boolean 
 }) {
+  const [expanded, setExpanded] = useState(false)
+  
   return (
-    <div className="px-5 py-3 flex items-start gap-3">
+    <div 
+      className="px-5 py-3 flex items-start gap-3 cursor-pointer hover:bg-[var(--card-hover)] transition-colors"
+      onClick={() => setExpanded(!expanded)}
+    >
       <span className="text-lg font-bold text-[var(--muted)] w-6">{rank}</span>
       <div className="flex-1 min-w-0">
-        <p className="text-sm line-clamp-2 mb-1">{tweet.text}</p>
-        <div className="flex items-center gap-4 text-xs text-[var(--muted)]">
+        <p className={`text-sm mb-1 ${expanded ? 'whitespace-pre-wrap' : 'line-clamp-2'}`}>
+          {tweet.text}
+        </p>
+        {!expanded && tweet.text.length > 100 && (
+          <span className="text-xs text-accent">Click to expand</span>
+        )}
+        <div className="flex items-center gap-4 text-xs text-[var(--muted)] mt-1">
           <span className="flex items-center gap-1">
             <Heart className="w-3 h-3" /> {tweet.metrics.likes}
           </span>
@@ -358,6 +378,7 @@ function TweetRow({
         target="_blank"
         rel="noopener noreferrer"
         className="text-[var(--muted)] hover:text-accent p-1"
+        onClick={(e) => e.stopPropagation()}
       >
         <ExternalLink className="w-4 h-4" />
       </a>
