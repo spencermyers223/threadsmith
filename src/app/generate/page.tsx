@@ -30,6 +30,7 @@ import { UpgradeModal } from '@/components/subscription/UpgradeModal'
 import TagSelector from '@/components/tags/TagSelector'
 import TagBadge, { Tag as TagType } from '@/components/tags/TagBadge'
 import { postTweet, postThread, openXIntent, openTweet } from '@/lib/x-posting'
+import { useXAccount } from '@/contexts/XAccountContext'
 
 // Types
 type Length = 'punchy' | 'standard' | 'developed' | 'thread'
@@ -269,6 +270,7 @@ interface PersistedState {
 export default function GeneratePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { activeAccount } = useXAccount()
 
   // Form state
   const [topic, setTopic] = useState('')
@@ -491,6 +493,7 @@ export default function GeneratePage() {
               : { html: `<p>${post.content.replace(/\n/g, '</p><p>')}</p>` },
             status: 'draft',
             generation_type: post.archetype,
+            x_account_id: activeAccount?.id,
           }),
         })
 
@@ -580,6 +583,7 @@ export default function GeneratePage() {
             : { html: `<p>${post.content.replace(/\n/g, '</p><p>')}</p>` },
           status: 'draft',
           generation_type: post.archetype,
+          x_account_id: activeAccount?.id,
         }),
       })
 

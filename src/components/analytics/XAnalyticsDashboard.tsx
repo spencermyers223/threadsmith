@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   BarChart3, Eye, Heart, TrendingUp, MessageSquare, Repeat2,
   RefreshCw, AlertCircle, ExternalLink, Sparkles
 } from 'lucide-react'
+import { useXAccount } from '@/contexts/XAccountContext'
 
 interface TweetMetrics {
   likes: number
@@ -49,19 +50,23 @@ interface AnalyticsData {
 }
 
 export function XAnalyticsDashboard() {
+  const { activeAccount } = useXAccount()
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [expandedTweetId, setExpandedTweetId] = useState<string | null>(null)
+  const prevAccountIdRef = useRef<string | null>(null)
 
   const fetchAnalytics = async (showRefresh = false) => {
+    if (!activeAccount?.id) return
+    
     if (showRefresh) setRefreshing(true)
     else setLoading(true)
     setError(null)
 
     try {
-      const res = await fetch('/api/x/analytics?max_results=50')
+      const res = await fetch(`/api/x/analytics?max_results=50&x_account_id=${activeAccount.id}`)
       const json = await res.json()
 
       if (!res.ok) {
@@ -77,9 +82,13 @@ export function XAnalyticsDashboard() {
     }
   }
 
+  // Reload when active account changes
   useEffect(() => {
+    if (!activeAccount?.id) return
+    if (prevAccountIdRef.current === activeAccount.id && data !== null) return
+    prevAccountIdRef.current = activeAccount.id
     fetchAnalytics()
-  }, [])
+  }, [activeAccount?.id])
 
   if (loading) {
     return (

@@ -21,6 +21,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
+    // Get x_account_id from query params
+    const searchParams = request.nextUrl.searchParams
+    const xAccountId = searchParams.get('x_account_id')
+    
     // Get user's X tokens from admin client
     const { createClient: createAdminClient } = await import('@supabase/supabase-js')
     const supabaseAdmin = createAdminClient(
@@ -28,31 +32,45 @@ export async function GET(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
     
-    // Check x_tokens first, then x_accounts as fallback
     let tokens = null
     
-    const { data: xTokens } = await supabaseAdmin
-      .from('x_tokens')
-      .select('access_token, x_user_id, expires_at')
-      .eq('user_id', user.id)
-      .single()
-    
-    if (xTokens?.access_token) {
-      tokens = xTokens
-    } else {
-      // Fallback: check x_accounts table (multi-account support)
-      const { data: xAccount } = await supabaseAdmin
-        .from('x_accounts')
-        .select('access_token, x_user_id, token_expires_at')
+    if (xAccountId) {
+      // Fetch tokens for specific x_account
+      const { data: xTokens } = await supabaseAdmin
+        .from('x_tokens')
+        .select('access_token, x_user_id, expires_at')
+        .eq('x_account_id', xAccountId)
         .eq('user_id', user.id)
-        .eq('is_primary', true)
         .single()
       
-      if (xAccount?.access_token) {
-        tokens = {
-          access_token: xAccount.access_token,
-          x_user_id: xAccount.x_user_id,
-          expires_at: xAccount.token_expires_at,
+      if (xTokens?.access_token) {
+        tokens = xTokens
+      }
+    } else {
+      // Legacy: Check x_tokens first, then x_accounts as fallback
+      const { data: xTokens } = await supabaseAdmin
+        .from('x_tokens')
+        .select('access_token, x_user_id, expires_at')
+        .eq('user_id', user.id)
+        .single()
+      
+      if (xTokens?.access_token) {
+        tokens = xTokens
+      } else {
+        // Fallback: check x_accounts table (multi-account support)
+        const { data: xAccount } = await supabaseAdmin
+          .from('x_accounts')
+          .select('access_token, x_user_id, token_expires_at')
+          .eq('user_id', user.id)
+          .eq('is_primary', true)
+          .single()
+        
+        if (xAccount?.access_token) {
+          tokens = {
+            access_token: xAccount.access_token,
+            x_user_id: xAccount.x_user_id,
+            expires_at: xAccount.token_expires_at,
+          }
         }
       }
     }
@@ -73,7 +91,6 @@ export async function GET(request: NextRequest) {
     }
     
     // Parse query params
-    const searchParams = request.nextUrl.searchParams
     const maxResults = Math.min(
       parseInt(searchParams.get('max_results') || '50'),
       100

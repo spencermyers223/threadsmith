@@ -20,6 +20,7 @@ import TagBadge, { Tag as TagType } from '@/components/tags/TagBadge'
 import { MediaUpload, type MediaItem } from '@/components/workspace/MediaUpload'
 import { EngagementPanel } from '@/components/workspace/EngagementPanel'
 import EditingTools from '@/components/editing/EditingTools'
+import { useXAccount } from '@/contexts/XAccountContext'
 
 type ContentType = 'tweet' | 'thread' | 'article'
 import type { GenerationType } from '@/components/calendar/PostTypeIcon'
@@ -37,6 +38,8 @@ interface Draft {
 }
 
 export default function WorkspacePage() {
+  const { activeAccount } = useXAccount()
+  
   // Content state
   const [content, setContent] = useState('')
   const [threadTweets, setThreadTweets] = useState<ThreadTweet[]>([{ id: '1', content: '' }])
@@ -211,6 +214,7 @@ export default function WorkspacePage() {
           status: 'draft',
           generation_type: generationType || 'user_generated',
           tagIds: selectedTagIds,
+          x_account_id: activeAccount?.id,
         }),
       })
 
@@ -361,6 +365,7 @@ export default function WorkspacePage() {
           scheduled_time: time,
           generation_type: generationType || 'user_generated',
           tagIds: selectedTagIds,
+          x_account_id: activeAccount?.id,
         }),
       })
 
@@ -423,6 +428,7 @@ export default function WorkspacePage() {
           status: 'posted',
           generation_type: generationType || 'user_generated',
           tagIds: selectedTagIds,
+          x_account_id: activeAccount?.id,
         }),
       })
 
@@ -504,6 +510,7 @@ export default function WorkspacePage() {
           status: 'draft',
           generation_type: generationType,
           tagIds: selectedTagIds,
+          x_account_id: activeAccount?.id,
         }),
       })
       if (!res.ok) return null

@@ -291,6 +291,59 @@ export default function SettingsPage() {
     loadSettings()
   }, [supabase])
 
+  // Reload content profile when active account changes
+  const prevAccountIdRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!activeAccount?.id) return
+    if (prevAccountIdRef.current === activeAccount.id) return
+    prevAccountIdRef.current = activeAccount.id
+    
+    const xAccountId = activeAccount.id
+    
+    async function loadContentProfile() {
+      const { data: contentProfileData } = await supabase
+        .from('content_profiles')
+        .select('*')
+        .eq('x_account_id', xAccountId)
+        .single()
+
+      if (contentProfileData) {
+        setContentProfile({
+          primary_niche: contentProfileData.primary_niche || contentProfileData.niche || '',
+          secondary_interests: contentProfileData.secondary_interests || [],
+          specific_protocols: contentProfileData.specific_protocols || '',
+          voice_examples: contentProfileData.voice_examples || '',
+          voice_description: contentProfileData.voice_description || '',
+          tone_formal_casual: contentProfileData.tone_formal_casual || 3,
+          tone_hedged_direct: contentProfileData.tone_hedged_direct || 3,
+          tone_serious_playful: contentProfileData.tone_serious_playful || 3,
+          primary_goal: contentProfileData.primary_goal || contentProfileData.content_goal || '',
+          content_frequency: contentProfileData.content_frequency || '',
+          target_audience: contentProfileData.target_audience || '',
+          admired_accounts: contentProfileData.admired_accounts || [],
+        })
+      } else {
+        // Reset to defaults if no profile for this account
+        setContentProfile({
+          primary_niche: '',
+          secondary_interests: [],
+          specific_protocols: '',
+          voice_examples: '',
+          voice_description: '',
+          tone_formal_casual: 3,
+          tone_hedged_direct: 3,
+          tone_serious_playful: 3,
+          primary_goal: '',
+          content_frequency: '',
+          target_audience: '',
+          admired_accounts: [],
+        })
+      }
+    }
+    
+    loadContentProfile()
+  }, [activeAccount?.id, supabase])
+
   const updateContentProfile = (updates: Partial<ContentProfile>) => {
     setContentProfile(prev => ({ ...prev, ...updates }))
   }
