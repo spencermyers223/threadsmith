@@ -5,12 +5,14 @@
  * Fetches authenticated user's tweet metrics for analytics dashboard
  * 
  * Query params:
+ * - x_account_id: specific X account to fetch analytics for
  * - max_results: number of tweets to fetch (default: 50, max: 100)
  * - days: how many days back to look (default: 7)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getValidXTokens } from '@/lib/x-tokens'
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,72 +25,19 @@ export async function GET(request: NextRequest) {
     
     // Get x_account_id from query params
     const searchParams = request.nextUrl.searchParams
-    const xAccountId = searchParams.get('x_account_id')
+    const xAccountId = searchParams.get('x_account_id') || undefined
     
-    // Get user's X tokens from admin client
-    const { createClient: createAdminClient } = await import('@supabase/supabase-js')
-    const supabaseAdmin = createAdminClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    // Get valid tokens (with auto-refresh!)
+    const tokenResult = await getValidXTokens(user.id, xAccountId)
     
-    let tokens = null
-    
-    if (xAccountId) {
-      // Fetch tokens for specific x_account
-      const { data: xTokens } = await supabaseAdmin
-        .from('x_tokens')
-        .select('access_token, x_user_id, expires_at')
-        .eq('x_account_id', xAccountId)
-        .eq('user_id', user.id)
-        .single()
-      
-      if (xTokens?.access_token) {
-        tokens = xTokens
-      }
-    } else {
-      // Legacy: Check x_tokens first, then x_accounts as fallback
-      const { data: xTokens } = await supabaseAdmin
-        .from('x_tokens')
-        .select('access_token, x_user_id, expires_at')
-        .eq('user_id', user.id)
-        .single()
-      
-      if (xTokens?.access_token) {
-        tokens = xTokens
-      } else {
-        // Fallback: check x_accounts table (multi-account support)
-        const { data: xAccount } = await supabaseAdmin
-          .from('x_accounts')
-          .select('access_token, x_user_id, token_expires_at')
-          .eq('user_id', user.id)
-          .eq('is_primary', true)
-          .single()
-        
-        if (xAccount?.access_token) {
-          tokens = {
-            access_token: xAccount.access_token,
-            x_user_id: xAccount.x_user_id,
-            expires_at: xAccount.token_expires_at,
-          }
-        }
-      }
-    }
-    
-    if (!tokens) {
+    if (!tokenResult.success) {
       return NextResponse.json(
-        { error: 'X account not connected' },
-        { status: 400 }
+        { error: tokenResult.error, needsReauth: tokenResult.needsReauth },
+        { status: tokenResult.needsReauth ? 401 : 400 }
       )
     }
     
-    // Check if token is expired
-    if (new Date(tokens.expires_at) < new Date()) {
-      return NextResponse.json(
-        { error: 'X token expired. Please sign in again.' },
-        { status: 401 }
-      )
-    }
+    const tokens = tokenResult.tokens
     
     // Parse query params
     const maxResults = Math.min(

@@ -29,41 +29,60 @@ type TokenResult = {
  * Get valid X tokens for a user, refreshing if needed.
  * 
  * @param userId - Supabase user ID
+ * @param xAccountId - Optional specific X account ID (for multi-account support)
  * @returns Valid tokens or error
  */
-export async function getValidXTokens(userId: string): Promise<TokenResult> {
+export async function getValidXTokens(userId: string, xAccountId?: string): Promise<TokenResult> {
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
   
-  // Fetch current tokens - check x_tokens first, then x_accounts as fallback
+  // Fetch current tokens
   let tokens = null
+  let tokenRecordId: string | null = null
   
-  const { data: xTokens } = await supabaseAdmin
-    .from('x_tokens')
-    .select('access_token, refresh_token, x_user_id, x_username, expires_at')
-    .eq('user_id', userId)
-    .single()
-  
-  if (xTokens?.access_token) {
-    tokens = xTokens
-  } else {
-    // Fallback: check x_accounts table (multi-account support)
-    const { data: xAccount } = await supabaseAdmin
-      .from('x_accounts')
-      .select('access_token, refresh_token, x_user_id, x_username, token_expires_at')
+  if (xAccountId) {
+    // Fetch tokens for specific X account
+    const { data: xTokens } = await supabaseAdmin
+      .from('x_tokens')
+      .select('id, access_token, refresh_token, x_user_id, x_username, expires_at')
+      .eq('x_account_id', xAccountId)
       .eq('user_id', userId)
-      .eq('is_primary', true)
       .single()
     
-    if (xAccount?.access_token) {
-      tokens = {
-        access_token: xAccount.access_token,
-        refresh_token: xAccount.refresh_token,
-        x_user_id: xAccount.x_user_id,
-        x_username: xAccount.x_username,
-        expires_at: xAccount.token_expires_at,
+    if (xTokens?.access_token) {
+      tokens = xTokens
+      tokenRecordId = xTokens.id
+    }
+  } else {
+    // Legacy: check x_tokens first, then x_accounts as fallback
+    const { data: xTokens } = await supabaseAdmin
+      .from('x_tokens')
+      .select('id, access_token, refresh_token, x_user_id, x_username, expires_at')
+      .eq('user_id', userId)
+      .single()
+    
+    if (xTokens?.access_token) {
+      tokens = xTokens
+      tokenRecordId = xTokens.id
+    } else {
+      // Fallback: check x_accounts table (multi-account support)
+      const { data: xAccount } = await supabaseAdmin
+        .from('x_accounts')
+        .select('access_token, refresh_token, x_user_id, x_username, token_expires_at')
+        .eq('user_id', userId)
+        .eq('is_primary', true)
+        .single()
+      
+      if (xAccount?.access_token) {
+        tokens = {
+          access_token: xAccount.access_token,
+          refresh_token: xAccount.refresh_token,
+          x_user_id: xAccount.x_user_id,
+          x_username: xAccount.x_username,
+          expires_at: xAccount.token_expires_at,
+        }
       }
     }
   }
@@ -107,7 +126,7 @@ export async function getValidXTokens(userId: string): Promise<TokenResult> {
     const newExpiresAt = new Date(Date.now() + refreshed.expires_in * 1000).toISOString()
     
     // Update tokens in database
-    const { error: updateError } = await supabaseAdmin
+    const updateQuery = supabaseAdmin
       .from('x_tokens')
       .update({
         access_token: refreshed.access_token,
@@ -115,7 +134,11 @@ export async function getValidXTokens(userId: string): Promise<TokenResult> {
         expires_at: newExpiresAt,
         updated_at: new Date().toISOString(),
       })
-      .eq('user_id', userId)
+    
+    // Use token record ID if available, otherwise fall back to user_id
+    const { error: updateError } = tokenRecordId 
+      ? await updateQuery.eq('id', tokenRecordId)
+      : await updateQuery.eq('user_id', userId)
     
     if (updateError) {
       console.error('[x-tokens] Failed to save refreshed token:', updateError)
