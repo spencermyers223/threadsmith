@@ -11,6 +11,19 @@ import { EditingTools } from '@/components/editing'
 import { GenerationCounter } from '@/components/subscription/GenerationCounter'
 import { UpgradeModal } from '@/components/subscription/UpgradeModal'
 import { TemplateSelector } from '@/components/creator-hub/TemplateSelector'
+
+// Template mode data structure
+interface TemplateData {
+  templateId: string
+  templateTitle: string
+  templateDescription: string | null
+  templateCategory: string
+  templateWhyItWorks: string | null
+  templateDifficulty: string | null
+  promptTemplate: string
+  variableValues: Record<string, string>
+  variables: { name: string; label: string; required: boolean }[] | null
+}
 import type { FileRecord } from '@/components/generate/FilesSidebar'
 import { postTweet, postThread, openXIntent, openTweet } from '@/lib/x-posting'
 
@@ -95,26 +108,12 @@ interface GenerateModeProps {
 export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile }: GenerateModeProps) {
   const router = useRouter()
 
-  // Template mode state (from /templates page)
-  interface TemplateData {
-    templateId: string
-    templateTitle: string
-    templateDescription: string | null
-    templateCategory: string
-    templateWhyItWorks: string | null
-    templateDifficulty: string | null
-    promptTemplate: string
-    variableValues: Record<string, string>
-    variables: { name: string; label: string; required: boolean }[] | null
-  }
+  // Template mode state (from /templates page or dropdown selector)
   const [templateMode, setTemplateMode] = useState<TemplateData | null>(null)
 
   // Form state
   const [topic, setTopic] = useState('')
   const [selectedPostType, setSelectedPostType] = useState<string>('market_take')
-  const [placeholderText, setPlaceholderText] = useState('Enter your topic, idea, or paste notes...')
-  const [activeTemplate, setActiveTemplate] = useState<string | null>(null)
-  const [promptTemplate, setPromptTemplate] = useState('')
   const [selectedLength, setSelectedLength] = useState<string>('standard')
   const [isTemplatePrompt, setIsTemplatePrompt] = useState(false)
 
@@ -133,10 +132,10 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
     const raw = sessionStorage.getItem('xthread-template-data')
     if (raw) {
       try {
-        const data = JSON.parse(raw)
+        const data = JSON.parse(raw) as TemplateData & { topic?: string }
         // New format: full template data for template mode
         if (data.templateId && data.promptTemplate) {
-          setTemplateMode(data)
+          setTemplateMode(data as TemplateData)
           setIsTemplatePrompt(true)
           // Auto-select post type based on category
           const categoryToPostType: Record<string, string> = {
@@ -298,11 +297,6 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
         const anyValue = Object.values(templateMode.variableValues)[0] || ''
         finalTopic = finalTopic.replace(/\{\{input\}\}/gi, anyValue)
                                .replace(/\{\{topic\}\}/gi, anyValue)
-      } else if (isTemplatePrompt && promptTemplate) {
-        // Legacy template selector mode
-        finalTopic = promptTemplate.replace(/\{\{topic\}\}/gi, topic.trim())
-                                    .replace(/\{\{input\}\}/gi, topic.trim())
-                                    .replace(/\{\{content\}\}/gi, topic.trim())
       } else {
         finalTopic = topic.trim()
       }
@@ -557,22 +551,26 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
                       Template Library
                     </a>
                     <TemplateSelector
-                      activeTemplate={activeTemplate}
-                      onSelectTemplate={(placeholderGuide, template, category, title) => {
-                        setPlaceholderText(placeholderGuide)
-                        setPromptTemplate(template)
-                        setActiveTemplate(title || null)
-                        setTopic('')
-                        setIsTemplatePrompt(!!template)
-                        const categoryToPostType: Record<string, string> = {
-                          'build-in-public': 'build_in_public',
-                          'contrarian': 'hot_take',
-                          'alpha': 'market_take',
-                          'data': 'on_chain_insight',
-                          'engagement': 'market_take',
-                        }
-                        if (category && categoryToPostType[category]) {
-                          setSelectedPostType(categoryToPostType[category])
+                      activeTemplate={null}
+                      onSelectTemplate={(data) => {
+                        if (data) {
+                          // Enter template mode
+                          setTemplateMode(data)
+                          setIsTemplatePrompt(true)
+                          setTopic('')
+                          // Auto-select post type based on category
+                          const categoryToPostType: Record<string, string> = {
+                            'build-in-public': 'build_in_public',
+                            'contrarian': 'hot_take',
+                            'alpha': 'market_take',
+                            'engagement': 'market_take',
+                          }
+                          if (data.templateCategory && categoryToPostType[data.templateCategory]) {
+                            setSelectedPostType(categoryToPostType[data.templateCategory])
+                          }
+                        } else {
+                          // Clear template mode
+                          clearTemplateMode()
                         }
                       }}
                     />
@@ -584,7 +582,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
                     onChange={(e) => {
                       setTopic(e.target.value.slice(0, 500))
                     }}
-                    placeholder={placeholderText}
+                    placeholder="Enter your topic, idea, or paste notes..."
                     rows={3}
                     className="
                       w-full px-4 py-3 rounded-xl resize-none
