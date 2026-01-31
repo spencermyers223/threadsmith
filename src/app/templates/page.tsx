@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import {
-  Search, Sparkles, TrendingUp, Flame, BarChart2, Rocket, MessageCircle,
+  Search, Sparkles, TrendingUp, Flame, Rocket, MessageCircle,
   Clock, Target, ArrowRight, X, Loader2
 } from 'lucide-react'
 
@@ -31,21 +31,19 @@ interface PostTemplate {
   why_it_works: string | null
 }
 
-// Category config
+// Category config - matches actual DB categories
 const CATEGORIES = [
   { id: 'all', label: 'All Templates', icon: Sparkles },
-  { id: 'alpha', label: 'Insight Threads', icon: TrendingUp },
-  { id: 'contrarian', label: 'Hot Takes', icon: Flame },
-  { id: 'data', label: 'Data Posts', icon: BarChart2 },
+  { id: 'alpha', label: 'Alpha', icon: TrendingUp },
   { id: 'build-in-public', label: 'Build in Public', icon: Rocket },
-  { id: 'engagement', label: 'Engagement Hooks', icon: MessageCircle },
+  { id: 'contrarian', label: 'Contrarian', icon: Flame },
+  { id: 'engagement', label: 'Engagement', icon: MessageCircle },
 ]
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   alpha: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/20' },
-  contrarian: { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-500/20' },
-  data: { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/20' },
   'build-in-public': { bg: 'bg-pink-500/10', text: 'text-pink-600 dark:text-pink-400', border: 'border-pink-500/20' },
+  contrarian: { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-500/20' },
   engagement: { bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/20' },
 }
 
