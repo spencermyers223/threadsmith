@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient as createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 // CORS headers for extension requests
@@ -19,11 +20,33 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders });
 }
 
+// Helper to get user from either Bearer token or cookies
+async function getAuthenticatedUser(request: NextRequest) {
+  const authHeader = request.headers.get('Authorization');
+  
+  // Try Bearer token first (for extension requests)
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.replace('Bearer ', '');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (!error && user) {
+      return { user, supabase };
+    }
+  }
+  
+  // Fall back to cookie-based auth (for web app requests)
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return { user, supabase };
+}
+
 // GET - List admired accounts
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { user, supabase } = await getAuthenticatedUser(request);
     
     if (!user) {
       return jsonResponse({ error: 'Unauthorized' }, { status: 401 });
@@ -47,8 +70,7 @@ export async function GET() {
 // POST - Add an admired account
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { user, supabase } = await getAuthenticatedUser(request);
     
     if (!user) {
       return jsonResponse({ error: 'Unauthorized' }, { status: 401 });
@@ -110,8 +132,7 @@ export async function POST(request: NextRequest) {
 // DELETE - Remove an admired account
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { user, supabase } = await getAuthenticatedUser(request);
     
     if (!user) {
       return jsonResponse({ error: 'Unauthorized' }, { status: 401 });

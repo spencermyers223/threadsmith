@@ -14,8 +14,8 @@ export async function OPTIONS() {
 }
 
 // Helper to add CORS headers to responses
-function jsonResponse(data: unknown, options: { status?: number; headers?: Record<string, string> } = {}) {
-  return jsonResponse(data, { 
+function jsonResponse(data: unknown, options: { status?: number } = {}) {
+  return NextResponse.json(data, { 
     status: options.status || 200,
     headers: corsHeaders 
   });
