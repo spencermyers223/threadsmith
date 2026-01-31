@@ -422,23 +422,38 @@ export async function POST(request: NextRequest) {
     const { contentLength, contentType } = mapLength(length)
     const mappedTone = mapTone(tone)
 
-    // Fetch user's content profile (including voice_profile)
+    // Fetch user's content profile (including voice_profile and all customization)
     let userProfile: UserProfile | undefined
     let voiceProfileData: Record<string, unknown> | null = null
+    let voiceDescription: string | null = null
+    let tonePreferences: { formal_casual: number; hedged_direct: number; serious_playful: number } | null = null
+    let specificProtocols: string | null = null
+    
     const { data: profileData } = await supabase
       .from('content_profiles')
-      .select('niche, content_goal, admired_accounts, target_audience, voice_profile')
+      .select('niche, content_goal, admired_accounts, target_audience, voice_profile, voice_description, tone_formal_casual, tone_hedged_direct, tone_serious_playful, specific_protocols, primary_niche, secondary_interests')
       .eq('user_id', user.id)
       .single()
 
     if (profileData) {
       userProfile = {
-        niche: profileData.niche || undefined,
+        niche: profileData.primary_niche || profileData.niche || undefined,
         contentGoal: profileData.content_goal || undefined,
         admiredAccounts: profileData.admired_accounts || undefined,
         targetAudience: profileData.target_audience || undefined,
       }
       voiceProfileData = profileData.voice_profile as Record<string, unknown> | null
+      voiceDescription = profileData.voice_description || null
+      specificProtocols = profileData.specific_protocols || null
+      
+      // Capture tone preferences (1-5 scale)
+      if (profileData.tone_formal_casual || profileData.tone_hedged_direct || profileData.tone_serious_playful) {
+        tonePreferences = {
+          formal_casual: profileData.tone_formal_casual || 3,
+          hedged_direct: profileData.tone_hedged_direct || 3,
+          serious_playful: profileData.tone_serious_playful || 3,
+        }
+      }
     }
 
     // Fetch user's actual voice samples (their real tweets)
@@ -459,10 +474,45 @@ export async function POST(request: NextRequest) {
 
     // Build voice profile context
     let additionalContext: string | undefined
+    
+    // Start with user's self-described style if available
+    if (voiceDescription) {
+      additionalContext = `<user_style_description>
+The user describes their writing style as:
+"${voiceDescription}"
+
+Honor this self-description in your writing.
+</user_style_description>`
+    }
+    
+    // Add tone preferences if set
+    if (tonePreferences) {
+      const toneContext = `<tone_preferences>
+User's tone settings (1=left, 5=right):
+- Formal ←→ Casual: ${tonePreferences.formal_casual}/5 ${tonePreferences.formal_casual <= 2 ? '(lean formal)' : tonePreferences.formal_casual >= 4 ? '(lean casual)' : '(balanced)'}
+- Hedged ←→ Direct: ${tonePreferences.hedged_direct}/5 ${tonePreferences.hedged_direct <= 2 ? '(use qualifiers, "might", "could")' : tonePreferences.hedged_direct >= 4 ? '(be assertive, state things directly)' : '(balanced)'}
+- Serious ←→ Playful: ${tonePreferences.serious_playful}/5 ${tonePreferences.serious_playful <= 2 ? '(keep it serious)' : tonePreferences.serious_playful >= 4 ? '(add humor, be playful)' : '(balanced)'}
+
+Apply these tone preferences throughout your writing.
+</tone_preferences>`
+      additionalContext = additionalContext ? `${additionalContext}\n\n${toneContext}` : toneContext
+    }
+    
+    // Add specific expertise/protocols if set
+    if (specificProtocols) {
+      const expertiseContext = `<user_expertise>
+User's specific areas of expertise: ${specificProtocols}
+
+Reference these areas naturally when relevant. Show expertise without being preachy.
+</user_expertise>`
+      additionalContext = additionalContext ? `${additionalContext}\n\n${expertiseContext}` : expertiseContext
+    }
+    
+    // Add analyzed voice profile if available
     if (voiceProfileData) {
       const vp = voiceProfileData as Record<string, unknown>
       const emojiUsage = vp.emojiUsage as { frequency?: string; favorites?: string[] } | undefined
-      additionalContext = `<voice_profile>
+      const voiceContext = `<voice_profile>
 IMPORTANT: Match this user's writing voice exactly. This was analyzed from their real tweets.
 
 Summary: ${vp.summary || 'N/A'}
@@ -482,6 +532,7 @@ Thread Preference: ${vp.threadPreference || 'N/A'}
 
 Write as if YOU are this person. Mirror their exact tone, vocabulary level, emoji patterns, and sentence structure.
 </voice_profile>`
+      additionalContext = additionalContext ? `${additionalContext}\n\n${voiceContext}` : voiceContext
     }
 
     // Add actual tweet examples if available
