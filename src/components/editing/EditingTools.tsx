@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import {
   Wand2, Zap, Sparkles, ListTree, BarChart3, Loader2,
-  AlertTriangle, MessageCircle, Flame, X, Clock, WandSparkles
+  AlertTriangle, MessageCircle, Flame, X, Clock, WandSparkles, Undo2
 } from 'lucide-react'
 import { scoreEngagement, type EngagementScore } from '@/lib/engagement-scorer'
 
@@ -109,6 +109,15 @@ export default function EditingTools({ content, onContentChange, isThread = fals
   const [engagementScore, setEngagementScore] = useState<EngagementScore | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [scoreChange, setScoreChange] = useState<{ before: number; after: number; tool: string } | null>(null)
+  const [previousContent, setPreviousContent] = useState<string | null>(null)
+
+  const handleUndo = () => {
+    if (previousContent) {
+      onContentChange(previousContent)
+      setPreviousContent(null)
+      setScoreChange(null)
+    }
+  }
 
   const handleToolClick = async (toolId: ToolId) => {
     if (isLoading) return
@@ -131,6 +140,9 @@ export default function EditingTools({ content, onContentChange, isThread = fals
 
     setEngagementScore(null)
     setIsLoading(true)
+    
+    // Save current content for undo
+    setPreviousContent(content)
 
     // Calculate score BEFORE the edit
     const beforeScore = scoreEngagement(content)
@@ -301,7 +313,7 @@ export default function EditingTools({ content, onContentChange, isThread = fals
         </div>
       )}
 
-      {/* Score Change Feedback */}
+      {/* Score Change Feedback with Undo */}
       {scoreChange && (
         <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm animate-fade-in-up ${
           scoreChange.after > scoreChange.before 
@@ -321,6 +333,16 @@ export default function EditingTools({ content, onContentChange, isThread = fals
               <>Score unchanged ({scoreChange.after})</>
             )}
           </span>
+          {previousContent && (
+            <button 
+              onClick={handleUndo}
+              className="flex items-center gap-1 px-2 py-0.5 bg-white/10 hover:bg-white/20 rounded text-xs"
+              title="Undo this change"
+            >
+              <Undo2 size={12} />
+              Undo
+            </button>
+          )}
           <button onClick={() => setScoreChange(null)} className="p-0.5 hover:bg-white/10 rounded">
             <X size={12} />
           </button>
