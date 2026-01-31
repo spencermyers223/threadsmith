@@ -21,6 +21,7 @@ import TagBadge, { Tag } from '@/components/tags/TagBadge'
 import { MediaThumbnails, type MediaItem } from '@/components/workspace/MediaUpload'
 import { getPostTweetText } from '@/lib/twitter'
 import { postTweet, postThread, openXIntent, openTweet } from '@/lib/x-posting'
+import { useXAccount } from '@/contexts/XAccountContext'
 
 interface Post {
   id: string
@@ -313,11 +314,13 @@ function MonthGrid({
 // ─── Main Calendar ────────────────────────────────────────────────────────────
 
 export function ContentCalendar({ onSelectPost, filters }: ContentCalendarProps) {
+  const { activeAccount } = useXAccount()
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [monthCount, setMonthCount] = useState(3)
   const scrollRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const prevAccountIdRef = useRef<string | null>(null)
 
   const baseDate = useMemo(() => startOfMonth(new Date()), [])
   const pastMonths = 2 // show 2 months before current month for history
@@ -329,18 +332,24 @@ export function ContentCalendar({ onSelectPost, filters }: ContentCalendarProps)
   }, [baseDate, monthCount])
 
   const fetchPosts = useCallback(async () => {
+    if (!activeAccount?.id) return
+    
     const start = format(subMonths(baseDate, pastMonths + 1), 'yyyy-MM-dd')
     const end = format(endOfMonth(addMonths(baseDate, monthCount + 1)), 'yyyy-MM-dd')
     try {
-      const res = await fetch(`/api/posts?startDate=${start}&endDate=${end}`)
+      const res = await fetch(`/api/posts?startDate=${start}&endDate=${end}&x_account_id=${activeAccount.id}`)
       if (res.ok) setPosts(await res.json())
     } catch (e) {
       console.error('Failed to fetch posts:', e)
     }
     setLoading(false)
-  }, [baseDate, monthCount])
+  }, [baseDate, monthCount, activeAccount?.id])
 
+  // Reload when active account changes
   useEffect(() => {
+    if (!activeAccount?.id) return
+    if (prevAccountIdRef.current === activeAccount.id && posts.length > 0) return
+    prevAccountIdRef.current = activeAccount.id
     fetchPosts()
   }, [fetchPosts])
 

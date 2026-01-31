@@ -10,11 +10,17 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url)
+  const xAccountId = searchParams.get('x_account_id')
   const status = searchParams.get('status')
   const generationType = searchParams.get('generation_type') || searchParams.get('archetype')
   const tagId = searchParams.get('tagId')
   const startDate = searchParams.get('startDate')
   const endDate = searchParams.get('endDate')
+  
+  // If x_account_id provided, filter by it; otherwise filter by user_id (backwards compatibility)
+  const accountFilter = xAccountId 
+    ? { column: 'x_account_id', value: xAccountId }
+    : { column: 'user_id', value: user.id }
 
   // If filtering by tag, we need to join through post_tags
   if (tagId) {
@@ -47,7 +53,7 @@ export async function GET(request: NextRequest) {
           )
         )
       `)
-      .eq('user_id', user.id)
+      .eq(accountFilter.column, accountFilter.value)
       .in('id', postIds)
       .order('created_at', { ascending: false })
 
@@ -86,7 +92,7 @@ export async function GET(request: NextRequest) {
         )
       )
     `)
-    .eq('user_id', user.id)
+    .eq(accountFilter.column, accountFilter.value)
     .order('created_at', { ascending: false })
 
   if (status) query = query.eq('status', status)
@@ -133,6 +139,7 @@ export async function POST(request: NextRequest) {
       scheduledDate,
       scheduledTime,
       tagIds,
+      x_account_id,
     } = body
 
     // Support both snake_case and camelCase for dates
@@ -160,6 +167,7 @@ export async function POST(request: NextRequest) {
 
     const postData = {
       user_id: user.id,
+      x_account_id: x_account_id || null,
       content,
       type: type || 'tweet',
       title: title || null,

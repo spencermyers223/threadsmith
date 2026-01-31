@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { format } from 'date-fns'
 import { FileText, MessageSquare, Newspaper, Trash2, Edit, Calendar as CalendarIcon, Clock, Send } from 'lucide-react'
 import PostTypeIcon, { GenerationType } from './PostTypeIcon'
@@ -8,6 +8,7 @@ import type { CalendarFilterState } from './CalendarFilters'
 import TagBadge, { Tag } from '@/components/tags/TagBadge'
 import { getPostTweetText } from '@/lib/twitter'
 import { postTweet, postThread, openXIntent, openTweet } from '@/lib/x-posting'
+import { useXAccount } from '@/contexts/XAccountContext'
 
 interface Post {
   id: string
@@ -76,10 +77,12 @@ function stripHtml(html: string): string {
 }
 
 export function ContentList({ onSelectPost, filters }: ContentListProps) {
+  const { activeAccount } = useXAccount()
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [hoveredPostId, setHoveredPostId] = useState<string | null>(null)
+  const prevAccountIdRef = useRef<string | null>(null)
 
   // Helper to get tag objects from post
   const getPostTags = (post: Post): Tag[] => {
@@ -107,7 +110,11 @@ export function ContentList({ onSelectPost, filters }: ContentListProps) {
   })
 
   const fetchPosts = useCallback(async () => {
-    const url = filter === 'all' ? '/api/posts' : `/api/posts?status=${filter}`
+    if (!activeAccount?.id) return
+    
+    let url = `/api/posts?x_account_id=${activeAccount.id}`
+    if (filter !== 'all') url += `&status=${filter}`
+    
     const res = await fetch(url)
     if (res.ok) {
       const data = await res.json()
@@ -128,12 +135,16 @@ export function ContentList({ onSelectPost, filters }: ContentListProps) {
       setPosts(sorted)
     }
     setLoading(false)
-  }, [filter])
+  }, [filter, activeAccount?.id])
 
+  // Reload when active account changes
   useEffect(() => {
+    if (!activeAccount?.id) return
+    if (prevAccountIdRef.current === activeAccount.id && posts.length > 0) return
+    prevAccountIdRef.current = activeAccount.id
     setLoading(true)
     fetchPosts()
-  }, [fetchPosts])
+  }, [fetchPosts, activeAccount?.id, posts.length])
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()

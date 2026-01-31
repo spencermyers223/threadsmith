@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { FileText, Trash2, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { useXAccount } from '@/contexts/XAccountContext'
 
 interface Draft {
   id: string
@@ -21,13 +22,17 @@ interface DraftsSidebarProps {
 }
 
 export function DraftsSidebar({ currentDraftId, onSelectDraft, onNewDraft, refreshTrigger }: DraftsSidebarProps) {
+  const { activeAccount } = useXAccount()
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [loading, setLoading] = useState(true)
   const [collapsed, setCollapsed] = useState(false)
+  const prevAccountIdRef = useRef<string | null>(null)
 
   const fetchDrafts = useCallback(async () => {
+    if (!activeAccount?.id) return
+    
     try {
-      const res = await fetch('/api/posts?status=draft')
+      const res = await fetch(`/api/posts?status=draft&x_account_id=${activeAccount.id}`)
       if (res.ok) {
         const data = await res.json()
         setDrafts(data)
@@ -36,11 +41,15 @@ export function DraftsSidebar({ currentDraftId, onSelectDraft, onNewDraft, refre
       console.error('Failed to fetch drafts:', err)
     }
     setLoading(false)
-  }, [])
+  }, [activeAccount?.id])
 
+  // Reload when active account changes
   useEffect(() => {
+    if (!activeAccount?.id) return
+    if (prevAccountIdRef.current === activeAccount.id && drafts.length > 0) return
+    prevAccountIdRef.current = activeAccount.id
     fetchDrafts()
-  }, [fetchDrafts, refreshTrigger])
+  }, [fetchDrafts, activeAccount?.id, refreshTrigger, drafts.length])
 
   const handleDelete = async (draftId: string, e: React.MouseEvent) => {
     e.stopPropagation()
