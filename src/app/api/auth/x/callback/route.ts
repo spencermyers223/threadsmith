@@ -45,7 +45,9 @@ export async function GET(request: NextRequest) {
   const storedState = cookieStore.get('x_oauth_state')?.value
   const codeVerifier = cookieStore.get('x_code_verifier')?.value
   const oauthAction = cookieStore.get('x_oauth_action')?.value
+  const linkSessionId = cookieStore.get('x_link_session_id')?.value
   const isLinkMode = oauthAction === 'link'
+  const isCrossDeviceLink = oauthAction === 'link_crossdevice'
   
   if (!storedState || state !== storedState) {
     console.error('State mismatch:', { received: state, stored: storedState })
@@ -74,7 +76,9 @@ export async function GET(request: NextRequest) {
     console.log('Fetched X user:', xUser.username)
     
     // Handle based on mode
-    if (isLinkMode) {
+    if (isCrossDeviceLink && linkSessionId) {
+      return await handleCrossDeviceLink(xUser, tokens, linkSessionId, cookieStore, baseUrl)
+    } else if (isLinkMode) {
       return await handleLinkAccount(request, xUser, tokens, cookieStore, baseUrl)
     } else {
       return await handleLogin(xUser, tokens, cookieStore, baseUrl)
@@ -84,6 +88,115 @@ export async function GET(request: NextRequest) {
     console.error('X OAuth callback error:', err)
     return NextResponse.redirect(new URL('/login?error=callback_failed', baseUrl))
   }
+}
+
+/**
+ * Handle cross-device account linking (from phone/other device)
+ */
+async function handleCrossDeviceLink(
+  xUser: { id: string; username: string; name: string; profile_image_url?: string },
+  tokens: { access_token: string; refresh_token: string; expires_in: number },
+  sessionId: string,
+  cookieStore: Awaited<ReturnType<typeof cookies>>,
+  baseUrl: string
+) {
+  console.log('Cross-device link mode: Session', sessionId)
+
+  // Fetch the link session to get the original user
+  const { data: session, error: sessionError } = await supabaseAdmin
+    .from('x_link_sessions')
+    .select('user_id, status')
+    .eq('id', sessionId)
+    .single()
+
+  if (sessionError || !session) {
+    console.error('Link session not found:', sessionId)
+    const response = NextResponse.redirect(new URL(`/link-account/${sessionId}?error=session_not_found`, baseUrl))
+    cleanupCookies(response)
+    return response
+  }
+
+  if (session.status !== 'pending') {
+    console.error('Link session already used:', sessionId)
+    const response = NextResponse.redirect(new URL(`/link-account/${sessionId}?error=session_used`, baseUrl))
+    cleanupCookies(response)
+    return response
+  }
+
+  const userId = session.user_id
+  console.log('Linking X account', xUser.username, 'to user', userId)
+
+  // Check if this X account is already linked to ANY user
+  const { data: existingAccount } = await supabaseAdmin
+    .from('x_accounts')
+    .select('id, user_id')
+    .eq('x_user_id', xUser.id)
+    .single()
+
+  if (existingAccount) {
+    if (existingAccount.user_id === userId) {
+      // Already linked to this user - just update tokens
+      console.log('X account already linked to this user, updating tokens')
+      await updateTokens(existingAccount.id, userId, xUser, tokens)
+    } else {
+      // Linked to a different user - error
+      console.error('X account already linked to another user')
+      await supabaseAdmin
+        .from('x_link_sessions')
+        .update({ status: 'failed', error: 'account_already_linked' })
+        .eq('id', sessionId)
+      
+      const response = NextResponse.redirect(new URL(`/link-account/${sessionId}?error=already_linked`, baseUrl))
+      cleanupCookies(response)
+      return response
+    }
+  } else {
+    // Create new x_account
+    const { data: newAccount, error: createError } = await supabaseAdmin
+      .from('x_accounts')
+      .insert({
+        user_id: userId,
+        x_user_id: xUser.id,
+        x_username: xUser.username,
+        x_display_name: xUser.name,
+        x_profile_image_url: xUser.profile_image_url,
+        is_primary: false,
+      })
+      .select()
+      .single()
+
+    if (createError || !newAccount) {
+      console.error('Failed to create x_account:', createError)
+      await supabaseAdmin
+        .from('x_link_sessions')
+        .update({ status: 'failed', error: 'create_failed' })
+        .eq('id', sessionId)
+      
+      const response = NextResponse.redirect(new URL(`/link-account/${sessionId}?error=link_failed`, baseUrl))
+      cleanupCookies(response)
+      return response
+    }
+
+    console.log('Created new x_account:', newAccount.id)
+
+    // Store tokens for the new account
+    await updateTokens(newAccount.id, userId, xUser, tokens)
+  }
+
+  // Mark session as completed
+  await supabaseAdmin
+    .from('x_link_sessions')
+    .update({ 
+      status: 'completed', 
+      linked_x_username: xUser.username,
+      completed_at: new Date().toISOString()
+    })
+    .eq('id', sessionId)
+
+  // Success - redirect to success page
+  const response = NextResponse.redirect(new URL(`/link-account/${sessionId}?success=true`, baseUrl))
+  cleanupCookies(response)
+  return response
 }
 
 /**

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useXAccount } from '@/contexts/XAccountContext';
-import { ChevronDown, Plus, Check, X, Sparkles, Settings, LogOut, AlertCircle } from 'lucide-react';
+import { ChevronDown, Plus, Check, X, Sparkles, Settings, LogOut, Smartphone, Copy, RefreshCw, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 
@@ -20,7 +20,12 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
   const [showAddAccountModal, setShowAddAccountModal] = useState(false);
   const [maxAccounts, setMaxAccounts] = useState(1);
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
+  const [linkSession, setLinkSession] = useState<{ sessionId: string; linkUrl: string } | null>(null);
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const supabase = createClient();
 
   // Fetch subscription limits
@@ -83,10 +88,84 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
     }
   };
 
-  // Proceed with OAuth - redirect in same window to ensure session is used
-  const proceedWithOAuth = () => {
+  // Generate a link for cross-device account linking
+  const generateLinkSession = async () => {
+    setIsGeneratingLink(true);
+    setLinkCopied(false);
+    
+    try {
+      const res = await fetch('/api/auth/x/link-session', { method: 'POST' });
+      const data = await res.json();
+      
+      if (res.ok && data.sessionId) {
+        setLinkSession({ sessionId: data.sessionId, linkUrl: data.linkUrl });
+        startPolling(data.sessionId);
+      } else {
+        console.error('Failed to generate link:', data.error);
+      }
+    } catch (err) {
+      console.error('Link generation error:', err);
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  };
+
+  // Poll for link completion
+  const startPolling = (sessionId: string) => {
+    setIsPolling(true);
+    
+    // Clear any existing interval
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+    }
+    
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/auth/x/link-session?id=${sessionId}`);
+        const data = await res.json();
+        
+        if (data.status === 'completed') {
+          // Success! Refresh the page to show new account
+          clearInterval(pollIntervalRef.current!);
+          setIsPolling(false);
+          window.location.reload();
+        } else if (data.status === 'failed' || data.status === 'expired') {
+          clearInterval(pollIntervalRef.current!);
+          setIsPolling(false);
+          setLinkSession(null);
+        }
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    }, 2000); // Poll every 2 seconds
+  };
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
+
+  // Copy link to clipboard
+  const copyLinkToClipboard = () => {
+    if (linkSession?.linkUrl) {
+      navigator.clipboard.writeText(linkSession.linkUrl);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    }
+  };
+
+  // Close modal and cleanup
+  const closeAddAccountModal = () => {
     setShowAddAccountModal(false);
-    window.location.href = '/api/auth/x?action=link';
+    setLinkSession(null);
+    setIsPolling(false);
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+    }
   };
 
   // Close dropdown when clicking outside
@@ -314,62 +393,133 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
         </div>
       )}
 
-      {/* Add Account Instructions Modal */}
+      {/* Add Account Modal - Link via Phone */}
       {showAddAccountModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100]">
           <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl w-full max-w-md mx-4 overflow-hidden shadow-2xl">
             {/* Header */}
             <div className="relative px-6 py-6 border-b border-white/10">
               <button
-                onClick={() => setShowAddAccountModal(false)}
+                onClick={closeAddAccountModal}
                 className="absolute top-4 right-4 p-1 rounded-lg hover:bg-white/10 transition-colors"
               >
                 <X className="w-5 h-5 text-gray-400" />
               </button>
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-500/20">
-                  <AlertCircle className="w-5 h-5 text-amber-400" />
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#D4A574]/20">
+                  <Smartphone className="w-5 h-5 text-[#D4A574]" />
                 </div>
                 <h2 className="text-lg font-bold text-white">
-                  Before You Continue
+                  Add X Account
                 </h2>
               </div>
             </div>
 
             {/* Content */}
             <div className="px-6 py-5">
-              <p className="text-gray-300 mb-4">
-                X will authorize whichever account is <strong>currently logged in</strong> to your browser.
-              </p>
-              
-              <div className="bg-white/5 rounded-lg p-4 mb-5">
-                <p className="text-sm text-gray-400 mb-3">To add a different X account:</p>
-                <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside">
-                  <li>Open <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-[#D4A574] hover:underline">x.com</a> in <strong>this browser window</strong></li>
-                  <li>Log out of your current account</li>
-                  <li>Log into the account you want to add</li>
-                  <li>Come back here and click &quot;Connect Account&quot;</li>
-                </ol>
-              </div>
-              
-              <p className="text-xs text-gray-500 mb-4">
-                ⚠️ Important: Do this in the same browser window, not a popup or incognito.
-              </p>
+              {!linkSession ? (
+                <>
+                  <p className="text-gray-300 mb-4">
+                    Link a different X account using your <strong>phone or another device</strong>.
+                  </p>
+                  
+                  <div className="bg-white/5 rounded-lg p-4 mb-5">
+                    <p className="text-sm text-gray-400 mb-3">How it works:</p>
+                    <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside">
+                      <li>Generate a link below</li>
+                      <li>Open the link on your <strong>phone</strong> (where you&apos;re logged into the other X account)</li>
+                      <li>Authorize the account on your phone</li>
+                      <li>This page will automatically update!</li>
+                    </ol>
+                  </div>
 
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={proceedWithOAuth}
-                  className="w-full py-2.5 px-4 bg-[#D4A574] hover:bg-[#C49664] text-black font-semibold rounded-lg transition-colors"
-                >
-                  Connect Account
-                </button>
-                <button
-                  onClick={() => setShowAddAccountModal(false)}
-                  className="w-full py-2 px-4 text-gray-500 hover:text-gray-300 text-sm transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
+                  <button
+                    onClick={generateLinkSession}
+                    disabled={isGeneratingLink}
+                    className="w-full py-2.5 px-4 bg-[#D4A574] hover:bg-[#C49664] text-black font-semibold rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isGeneratingLink ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Smartphone className="w-4 h-4" />
+                        Generate Link
+                      </>
+                    )}
+                  </button>
+                  
+                  <button
+                    onClick={closeAddAccountModal}
+                    className="w-full py-2 px-4 text-gray-500 hover:text-gray-300 text-sm transition-colors mt-3"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-300 mb-4">
+                    Open this link on your phone (where you&apos;re logged into the X account you want to add):
+                  </p>
+                  
+                  <div className="bg-white/5 rounded-lg p-3 mb-4">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={linkSession.linkUrl}
+                        readOnly
+                        className="flex-1 bg-transparent text-sm text-gray-300 outline-none truncate"
+                      />
+                      <button
+                        onClick={copyLinkToClipboard}
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
+                        title="Copy link"
+                      >
+                        {linkCopied ? (
+                          <Check className="w-4 h-4 text-green-400" />
+                        ) : (
+                          <Copy className="w-4 h-4 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {isPolling && (
+                    <div className="flex items-center justify-center gap-2 py-3 mb-4 bg-[#D4A574]/10 rounded-lg">
+                      <Loader2 className="w-4 h-4 text-[#D4A574] animate-spin" />
+                      <span className="text-sm text-[#D4A574]">Waiting for authorization...</span>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        setLinkSession(null);
+                        if (pollIntervalRef.current) {
+                          clearInterval(pollIntervalRef.current);
+                        }
+                        setIsPolling(false);
+                      }}
+                      className="flex-1 py-2.5 px-4 border border-white/10 hover:bg-white/5 text-gray-300 font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      New Link
+                    </button>
+                    <button
+                      onClick={closeAddAccountModal}
+                      className="flex-1 py-2.5 px-4 text-gray-500 hover:text-gray-300 font-medium rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  
+                  <p className="text-xs text-gray-500 mt-4 text-center">
+                    Link expires in 10 minutes
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>
