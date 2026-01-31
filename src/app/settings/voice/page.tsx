@@ -321,8 +321,31 @@ export default function VoiceSettingsPage() {
     }
   }
 
-  // Handle importing tweets from admired accounts
-  async function handleImportAdmiredTweets(username: string, tweets: string[]) {
+  // Handle saving inspiration tweets from admired accounts (auto-fetched)
+  interface FetchedUser {
+    id: string
+    name: string
+    username: string
+    profile_image_url?: string
+    followers_count: number
+  }
+  
+  interface FetchedTweet {
+    id: string
+    text: string
+    url: string
+    metrics: {
+      like_count: number
+      retweet_count: number
+      reply_count: number
+    }
+  }
+
+  async function handleSaveInspirationTweets(
+    username: string, 
+    fetchedUser: FetchedUser, 
+    tweets: FetchedTweet[]
+  ): Promise<number> {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
 
@@ -335,29 +358,36 @@ export default function VoiceSettingsPage() {
       .single()
 
     // Save tweets as inspiration tweets
-    const tweetsToInsert = tweets.map(text => ({
+    const tweetsToInsert = tweets.map(tweet => ({
       user_id: user.id,
       x_account_id: xAccount?.id || null,
-      tweet_id: `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      tweet_text: text,
-      tweet_url: null,
-      author_id: `manual_${username}`,
-      author_username: username,
-      author_name: username,
-      author_profile_image_url: null,
-      reply_count: 0,
-      like_count: 0,
-      repost_count: 0,
+      tweet_id: tweet.id,
+      tweet_text: tweet.text,
+      tweet_url: tweet.url,
+      author_id: fetchedUser.id,
+      author_username: fetchedUser.username,
+      author_name: fetchedUser.name,
+      author_profile_image_url: fetchedUser.profile_image_url || null,
+      reply_count: tweet.metrics.reply_count,
+      like_count: tweet.metrics.like_count,
+      repost_count: tweet.metrics.retweet_count,
       quote_count: 0,
-      notes: 'Manually added via admired accounts',
+      notes: 'Auto-imported from admired account',
     }))
 
+    // Use upsert to avoid duplicates (tweet_id should be unique per user)
     const { data: inserted, error } = await supabase
       .from('inspiration_tweets')
-      .insert(tweetsToInsert)
+      .upsert(tweetsToInsert, { 
+        onConflict: 'user_id,tweet_id',
+        ignoreDuplicates: true 
+      })
       .select()
 
-    if (error) throw error
+    if (error) {
+      console.error('Error saving inspiration tweets:', error)
+      throw error
+    }
 
     // Refresh inspiration tweets
     const inspirationRes = await fetch('/api/inspiration-tweets')
@@ -366,7 +396,7 @@ export default function VoiceSettingsPage() {
       setInspirationTweets(data.tweets || [])
     }
 
-    return inserted
+    return inserted?.length || tweets.length
   }
 
   const effectiveFormality = tweaks.formalityLevel ?? voiceProfile?.formalityLevel ?? 5
@@ -771,7 +801,7 @@ export default function VoiceSettingsPage() {
           <AdmiredAccountsManager
             accounts={admiredAccounts}
             onAccountsChange={handleAdmiredAccountsChange}
-            onImportTweets={handleImportAdmiredTweets}
+            onSaveInspirationTweets={handleSaveInspirationTweets}
           />
         </section>
 

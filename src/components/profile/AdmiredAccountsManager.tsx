@@ -1,29 +1,112 @@
 'use client'
 
 import { useState, useCallback, KeyboardEvent } from 'react'
-import { AtSign, Plus, Users, ExternalLink, Trash2, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
+import { AtSign, Plus, Users, ExternalLink, Trash2, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import Image from 'next/image'
+
+interface FetchedUser {
+  id: string
+  name: string
+  username: string
+  profile_image_url?: string
+  followers_count: number
+}
+
+interface FetchedTweet {
+  id: string
+  text: string
+  url: string
+  metrics: {
+    like_count: number
+    retweet_count: number
+    reply_count: number
+  }
+}
+
+interface AdmiredAccountData {
+  username: string
+  user?: FetchedUser
+  status: 'pending' | 'fetching' | 'saving' | 'done' | 'error'
+  error?: string
+  savedCount?: number
+}
 
 interface AdmiredAccountsManagerProps {
   accounts: string[]
   onAccountsChange: (accounts: string[]) => void
-  onImportTweets: (username: string, tweets: string[]) => Promise<unknown>
+  onSaveInspirationTweets: (username: string, user: FetchedUser, tweets: FetchedTweet[]) => Promise<number>
 }
 
 const MAX_ACCOUNTS = 5
+const TWEETS_TO_SAVE = 10 // Save top 10 tweets from each account
 
 export default function AdmiredAccountsManager({
   accounts,
   onAccountsChange,
-  onImportTweets,
+  onSaveInspirationTweets,
 }: AdmiredAccountsManagerProps) {
   const [inputValue, setInputValue] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [expandedAccount, setExpandedAccount] = useState<string | null>(null)
-  const [tweetInput, setTweetInput] = useState('')
-  const [importing, setImporting] = useState(false)
-  const [importSuccess, setImportSuccess] = useState<string | null>(null)
+  const [accountData, setAccountData] = useState<Record<string, AdmiredAccountData>>({})
 
-  const handleAdd = useCallback(() => {
+  const fetchAndSaveTweets = useCallback(async (username: string) => {
+    // Update status to fetching
+    setAccountData(prev => ({
+      ...prev,
+      [username]: { username, status: 'fetching' }
+    }))
+
+    try {
+      // Fetch tweets from X API
+      const response = await fetch(`/api/x/user-tweets?username=${username}&max_results=50`)
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch tweets')
+      }
+
+      if (!data.tweets || data.tweets.length === 0) {
+        throw new Error('No tweets found for this account')
+      }
+
+      // Update status to saving
+      setAccountData(prev => ({
+        ...prev,
+        [username]: { 
+          username, 
+          user: data.user,
+          status: 'saving' 
+        }
+      }))
+
+      // Take top tweets by engagement and save them
+      const topTweets = data.tweets.slice(0, TWEETS_TO_SAVE)
+      const savedCount = await onSaveInspirationTweets(username, data.user, topTweets)
+
+      // Update status to done
+      setAccountData(prev => ({
+        ...prev,
+        [username]: { 
+          username, 
+          user: data.user,
+          status: 'done',
+          savedCount
+        }
+      }))
+
+    } catch (err) {
+      setAccountData(prev => ({
+        ...prev,
+        [username]: { 
+          username, 
+          status: 'error',
+          error: err instanceof Error ? err.message : 'Failed to fetch tweets'
+        }
+      }))
+    }
+  }, [onSaveInspirationTweets])
+
+  const handleAdd = useCallback(async () => {
     const handle = inputValue.trim().replace(/^@/, '')
 
     if (!handle) return
@@ -44,17 +127,24 @@ export default function AdmiredAccountsManager({
       return
     }
 
-    onAccountsChange([...accounts, handle])
-    setInputValue('')
     setError(null)
-  }, [inputValue, accounts, onAccountsChange])
+    setInputValue('')
+    
+    // Add to accounts list
+    onAccountsChange([...accounts, handle])
+    
+    // Fetch and save their tweets
+    fetchAndSaveTweets(handle)
+  }, [inputValue, accounts, onAccountsChange, fetchAndSaveTweets])
 
   const handleRemove = useCallback((account: string) => {
     onAccountsChange(accounts.filter(a => a !== account))
-    if (expandedAccount === account) {
-      setExpandedAccount(null)
-    }
-  }, [accounts, onAccountsChange, expandedAccount])
+    setAccountData(prev => {
+      const newData = { ...prev }
+      delete newData[account]
+      return newData
+    })
+  }, [accounts, onAccountsChange])
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -63,33 +153,8 @@ export default function AdmiredAccountsManager({
     }
   }
 
-  const handleImportTweets = async (username: string) => {
-    if (!tweetInput.trim()) return
-    
-    setImporting(true)
-    setError(null)
-    
-    // Split tweets by double newlines or numbered patterns
-    const tweets = tweetInput
-      .split(/\n\n+|\n(?=\d+[\.\)]\s)/)
-      .map(t => t.replace(/^\d+[\.\)]\s*/, '').trim()) // Remove numbering
-      .filter(t => t.length > 0 && t.length <= 500)
-    
-    if (tweets.length === 0) {
-      setError('No valid tweets found. Paste tweet text, separated by blank lines.')
-      setImporting(false)
-      return
-    }
-    
-    try {
-      await onImportTweets(username, tweets)
-      setTweetInput('')
-      setImportSuccess(`Saved ${tweets.length} tweet(s) from @${username}`)
-      setTimeout(() => setImportSuccess(null), 3000)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save tweets')
-    }
-    setImporting(false)
+  const handleRetry = (username: string) => {
+    fetchAndSaveTweets(username)
   }
 
   return (
@@ -101,7 +166,7 @@ export default function AdmiredAccountsManager({
           Accounts You Admire
         </h3>
         <p className="text-xs text-[var(--muted)] mt-1">
-          Add accounts whose style you want to emulate. Save their best tweets as inspiration.
+          Add X accounts whose style you want to emulate. We&apos;ll automatically save their best tweets as inspiration.
         </p>
       </div>
 
@@ -139,100 +204,109 @@ export default function AdmiredAccountsManager({
         <p className="text-xs text-red-500">{error}</p>
       )}
 
-      {importSuccess && (
-        <p className="text-xs text-green-500 flex items-center gap-1">
-          <Sparkles className="w-3 h-3" />
-          {importSuccess}
-        </p>
-      )}
-
       {/* Account List */}
       {accounts.length > 0 && (
         <div className="space-y-2">
-          {accounts.map((account) => (
-            <div 
-              key={account} 
-              className="border border-[var(--border)] rounded-lg overflow-hidden"
-            >
-              {/* Account Header */}
+          {accounts.map((username) => {
+            const data = accountData[username]
+            const status = data?.status || 'pending'
+            
+            return (
               <div 
-                className="flex items-center justify-between px-3 py-2 bg-[var(--background)] cursor-pointer hover:bg-[var(--card-hover)]"
-                onClick={() => setExpandedAccount(expandedAccount === account ? null : account)}
+                key={username} 
+                className="flex items-center justify-between px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg"
               >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">@{account}</span>
-                  <a
-                    href={`https://x.com/${account}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="text-[var(--muted)] hover:text-accent"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleRemove(account) }}
-                    className="p-1 rounded hover:bg-red-500/20 text-red-400 transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                  {expandedAccount === account ? (
-                    <ChevronUp className="w-4 h-4 text-[var(--muted)]" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-[var(--muted)]" />
-                  )}
-                </div>
-              </div>
-
-              {/* Expanded: Import Tweets */}
-              {expandedAccount === account && (
-                <div className="border-t border-[var(--border)] p-3 space-y-3">
-                  <div>
-                    <p className="text-xs text-[var(--muted)] mb-2">
-                      Paste tweets from @{account} that you admire. Separate with blank lines.
-                    </p>
-                    <textarea
-                      value={tweetInput}
-                      onChange={(e) => setTweetInput(e.target.value)}
-                      placeholder={`Paste @${account}'s best tweets here...\n\nEach tweet on its own line or separated by blank lines.`}
-                      rows={4}
-                      className="w-full px-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] placeholder-[var(--muted)] text-sm focus:outline-none focus:border-accent resize-none"
+                <div className="flex items-center gap-3">
+                  {/* Profile image or placeholder */}
+                  {data?.user?.profile_image_url ? (
+                    <Image
+                      src={data.user.profile_image_url}
+                      alt=""
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full"
+                      unoptimized
                     />
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="text-xs text-[var(--muted)]">
-                        {tweetInput.split(/\n\n+|\n(?=\d+[\.\)]\s)/).filter(t => t.trim()).length} tweets detected
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-[var(--border)] flex items-center justify-center">
+                      <AtSign className="w-4 h-4 text-[var(--muted)]" />
+                    </div>
+                  )}
+                  
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">
+                        {data?.user?.name || `@${username}`}
                       </span>
-                      <button
-                        onClick={() => handleImportTweets(account)}
-                        disabled={importing || !tweetInput.trim()}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-violet-500 hover:bg-violet-600 disabled:opacity-50 text-white rounded-lg transition-colors text-xs font-medium"
+                      {data?.user?.name && (
+                        <span className="text-xs text-[var(--muted)]">@{username}</span>
+                      )}
+                      <a
+                        href={`https://x.com/${username}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[var(--muted)] hover:text-accent"
                       >
-                        {importing ? (
-                          <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Plus className="w-3 h-3" />
-                        )}
-                        Save as Inspiration
-                      </button>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                    
+                    {/* Status line */}
+                    <div className="text-xs mt-0.5">
+                      {status === 'fetching' && (
+                        <span className="text-blue-400 flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Fetching tweets...
+                        </span>
+                      )}
+                      {status === 'saving' && (
+                        <span className="text-blue-400 flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Saving inspiration...
+                        </span>
+                      )}
+                      {status === 'done' && (
+                        <span className="text-green-400 flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" />
+                          Saved {data?.savedCount || 0} tweets
+                        </span>
+                      )}
+                      {status === 'error' && (
+                        <span className="text-red-400 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {data?.error || 'Failed'}
+                          <button
+                            onClick={() => handleRetry(username)}
+                            className="ml-1 underline hover:no-underline"
+                          >
+                            Retry
+                          </button>
+                        </span>
+                      )}
+                      {status === 'pending' && (
+                        <span className="text-[var(--muted)]">
+                          Waiting...
+                        </span>
+                      )}
                     </div>
                   </div>
-                  
-                  <div className="text-xs text-[var(--muted)] bg-violet-500/5 p-2 rounded border border-violet-500/20">
-                    💡 <strong>Tip:</strong> Use the Chrome extension to save tweets directly while browsing X. 
-                    Look for the &ldquo;Save to xthread&rdquo; button.
-                  </div>
                 </div>
-              )}
-            </div>
-          ))}
+
+                <button
+                  onClick={() => handleRemove(username)}
+                  className="p-1.5 rounded hover:bg-red-500/20 text-red-400 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
 
       {/* Account Count */}
       <p className="text-xs text-[var(--muted)]">
-        {accounts.length}/{MAX_ACCOUNTS} accounts added
+        {accounts.length}/{MAX_ACCOUNTS} accounts • Top {TWEETS_TO_SAVE} tweets auto-saved from each
       </p>
     </div>
   )
