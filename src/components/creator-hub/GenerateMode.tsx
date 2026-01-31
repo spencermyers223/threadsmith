@@ -416,29 +416,38 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
               <label className="text-sm font-medium text-[var(--foreground)]">
                 What do you want to post about?
               </label>
-              <TemplateSelector
-                activeTemplate={activeTemplate}
-                onSelectTemplate={(placeholderGuide, template, category, title) => {
-                  // Set placeholder guidance (disappears when user types)
-                  // Do NOT set input value - user starts with blank input
-                  setPlaceholderText(placeholderGuide)
-                  setPromptTemplate(template)
-                  setActiveTemplate(title || null)
-                  setTopic('') // Clear any existing input - user starts fresh
-                  setIsTemplatePrompt(!!template)
-                  // Auto-select matching post type based on template category
-                  const categoryToPostType: Record<string, string> = {
-                    'build-in-public': 'build_in_public',
-                    'contrarian': 'hot_take',
-                    'alpha': 'market_take',
-                    'data': 'on_chain_insight',
-                    'engagement': 'market_take',
-                  }
-                  if (category && categoryToPostType[category]) {
-                    setSelectedPostType(categoryToPostType[category])
-                  }
-                }}
-              />
+              <div className="flex items-center gap-3">
+                <a
+                  href="/templates"
+                  className="flex items-center gap-1.5 text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+                >
+                  <Layers size={14} />
+                  Template Library
+                </a>
+                <TemplateSelector
+                  activeTemplate={activeTemplate}
+                  onSelectTemplate={(placeholderGuide, template, category, title) => {
+                    // Set placeholder guidance (disappears when user types)
+                    // Do NOT set input value - user starts with blank input
+                    setPlaceholderText(placeholderGuide)
+                    setPromptTemplate(template)
+                    setActiveTemplate(title || null)
+                    setTopic('') // Clear any existing input - user starts fresh
+                    setIsTemplatePrompt(!!template)
+                    // Auto-select matching post type based on template category
+                    const categoryToPostType: Record<string, string> = {
+                      'build-in-public': 'build_in_public',
+                      'contrarian': 'hot_take',
+                      'alpha': 'market_take',
+                      'data': 'on_chain_insight',
+                      'engagement': 'market_take',
+                    }
+                    if (category && categoryToPostType[category]) {
+                      setSelectedPostType(categoryToPostType[category])
+                    }
+                  }}
+                />
+              </div>
             </div>
             <div className="relative">
               <textarea

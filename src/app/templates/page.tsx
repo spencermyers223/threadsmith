@@ -229,9 +229,22 @@ export default function TemplatesPage() {
                   </h3>
 
                   {/* Description */}
-                  <p className="text-sm text-[var(--muted)] mb-4 line-clamp-2">
+                  <p className="text-sm text-[var(--muted)] mb-3 line-clamp-2">
                     {template.description}
                   </p>
+
+                  {/* Why This Works */}
+                  {template.why_it_works && (
+                    <div className="mb-4 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                      <p className="text-xs font-medium text-amber-500 dark:text-amber-400 mb-1 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        Why it works
+                      </p>
+                      <p className="text-xs text-[var(--muted)] leading-relaxed line-clamp-2">
+                        {template.why_it_works}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Bottom row: engagement type + best time */}
                   <div className="flex items-center gap-4 text-xs text-[var(--muted)]">

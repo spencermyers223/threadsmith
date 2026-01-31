@@ -205,16 +205,6 @@ export function TemplateSelector({ onSelectTemplate, activeTemplate }: TemplateS
                         {template.description}
                       </p>
                     )}
-                    {isActive && template.why_it_works && (
-                      <div className="mt-2 p-2 rounded-md bg-amber-500/10 border border-amber-500/20">
-                        <p className="text-xs font-medium text-amber-400 flex items-center gap-1 mb-1">
-                          <Sparkles size={10} /> Why this works
-                        </p>
-                        <p className="text-xs text-[var(--muted)] leading-relaxed">
-                          {template.why_it_works}
-                        </p>
-                      </div>
-                    )}
                   </div>
                 </button>
               )
