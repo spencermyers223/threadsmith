@@ -110,6 +110,7 @@ export default function EditingTools({ content, onContentChange, isThread = fals
   const [error, setError] = useState<string | null>(null)
   const [scoreChange, setScoreChange] = useState<{ before: number; after: number; tool: string } | null>(null)
   const [previousContent, setPreviousContent] = useState<string | null>(null)
+  const [autoProgress, setAutoProgress] = useState<string | null>(null)
 
   const handleUndo = () => {
     if (previousContent) {
@@ -192,6 +193,9 @@ export default function EditingTools({ content, onContentChange, isThread = fals
         // Apply tools in sequence
         for (const tool of toolsToApply) {
           try {
+            const toolLabel = TOOLS.find(t => t.id === tool)?.shortLabel || tool
+            setAutoProgress(`Applying ${toolLabel}...`)
+            
             const res = await fetch('/api/chat/writing-assistant', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -212,6 +216,8 @@ export default function EditingTools({ content, onContentChange, isThread = fals
             // Continue with next tool if one fails
           }
         }
+        
+        setAutoProgress(null) // Clear progress
         
         // Only update if at least one tool was applied successfully
         if (toolsApplied.length > 0) {
@@ -330,6 +336,14 @@ export default function EditingTools({ content, onContentChange, isThread = fals
           )
         })}
       </div>
+
+      {/* Auto-Optimize Progress */}
+      {autoProgress && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-violet-500/10 border border-violet-500/30 rounded-lg text-violet-400 text-sm">
+          <Loader2 size={14} className="animate-spin flex-shrink-0" />
+          <span>{autoProgress}</span>
+        </div>
+      )}
 
       {/* Error Display */}
       {error && (
