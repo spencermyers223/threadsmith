@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
+import Image from 'next/image'
 import { Upload, X, Image as ImageIcon, Film, Loader2 } from 'lucide-react'
 
 export interface MediaItem {
@@ -131,10 +132,12 @@ export function MediaUpload({ postId, media, onMediaChange, onSaveFirst }: Media
               className="relative group w-20 h-20 rounded-lg overflow-hidden border border-[var(--border)] bg-[var(--card)]"
             >
               {isImage(item.type) ? (
-                <img
+                <Image
                   src={item.url}
                   alt={item.filename}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  unoptimized
                 />
               ) : isVideo(item.type) ? (
                 <div className="w-full h-full flex items-center justify-center bg-[var(--card)]">
@@ -214,10 +217,10 @@ export function MediaThumbnails({ media, maxShow = 4 }: { media: MediaItem[]; ma
       {shown.map((item) => (
         <div
           key={item.filename}
-          className="w-12 h-12 rounded overflow-hidden border border-[var(--border)] bg-[var(--card)] flex-shrink-0"
+          className="relative w-12 h-12 rounded overflow-hidden border border-[var(--border)] bg-[var(--card)] flex-shrink-0"
         >
           {item.type.startsWith('image/') ? (
-            <img src={item.url} alt={item.filename} className="w-full h-full object-cover" />
+            <Image src={item.url} alt={item.filename} fill className="object-cover" unoptimized />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <Film className="w-4 h-4 text-[var(--muted)]" />
