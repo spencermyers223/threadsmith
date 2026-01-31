@@ -295,12 +295,21 @@ export default function EditingTools({ content, onContentChange, isThread = fals
         }
         
         // Show score change feedback
-        setScoreChange({ before: beforeScore.score, after: bestScore, tool: toolLabel })
-        
-        // Auto-hide the score change after 4 seconds
-        setTimeout(() => setScoreChange(null), 4000)
-        
-        onContentChange(bestContent)
+        if (bestScore > beforeScore.score) {
+          setScoreChange({ before: beforeScore.score, after: bestScore, tool: toolLabel })
+          setTimeout(() => setScoreChange(null), 4000)
+          onContentChange(bestContent)
+        } else if (bestContent !== content) {
+          // Content changed but score didn't improve - still apply but note it
+          setScoreChange({ before: beforeScore.score, after: bestScore, tool: `${toolLabel} (already optimized)` })
+          setTimeout(() => setScoreChange(null), 4000)
+          onContentChange(bestContent)
+        } else {
+          // No change at all - content is already optimal for this tool
+          setScoreChange({ before: beforeScore.score, after: beforeScore.score, tool: `${toolLabel} ✓ Already optimized` })
+          setTimeout(() => setScoreChange(null), 3000)
+          setPreviousContent(null) // Clear undo since nothing changed
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
