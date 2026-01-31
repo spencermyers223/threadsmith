@@ -10,6 +10,7 @@ interface PostTemplate {
   category: string
   description: string | null
   prompt_template: string
+  why_it_works: string | null
 }
 
 const CATEGORY_ICONS: Record<string, typeof Sparkles> = {
@@ -112,7 +113,7 @@ export function TemplateSelector({ onSelectTemplate, activeTemplate }: TemplateS
       const supabase = createClient()
       const { data, error } = await supabase
         .from('post_templates')
-        .select('id, title, category, description, prompt_template')
+        .select('id, title, category, description, prompt_template, why_it_works')
         .order('category', { ascending: true })
         .limit(30)
 
@@ -203,6 +204,16 @@ export function TemplateSelector({ onSelectTemplate, activeTemplate }: TemplateS
                       <p className="text-xs text-[var(--muted)] line-clamp-1">
                         {template.description}
                       </p>
+                    )}
+                    {isActive && template.why_it_works && (
+                      <div className="mt-2 p-2 rounded-md bg-amber-500/10 border border-amber-500/20">
+                        <p className="text-xs font-medium text-amber-400 flex items-center gap-1 mb-1">
+                          <Sparkles size={10} /> Why this works
+                        </p>
+                        <p className="text-xs text-[var(--muted)] leading-relaxed">
+                          {template.why_it_works}
+                        </p>
+                      </div>
                     )}
                   </div>
                 </button>
