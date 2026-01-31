@@ -51,8 +51,9 @@ export function buildAuthUrl(params: {
   redirectUri: string
   state: string
   codeChallenge: string
+  forceLogin?: boolean
 }): string {
-  const { clientId, redirectUri, state, codeChallenge } = params
+  const { clientId, redirectUri, state, codeChallenge, forceLogin = true } = params
   
   const url = new URL('https://twitter.com/i/oauth2/authorize')
   url.searchParams.set('response_type', 'code')
@@ -62,6 +63,11 @@ export function buildAuthUrl(params: {
   url.searchParams.set('state', state)
   url.searchParams.set('code_challenge', codeChallenge)
   url.searchParams.set('code_challenge_method', 'S256')
+  
+  // Force login screen to allow connecting different accounts
+  if (forceLogin) {
+    url.searchParams.set('force_login', 'true')
+  }
   
   return url.toString()
 }
