@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useXAccount } from '@/contexts/XAccountContext'
 import {
   ArrowLeft, Mic, Upload, Trash2, RefreshCw, AlertCircle, Check,
   ChevronDown, ChevronUp, Sparkles, MessageSquare, Download,
@@ -58,6 +59,7 @@ interface VoiceProfile {
 
 export default function VoiceSettingsPage() {
   const supabase = createClient()
+  const { activeAccount } = useXAccount()
   const [samples, setSamples] = useState<VoiceSample[]>([])
   const [inspirationTweets, setInspirationTweets] = useState<InspirationTweet[]>([])
   const [voiceProfile, setVoiceProfile] = useState<VoiceProfile | null>(null)
@@ -72,7 +74,7 @@ export default function VoiceSettingsPage() {
   const [showSamples, setShowSamples] = useState(false)
   const [showInspirationTweets, setShowInspirationTweets] = useState(false)
   const [admiredAccounts, setAdmiredAccounts] = useState<string[]>([])
-  const hasLoadedRef = useRef(false)
+  const prevAccountIdRef = useRef<string | null>(null)
 
   // Tweak state (overrides on top of analyzed profile)
   const [tweaks, setTweaks] = useState<{
@@ -82,50 +84,61 @@ export default function VoiceSettingsPage() {
   }>({})
 
   const loadData = useCallback(async () => {
+    if (!activeAccount?.id) return
+    
     setLoading(true)
+    // Reset state when loading new account data
+    setVoiceProfile(null)
+    setVoiceTrainedAt(null)
+    setSamples([])
+    setInspirationTweets([])
+    setAdmiredAccounts([])
+    
     try {
-      // Load samples
-      const samplesRes = await fetch('/api/voice/samples')
+      // Load samples for this X account
+      const samplesRes = await fetch(`/api/voice/samples?x_account_id=${activeAccount.id}`)
       if (samplesRes.ok) {
         const data = await samplesRes.json()
         setSamples(data)
       }
 
-      // Load inspiration tweets
-      const inspirationRes = await fetch('/api/inspiration-tweets')
+      // Load inspiration tweets for this X account
+      const inspirationRes = await fetch(`/api/inspiration-tweets?x_account_id=${activeAccount.id}`)
       if (inspirationRes.ok) {
         const data = await inspirationRes.json()
         setInspirationTweets(data.tweets || [])
       }
 
-      // Load voice profile and admired accounts from content_profiles
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: profile } = await supabase
-          .from('content_profiles')
-          .select('voice_profile, voice_trained_at, admired_accounts')
-          .eq('user_id', user.id)
-          .single()
+      // Load voice profile and admired accounts from content_profiles for this X account
+      const { data: profile } = await supabase
+        .from('content_profiles')
+        .select('voice_profile, voice_trained_at, admired_accounts')
+        .eq('x_account_id', activeAccount.id)
+        .single()
 
-        if (profile?.voice_profile) {
-          setVoiceProfile(profile.voice_profile as VoiceProfile)
-          setVoiceTrainedAt(profile.voice_trained_at)
-        }
-        if (profile?.admired_accounts) {
-          setAdmiredAccounts(profile.admired_accounts as string[])
-        }
+      if (profile?.voice_profile) {
+        setVoiceProfile(profile.voice_profile as VoiceProfile)
+        setVoiceTrainedAt(profile.voice_trained_at)
+      }
+      if (profile?.admired_accounts) {
+        setAdmiredAccounts(profile.admired_accounts as string[])
       }
     } catch {
       // Ignore load errors
     }
     setLoading(false)
-  }, [supabase])
+  }, [supabase, activeAccount?.id])
 
+  // Reload data when active account changes
   useEffect(() => {
-    if (hasLoadedRef.current) return
-    hasLoadedRef.current = true
+    if (!activeAccount?.id) return
+    
+    // Skip if same account (prevents double-load on mount)
+    if (prevAccountIdRef.current === activeAccount.id) return
+    prevAccountIdRef.current = activeAccount.id
+    
     loadData()
-  }, [loadData])
+  }, [loadData, activeAccount?.id])
 
   async function handleImportFromX() {
     setImportingFromX(true)
@@ -279,16 +292,15 @@ export default function VoiceSettingsPage() {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!activeAccount?.id) return
 
       const { error: updateError } = await supabase
         .from('content_profiles')
-        .upsert({
-          user_id: user.id,
+        .update({
           voice_profile: tweakedProfile,
           updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id' })
+        })
+        .eq('x_account_id', activeAccount.id)
 
       if (updateError) throw updateError
 
@@ -306,16 +318,15 @@ export default function VoiceSettingsPage() {
     setAdmiredAccounts(accounts)
     
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!activeAccount?.id) return
 
       await supabase
         .from('content_profiles')
-        .upsert({
-          user_id: user.id,
+        .update({
           admired_accounts: accounts,
           updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id' })
+        })
+        .eq('x_account_id', activeAccount.id)
     } catch (err) {
       console.error('Failed to save admired accounts:', err)
     }
@@ -348,19 +359,12 @@ export default function VoiceSettingsPage() {
   ): Promise<number> {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Not authenticated')
+    if (!activeAccount?.id) throw new Error('No active X account')
 
-    // Get user's primary X account (if connected)
-    const { data: xAccount } = await supabase
-      .from('x_accounts')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('is_primary', true)
-      .single()
-
-    // Save tweets as inspiration tweets
+    // Save tweets as inspiration tweets for the active X account
     const tweetsToInsert = tweets.map(tweet => ({
       user_id: user.id,
-      x_account_id: xAccount?.id || null,
+      x_account_id: activeAccount.id,
       tweet_id: tweet.id,
       tweet_text: tweet.text,
       tweet_url: tweet.url,
@@ -375,11 +379,11 @@ export default function VoiceSettingsPage() {
       notes: 'Auto-imported from admired account',
     }))
 
-    // Use upsert to avoid duplicates (tweet_id should be unique per user)
+    // Use upsert to avoid duplicates (tweet_id should be unique per x_account)
     const { data: inserted, error } = await supabase
       .from('inspiration_tweets')
       .upsert(tweetsToInsert, { 
-        onConflict: 'user_id,tweet_id',
+        onConflict: 'x_account_id,tweet_id',
         ignoreDuplicates: true 
       })
       .select()
@@ -389,8 +393,8 @@ export default function VoiceSettingsPage() {
       throw error
     }
 
-    // Refresh inspiration tweets
-    const inspirationRes = await fetch('/api/inspiration-tweets')
+    // Refresh inspiration tweets for this X account
+    const inspirationRes = await fetch(`/api/inspiration-tweets?x_account_id=${activeAccount.id}`)
     if (inspirationRes.ok) {
       const data = await inspirationRes.json()
       setInspirationTweets(data.tweets || [])

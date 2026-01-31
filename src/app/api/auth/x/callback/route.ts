@@ -181,6 +181,9 @@ async function handleCrossDeviceLink(
 
     // Store tokens for the new account
     await updateTokens(newAccount.id, userId, xUser, tokens)
+    
+    // Auto-create content_profile for this X account
+    await createContentProfileForAccount(newAccount.id, userId)
   }
 
   // Mark session as completed
@@ -285,6 +288,9 @@ async function handleLinkAccount(
     
     // Store tokens for the new account
     await updateTokens(newAccount.id, user.id, xUser, tokens)
+    
+    // Auto-create content_profile for this X account
+    await createContentProfileForAccount(newAccount.id, user.id)
   }
   
   // Success - redirect to settings
@@ -367,6 +373,11 @@ async function handleLogin(
       
       xAccountId = newAccount?.id || ''
       
+      // Auto-create content_profile for this X account
+      if (newAccount) {
+        await createContentProfileForAccount(newAccount.id, userId)
+      }
+      
       // Update user metadata
       await supabaseAdmin.auth.admin.updateUserById(userId, {
         user_metadata: {
@@ -436,6 +447,11 @@ async function handleLogin(
         .single()
       
       xAccountId = newAccount?.id || ''
+      
+      // Auto-create content_profile for this X account
+      if (newAccount) {
+        await createContentProfileForAccount(newAccount.id, userId)
+      }
     }
   }
   
@@ -503,10 +519,46 @@ async function updateTokens(
 }
 
 /**
+ * Auto-create content_profile for a new X account
+ */
+async function createContentProfileForAccount(xAccountId: string, userId: string) {
+  try {
+    // Check if profile already exists
+    const { data: existing } = await supabaseAdmin
+      .from('content_profiles')
+      .select('id')
+      .eq('x_account_id', xAccountId)
+      .single()
+    
+    if (existing) {
+      console.log('Content profile already exists for x_account:', xAccountId)
+      return
+    }
+    
+    // Create new content_profile
+    const { error } = await supabaseAdmin
+      .from('content_profiles')
+      .insert({
+        user_id: userId,
+        x_account_id: xAccountId,
+      })
+    
+    if (error) {
+      console.error('Failed to create content_profile:', error)
+    } else {
+      console.log('Created content_profile for x_account:', xAccountId)
+    }
+  } catch (err) {
+    console.error('Error creating content_profile:', err)
+  }
+}
+
+/**
  * Clean up OAuth cookies
  */
 function cleanupCookies(response: NextResponse) {
   response.cookies.delete('x_code_verifier')
   response.cookies.delete('x_oauth_state')
   response.cookies.delete('x_oauth_action')
+  response.cookies.delete('x_link_session_id')
 }
