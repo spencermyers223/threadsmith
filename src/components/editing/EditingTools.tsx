@@ -190,26 +190,43 @@ export default function EditingTools({ content, onContentChange, isThread = fals
           toolsToApply.push('humanize')
         }
         
-        // Apply tools in sequence
+        // Apply tools in sequence, with retry to ensure score improvement
         for (const tool of toolsToApply) {
           try {
             const toolLabel = TOOLS.find(t => t.id === tool)?.shortLabel || tool
             setAutoProgress(`Applying ${toolLabel}...`)
             
-            const res = await fetch('/api/chat/writing-assistant', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                content: currentContent,
-                action: tool,
-                isThread,
-              }),
-            })
+            const currentScore = scoreEngagement(currentContent).score
+            let bestResult = currentContent
+            let bestScore = currentScore
             
-            if (res.ok) {
-              const data = await res.json()
-              currentContent = data.content
-              const toolLabel = TOOLS.find(t => t.id === tool)?.shortLabel || tool
+            // Try up to 2 times to improve score with this tool
+            for (let attempt = 0; attempt < 2; attempt++) {
+              const res = await fetch('/api/chat/writing-assistant', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  content: currentContent,
+                  action: tool,
+                  isThread,
+                }),
+              })
+              
+              if (res.ok) {
+                const data = await res.json()
+                const newScore = scoreEngagement(data.content).score
+                
+                if (newScore > bestScore) {
+                  bestResult = data.content
+                  bestScore = newScore
+                  break // Got improvement, stop retrying
+                }
+              }
+            }
+            
+            // Only apply if we got an improvement
+            if (bestScore > currentScore) {
+              currentContent = bestResult
               toolsApplied.push(toolLabel)
             }
           } catch {
