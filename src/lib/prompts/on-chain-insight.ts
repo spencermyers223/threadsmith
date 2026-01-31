@@ -112,21 +112,29 @@ If the user provides specific data, use it. If they only provide a topic or gene
 - Don't invent specific data points — use patterns and qualitative language when no real data is provided
 
 ### Output Format
-Generate 3 variations with different angles:
+Generate 3 variations. Each must be READY TO POST - no explanation needed.
 
-**Variation 1: [Data type - e.g., "Trend Analysis"]**
-[Tweet content]
-*Character count:* [X]
-*Visual note:* [What chart/screenshot to pair]
-*Conversation hook:* [Why they'll reply]
+---
+1
+[Tweet content - include a line break then "[Pair with: chart/visual description]" at the end]
+---
 
-**Variation 2: [Data type]**
-...
+---
+2
+[Tweet content - different angle]
+---
 
-**Variation 3: [Data type]**
-...
+---
+3
+[Tweet content - third angle]
+---
 
-**Recommendation:** [Which insight is most actionable/discussable]
+CRITICAL:
+- Lead with INSIGHT, not raw data
+- NO explanations or "why this works" commentary outside the content
+- NO character counts
+- Include visual note as part of the tweet (e.g., "[Pair with: trend chart]")
+- Just pure, postable content between the --- markers
 `;
 
 export const DATA_INSIGHT_HOOKS = [

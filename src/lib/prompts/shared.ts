@@ -151,43 +151,57 @@ Add these natural phrases when appropriate:
 - "let me be real" / "unpopular opinion"
 - Brief personal asides in parentheses (shows personality)
 
-### AI Slop Patterns (NEVER USE THESE)
+### AI SLOP PATTERNS — ABSOLUTE PROHIBITION
 
-**Opening killers (start any other way):**
-- "In the world of..." / "In today's fast-paced..."
-- "As we navigate..." / "In this thread, I'll..."
-- "Let me share..." / "I'm excited to announce..."
-- "Breaking down..." / "Here's my take on..."
+These patterns are BANNED. Using any of them makes the content immediately detectable as AI-generated. Real humans don't write this way.
 
-**Transition words that scream AI:**
-- "Furthermore" / "Moreover" / "Additionally"
-- "It's worth noting that..." / "Interestingly enough..."
-- "That being said..." / "With that in mind..."
-- "Moving forward..." / "Needless to say..."
+**BANNED OPENERS (automatic failure if used):**
+❌ "In the world of..." / "In today's fast-paced..."
+❌ "As we navigate..." / "In this thread, I'll..."  
+❌ "Let me share..." / "I'm excited to announce..."
+❌ "Breaking down..." / "Here's my take on..."
+❌ "I wanted to share..." / "Allow me to explain..."
 
-**Weak hedging (cut these entirely):**
-- "It's important to remember that..."
-- "It should be noted that..."
-- "One might argue that..."
-- "It could be said that..."
+**BANNED TRANSITIONS (delete these entirely):**
+❌ "Furthermore" / "Moreover" / "Additionally"
+❌ "It's worth noting that..." / "Interestingly enough..."
+❌ "That being said..." / "With that in mind..."
+❌ "Moving forward..." / "Needless to say..."
 
-**Conclusion starters (never end this way):**
-- "In conclusion..." / "To sum up..."
-- "All in all..." / "At the end of the day..."
-- "The bottom line is..." / "To wrap up..."
+**BANNED HEDGING (makes content weak):**
+❌ "It's important to remember that..."
+❌ "It should be noted that..."
+❌ "One might argue that..."
+❌ "It could be said that..."
 
-**Generic padding (delete on sight):**
-- "game-changer" / "groundbreaking" / "revolutionary" (unless genuinely so)
-- "deep dive" (unless being ironic)
-- "synergy" / "ecosystem" / "paradigm shift"
-- "unlock" / "leverage" / "utilize"
-- "robust" / "seamless" / "cutting-edge"
+**BANNED CONCLUSIONS (never end this way):**
+❌ "In conclusion..." / "To sum up..."
+❌ "All in all..." / "At the end of the day..."
+❌ "The bottom line is..." / "To wrap up..."
 
-**Other AI tells:**
-- Perfect grammar when casual would sound more authentic
-- Lists that feel mechanically generated
-- Excessive use of semicolons
-- Starting multiple sentences with "This"
+**BANNED CORPORATE SPEAK:**
+❌ "game-changer" / "groundbreaking" / "revolutionary"
+❌ "deep dive" / "synergy" / "ecosystem" / "paradigm shift"
+❌ "unlock" / "leverage" / "utilize"
+❌ "robust" / "seamless" / "cutting-edge" / "holistic"
+❌ "actionable insights" / "value proposition" / "empower"
+
+**OTHER AI TELLS TO AVOID:**
+❌ Perfect grammar when casual would be more authentic
+❌ Semicolons (humans rarely use them on Twitter)
+❌ Starting multiple sentences with "This"
+❌ Numbered lists in single tweets (feels robotic)
+❌ Ending with "Thoughts?" or "What do you think?"
+
+**WHAT TO USE INSTEAD:**
+✅ Start mid-thought: "The thing nobody tells you about X..."
+✅ Start with a statement: "X is overrated."
+✅ Start with a number: "3 years ago I..."
+✅ Start with an observation: "Everyone's talking about X. They're missing the point."
+✅ Use "Also" instead of "Additionally"
+✅ Use "But" instead of "However"
+✅ Use "Look," or "Here's the thing:" for transitions
+✅ Just end. Don't announce the ending.
 
 ### Psychological Triggers (What Makes Content Spread)
 High-arousal emotions spread faster. Aim for:
@@ -408,29 +422,36 @@ export function buildUserContextSection(profile: UserVoiceProfile): string {
 
 /**
  * Common output format instructions for all generation prompts
+ * Optimized for clean, postable output with no AI meta-discussion
  */
 export const OUTPUT_FORMAT_RULES = `
-## OUTPUT REQUIREMENTS
+## OUTPUT FORMAT
 
-1. Generate 3 distinct options for the user to choose from
-2. Each option should take a different angle or approach
-4. NEVER include external links in the main content (suggest for first reply)
-5. Content must follow algorithm rules for maximum reach
+Generate exactly 3 variations. Each must be READY TO POST - no edits needed.
 
-Format your response EXACTLY as:
-
-**Option 1**
-[Content here - the actual tweet/thread text]
+Format EXACTLY like this:
 
 ---
-
-**Option 2**
-[Content here - the actual tweet/thread text]
-
+1
+[Your content here - ready to copy/paste to X]
 ---
 
-**Option 3**
-[Content here - the actual tweet/thread text]
+---
+2
+[Your content here - ready to copy/paste to X]
+---
 
-IMPORTANT: Each option should contain ONLY the actual content to post. Do not include explanations, character counts, or analysis within the options themselves.
+---
+3
+[Your content here - ready to copy/paste to X]
+---
+
+CRITICAL RULES:
+- NO explanations, analysis, or "why this works" commentary
+- NO character counts or metadata
+- NO asking "what do you think?" or similar weak endings
+- Just pure, postable content between the --- markers
+- Each variation should take a DIFFERENT angle/approach
+- Content must be complete and ready to post AS-IS
+- NEVER include external links in main content (suggest in first reply instead)
 `;

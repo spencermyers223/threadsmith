@@ -140,48 +140,56 @@ ${userContext ? buildUserContextSection(toUserVoiceProfile(userContext)) : ''}
 
 ## OUTPUT FORMAT
 
-Generate 3 DISTINCT variations with DIFFERENT ANGLES/HOOKS AND DIFFERENT LENGTHS.
+Generate 3 DISTINCT thread variations. Each must be READY TO POST - no explanations needed.
 
-**CRITICAL: Each variation MUST have a different number of tweets:**
-- Variation 1: QUICK EXPLAINER (6-7 tweets) - essential concepts only, for time-strapped readers
-- Variation 2: STANDARD BREAKDOWN (8-10 tweets) - balanced education with key limitations
-- Variation 3: COMPREHENSIVE DEEP-DIVE (11-14 tweets) - full context, multiple considerations, nuanced implications
+**Each variation should have a DIFFERENT length:**
+- Variation 1: QUICK EXPLAINER (6-7 tweets)
+- Variation 2: STANDARD BREAKDOWN (8-10 tweets)
+- Variation 3: COMPREHENSIVE DEEP-DIVE (11-14 tweets)
 
-Let the topic complexity determine natural length. Don't pad simple topics or truncate complex ones artificially.
+Format EXACTLY like this:
 
-For each variation, use this flexible structure:
+---
+THREAD 1
 
-**Variation [1/2/3]: [Angle Description] ([X] tweets)**
-
-1/ [Hook - why care NOW]
+1/ [Hook - why care NOW, under 100 chars ideal]
 
 2/ [Simple explanation]
 
-[Continue with as many tweets as this variation needs, covering:]
-- Simple explanation (1-2 tweets)
-- How it works / mechanics (2-4 tweets depending on complexity)
-- Limitations (1-3 tweets - at least one limitation tweet is REQUIRED for credibility)
-- Implications (1-2 tweets)
+3/ [Continue with mechanics...]
 
-[Suggest: Add diagram/image here] - place this note where most helpful
+[Suggest: diagram here]
 
-[Final tweet]/ [CTA + hashtags]
+4/ [Continue...]
 
-*Hook Analysis:* [Why this makes them care NOW]
-*Educational Flow:* [How the complexity progresses]
-*Trust Factor:* [How the limitations section builds credibility]
-*Reply Potential:* [Why the CTA generates quality discussion]
+5/ [At least one limitation tweet - REQUIRED for credibility]
 
+[Final]/ [CTA question + 1-2 hashtags]
 ---
 
-After all 3 variations, provide:
+---
+THREAD 2
 
-**Recommendation:** [Which variation and why - consider topic complexity and audience]
+1/ [Different hook approach]
 
-**Angle Breakdown:**
-- Variation 1 ([X] tweets): [Hook approach, e.g., "current event tie-in"]
-- Variation 2 ([X] tweets): [Hook approach, e.g., "practical impact angle"]
-- Variation 3 ([X] tweets): [Hook approach, e.g., "misconception correction"]`;
+2/ [Continue...]
+---
+
+---
+THREAD 3
+
+1/ [Third angle hook]
+
+2/ [Continue...]
+---
+
+CRITICAL:
+- NO analysis, explanations, or "why this works" commentary outside the content
+- Each tweet numbered (1/, 2/, etc.)
+- MUST include at least one limitation/downside tweet (builds trust)
+- Image suggestions go INSIDE the thread content where relevant
+- Final tweet ends with a genuine question inviting expert replies
+- Just pure, postable thread content`;
 
   const userPrompt = `Create a technical deep dive thread about: ${topic}
 

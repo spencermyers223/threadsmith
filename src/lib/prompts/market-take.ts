@@ -73,20 +73,28 @@ RIGHT (clear position):
 - Don't hedge everything into meaninglessness
 
 ### Output Format
-Generate 3 variations with different angles/hooks:
+Generate 3 variations. Each must be READY TO POST - no explanation needed.
 
-**Variation 1: [Angle]**
-[Tweet content]
-*Character count:* [X]
-*Conversation hook:* [What drives replies]
+---
+1
+[Tweet - just the content, nothing else]
+---
 
-**Variation 2: [Angle]**
-...
+---
+2
+[Tweet - different angle]
+---
 
-**Variation 3: [Angle]**
-...
+---
+3
+[Tweet - third angle]
+---
 
-**Recommendation:** [Which one and why based on algorithm/engagement]
+CRITICAL:
+- Under 100 characters ideal, 150 max
+- NO explanations or metadata
+- NO character counts in the output
+- Just pure, postable content between the --- markers
 `;
 
 // Legacy alias

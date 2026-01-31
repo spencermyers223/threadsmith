@@ -127,41 +127,53 @@ ${userContext ? buildUserContextSection(toUserVoiceProfile(userContext)) : ''}
 
 ## OUTPUT FORMAT
 
-Generate 3 DISTINCT variations with DIFFERENT ANGLES/HOOKS AND DIFFERENT LENGTHS.
+Generate 3 DISTINCT thread variations. Each must be READY TO POST - no explanations needed.
 
-**CRITICAL: Each variation MUST have a different number of tweets:**
-- Variation 1: CONCISE (5-6 tweets) - punchy, high-impact, for short attention spans
-- Variation 2: STANDARD (7-8 tweets) - balanced depth and brevity
-- Variation 3: COMPREHENSIVE (9-11 tweets) - full deep-dive with maximum context
+**Each variation should have a DIFFERENT length:**
+- Variation 1: CONCISE (5-6 tweets)
+- Variation 2: STANDARD (7-8 tweets)  
+- Variation 3: COMPREHENSIVE (9-11 tweets)
 
-Let the content depth determine natural length. Don't pad or truncate artificially.
+Format EXACTLY like this:
 
-For each variation, use this structure (adjust tweet count per variation):
+---
+THREAD 1
 
-**Variation [1/2/3]: [Angle Description] ([X] tweets)**
-
-1/ [Hook tweet]
+1/ [Hook tweet - under 100 chars ideal]
 
 2/ [Context]
 
-[Continue with as many tweets as this variation needs...]
+3/ [Evidence]
 
-[Final tweet]/ [CTA + hashtags]
+4/ [Insight]
 
-*Hook Analysis:* [Why this hook stops the scroll]
-*Algorithm Score:* [Why this should perform well - cite specific algorithm factors]
-*Reply Potential:* [Why the CTA should generate quality replies]
+5/ [Continue as needed...]
 
+[Final]/ [CTA question + 1-2 hashtags if appropriate]
 ---
 
-After all 3 variations, provide:
+---
+THREAD 2
 
-**Recommendation:** [Which variation and why, based on algorithm + authenticity + content depth needed]
+1/ [Different hook approach]
 
-**Angle Breakdown:**
-- Variation 1 ([X] tweets): [Hook type used, e.g., "data-driven curiosity gap"]
-- Variation 2 ([X] tweets): [Hook type used, e.g., "contrarian take"]
-- Variation 3 ([X] tweets): [Hook type used, e.g., "insider observation"]`;
+2/ [Continue...]
+---
+
+---
+THREAD 3
+
+1/ [Third angle hook]
+
+2/ [Continue...]
+---
+
+CRITICAL:
+- NO analysis, explanations, or "why this works" commentary
+- NO metadata between the content (put INSIDE the --- markers only)
+- Each tweet numbered (1/, 2/, etc.)
+- Final tweet ends with a genuine question
+- Just pure, postable thread content`;
 
   const userPrompt = `Create an insight thread about: ${topic}
 

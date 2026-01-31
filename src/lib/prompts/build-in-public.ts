@@ -298,20 +298,28 @@ This is a project update/journey post. Remember:
 - End with a genuine question for feedback
 
 ${additionalContext ? `Additional context:\n${additionalContext}\n` : ''}
-Generate 3 distinct options, each taking a different angle on this update.
+Generate 3 distinct options. Each must be READY TO POST - no explanation needed.
 
-Format each option as:
+---
+1
+[Tweet content - ready to post]
+---
 
-**Variation 1: [Angle Description]**
-[Tweet content]
+---
+2
+[Tweet content - different angle]
+---
 
-**Variation 2: [Angle Description]**
-[Tweet content]
+---
+3
+[Tweet content - third angle]
+---
 
-**Variation 3: [Angle Description]**
-[Tweet content]
-
-**Recommendation:** [Which option and why]`;
+CRITICAL:
+- NO explanations, analysis, or "why this works" commentary
+- NO metadata or character counts
+- Just pure, postable content between the --- markers
+- Each variation should take a DIFFERENT angle on the update`;
 
   return { systemPrompt, userPrompt };
 }

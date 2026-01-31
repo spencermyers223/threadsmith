@@ -10,6 +10,7 @@ import {
   type UserProfile,
 } from '@/lib/prompts/build-generation-prompt'
 import { checkCanGenerate, recordGeneration, type SourceType } from '@/lib/generation-limits'
+import { cleanContent, getContentWarnings, calculateHumannessScore } from '@/lib/content-cleaner'
 // Import CT-native post type prompts
 import {
   marketTakePrompt,
@@ -57,6 +58,8 @@ interface GeneratedPost {
   archetype: 'scroll_stopper' | 'debate_starter' | 'viral_catalyst'
   postType?: CTNativePostType
   characterCount: number
+  qualityScore?: number // 0-100, higher is better (humanness + engagement potential)
+  warnings?: string[] // Any content issues detected
 }
 
 interface GenerateResponse {
@@ -140,88 +143,61 @@ function parseGeneratedPosts(
 ): GeneratedPost[] {
   const posts: GeneratedPost[] = []
 
-  // All CT-native post types use "Variation" format in their prompts
-  const isVariationFormat = postType != null
+  // Try the new --- delimited format first
+  const delimiterRegex = /---\s*\n?(VARIATION\s*\d+|THREAD\s*\d+|\d+)?\s*\n([\s\S]*?)(?=\n---|\n*$)/gi
+  let match
+  
+  while ((match = delimiterRegex.exec(response)) !== null) {
+    const rawContent = match[2].trim()
+    if (rawContent && rawContent.length > 10) {
+      // Run through content cleaner to remove AI patterns
+      const { cleaned } = cleanContent(rawContent)
+      if (cleaned.length > 0) {
+        posts.push({
+          content: cleaned,
+          archetype: archetypeToOutput(archetype),
+          postType,
+          characterCount: cleaned.length,
+        })
+      }
+    }
+  }
 
-  if (isVariationFormat) {
-    // Parse thread format: **Variation 1: [Title]** followed by numbered tweets
-    // The content continues until the next **Variation** or **Recommendation** section
-    // Use a simpler regex that captures content until the next variation header or end markers
-    const variationRegex = /\*\*Variation\s+(\d+)(?:\/\d+)?:\s*([^*]*)\*\*\s*([\s\S]*?)(?=\*\*Variation\s+\d+|\*\*Recommendation|\*\*Angle Breakdown|$)/gi
+  // If --- format didn't work, try **Variation** format
+  if (posts.length === 0) {
+    const variationRegex = /\*\*(?:Variation|Option)\s+(\d+)(?:\/\d+)?[^*]*\*\*\s*([\s\S]*?)(?=\*\*(?:Variation|Option)\s+\d+|\*\*Recommendation|\*\*Angle|$)/gi
 
-    let match
     while ((match = variationRegex.exec(response)) !== null) {
-      const rawContent = match[3].trim()
-      if (rawContent) {
-        // Extract just the tweet content (numbered lines like "1/ content")
-        // Remove analysis metadata that appears after each variation
-        const cleanContent = rawContent
-          // Remove analysis/metadata lines (lines starting with *)
-          .replace(/^\*Hook Analysis:.*$/gm, '')
-          .replace(/^\*Educational Flow:.*$/gm, '')
-          .replace(/^\*Trust Factor:.*$/gm, '')
-          .replace(/^\*Reply Potential:.*$/gm, '')
-          .replace(/^\*Algorithm Score:.*$/gm, '')
-          .replace(/^\*Conversation hook:.*$/gm, '')
-          .replace(/^\*Character count:.*$/gm, '')
-          .replace(/^\*Why this works:.*$/gm, '')
-          .replace(/^\*Why they'll reply:.*$/gm, '')
-          .replace(/^\[Suggest:.*\]$/gm, '') // Remove image placement suggestions
-          .replace(/\[(\d+)\s*chars?\]/gi, '') // Remove [149 chars] metadata
-          .replace(/\((\d+)\s*characters?\)/gi, '') // Remove (149 characters) metadata
-          .replace(/\s*—?\s*\d+\s*characters?\s*$/gm, '') // Remove "— 149 characters" at end of lines
-          .replace(/\s*\|\s*\d+\s*chars?\s*$/gm, '') // Remove "| 149 chars" at end of lines
-          .replace(/^\*Visual note:.*$/gm, '') // Remove visual note metadata
-          .replace(/^\*Conversation hook:.*$/gm, '') // Remove conversation hook metadata
-          // Remove separator lines
-          .replace(/^---+\s*$/gm, '')
-          // Remove trailing metadata block (lines starting with * at the end)
-          .replace(/(\n\*[A-Z][^\n]*)+\s*$/gi, '')
-          // Clean up numbered tweet prefixes for single-tweet post types (not threads)
-          // For threads, keep the numbering as-is since parseThreadContent handles it
-          // Clean up extra whitespace
-          .replace(/\n{3,}/g, '\n\n')
-          .trim()
-
-        if (cleanContent.length > 0) {
+      const rawContent = match[2].trim()
+      if (rawContent && rawContent.length > 10) {
+        // Run through content cleaner to remove AI patterns
+        const { cleaned } = cleanContent(rawContent)
+        if (cleaned.length > 0) {
           posts.push({
-            content: cleanContent,
+            content: cleaned,
             archetype: archetypeToOutput(archetype),
             postType,
-            characterCount: cleanContent.length,
+            characterCount: cleaned.length,
           })
         }
       }
     }
   }
 
-  // If no thread variations found, try standard Option format
+  // If still no posts, try plain **Option N:** format (legacy)
   if (posts.length === 0) {
-    // Match patterns like "**Option 1:**" or "**Option 1: Title**" or "**Option 1**"
     const optionRegex = /\*\*Option\s+(\d+)(?::\s*[^*]*)?\*\*\s*([\s\S]*?)(?=\*\*Option\s+\d+|$|\*Why|\*Recommendation|---)/gi
 
-    let match
     while ((match = optionRegex.exec(response)) !== null) {
-      const content = match[2].trim()
-      if (content) {
-        // Clean up the content - remove trailing asterisks, whitespace, and metadata
-        const cleanContent = content
-          .replace(/\n\n\*\*?$/g, '')
-          .replace(/\n\*Character count.*$/gi, '')
-          .replace(/\n\*Why this works.*$/gi, '')
-          .replace(/\n\*Hook Analysis.*$/gi, '')
-          .replace(/\n\*Algorithm Score.*$/gi, '')
-          .replace(/\n\*Reply Potential.*$/gi, '')
-          .replace(/\n\*Conversation hook.*$/gi, '')
-          .replace(/---\s*$/g, '')
-          .trim()
-
-        if (cleanContent.length > 0) {
+      const rawContent = match[2].trim()
+      if (rawContent && rawContent.length > 10) {
+        const { cleaned } = cleanContent(rawContent)
+        if (cleaned.length > 0) {
           posts.push({
-            content: cleanContent,
+            content: cleaned,
             archetype: archetypeToOutput(archetype),
             postType,
-            characterCount: cleanContent.length,
+            characterCount: cleaned.length,
           })
         }
       }
@@ -230,16 +206,25 @@ function parseGeneratedPosts(
 
   // Fallback: if no options found, treat entire response as single post
   if (posts.length === 0 && response.trim().length > 0) {
-    const cleanResponse = response.trim()
+    const { cleaned } = cleanContent(response.trim())
     posts.push({
-      content: cleanResponse,
+      content: cleaned,
       archetype: archetypeToOutput(archetype),
       postType,
-      characterCount: cleanResponse.length,
+      characterCount: cleaned.length,
     })
   }
 
-  return posts
+  // Add quality scores and warnings to each post
+  return posts.map(post => {
+    const { score } = calculateHumannessScore(post.content)
+    const warnings = getContentWarnings(post.content)
+    return {
+      ...post,
+      qualityScore: score,
+      warnings: warnings.length > 0 ? warnings : undefined,
+    }
+  })
 }
 
 // Convert UserProfile to UserVoiceProfile for CT-native prompts

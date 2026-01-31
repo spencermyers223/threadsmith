@@ -90,20 +90,31 @@ The take should END in a way that makes silence feel like agreement:
 - Don't hedge the take into meaninglessness
 
 ### Output Format
-Generate 3 variations targeting different nerves:
+Generate 3 variations. Each must be READY TO POST - no explanation needed.
 
-**Variation 1: [What consensus it challenges]**
-[Tweet content]
-*Character count:* [X]
-*Why they'll reply:* [The itch they can't help scratching]
+Format EXACTLY like this:
 
-**Variation 2: [What consensus it challenges]**
-...
+---
+1
+[Tweet - just the content, nothing else]
+---
 
-**Variation 3: [What consensus it challenges]**
-...
+---
+2
+[Tweet - different angle]
+---
 
-**Recommendation:** [Which one will generate most productive disagreement]
+---
+3
+[Tweet - third angle]
+---
+
+CRITICAL:
+- NO explanations or "why this works" commentary
+- NO character counts
+- NO "Variation 1:" labels inside the content
+- Just pure, postable tweets between the --- markers
+- Each should challenge a DIFFERENT consensus
 `;
 
 export const HOT_TAKE_HOOKS = [
