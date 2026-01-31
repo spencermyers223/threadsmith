@@ -441,6 +441,14 @@ export async function POST(request: NextRequest) {
       voiceProfileData = profileData.voice_profile as Record<string, unknown> | null
     }
 
+    // Fetch user's actual voice samples (their real tweets)
+    const { data: voiceSamples } = await supabase
+      .from('voice_samples')
+      .select('tweet_text')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(10) // Get up to 10 most recent samples
+
     // Build voice profile context
     let additionalContext: string | undefined
     if (voiceProfileData) {
@@ -466,6 +474,32 @@ Thread Preference: ${vp.threadPreference || 'N/A'}
 
 Write as if YOU are this person. Mirror their exact tone, vocabulary level, emoji patterns, and sentence structure.
 </voice_profile>`
+    }
+
+    // Add actual tweet examples if available
+    if (voiceSamples && voiceSamples.length > 0) {
+      const exampleTweets = voiceSamples
+        .map((s, i) => `${i + 1}. "${s.tweet_text}"`)
+        .join('\n')
+      
+      const tweetExamplesContext = `<real_tweet_examples>
+CRITICAL: These are ACTUAL tweets written by this user. Study them carefully and match their EXACT style.
+
+${exampleTweets}
+
+Your generated content MUST sound like it was written by the same person who wrote these tweets.
+Match their:
+- Sentence structure and length
+- Word choices and vocabulary
+- Punctuation patterns
+- Use of capitalization
+- Emoji usage (or lack thereof)
+- Overall energy and tone
+</real_tweet_examples>`
+
+      additionalContext = additionalContext 
+        ? `${additionalContext}\n\n${tweetExamplesContext}` 
+        : tweetExamplesContext
     }
 
     // Fetch source file content if provided
