@@ -104,24 +104,21 @@ export default function TemplatesPage() {
     setVariableValues({})
   }
 
-  // Generate from template
+  // Generate from template - just redirects, doesn't trigger AI yet
   const handleGenerate = async () => {
     if (!selectedTemplate) return
 
-    // Build the filled prompt
-    let filledPrompt = selectedTemplate.prompt_template
-    const vars = selectedTemplate.variables || []
-
-    for (const v of vars) {
-      const value = variableValues[v.name] || v.placeholder || ''
-      filledPrompt = filledPrompt.replace(new RegExp(`\\{\\{${v.name}\\}\\}`, 'g'), value)
-    }
-
-    // Navigate to creator hub with the template data in sessionStorage
+    // Store comprehensive template data for creator-hub to display
     const templateData = {
-      topic: filledPrompt,
+      templateId: selectedTemplate.id,
       templateTitle: selectedTemplate.title,
+      templateDescription: selectedTemplate.description,
       templateCategory: selectedTemplate.category,
+      templateWhyItWorks: selectedTemplate.why_it_works,
+      templateDifficulty: selectedTemplate.difficulty,
+      promptTemplate: selectedTemplate.prompt_template,
+      variableValues: variableValues,
+      variables: selectedTemplate.variables,
     }
 
     sessionStorage.setItem('xthread-template-data', JSON.stringify(templateData))

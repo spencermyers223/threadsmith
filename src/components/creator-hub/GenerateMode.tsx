@@ -95,6 +95,20 @@ interface GenerateModeProps {
 export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile }: GenerateModeProps) {
   const router = useRouter()
 
+  // Template mode state (from /templates page)
+  interface TemplateData {
+    templateId: string
+    templateTitle: string
+    templateDescription: string | null
+    templateCategory: string
+    templateWhyItWorks: string | null
+    templateDifficulty: string | null
+    promptTemplate: string
+    variableValues: Record<string, string>
+    variables: { name: string; label: string; required: boolean }[] | null
+  }
+  const [templateMode, setTemplateMode] = useState<TemplateData | null>(null)
+
   // Form state
   const [topic, setTopic] = useState('')
   const [selectedPostType, setSelectedPostType] = useState<string>('market_take')
@@ -120,13 +134,46 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
     if (raw) {
       try {
         const data = JSON.parse(raw)
-        if (data.topic) setTopic(data.topic)
+        // New format: full template data for template mode
+        if (data.templateId && data.promptTemplate) {
+          setTemplateMode(data)
+          setIsTemplatePrompt(true)
+          // Auto-select post type based on category
+          const categoryToPostType: Record<string, string> = {
+            'build-in-public': 'build_in_public',
+            'contrarian': 'hot_take',
+            'alpha': 'market_take',
+            'engagement': 'market_take',
+          }
+          if (data.templateCategory && categoryToPostType[data.templateCategory]) {
+            setSelectedPostType(categoryToPostType[data.templateCategory])
+          }
+        }
+        // Legacy format fallback
+        else if (data.topic) {
+          setTopic(data.topic)
+        }
       } catch {}
       sessionStorage.removeItem('xthread-template-data')
     }
   }, [])
 
   const selectedPostTypeData = POST_TYPES.find(pt => pt.id === selectedPostType)
+
+  // Clear template mode and return to normal input
+  const clearTemplateMode = () => {
+    setTemplateMode(null)
+    setIsTemplatePrompt(false)
+    setTopic('')
+  }
+
+  // Template category colors (matching templates page)
+  const TEMPLATE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+    alpha: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' },
+    'build-in-public': { bg: 'bg-pink-500/10', text: 'text-pink-400', border: 'border-pink-500/30' },
+    contrarian: { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/30' },
+    engagement: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/30' },
+  }
 
   // Helper function to parse thread content into individual tweets
   const parseThreadContent = (content: string): { number: string; text: string; charCount: number }[] => {
@@ -217,7 +264,8 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   }, [selectedPostType])
 
   const handleGenerate = async () => {
-    if (!topic.trim()) return
+    // In template mode, we don't need topic - we have the filled template
+    if (!templateMode && !topic.trim()) return
 
     setIsGenerating(true)
     setError(null)
@@ -235,15 +283,28 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
         }
       }
 
-      // Pass the CT-native post type directly to the API
-      // The API now supports both legacy archetypes and CT-native post types
-      // If using a template, substitute the user's input into the prompt template
-      let finalTopic = topic.trim()
-      if (isTemplatePrompt && promptTemplate) {
-        // Replace {{topic}} or similar placeholders with user input
-        finalTopic = promptTemplate.replace(/\{\{topic\}\}/gi, finalTopic)
-                                    .replace(/\{\{input\}\}/gi, finalTopic)
-                                    .replace(/\{\{content\}\}/gi, finalTopic)
+      // Build the final topic/prompt
+      let finalTopic = ''
+      
+      if (templateMode) {
+        // Template mode: substitute variables into prompt template
+        finalTopic = templateMode.promptTemplate
+        const vars = templateMode.variables || []
+        for (const v of vars) {
+          const value = templateMode.variableValues[v.name] || ''
+          finalTopic = finalTopic.replace(new RegExp(`\\{\\{${v.name}\\}\\}`, 'g'), value)
+        }
+        // Also handle generic placeholders
+        const anyValue = Object.values(templateMode.variableValues)[0] || ''
+        finalTopic = finalTopic.replace(/\{\{input\}\}/gi, anyValue)
+                               .replace(/\{\{topic\}\}/gi, anyValue)
+      } else if (isTemplatePrompt && promptTemplate) {
+        // Legacy template selector mode
+        finalTopic = promptTemplate.replace(/\{\{topic\}\}/gi, topic.trim())
+                                    .replace(/\{\{input\}\}/gi, topic.trim())
+                                    .replace(/\{\{content\}\}/gi, topic.trim())
+      } else {
+        finalTopic = topic.trim()
       }
 
       const res = await fetch('/api/generate', {
@@ -410,138 +471,207 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
 
         {/* Main Content Card */}
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 mb-6">
-          {/* Topic Input */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-[var(--foreground)]">
-                What do you want to post about?
-              </label>
-              <div className="flex items-center gap-3">
-                <a
-                  href="/templates"
+          
+          {/* TEMPLATE MODE: Show template card instead of topic input + post types */}
+          {templateMode ? (
+            <div className="mb-6">
+              {/* Template Card Header */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <span className={`
+                    inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium
+                    ${TEMPLATE_COLORS[templateMode.templateCategory]?.bg || 'bg-gray-500/10'}
+                    ${TEMPLATE_COLORS[templateMode.templateCategory]?.text || 'text-gray-400'}
+                    border ${TEMPLATE_COLORS[templateMode.templateCategory]?.border || 'border-gray-500/30'}
+                  `}>
+                    {templateMode.templateCategory.replace('-', ' ')}
+                  </span>
+                  {templateMode.templateDifficulty && (
+                    <span className={`text-xs font-medium capitalize ${
+                      templateMode.templateDifficulty === 'beginner' ? 'text-green-400' :
+                      templateMode.templateDifficulty === 'intermediate' ? 'text-yellow-400' : 'text-red-400'
+                    }`}>
+                      {templateMode.templateDifficulty}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={clearTemplateMode}
                   className="flex items-center gap-1.5 text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
                 >
-                  <Layers size={14} />
-                  Template Library
-                </a>
-                <TemplateSelector
-                  activeTemplate={activeTemplate}
-                  onSelectTemplate={(placeholderGuide, template, category, title) => {
-                    // Set placeholder guidance (disappears when user types)
-                    // Do NOT set input value - user starts with blank input
-                    setPlaceholderText(placeholderGuide)
-                    setPromptTemplate(template)
-                    setActiveTemplate(title || null)
-                    setTopic('') // Clear any existing input - user starts fresh
-                    setIsTemplatePrompt(!!template)
-                    // Auto-select matching post type based on template category
-                    const categoryToPostType: Record<string, string> = {
-                      'build-in-public': 'build_in_public',
-                      'contrarian': 'hot_take',
-                      'alpha': 'market_take',
-                      'data': 'on_chain_insight',
-                      'engagement': 'market_take',
-                    }
-                    if (category && categoryToPostType[category]) {
-                      setSelectedPostType(categoryToPostType[category])
-                    }
-                  }}
-                />
-              </div>
-            </div>
-            <div className="relative">
-              <textarea
-                value={topic}
-                onChange={(e) => {
-                  setTopic(e.target.value.slice(0, 500))
-                  // Keep template context while user types
-                }}
-                placeholder={placeholderText}
-                rows={3}
-                className="
-                  w-full px-4 py-3 rounded-xl resize-none
-                  bg-[var(--background)] border border-[var(--border)]
-                  text-[var(--foreground)] placeholder-[var(--muted)]
-                  focus:outline-none focus:border-[var(--accent)]
-                  transition-colors
-                "
-              />
-              <span className="absolute bottom-3 right-3 text-xs text-[var(--muted)]">
-                {topic.length}/500
-              </span>
-            </div>
-          </div>
-
-          {/* Source File */}
-          <div className="mb-6">
-            {selectedFile ? (
-              <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/30">
-                <FileText size={16} className="text-[var(--accent)]" />
-                <span className="flex-1 truncate text-sm">
-                  <span className="text-[var(--muted)]">Using: </span>
-                  <span className="text-[var(--accent)] font-medium">{selectedFile.name}</span>
-                </span>
-                <button
-                  onClick={onOpenSidebar}
-                  className="px-2 py-1 text-xs bg-[var(--card)] hover:bg-[var(--border)] rounded transition-colors"
-                >
-                  Change
-                </button>
-                <button
-                  onClick={onClearFile}
-                  className="p-1 hover:bg-[var(--border)] rounded text-[var(--muted)] hover:text-red-400"
-                >
                   <X size={14} />
+                  Change template
                 </button>
               </div>
-            ) : (
-              <button
-                onClick={onOpenSidebar}
-                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-[var(--border)] hover:border-[var(--muted)] transition-colors text-sm text-[var(--muted)]"
-              >
-                <FileText size={16} />
-                Use a file as source material
-              </button>
-            )}
-          </div>
 
-          {/* Post Type Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-[var(--foreground)] mb-3">
-              Post Type
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {POST_TYPES.map((type) => {
-                const Icon = type.icon
-                const isSelected = selectedPostType === type.id
-                return (
-                  <button
-                    key={type.id}
-                    onClick={() => setSelectedPostType(type.id)}
-                    className={`
-                      flex flex-col items-start gap-2 p-4 rounded-xl text-left transition-all
-                      ${isSelected
-                        ? `${type.bgColor} border-2 ${type.borderColor}`
-                        : 'bg-[var(--background)] border-2 border-[var(--border)] hover:border-[var(--muted)]'
-                      }
-                    `}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Icon size={18} className={isSelected ? type.color : 'text-[var(--muted)]'} />
-                      <span className={`text-sm font-medium ${isSelected ? type.color : ''}`}>
-                        {type.label}
+              {/* Template Title */}
+              <h2 className="text-xl font-bold mb-2">{templateMode.templateTitle}</h2>
+              
+              {/* Template Description */}
+              {templateMode.templateDescription && (
+                <p className="text-[var(--muted)] text-sm mb-4">{templateMode.templateDescription}</p>
+              )}
+
+              {/* Filled Variables */}
+              {templateMode.variables && templateMode.variables.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  {templateMode.variables.map((v) => (
+                    <div key={v.name} className="flex items-start gap-2 p-3 rounded-lg bg-[var(--background)] border border-[var(--border)]">
+                      <span className="text-xs font-medium text-[var(--muted)] min-w-[80px]">{v.label}:</span>
+                      <span className="text-sm text-[var(--foreground)]">
+                        {templateMode.variableValues[v.name] || <span className="text-[var(--muted)] italic">Not filled</span>}
                       </span>
                     </div>
-                    <p className="text-xs text-[var(--muted)] line-clamp-2">
-                      {type.description}
-                    </p>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+                  ))}
+                </div>
+              )}
 
-          {/* Length Selection */}
+              {/* Why This Works */}
+              {templateMode.templateWhyItWorks && (
+                <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+                  <h3 className="text-sm font-semibold mb-2 text-amber-400 flex items-center gap-2">
+                    <Sparkles size={14} />
+                    Why This Works
+                  </h3>
+                  <p className="text-sm text-[var(--muted)] leading-relaxed">
+                    {templateMode.templateWhyItWorks}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* NORMAL MODE: Topic input + Post types */
+            <>
+              {/* Topic Input */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-[var(--foreground)]">
+                    What do you want to post about?
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <a
+                      href="/templates"
+                      className="flex items-center gap-1.5 text-sm text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+                    >
+                      <Layers size={14} />
+                      Template Library
+                    </a>
+                    <TemplateSelector
+                      activeTemplate={activeTemplate}
+                      onSelectTemplate={(placeholderGuide, template, category, title) => {
+                        setPlaceholderText(placeholderGuide)
+                        setPromptTemplate(template)
+                        setActiveTemplate(title || null)
+                        setTopic('')
+                        setIsTemplatePrompt(!!template)
+                        const categoryToPostType: Record<string, string> = {
+                          'build-in-public': 'build_in_public',
+                          'contrarian': 'hot_take',
+                          'alpha': 'market_take',
+                          'data': 'on_chain_insight',
+                          'engagement': 'market_take',
+                        }
+                        if (category && categoryToPostType[category]) {
+                          setSelectedPostType(categoryToPostType[category])
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="relative">
+                  <textarea
+                    value={topic}
+                    onChange={(e) => {
+                      setTopic(e.target.value.slice(0, 500))
+                    }}
+                    placeholder={placeholderText}
+                    rows={3}
+                    className="
+                      w-full px-4 py-3 rounded-xl resize-none
+                      bg-[var(--background)] border border-[var(--border)]
+                      text-[var(--foreground)] placeholder-[var(--muted)]
+                      focus:outline-none focus:border-[var(--accent)]
+                      transition-colors
+                    "
+                  />
+                  <span className="absolute bottom-3 right-3 text-xs text-[var(--muted)]">
+                    {topic.length}/500
+                  </span>
+                </div>
+              </div>
+
+              {/* Source File */}
+              <div className="mb-6">
+                {selectedFile ? (
+                  <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/30">
+                    <FileText size={16} className="text-[var(--accent)]" />
+                    <span className="flex-1 truncate text-sm">
+                      <span className="text-[var(--muted)]">Using: </span>
+                      <span className="text-[var(--accent)] font-medium">{selectedFile.name}</span>
+                    </span>
+                    <button
+                      onClick={onOpenSidebar}
+                      className="px-2 py-1 text-xs bg-[var(--card)] hover:bg-[var(--border)] rounded transition-colors"
+                    >
+                      Change
+                    </button>
+                    <button
+                      onClick={onClearFile}
+                      className="p-1 hover:bg-[var(--border)] rounded text-[var(--muted)] hover:text-red-400"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={onOpenSidebar}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-[var(--border)] hover:border-[var(--muted)] transition-colors text-sm text-[var(--muted)]"
+                  >
+                    <FileText size={16} />
+                    Use a file as source material
+                  </button>
+                )}
+              </div>
+
+              {/* Post Type Selection */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-[var(--foreground)] mb-3">
+                  Post Type
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {POST_TYPES.map((type) => {
+                    const Icon = type.icon
+                    const isSelected = selectedPostType === type.id
+                    return (
+                      <button
+                        key={type.id}
+                        onClick={() => setSelectedPostType(type.id)}
+                        className={`
+                          flex flex-col items-start gap-2 p-4 rounded-xl text-left transition-all
+                          ${isSelected
+                            ? `${type.bgColor} border-2 ${type.borderColor}`
+                            : 'bg-[var(--background)] border-2 border-[var(--border)] hover:border-[var(--muted)]'
+                          }
+                        `}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Icon size={18} className={isSelected ? type.color : 'text-[var(--muted)]'} />
+                          <span className={`text-sm font-medium ${isSelected ? type.color : ''}`}>
+                            {type.label}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[var(--muted)] line-clamp-2">
+                          {type.description}
+                        </p>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Length Selection - always visible */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-[var(--foreground)] mb-3">
               Length
@@ -573,7 +703,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
         {/* Generate Button */}
         <button
           onClick={handleGenerate}
-          disabled={!topic.trim() || isGenerating}
+          disabled={(!templateMode && !topic.trim()) || isGenerating}
           className="
             w-full flex items-center justify-center gap-3 px-6 py-4
             bg-[var(--accent)] hover:opacity-90
