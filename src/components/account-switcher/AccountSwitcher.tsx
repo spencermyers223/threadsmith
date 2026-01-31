@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useXAccount } from '@/contexts/XAccountContext';
-import { ChevronDown, Plus, Check, X, Sparkles, Settings, LogOut } from 'lucide-react';
+import { ChevronDown, Plus, Check, X, Sparkles, Settings, LogOut, AlertCircle, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 
@@ -17,6 +17,7 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
   const { accounts, activeAccount, isLoading, setActiveAccount } = useXAccount();
   const [isOpen, setIsOpen] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showAddAccountModal, setShowAddAccountModal] = useState(false);
   const [maxAccounts, setMaxAccounts] = useState(1);
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -77,9 +78,15 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
       // Show upgrade modal
       setShowUpgradeModal(true);
     } else {
-      // Redirect to X OAuth with link action
-      window.location.href = '/api/auth/x?action=link';
+      // Show instructions modal before OAuth
+      setShowAddAccountModal(true);
     }
+  };
+
+  // Proceed with OAuth after user confirms
+  const proceedWithOAuth = () => {
+    setShowAddAccountModal(false);
+    window.location.href = '/api/auth/x?action=link';
   };
 
   // Close dropdown when clicking outside
@@ -302,6 +309,66 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
               <p className="text-center text-xs text-gray-500 mt-4">
                 Starting at $39.99/month • Cancel anytime
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Account Instructions Modal */}
+      {showAddAccountModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100]">
+          <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl w-full max-w-md mx-4 overflow-hidden shadow-2xl">
+            {/* Header */}
+            <div className="relative px-6 py-6 border-b border-white/10">
+              <button
+                onClick={() => setShowAddAccountModal(false)}
+                className="absolute top-4 right-4 p-1 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-500/20">
+                  <AlertCircle className="w-5 h-5 text-amber-400" />
+                </div>
+                <h2 className="text-lg font-bold text-white">
+                  Before You Continue
+                </h2>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="px-6 py-5">
+              <p className="text-gray-300 mb-4">
+                X will authorize whichever account is <strong>currently logged in</strong> to your browser.
+              </p>
+              
+              <div className="bg-white/5 rounded-lg p-4 mb-5">
+                <p className="text-sm text-gray-400 mb-3">To add a different X account:</p>
+                <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside">
+                  <li>Open <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-[#D4A574] hover:underline inline-flex items-center gap-1">x.com <ExternalLink className="w-3 h-3" /></a> in this browser</li>
+                  <li>Log out, then log into the account you want to add</li>
+                  <li>Come back here and click &quot;Continue&quot;</li>
+                </ol>
+              </div>
+
+              <p className="text-xs text-gray-500 mb-5">
+                💡 Tip: Or use an incognito window for the entire xthread session with the other X account already logged in.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowAddAccountModal(false)}
+                  className="flex-1 py-2.5 px-4 border border-white/10 hover:bg-white/5 text-gray-300 font-medium rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={proceedWithOAuth}
+                  className="flex-1 py-2.5 px-4 bg-[#D4A574] hover:bg-[#C49664] text-black font-semibold rounded-lg transition-colors"
+                >
+                  Continue to X
+                </button>
+              </div>
             </div>
           </div>
         </div>
