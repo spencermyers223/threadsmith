@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Check, Loader2, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useXAccount } from '@/contexts/XAccountContext'
 import { NicheSelector, AdmiredAccountsInput } from '@/components/profile'
 import type { Niche } from '@/components/profile/NicheSelector'
 
@@ -87,6 +88,7 @@ function detectTimezone(): string {
 
 export default function ProfileSetupPage() {
   const router = useRouter()
+  const { activeAccount } = useXAccount()
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -167,10 +169,13 @@ export default function ProfileSetupPage() {
         .map(id => TIME_SLOTS.find(slot => slot.id === id)?.value)
         .filter(Boolean) as string[]
 
+      if (!activeAccount?.id) {
+        throw new Error('No active X account')
+      }
+      
       const { error: upsertError } = await supabase
         .from('content_profiles')
-        .upsert({
-          user_id: user.id,
+        .update({
           niche,
           content_goal: contentGoal.trim(),
           target_audience: targetAudience.trim(),
@@ -179,9 +184,8 @@ export default function ProfileSetupPage() {
           preferred_times: preferredTimeValues,
           timezone,
           updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id'
         })
+        .eq('x_account_id', activeAccount.id)
 
       if (upsertError) {
         throw upsertError

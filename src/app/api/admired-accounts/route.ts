@@ -52,10 +52,16 @@ export async function GET(request: NextRequest) {
       return jsonResponse({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const xAccountId = request.nextUrl.searchParams.get('x_account_id');
+    
+    if (!xAccountId) {
+      return jsonResponse({ error: 'x_account_id is required' }, { status: 400 });
+    }
+
     const { data: profile } = await supabase
       .from('content_profiles')
       .select('admired_accounts')
-      .eq('user_id', user.id)
+      .eq('x_account_id', xAccountId)
       .single();
 
     return jsonResponse({
@@ -77,10 +83,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { username } = body;
+    const { username, x_account_id } = body;
 
     if (!username) {
       return jsonResponse({ error: 'Username is required' }, { status: 400 });
+    }
+    
+    if (!x_account_id) {
+      return jsonResponse({ error: 'x_account_id is required' }, { status: 400 });
     }
 
     // Normalize username (remove @ if present)
@@ -90,7 +100,7 @@ export async function POST(request: NextRequest) {
     const { data: profile } = await supabase
       .from('content_profiles')
       .select('admired_accounts')
-      .eq('user_id', user.id)
+      .eq('x_account_id', x_account_id)
       .single();
 
     const currentAccounts: string[] = profile?.admired_accounts || [];
@@ -106,16 +116,14 @@ export async function POST(request: NextRequest) {
     // Add to list (max 10 accounts)
     const newAccounts = [...currentAccounts, normalizedUsername].slice(0, 10);
 
-    // Upsert content_profiles
+    // Update content_profiles
     const { error } = await supabase
       .from('content_profiles')
-      .upsert({
-        user_id: user.id,
+      .update({
         admired_accounts: newAccounts,
         updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id',
-      });
+      })
+      .eq('x_account_id', x_account_id);
 
     if (error) throw error;
 
@@ -140,9 +148,14 @@ export async function DELETE(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const username = searchParams.get('username');
+    const xAccountId = searchParams.get('x_account_id');
 
     if (!username) {
       return jsonResponse({ error: 'Username is required' }, { status: 400 });
+    }
+    
+    if (!xAccountId) {
+      return jsonResponse({ error: 'x_account_id is required' }, { status: 400 });
     }
 
     const normalizedUsername = username.replace(/^@/, '').toLowerCase();
@@ -151,7 +164,7 @@ export async function DELETE(request: NextRequest) {
     const { data: profile } = await supabase
       .from('content_profiles')
       .select('admired_accounts')
-      .eq('user_id', user.id)
+      .eq('x_account_id', xAccountId)
       .single();
 
     const currentAccounts: string[] = profile?.admired_accounts || [];
@@ -164,7 +177,7 @@ export async function DELETE(request: NextRequest) {
         admired_accounts: newAccounts,
         updated_at: new Date().toISOString(),
       })
-      .eq('user_id', user.id);
+      .eq('x_account_id', xAccountId);
 
     if (error) throw error;
 

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { xApiFetch } from '@/lib/x-tokens'
 
@@ -15,7 +15,7 @@ interface Tweet {
  * Auto-analyze voice profile from user's recent X tweets.
  * Fetches last 50 tweets and generates a voice profile.
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -23,37 +23,32 @@ export async function POST() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Get x_account_id from query params
+  const xAccountId = request.nextUrl.searchParams.get('x_account_id')
+  
+  if (!xAccountId) {
+    return NextResponse.json({ error: 'x_account_id is required' }, { status: 400 })
+  }
+
+  // Verify user owns this x_account and get the x_user_id
+  const { data: xAccount } = await supabase
+    .from('x_accounts')
+    .select('id, x_user_id')
+    .eq('id', xAccountId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (!xAccount) {
+    return NextResponse.json({ error: 'X account not found' }, { status: 404 })
+  }
+
   try {
     // Fetch user's recent tweets from X API
-    // Using user timeline endpoint: GET /2/users/:id/tweets
-    // Check both x_tokens and x_accounts tables
-    let xUserId: string | null = null
+    const xUserId = xAccount.x_user_id
     
-    const { data: xTokens } = await supabase
-      .from('x_tokens')
-      .select('x_user_id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (xTokens?.x_user_id) {
-      xUserId = xTokens.x_user_id
-    } else {
-      // Fallback: check x_accounts table (multi-account support)
-      const { data: xAccount } = await supabase
-        .from('x_accounts')
-        .select('x_user_id')
-        .eq('user_id', user.id)
-        .eq('is_primary', true)
-        .single()
-      
-      if (xAccount?.x_user_id) {
-        xUserId = xAccount.x_user_id
-      }
-    }
-
     if (!xUserId) {
       return NextResponse.json(
-        { error: 'X account not connected. Please sign in with X first.' },
+        { error: 'X user ID not found for this account' },
         { status: 400 }
       )
     }
@@ -149,15 +144,13 @@ Return this exact JSON structure:
     // Store the voice profile
     const { error: updateError } = await supabase
       .from('content_profiles')
-      .upsert({
-        user_id: user.id,
+      .update({
         voice_profile: voiceProfile,
         voice_trained_at: new Date().toISOString(),
         voice_tweet_count: tweets.length,
         updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id',
       })
+      .eq('x_account_id', xAccountId)
 
     if (updateError) throw updateError
 
