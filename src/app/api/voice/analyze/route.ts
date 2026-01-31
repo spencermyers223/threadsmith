@@ -1,10 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 
 const anthropic = new Anthropic()
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -12,12 +12,31 @@ export async function POST() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Get x_account_id from query params or body
+  const xAccountId = request.nextUrl.searchParams.get('x_account_id')
+  
+  if (!xAccountId) {
+    return NextResponse.json({ error: 'x_account_id is required' }, { status: 400 })
+  }
+
+  // Verify user owns this x_account
+  const { data: xAccount } = await supabase
+    .from('x_accounts')
+    .select('id')
+    .eq('id', xAccountId)
+    .eq('user_id', user.id)
+    .single()
+  
+  if (!xAccount) {
+    return NextResponse.json({ error: 'X account not found' }, { status: 404 })
+  }
+
   try {
-    // Fetch all voice samples for the user
+    // Fetch all voice samples for this X account
     const { data: samples, error: samplesError } = await supabase
       .from('voice_samples')
       .select('tweet_text')
-      .eq('user_id', user.id)
+      .eq('x_account_id', xAccountId)
       .order('created_at', { ascending: false })
 
     if (samplesError) throw samplesError
@@ -93,14 +112,12 @@ Return this exact JSON structure:
     // Store the voice profile
     const { error: updateError } = await supabase
       .from('content_profiles')
-      .upsert({
-        user_id: user.id,
+      .update({
         voice_profile: voiceProfile,
         voice_trained_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id',
       })
+      .eq('x_account_id', xAccountId)
 
     if (updateError) throw updateError
 

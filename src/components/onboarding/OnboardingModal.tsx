@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useXAccount } from '@/contexts/XAccountContext'
 import { ArrowLeft, ArrowRight, Loader2, Check, Sparkles } from 'lucide-react'
 
 // Step components
@@ -71,6 +72,7 @@ interface OnboardingModalProps {
 }
 
 export default function OnboardingModal({ isOpen, onComplete }: OnboardingModalProps) {
+  const { activeAccount } = useXAccount()
   const [currentStep, setCurrentStep] = useState(1)
   const [data, setData] = useState<OnboardingData>(initialData)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -142,11 +144,14 @@ export default function OnboardingModal({ isOpen, onComplete }: OnboardingModalP
         throw new Error('Not authenticated')
       }
 
-      // Save onboarding data to content_profiles
+      // Save onboarding data to content_profiles for the active X account
+      if (!activeAccount?.id) {
+        throw new Error('No active X account')
+      }
+      
       const { error: upsertError } = await supabase
         .from('content_profiles')
-        .upsert({
-          user_id: user.id,
+        .update({
           // Pain Discovery
           struggles: data.struggles,
           growth_stage: data.growthStage,
@@ -170,9 +175,8 @@ export default function OnboardingModal({ isOpen, onComplete }: OnboardingModalP
           // Mark onboarding complete
           onboarding_completed: true,
           updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id'
         })
+        .eq('x_account_id', activeAccount.id)
 
       if (upsertError) {
         console.error('Supabase upsert error:', upsertError)
