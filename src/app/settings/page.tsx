@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useXAccount } from '@/contexts/XAccountContext'
 import {
   ArrowLeft, Bell, Moon, Sun, User, Check, AlertCircle, LogOut,
   Target, Mic, Users, Plus, X, ChevronDown, ChevronUp, MessageSquare,
@@ -51,6 +52,7 @@ const FREQUENCIES = POSTING_FREQUENCIES
 export default function SettingsPage() {
   const router = useRouter()
   const supabase = createClient()
+  const { activeAccount } = useXAccount()
   const { theme, setTheme } = useTheme()
   const [notifications, setNotifications] = useState(true)
   const [xUsername, setXUsername] = useState<string | null>(null)
@@ -258,12 +260,15 @@ export default function SettingsPage() {
         setNotifications(settings.notifications ?? true)
       }
 
-      // Load content profile
-      const { data: contentProfileData } = await supabase
+      // Load content profile for active X account
+      // Note: activeAccount might not be available yet on initial load
+      // This will be reloaded when activeAccount changes
+      const xAccountId = activeAccount?.id
+      const { data: contentProfileData } = xAccountId ? await supabase
         .from('content_profiles')
         .select('*')
-        .eq('user_id', user.id)
-        .single()
+        .eq('x_account_id', xAccountId)
+        .single() : { data: null }
 
       if (contentProfileData) {
         setContentProfile({
@@ -334,11 +339,14 @@ export default function SettingsPage() {
 
       if (updateError) throw updateError
 
-      // Save content profile
+      // Save content profile for the active X account
+      if (!activeAccount?.id) {
+        throw new Error('No active X account')
+      }
+      
       const { error: contentError } = await supabase
         .from('content_profiles')
-        .upsert({
-          user_id: user.id,
+        .update({
           primary_niche: contentProfile.primary_niche,
           niche: contentProfile.primary_niche, // Keep for backwards compatibility
           secondary_interests: contentProfile.secondary_interests,
@@ -354,9 +362,8 @@ export default function SettingsPage() {
           target_audience: contentProfile.target_audience,
           admired_accounts: contentProfile.admired_accounts,
           updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id'
         })
+        .eq('x_account_id', activeAccount.id)
 
       if (contentError) throw contentError
 
