@@ -8,6 +8,7 @@ import {
   Bookmark, ExternalLink, MessageCircle, Heart, Repeat2
 } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface InspirationTweet {
   id: string
@@ -735,10 +736,13 @@ export default function VoiceSettingsPage() {
                       {/* Author info */}
                       <div className="flex items-center gap-2 mb-2">
                         {tweet.author_profile_image_url ? (
-                          <img 
+                          <Image 
                             src={tweet.author_profile_image_url} 
                             alt="" 
+                            width={24}
+                            height={24}
                             className="w-6 h-6 rounded-full"
+                            unoptimized
                           />
                         ) : (
                           <div className="w-6 h-6 rounded-full bg-[var(--border)]" />

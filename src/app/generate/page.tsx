@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import {
   Sparkles,
   FileText,
@@ -909,10 +910,13 @@ export default function GeneratePage() {
                       {/* Author */}
                       <div className="flex items-center gap-2 mb-2">
                         {tweet.author_profile_image_url ? (
-                          <img
+                          <Image
                             src={tweet.author_profile_image_url}
                             alt=""
+                            width={24}
+                            height={24}
                             className="w-6 h-6 rounded-full"
+                            unoptimized
                           />
                         ) : (
                           <div className="w-6 h-6 rounded-full bg-[var(--border)]" />
