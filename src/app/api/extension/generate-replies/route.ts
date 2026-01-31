@@ -199,13 +199,15 @@ Respond in this exact JSON format:
 }
 
 GUIDELINES:
-- Provide exactly 3 angles (different strategic approaches)
-- Provide 2-3 hook starters (conversation openers, NOT full replies)
-- Provide 2-3 specific pitfalls to avoid
-- postScore should be 1-10 based on: author influence, topic virality, engagement velocity, reply opportunity quality
+- Provide exactly 2 angles (not 3 - keep it focused)
+- Each angle description MUST be under 15 words
+- Provide exactly 2 hook starters (conversation openers, NOT full replies)
+- Provide exactly 2 pitfalls (specific to this post)
+- postScore reasoning MUST be under 20 words
+- toneRecommendation why MUST be under 15 words
+- postScore should be 1-10 based on: author influence, topic virality, engagement velocity
 - timeUrgency: "high" if <30min old, "medium" if 30min-2h, "low" if >2h
-- Be specific to THIS post, not generic advice
-- Community cultural fluency matters — adapt language to match the community you're engaging with`;
+- Be punchy and specific. No fluff. Users want quick guidance, not essays.`;
 
     console.log('[generate-replies] Calling Claude API...');
     const response = await anthropic.messages.create({
@@ -239,17 +241,17 @@ GUIDELINES:
         worthReplying: result.postScore?.worthReplying ?? true,
         timeUrgency: result.postScore?.timeUrgency || 'medium'
       },
-      angles: (result.angles || []).slice(0, 3).map(angle => ({
+      angles: (result.angles || []).slice(0, 2).map(angle => ({
         title: angle.title || 'Strategic angle',
         description: angle.description || '',
         tone: angle.tone || 'witty',
         example: angle.example
       })),
-      hookStarters: (result.hookStarters || []).slice(0, 3).map(hook => ({
+      hookStarters: (result.hookStarters || []).slice(0, 2).map(hook => ({
         text: hook.text || '',
         angle: hook.angle || ''
       })),
-      pitfalls: (result.pitfalls || []).slice(0, 3),
+      pitfalls: (result.pitfalls || []).slice(0, 2),
       toneRecommendation: {
         primary: result.toneRecommendation?.primary || 'witty',
         why: result.toneRecommendation?.why || ''
