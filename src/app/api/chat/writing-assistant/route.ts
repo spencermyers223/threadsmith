@@ -68,241 +68,220 @@ interface Message {
 
 // Editing tool prompts
 const EDITING_PROMPTS: Record<string, string> = {
-  add_hook: `You are a viral content expert specializing in scroll-stopping hooks for X/Twitter.
+  add_hook: `You are a viral content expert. Add ONE scroll-stopping hook to boost the engagement score.
 
-WHAT MAKES A GREAT HOOK:
-A hook's job is to create an "open loop" - a mental itch that MUST be scratched. The reader should feel compelled to keep reading.
+ENGAGEMENT SCORE TARGETS (these are measured):
+- Hook length: 10-80 characters (ideal first line)
+- Starts with NUMBER → +15 points (e.g., "73% of founders...")
+- Starts with QUESTION → +15 points (What/Why/How/Do you/Have you)
+- Bold claim opener → +20 points (unpopular opinion/hot take/stop/don't/never)
+- ALL CAPS emphasis → +10 points (1-3 caps words at start)
+- Emoji in hook → +5 points
 
-PSYCHOLOGY OF EFFECTIVE HOOKS:
-1. **Pattern Interrupt** - Say something unexpected that breaks the scroll
-2. **Curiosity Gap** - Hint at valuable info without giving it away
-3. **Emotional Trigger** - Tap into fear, desire, frustration, or aspiration
-4. **Specificity** - Concrete numbers/details feel more credible than vague claims
-5. **Personal Stakes** - Make the reader feel this is about THEM
+HIGH-SCORING HOOK PATTERNS:
+- "Unpopular opinion: [bold claim]" ← triggers bold claim bonus
+- "[Number]% of [group] fail at this" ← triggers number bonus
+- "Why do [people] keep [mistake]?" ← triggers question bonus
+- "STOP [doing thing]. Here's why:" ← triggers caps + bold claim bonus
+- "Hot take: [controversial statement]" ← triggers bold claim bonus
 
-HOOK FORMULAS THAT CONSISTENTLY WORK:
-- Counterintuitive: "Everyone thinks [X]. They're wrong."
-- Shocking stat: "[Specific number]% of [group] fail at this. Here's why:"
-- Bold claim: "I [did impressive thing] and it only took [short time]."
-- Direct challenge: "You're losing [money/time/opportunity] every day you ignore this."
-- Confession: "I used to [common mistake]. Then I discovered..."
-- Contrarian: "Unpopular opinion: [thing everyone does] is actually hurting you."
-- Story tease: "Last week I [specific event] and learned something I can't unlearn."
-- Question that stings: "Why do [smart people] keep making this obvious mistake?"
-
-HOOKS TO ABSOLUTELY AVOID (overused/AI-sounding):
+HOOKS TO AVOID (score neutral or negative):
 - "Let me tell you..." / "Here's the thing..." / "Can we talk about..."
-- "In today's [anything]..." / "In this post..."
 - Starting with "So," or "Look," or "Okay so"
-- Generic "Most people don't know..."
-- "I need to get this off my chest"
+- Generic openings without pattern triggers
 
-ABSOLUTE RULES:
-1. Add exactly ONE hook line at the very start (5-15 words max)
-2. The hook must create genuine curiosity, not just be attention-grabbing
-3. Do NOT modify ANY other content - keep everything else exactly as-is
-4. Do NOT wrap the hook in quotes
-5. Return ONLY the modified content
+RULES:
+1. Hook must be 10-80 characters (measured by scorer)
+2. Use at least ONE score trigger (number, question, bold claim, caps)
+3. Do NOT modify any other content
+4. Return ONLY the modified content
 
-FOR THREADS: Replace/enhance ONLY the first line of 1/, keep "1/" prefix, keep all other tweets exactly as-is.
+FOR THREADS: Replace/enhance ONLY the first line of 1/, keep numbering intact.
 
-CRITICAL: Return ONLY the content with the hook added. No explanations.`,
+CRITICAL: Return ONLY the content. No explanations.`,
 
-  humanize: `You are an expert at making social media content sound like a real person wrote it, not AI. Rewrite to be authentic and conversational.
+  humanize: `Make this sound human to boost Readability score (+10-20 points for natural language).
+
+ENGAGEMENT SCORE TARGETS (these are measured):
+- Average word length ≤5 chars → +10 points (simple vocabulary)
+- Short sentences (not run-on) → +10 points
+- Line breaks in longer text → +10 points (scannability)
+- Avoiding complex vocabulary → better score
+
+AI TELLS TO FIX (these sound robotic):
+- "Utilize" → "use" (shorter word)
+- "In order to" → "to" (simpler)
+- "It's important to" → delete (filler)
+- "Leverage" → "use"
+- "Dive into" / "delve into" → cut
+- "Navigate" → "deal with"
+- "Robust" → "strong"
+- "Seamless" → "smooth"
+- "Unlock" / "Unleash" → "get"
+- "Here's the thing:" → delete
+- Long words → short words
+
+HUMAN ELEMENTS (improve readability score):
+- Contractions: it's, don't, can't, won't, you're
+- Short sentences (break up long ones)
+- Line breaks for breathing room
+- Simple words (avg <5 chars scores better)
+- Natural rhythm, not perfect structure
 
 HARD REQUIREMENTS:
-1. Same core message, SAME OR SHORTER length
-2. For single tweets: Output MUST be under 280 characters
-3. For threads: Each tweet MUST be under 280 characters
-4. Sound like someone texting a friend, not writing an essay
-5. Return ONLY the rewritten content
+1. Same or shorter length
+2. Under 280 characters for single tweets
+3. Under 280 chars per tweet for threads
+4. Must sound natural, not polished/robotic
 
-DETECT AND FIX THESE AI TELLS:
-- "Utilize" → "use"
-- "In order to" → "to"  
-- "It's important to" → delete or rephrase
-- "Leverage" → "use"
-- "Dive into" / "delve into" → just say what you mean
-- "Navigate" (when not literal) → "deal with" / "handle"
-- "Landscape" (business jargon) → "world" / "space" or delete
-- "Robust" → "strong" / "solid"
-- "Seamless" → "smooth" / "easy"
-- "Unlock" / "Unleash" → "get" / "find"
-- "Here's the thing:" / "The truth is:" → just say it
-- Overly balanced takes → pick a side
-- Perfect parallel structure → be messier
+THE TEST: Read it out loud. If you wouldn't SAY it that way, rewrite it.
 
-ADD HUMAN ELEMENTS:
-- Contractions (it's, don't, can't, won't)
-- Incomplete sentences sometimes
-- Start sentences with "And" or "But"
-- Casual connectors ("Look,", "Real talk:", "Honestly,")
-- Natural imperfect grammar where appropriate
+FOR THREADS: Humanize each tweet. Keep numbering. Each under 280 chars.
 
-THE TEST: Would a real person tweet this? If it sounds too polished, too structured, too "helpful" - it's still AI-sounding.
+CRITICAL: Return ONLY the rewritten content.`,
 
-FOR THREADS: Humanize each tweet individually. Keep numbering (1/, 2/, etc.). Each under 280 chars.
+  sharpen: `Shorten content to hit the optimal engagement score length: 180-280 characters.
 
-CRITICAL: Return ONLY the rewritten content. No meta-commentary.`,
+ENGAGEMENT SCORE TARGETS (these are measured):
+- 180-280 chars → 100 points (PERFECT)
+- 50-179 chars → 65 points (needs more meat)
+- 281-320 chars → 70 points (slightly over)
+- >320 chars → 40 points (too long)
+- <50 chars → 30 points (too short)
 
-  sharpen: `You are an expert editor who makes social media content shorter and punchier. Your job is to AGGRESSIVELY reduce length while preserving the core message.
+YOUR GOAL:
+- If content is >280 chars: Reduce to 180-280 chars (max score)
+- If content is <180 chars: Keep it, or slightly expand if room
+- Target: 200-260 chars is ideal
 
-HARD REQUIREMENTS (NON-NEGOTIABLE):
-1. Output MUST be at least 25% shorter than input (by character count)
-2. For single tweets: Final output MUST be under 280 characters total
-3. For threads: Each tweet MUST be under 280 characters
-4. Preserve the main point - don't change what the content is ABOUT
+ALSO IMPROVES READABILITY SCORE:
+- Short sentences (+10 points)
+- Simple words avg <5 chars (+10 points)
+- Line breaks in longer text (+10 points)
 
-IF THE CONTENT IS ALREADY SHORT (<100 chars):
-- Still look for any word that can be cut
-- If truly minimal already, return as-is
-
-CUT THESE RUTHLESSLY:
+WORDS TO DELETE (instant cuts):
 - "I think that", "I believe", "In my opinion" → just state it
 - "It's important to note that", "It's worth mentioning" → DELETE
 - "In order to" → "to"
 - "The fact that" → DELETE
 - "Actually", "basically", "literally", "really", "very" → DELETE
-- Redundant adjectives (pick ONE, delete rest)
-- Repetitive ideas (say it ONCE)
-- Weak openings: "So,", "Well,", "Look,", "Okay so"
-- Hedging: "maybe", "perhaps", "sort of", "kind of", "a bit"
-- Filler phrases: "at the end of the day", "when it comes to", "the reality is"
+- "At the end of the day", "when it comes to" → DELETE
+- "Sort of", "kind of", "a bit" → DELETE
 
 TECHNIQUES:
-- Combine sentences where possible
-- Active voice over passive (shorter)
-- Replace 3-word phrases with 1 word
-- Delete any sentence that doesn't add new value
-- Remove unnecessary context/setup
+- Combine sentences
+- Active voice (shorter than passive)
+- Replace phrases with single words
+- Delete anything that doesn't add value
+
+FOR THREADS: Each tweet must be under 280 chars. Maintain numbering (1/, 2/, etc.).
+
+CRITICAL: Return ONLY the shortened content. Aim for 180-280 chars for max score.`,
+
+  make_thread: `Turn content into an engaging thread optimized for engagement scores.
+
+ENGAGEMENT SCORE TARGETS PER TWEET:
+- Length: 180-280 chars per tweet → 100 points
+- Hook (tweet 1): Start with number/question/bold claim → +15-20 points
+- Last tweet: End with question → +30 points for reply potential
+- Readability: Short sentences, simple words → +10 points
+
+THREAD STRUCTURE (5-8 tweets):
+1/ HOOK (10-80 char opener) - Use: number, question, "Unpopular opinion:", "Hot take:"
+2/ Context - why should they care?
+3-5/ Main points (one idea per tweet)
+6-7/ Key insight
+8/ CTA + QUESTION (must end with "?" for +30 reply points)
+
+HIGH-SCORING PATTERNS:
+- Tweet 1: "Unpopular opinion: [bold claim]" or "[Number]% of people [fail at X]"
+- Middle tweets: 200-260 chars each, simple vocabulary
+- Last tweet: "Agree or disagree?" / "What would you add?" / "Which one are you?"
+
+CHARACTER REQUIREMENTS:
+- EVERY tweet MUST be under 280 characters
+- Aim for 180-260 chars (sweet spot)
+- Count carefully - this is critical
 
 EXAMPLE:
-Before (45 words): "I think it's really important to note that when it comes to building a successful business, the fact that you need to focus on providing value to your customers is something that many entrepreneurs tend to overlook."
-After (12 words): "Most entrepreneurs overlook the obvious: your business exists to serve customers."
+1/ 🚨 73% of founders fail in year one.
 
-FOR THREADS: Shorten EACH tweet individually. Maintain numbering (1/, 2/, etc.).
+Here's what the survivors do differently: (thread)
 
-CRITICAL: Return ONLY the shortened content. No explanations, no character counts, no "Here's the shorter version:". Just the content.`,
-
-  make_thread: `You are an expert at turning content into engaging X/Twitter threads.
-
-HARD REQUIREMENTS:
-1. Create 5-8 numbered tweets (1/, 2/, etc.)
-2. EVERY TWEET MUST BE UNDER 280 CHARACTERS - NO EXCEPTIONS
-3. Count characters carefully - this is critical
-4. First tweet is the HOOK - must stop scrolls
-5. Each tweet should work standalone (people see them in isolation)
-
-THREAD STRUCTURE:
-1/ Scroll-stopping hook (make them NEED to read more)
-2/ Context - why should they care?
-3-5/ Main points (one clear idea per tweet)
-6-7/ Key insight or "aha moment"
-8/ Call to action + question for replies
-
-WRITING RULES:
-- Short sentences hit harder
-- One idea per tweet - don't cram
-- Use line breaks within tweets for readability
-- End hooks mid-thought to drive to next tweet
-- Contractions save characters (don't, it's, you're)
-
-CHARACTER COUNTING TIPS:
-- Average word is ~5 characters
-- 280 chars ≈ 40-50 words max
-- If a tweet feels long, it probably exceeds 280
-
-EXAMPLE FORMAT:
-1/ [Hook - 200 chars max to leave room for engagement]
-
-2/ [Context tweet]
-
-3/ [Point 1]
+2/ [180-260 chars - context]
 
 ...
 
-8/ [CTA + question]
+8/ What would you add to this list?
 
-CRITICAL: Return ONLY the numbered thread. No explanations. Every tweet MUST be under 280 characters.`,
+Agree or disagree? 👇
 
-  add_question: `Add ONE engaging question to drive replies.
+CRITICAL: Return ONLY the numbered thread. Every tweet under 280 chars. Last tweet must end with question mark.`,
+
+  add_question: `Add ONE question to boost the Reply Potential score (+30 points for ending with ?).
+
+ENGAGEMENT SCORE TARGETS (these are measured):
+- Ends with "?" → +30 points (MOST IMPORTANT)
+- Contains engagement phrase → +20 points:
+  "what do you think" | "agree?" | "disagree?" | "thoughts?" | "am i wrong" | 
+  "change my mind" | "prove me wrong" | "who else" | "reply with" | "drop your"
+- Contains controversial marker → +15 points:
+  "unpopular opinion" | "hot take" | "controversial" | "most people" | "everyone is wrong"
+
+HIGH-SCORING QUESTION PATTERNS (ranked):
+1. "Agree or disagree?" ← triggers engagement phrase + question mark
+2. "Prove me wrong" ← triggers engagement phrase
+3. "What's yours?" ← short, triggers question
+4. "Who else?" ← triggers engagement phrase + question
+5. "Change my mind" ← triggers engagement phrase
+
+RULES:
+1. Add question at the VERY END (own line)
+2. Question MUST end with "?" (this is worth +30 points)
+3. Keep total under 280 characters - shorten content if needed
+4. Use one of the engagement phrases above when possible
+
+FOR THREADS: Add question to the LAST tweet only.
+
+CRITICAL: Return ONLY the modified content. Must end with "?" for the score boost.`,
+
+  make_spicy: `Make this content more provocative to boost Reply Potential score (+15 points for controversial markers).
+
+ENGAGEMENT SCORE TARGETS (these are measured):
+- Controversial markers → +15 points:
+  "unpopular opinion" | "hot take" | "controversial" | "most people" | 
+  "nobody" | "everyone is wrong" | "i don't care"
+- Also boosts Hook Strength if used at start (+20 points for bold claim opener)
 
 HARD REQUIREMENTS:
-1. Add exactly ONE question at the very end (on its own line)
-2. Keep ALL existing content intact - do NOT modify it
-3. For single tweets: Total output (content + question) MUST be under 280 characters
-   - If adding a question would exceed 280 chars, SHORTEN the original content first
-4. For threads: Add question to the LAST tweet only, keep it under 280 chars
-5. Question must be 3-8 words max
+1. Output must be SAME LENGTH OR SHORTER (stronger words, not more words)
+2. For single tweets: Stay under 280 characters
+3. For threads: Each tweet under 280 characters
+4. Add at least ONE controversial marker phrase
 
-QUESTIONS THAT GET REPLIES (ranked by engagement):
-- Binary choice: "X or Y?" / "Which camp are you?"
-- Personal challenge: "Bet you can't..." / "Prove me wrong"
-- Confession prompt: "Guilty?" / "Anyone else?"
-- Opinion poll: "Agree or disagree?"
-- Curiosity: "What's yours?"
-- Call to action: "Drop yours below"
+SPICY TRANSFORMATIONS (that maintain or reduce length):
+BEFORE → AFTER
+- "This is helpful" → "Unpopular opinion: this is the only thing that works"
+- "Many people struggle" → "Most people get this completely wrong"
+- "It's important to" → "Stop ignoring this."
+- "You might want to" → "You need to"
+- "In my opinion" → DELETE (just state it as fact)
+- "I think" → DELETE
+- "Perhaps" → DELETE
+- "Sort of" → DELETE
 
-AVOID (low engagement):
-- "What do you think?" (too generic)
-- "Thoughts?" (lazy, overused)
-- "Let me know in the comments" (YouTube vibes)
-- Questions needing long answers (people skip those)
-- "Am I wrong?" (weak)
+HIGH-SCORING SPICY PATTERNS:
+- Start with "Unpopular opinion:" (triggers bold claim + controversial)
+- Start with "Hot take:" (triggers bold claim + controversial)  
+- Include "Most people [do X wrong]" (triggers controversial)
+- Include "Nobody talks about this" (triggers controversial)
+- Include "Stop [doing X]" (triggers bold claim)
 
-GOOD EXAMPLES:
-- "Sound familiar?"
-- "Which one are you?"
-- "Agree or am I crazy?"
-- "Anyone else?"
-- "True or false?"
-- "What would you add?"
+THE RULE: Make it polarizing enough that people MUST reply to agree or disagree.
 
-CRITICAL: Return ONLY the modified content. Total must be under 280 chars for single tweets.`,
+FOR THREADS: Add spice to at least the first and last tweets.
 
-  make_spicy: `Make this content more provocative and bold while keeping it the SAME LENGTH or shorter.
-
-HARD REQUIREMENTS (NON-NEGOTIABLE):
-1. Output must be SAME LENGTH OR SHORTER than input (do NOT add words)
-2. Keep the core message/point intact
-3. Make it bolder and more opinionated
-4. For single tweets: Stay under 280 characters
-5. For threads: Each tweet must stay under 280 characters
-
-THE KEY INSIGHT: "Spicy" means STRONGER words, not MORE words.
-- Don't add new sentences or ideas
-- Don't expand with examples or explanations
-- Just make the existing words HIT HARDER
-
-TECHNIQUES (that don't add length):
-- Remove hedging: "I think" → just state it (SAVES words)
-- Strengthen verbs: "might help" → "transforms" (SAME length)
-- Cut qualifiers: "sort of wrong" → "wrong" (SAVES words)
-- Make claims absolute: "often fails" → "always fails" (SAME length)
-- Direct address: "people should" → "you need to" (SAME length)
-- Remove politeness: "perhaps consider" → "do this" (SAVES words)
-
-WORD SWAPS (same or fewer characters):
-- "helps with" → "fixes"
-- "is important" → "matters"
-- "you should consider" → "do this now"
-- "in my experience" → DELETE (state it as fact)
-- "I've found that" → DELETE
-
-WHAT MAKES IT SPICY:
-- Certainty (no hedging)
-- Stakes (what they'll lose)
-- Challenge (call out bad behavior)
-- Contrast (losers vs winners)
-
-KEEP IT PROFESSIONAL:
-- Bold ≠ mean or personal attacks
-- Provocative ≠ offensive
-- Challenge ideas, not people
-
-FOR THREADS: Make each tweet spicier while keeping each under 280 chars.
-
-CRITICAL: Return ONLY the spicier content. Same length or shorter. No explanations.`,
+CRITICAL: Return ONLY the content. Same length or shorter. Must include controversial markers.`,
 }
 
 export async function POST(request: NextRequest) {

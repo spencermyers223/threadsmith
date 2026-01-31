@@ -99,12 +99,14 @@ export default function EditingTools({ content, onContentChange, isThread = fals
   const [isLoading, setIsLoading] = useState(false)
   const [engagementScore, setEngagementScore] = useState<EngagementScore | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [scoreChange, setScoreChange] = useState<{ before: number; after: number; tool: string } | null>(null)
 
   const handleToolClick = async (toolId: ToolId) => {
     if (isLoading) return
 
     setActiveTool(toolId)
     setError(null)
+    setScoreChange(null)
 
     if (toolId === 'algorithm_check') {
       // Toggle score check - if already showing, hide it
@@ -120,6 +122,9 @@ export default function EditingTools({ content, onContentChange, isThread = fals
 
     setEngagementScore(null)
     setIsLoading(true)
+
+    // Calculate score BEFORE the edit
+    const beforeScore = scoreEngagement(content).score
 
     try {
       const res = await fetch('/api/chat/writing-assistant', {
@@ -138,6 +143,17 @@ export default function EditingTools({ content, onContentChange, isThread = fals
       }
 
       const data = await res.json()
+      
+      // Calculate score AFTER the edit
+      const afterScore = scoreEngagement(data.content).score
+      
+      // Show score change feedback
+      const toolLabel = TOOLS.find(t => t.id === toolId)?.shortLabel || toolId
+      setScoreChange({ before: beforeScore, after: afterScore, tool: toolLabel })
+      
+      // Auto-hide the score change after 4 seconds
+      setTimeout(() => setScoreChange(null), 4000)
+      
       onContentChange(data.content)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
@@ -217,6 +233,32 @@ export default function EditingTools({ content, onContentChange, isThread = fals
           <AlertTriangle size={14} className="flex-shrink-0" />
           <span className="flex-1">{error}</span>
           <button onClick={() => setError(null)} className="p-0.5 hover:bg-red-500/20 rounded">
+            <X size={12} />
+          </button>
+        </div>
+      )}
+
+      {/* Score Change Feedback */}
+      {scoreChange && (
+        <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm animate-fade-in-up ${
+          scoreChange.after > scoreChange.before 
+            ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+            : scoreChange.after < scoreChange.before
+              ? 'bg-amber-500/10 border border-amber-500/30 text-amber-400'
+              : 'bg-blue-500/10 border border-blue-500/30 text-blue-400'
+        }`}>
+          <BarChart3 size={14} className="flex-shrink-0" />
+          <span className="flex-1">
+            <strong>{scoreChange.tool}:</strong>{' '}
+            {scoreChange.after > scoreChange.before ? (
+              <>Score +{scoreChange.after - scoreChange.before} ({scoreChange.before} → {scoreChange.after})</>
+            ) : scoreChange.after < scoreChange.before ? (
+              <>Score {scoreChange.after - scoreChange.before} ({scoreChange.before} → {scoreChange.after})</>
+            ) : (
+              <>Score unchanged ({scoreChange.after})</>
+            )}
+          </span>
+          <button onClick={() => setScoreChange(null)} className="p-0.5 hover:bg-white/10 rounded">
             <X size={12} />
           </button>
         </div>
