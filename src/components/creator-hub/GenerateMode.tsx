@@ -115,7 +115,6 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   const [topic, setTopic] = useState('')
   const [selectedPostType, setSelectedPostType] = useState<string>('market_take')
   const [selectedLength, setSelectedLength] = useState<string>('standard')
-  const [isTemplatePrompt, setIsTemplatePrompt] = useState(false)
 
   // UI state
   const [isGenerating, setIsGenerating] = useState(false)
@@ -136,7 +135,6 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
         // New format: full template data for template mode
         if (data.templateId && data.promptTemplate) {
           setTemplateMode(data as TemplateData)
-          setIsTemplatePrompt(true)
           // Auto-select post type based on category
           const categoryToPostType: Record<string, string> = {
             'build-in-public': 'build_in_public',
@@ -162,7 +160,6 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   // Clear template mode and return to normal input
   const clearTemplateMode = () => {
     setTemplateMode(null)
-    setIsTemplatePrompt(false)
     setTopic('')
   }
 
@@ -310,7 +307,12 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
           tone: 'casual',
           postType: selectedPostType,
           sourceFileId: selectedFile?.id || undefined,
-          isTemplatePrompt,
+          isTemplatePrompt: !!templateMode,
+          // Include template metadata for better context
+          templateTitle: templateMode?.templateTitle,
+          templateDescription: templateMode?.templateDescription,
+          templateWhyItWorks: templateMode?.templateWhyItWorks,
+          templateCategory: templateMode?.templateCategory,
         }),
       })
 
@@ -556,7 +558,6 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
                         if (data) {
                           // Enter template mode
                           setTemplateMode(data)
-                          setIsTemplatePrompt(true)
                           setTopic('')
                           // Auto-select post type based on category
                           const categoryToPostType: Record<string, string> = {

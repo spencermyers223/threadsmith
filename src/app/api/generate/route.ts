@@ -51,6 +51,11 @@ interface GenerateRequest {
   postType: InputPostType
   sourceFileId?: string
   isTemplatePrompt?: boolean // When true, topic is a template instruction - use as-is
+  // Template metadata for better context
+  templateTitle?: string
+  templateDescription?: string
+  templateWhyItWorks?: string
+  templateCategory?: string
 }
 
 interface GeneratedPost {
@@ -408,7 +413,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: GenerateRequest = await request.json()
-    const { topic, length, tone, postType, sourceFileId, isTemplatePrompt } = body
+    const { topic, length, tone, postType, sourceFileId, isTemplatePrompt, templateTitle, templateDescription, templateWhyItWorks, templateCategory } = body
 
     // Validate topic
     if (!topic || topic.trim().length === 0) {
@@ -533,6 +538,19 @@ Thread Preference: ${vp.threadPreference || 'N/A'}
 Write as if YOU are this person. Mirror their exact tone, vocabulary level, emoji patterns, and sentence structure.
 </voice_profile>`
       additionalContext = additionalContext ? `${additionalContext}\n\n${voiceContext}` : voiceContext
+    }
+
+    // Add template context if using a template
+    if (isTemplatePrompt && templateTitle) {
+      const templateContext = `<template_context>
+TEMPLATE BEING USED: "${templateTitle}"
+${templateCategory ? `Category: ${templateCategory}` : ''}
+${templateDescription ? `Purpose: ${templateDescription}` : ''}
+${templateWhyItWorks ? `\nWhy this format works:\n${templateWhyItWorks}` : ''}
+
+IMPORTANT: Follow the template's format and structure. The "why it works" explains the psychology - use these principles to maximize engagement.
+</template_context>`
+      additionalContext = additionalContext ? `${additionalContext}\n\n${templateContext}` : templateContext
     }
 
     // Add actual tweet examples if available
