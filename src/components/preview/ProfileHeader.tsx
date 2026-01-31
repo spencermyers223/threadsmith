@@ -1,5 +1,7 @@
 'use client'
 
+import Image from 'next/image'
+
 interface ProfileHeaderProps {
   size?: 'sm' | 'md' | 'lg'
   showNumber?: number
@@ -32,10 +34,13 @@ export function ProfileHeader({
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       {avatarUrl ? (
-        <img 
+        <Image 
           src={avatarUrl} 
           alt={name}
+          width={size === 'lg' ? 48 : size === 'md' ? 40 : 32}
+          height={size === 'lg' ? 48 : size === 'md' ? 40 : 32}
           className={`${avatarSizes[size]} rounded-full flex-shrink-0 object-cover`}
+          unoptimized
         />
       ) : (
         <div className={`${avatarSizes[size]} rounded-full bg-accent flex-shrink-0 flex items-center justify-center`}>

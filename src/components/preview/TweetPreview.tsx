@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { Link as LinkIcon } from 'lucide-react'
 import { ProfileHeader } from './ProfileHeader'
 
@@ -59,10 +60,12 @@ export function TweetPreview({ content, media }: TweetPreviewProps) {
                   }`}
                 >
                   {item.type.startsWith('image/') ? (
-                    <img
+                    <Image
                       src={item.url}
                       alt={item.filename}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
+                      unoptimized
                     />
                   ) : (
                     <video
