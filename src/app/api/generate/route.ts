@@ -449,13 +449,13 @@ export async function POST(request: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(10) // Get up to 10 most recent samples
 
-    // Fetch inspiration tweets from admired accounts
+    // Fetch inspiration tweets from admired accounts (top 5 for shorter prompts)
     const { data: inspirationTweets } = await supabase
       .from('inspiration_tweets')
       .select('tweet_text, author_username, like_count')
       .eq('user_id', user.id)
       .order('like_count', { ascending: false }) // Prioritize high-engagement tweets
-      .limit(8) // Get top 8 inspiration tweets
+      .limit(5) // Top 5 for faster generation
 
     // Build voice profile context
     let additionalContext: string | undefined

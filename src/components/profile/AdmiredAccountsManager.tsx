@@ -38,7 +38,7 @@ interface AdmiredAccountsManagerProps {
 }
 
 const MAX_ACCOUNTS = 5
-const TWEETS_TO_SAVE = 10 // Save top 10 tweets from each account
+const TWEETS_TO_SAVE = 5 // Save top 5 tweets from each account
 
 export default function AdmiredAccountsManager({
   accounts,
