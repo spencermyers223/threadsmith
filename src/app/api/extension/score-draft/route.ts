@@ -2,6 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 
+// CORS headers for extension requests
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+// Handle CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
+// Helper to add CORS headers to responses
+function jsonResponse(data: unknown, options: { status?: number; headers?: Record<string, string> } = {}) {
+  return jsonResponse(data, { 
+    status: options.status || 200,
+    headers: corsHeaders 
+  });
+}
+
 interface ScoreRequest {
   text: string;
   postType?: 'tweet' | 'reply' | 'quote' | 'thread';
@@ -33,7 +53,7 @@ export async function POST(request: NextRequest) {
   // Check required env vars early
   if (!process.env.ANTHROPIC_API_KEY) {
     console.error('ANTHROPIC_API_KEY is not set');
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'API not configured. Please contact support.' },
       { status: 500 }
     );
@@ -52,7 +72,7 @@ export async function POST(request: NextRequest) {
     // Verify auth
     const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Missing or invalid authorization header' },
         { status: 401 }
       );
@@ -62,7 +82,7 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Invalid or expired token' },
         { status: 401 }
       );
@@ -80,7 +100,7 @@ export async function POST(request: NextRequest) {
                       subscription?.plan_type === 'lifetime';
 
     if (!isPremium) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Premium subscription required' },
         { status: 403 }
       );
@@ -91,7 +111,7 @@ export async function POST(request: NextRequest) {
     const { text, postType = 'tweet', replyToContext } = body;
 
     if (!text || text.trim().length === 0) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Tweet text is required' },
         { status: 400 }
       );
@@ -99,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     // Handle very short drafts gracefully
     if (text.trim().length < 5) {
-      return NextResponse.json({
+      return jsonResponse({
         result: {
           score: 10,
           scoreColor: 'red',
@@ -363,7 +383,7 @@ IMPORTANT:
         created_at: new Date().toISOString()
       });
 
-    return NextResponse.json({
+    return jsonResponse({
       result,
       personalized: !!(engagementPatterns && engagementPatterns.tweets_analyzed >= 10),
       tweetsAnalyzed: engagementPatterns?.tweets_analyzed || 0,
@@ -374,7 +394,7 @@ IMPORTANT:
 
   } catch (error) {
     console.error('Score draft API error:', error);
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'Failed to score draft' },
       { status: 500 }
     );

@@ -12,6 +12,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+// CORS headers for extension requests
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+// Handle CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
+// Helper to add CORS headers to responses
+function jsonResponse(data: unknown, options: { status?: number; headers?: Record<string, string> } = {}) {
+  return jsonResponse(data, { 
+    status: options.status || 200,
+    headers: corsHeaders 
+  });
+}
+
 // Create admin Supabase client
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,7 +43,7 @@ export async function POST(request: NextRequest) {
     // Get auth token from header
     const authHeader = request.headers.get('authorization')
     if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return jsonResponse({ error: 'Unauthorized' }, { status: 401 })
     }
     
     const token = authHeader.slice(7)
@@ -32,7 +52,7 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
     
     if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+      return jsonResponse({ error: 'Invalid token' }, { status: 401 })
     }
     
     // Check premium status
@@ -47,7 +67,7 @@ export async function POST(request: NextRequest) {
                       profile?.subscription_status === 'lifetime'
     
     if (!isPremium) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Premium subscription required for direct posting' },
         { status: 403 }
       )
@@ -82,7 +102,7 @@ export async function POST(request: NextRequest) {
     }
     
     if (!tokens) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'X account not connected. Please sign in again.' },
         { status: 400 }
       )
@@ -90,7 +110,7 @@ export async function POST(request: NextRequest) {
     
     // Check if token is expired
     if (new Date(tokens.expires_at) < new Date()) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'X token expired. Please sign in again.' },
         { status: 401 }
       )
@@ -101,22 +121,22 @@ export async function POST(request: NextRequest) {
     const { text, replyToUrl } = body
     
     if (!text || typeof text !== 'string') {
-      return NextResponse.json({ error: 'text is required' }, { status: 400 })
+      return jsonResponse({ error: 'text is required' }, { status: 400 })
     }
     
     if (text.length > 280) {
-      return NextResponse.json({ error: 'Reply exceeds 280 characters' }, { status: 400 })
+      return jsonResponse({ error: 'Reply exceeds 280 characters' }, { status: 400 })
     }
     
     if (!replyToUrl || typeof replyToUrl !== 'string') {
-      return NextResponse.json({ error: 'replyToUrl is required' }, { status: 400 })
+      return jsonResponse({ error: 'replyToUrl is required' }, { status: 400 })
     }
     
     // Extract tweet ID from URL
     // URL format: https://x.com/username/status/1234567890
     const tweetIdMatch = replyToUrl.match(/status\/(\d+)/)
     if (!tweetIdMatch) {
-      return NextResponse.json({ error: 'Invalid tweet URL' }, { status: 400 })
+      return jsonResponse({ error: 'Invalid tweet URL' }, { status: 400 })
     }
     
     const replyToTweetId = tweetIdMatch[1]
@@ -142,13 +162,13 @@ export async function POST(request: NextRequest) {
       
       // Check for specific error types
       if (postResponse.status === 429) {
-        return NextResponse.json(
+        return jsonResponse(
           { error: 'Rate limit reached. Please wait a moment.' },
           { status: 429 }
         )
       }
       
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Failed to post reply to X' },
         { status: postResponse.status }
       )
@@ -156,7 +176,7 @@ export async function POST(request: NextRequest) {
     
     const result = await postResponse.json()
     
-    return NextResponse.json({
+    return jsonResponse({
       success: true,
       tweet_id: result.data?.id,
       text: result.data?.text,
@@ -164,7 +184,7 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     console.error('Extension post-reply error:', error)
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'Internal server error' },
       { status: 500 }
     )

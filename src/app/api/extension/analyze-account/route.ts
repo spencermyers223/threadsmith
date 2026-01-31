@@ -2,6 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 
+// CORS headers for extension requests
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+// Handle CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
+// Helper to add CORS headers to responses
+function jsonResponse(data: unknown, options: { status?: number; headers?: Record<string, string> } = {}) {
+  return jsonResponse(data, { 
+    status: options.status || 200,
+    headers: corsHeaders 
+  });
+}
+
 interface TweetData {
   text: string;
   metrics?: {
@@ -53,7 +73,7 @@ export async function POST(request: NextRequest) {
     // Verify auth
     const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Missing or invalid authorization header' },
         { status: 401 }
       );
@@ -63,7 +83,7 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Invalid or expired token' },
         { status: 401 }
       );
@@ -77,14 +97,14 @@ export async function POST(request: NextRequest) {
     const { handle, tweets, profileStats } = body;
 
     if (!handle) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Account handle is required' },
         { status: 400 }
       );
     }
 
     if (!tweets || !Array.isArray(tweets) || tweets.length === 0) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'At least one tweet is required for analysis' },
         { status: 400 }
       );
@@ -222,7 +242,7 @@ GUIDELINES:
         created_at: new Date().toISOString()
       });
 
-    return NextResponse.json({
+    return jsonResponse({
       analysis,
       handle,
       analyzedAt: new Date().toISOString(),
@@ -233,7 +253,7 @@ GUIDELINES:
 
   } catch (error) {
     console.error('Analyze account API error:', error);
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'Failed to analyze account' },
       { status: 500 }
     );

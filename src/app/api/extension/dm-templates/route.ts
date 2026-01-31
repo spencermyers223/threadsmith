@@ -1,6 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+// CORS headers for extension requests
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+// Handle CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
+// Helper to add CORS headers to responses
+function jsonResponse(data: unknown, options: { status?: number; headers?: Record<string, string> } = {}) {
+  return jsonResponse(data, { 
+    status: options.status || 200,
+    headers: corsHeaders 
+  });
+}
+
 // Extension endpoint for fetching DM templates
 // Uses token-based auth from extension
 
@@ -9,7 +29,7 @@ export async function GET(request: NextRequest) {
     // Get auth token from header
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return jsonResponse({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const token = authHeader.replace('Bearer ', '');
@@ -30,7 +50,7 @@ export async function GET(request: NextRequest) {
     // Get user from token
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      return jsonResponse({ error: 'Invalid token' }, { status: 401 });
     }
 
     // Fetch user's DM templates
@@ -43,15 +63,15 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching DM templates:', error);
-      return NextResponse.json({ error: 'Failed to fetch templates' }, { status: 500 });
+      return jsonResponse({ error: 'Failed to fetch templates' }, { status: 500 });
     }
 
-    return NextResponse.json({
+    return jsonResponse({
       templates: templates || [],
     });
   } catch (error) {
     console.error('Extension DM templates error:', error);
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'Internal server error' },
       { status: 500 }
     );
@@ -63,7 +83,7 @@ export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return jsonResponse({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const token = authHeader.replace('Bearer ', '');
@@ -71,7 +91,7 @@ export async function POST(request: NextRequest) {
     const { template_id } = body;
 
     if (!template_id) {
-      return NextResponse.json({ error: 'template_id required' }, { status: 400 });
+      return jsonResponse({ error: 'template_id required' }, { status: 400 });
     }
 
     const supabase = createClient(
@@ -88,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      return jsonResponse({ error: 'Invalid token' }, { status: 401 });
     }
 
     // Get current count
@@ -108,10 +128,10 @@ export async function POST(request: NextRequest) {
         .eq('user_id', user.id);
     }
 
-    return NextResponse.json({ success: true });
+    return jsonResponse({ success: true });
   } catch (error) {
     console.error('Extension DM template usage error:', error);
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'Internal server error' },
       { status: 500 }
     );

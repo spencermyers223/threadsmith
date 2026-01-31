@@ -2,6 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
 
+// CORS headers for extension requests
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+// Handle CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
+// Helper to add CORS headers to responses
+function jsonResponse(data: unknown, options: { status?: number; headers?: Record<string, string> } = {}) {
+  return jsonResponse(data, { 
+    status: options.status || 200,
+    headers: corsHeaders 
+  });
+}
+
 interface PostData {
   text: string;
   metrics?: {
@@ -53,7 +73,7 @@ export async function POST(request: NextRequest) {
   // Check required env vars early
   if (!process.env.ANTHROPIC_API_KEY) {
     console.error('ANTHROPIC_API_KEY is not set');
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'API not configured. Please contact support.' },
       { status: 500 }
     );
@@ -96,7 +116,7 @@ export async function POST(request: NextRequest) {
 
     // Content Coach requires premium
     if (!isPremium) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Content Coach is a premium feature. Upgrade at xthread.io' },
         { status: 403 }
       );
@@ -285,7 +305,7 @@ IMPORTANT:
         });
     }
 
-    return NextResponse.json({
+    return jsonResponse({
       result,
       hasData: recentPosts.length > 0,
       usage: {
@@ -295,7 +315,7 @@ IMPORTANT:
 
   } catch (error) {
     console.error('Content Coach API error:', error);
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'Failed to generate content suggestions' },
       { status: 500 }
     );

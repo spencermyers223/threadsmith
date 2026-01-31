@@ -11,6 +11,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getValidXTokens } from '@/lib/x-tokens';
 
+// CORS headers for extension requests
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+// Handle CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
+// Helper to add CORS headers to responses
+function jsonResponse(data: unknown, options: { status?: number; headers?: Record<string, string> } = {}) {
+  return jsonResponse(data, { 
+    status: options.status || 200,
+    headers: corsHeaders 
+  });
+}
+
 interface XTweet {
   id: string;
   text: string;
@@ -41,7 +61,7 @@ export async function GET(request: NextRequest) {
     // Verify auth
     const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Missing or invalid authorization header' },
         { status: 401 }
       );
@@ -51,7 +71,7 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Invalid or expired token' },
         { status: 401 }
       );
@@ -62,7 +82,7 @@ export async function GET(request: NextRequest) {
     const username = searchParams.get('username')?.replace('@', '');
 
     if (!username) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Username is required' },
         { status: 400 }
       );
@@ -72,7 +92,7 @@ export async function GET(request: NextRequest) {
     const tokenResult = await getValidXTokens(user.id);
     
     if (!tokenResult.success || !tokenResult.tokens) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'X account not connected. Please link your X account in xthread settings.' },
         { status: 401 }
       );
@@ -91,14 +111,14 @@ export async function GET(request: NextRequest) {
 
     if (!userResponse.ok) {
       if (userResponse.status === 404) {
-        return NextResponse.json(
+        return jsonResponse(
           { error: 'User not found' },
           { status: 404 }
         );
       }
       const error = await userResponse.text();
       console.error('X API user lookup error:', error);
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Failed to find user on X' },
         { status: userResponse.status }
       );
@@ -108,7 +128,7 @@ export async function GET(request: NextRequest) {
     const targetUser: XUser = userData.data;
 
     if (!targetUser) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'User not found' },
         { status: 404 }
       );
@@ -129,7 +149,7 @@ export async function GET(request: NextRequest) {
     if (!tweetsResponse.ok) {
       const error = await tweetsResponse.text();
       console.error('X API tweets error:', error);
-      return NextResponse.json(
+      return jsonResponse(
         { error: 'Failed to fetch tweets' },
         { status: tweetsResponse.status }
       );
@@ -170,7 +190,7 @@ export async function GET(request: NextRequest) {
         created_at: new Date().toISOString()
       });
 
-    return NextResponse.json({
+    return jsonResponse({
       user: {
         id: targetUser.id,
         name: targetUser.name,
@@ -184,7 +204,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('User top tweets API error:', error);
-    return NextResponse.json(
+    return jsonResponse(
       { error: 'Failed to fetch user tweets' },
       { status: 500 }
     );
