@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import {
   Wand2, Zap, Sparkles, ListTree, BarChart3, Loader2,
-  AlertTriangle, MessageCircle, Flame, X, Clock
+  AlertTriangle, MessageCircle, Flame, X, Clock, WandSparkles
 } from 'lucide-react'
 import { scoreEngagement, type EngagementScore } from '@/lib/engagement-scorer'
 
@@ -14,7 +14,7 @@ interface EditingToolsProps {
   hideScore?: boolean // Hide Score button when engagement panel is already visible (e.g., Workspace)
 }
 
-type ToolId = 'add_hook' | 'humanize' | 'sharpen' | 'add_question' | 'make_spicy' | 'make_thread' | 'algorithm_check'
+type ToolId = 'add_hook' | 'humanize' | 'sharpen' | 'add_question' | 'make_spicy' | 'make_thread' | 'algorithm_check' | 'auto_optimize'
 
 interface Tool {
   id: ToolId
@@ -28,10 +28,19 @@ interface Tool {
 
 const TOOLS: Tool[] = [
   {
+    id: 'auto_optimize',
+    label: 'Auto-Optimize',
+    shortLabel: '✨ Auto',
+    description: 'Automatically apply the best improvements based on score analysis',
+    icon: WandSparkles,
+    color: 'text-violet-400',
+    hoverBg: 'hover:bg-violet-500/10 hover:border-violet-500/30',
+  },
+  {
     id: 'add_hook',
     label: 'Add Hook',
     shortLabel: 'Hook',
-    description: 'Add a scroll-stopping opening line',
+    description: 'Add a scroll-stopping opening line (+15-20 hook score)',
     icon: Zap,
     color: 'text-amber-400',
     hoverBg: 'hover:bg-amber-500/10 hover:border-amber-500/30',
@@ -40,7 +49,7 @@ const TOOLS: Tool[] = [
     id: 'humanize',
     label: 'Humanize',
     shortLabel: 'Humanize',
-    description: 'Make it sound more natural and authentic',
+    description: 'Make it sound natural (+10-20 readability score)',
     icon: Sparkles,
     color: 'text-pink-400',
     hoverBg: 'hover:bg-pink-500/10 hover:border-pink-500/30',
@@ -49,7 +58,7 @@ const TOOLS: Tool[] = [
     id: 'sharpen',
     label: 'Shorten',
     shortLabel: 'Shorten',
-    description: 'Make it more punchy and concise',
+    description: 'Reduce to 180-280 chars (+100 length score)',
     icon: Wand2,
     color: 'text-cyan-400',
     hoverBg: 'hover:bg-cyan-500/10 hover:border-cyan-500/30',
@@ -58,7 +67,7 @@ const TOOLS: Tool[] = [
     id: 'add_question',
     label: 'Add Question',
     shortLabel: 'Question',
-    description: 'Add an engaging question to drive replies',
+    description: 'End with a question (+30 reply potential)',
     icon: MessageCircle,
     color: 'text-blue-400',
     hoverBg: 'hover:bg-blue-500/10 hover:border-blue-500/30',
@@ -67,7 +76,7 @@ const TOOLS: Tool[] = [
     id: 'make_spicy',
     label: 'Make Spicier',
     shortLabel: 'Spicier',
-    description: 'Add more edge and provocative takes',
+    description: 'Add controversy (+15 reply potential)',
     icon: Flame,
     color: 'text-orange-400',
     hoverBg: 'hover:bg-orange-500/10 hover:border-orange-500/30',
@@ -124,37 +133,91 @@ export default function EditingTools({ content, onContentChange, isThread = fals
     setIsLoading(true)
 
     // Calculate score BEFORE the edit
-    const beforeScore = scoreEngagement(content).score
+    const beforeScore = scoreEngagement(content)
 
     try {
-      const res = await fetch('/api/chat/writing-assistant', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content,
-          action: toolId,
-          isThread,
-        }),
-      })
+      // Auto-optimize: analyze score and apply best tools in sequence
+      if (toolId === 'auto_optimize') {
+        let currentContent = content
+        const toolsApplied: string[] = []
+        
+        // Determine which tools to apply based on current scores
+        const bd = beforeScore.breakdown
+        const toolsToApply: ToolId[] = []
+        
+        // If hook score is low, add hook
+        if (bd.hookStrength.score < 70) toolsToApply.push('add_hook')
+        // If reply potential is low, add question  
+        if (bd.replyPotential.score < 60) toolsToApply.push('add_question')
+        // If length is bad (too long), sharpen
+        if (bd.length.score < 80 && content.length > 280) toolsToApply.push('sharpen')
+        // If readability is low, humanize
+        if (bd.readability.score < 70) toolsToApply.push('humanize')
+        
+        // If nothing obvious, just humanize + sharpen for polish
+        if (toolsToApply.length === 0) {
+          toolsToApply.push('humanize')
+        }
+        
+        // Apply tools in sequence
+        for (const tool of toolsToApply) {
+          const res = await fetch('/api/chat/writing-assistant', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              content: currentContent,
+              action: tool,
+              isThread,
+            }),
+          })
+          
+          if (res.ok) {
+            const data = await res.json()
+            currentContent = data.content
+            const toolLabel = TOOLS.find(t => t.id === tool)?.shortLabel || tool
+            toolsApplied.push(toolLabel)
+          }
+        }
+        
+        const afterScore = scoreEngagement(currentContent).score
+        setScoreChange({ 
+          before: beforeScore.score, 
+          after: afterScore, 
+          tool: `Auto (${toolsApplied.join(' → ')})` 
+        })
+        setTimeout(() => setScoreChange(null), 6000)
+        onContentChange(currentContent)
+      } else {
+        // Single tool application
+        const res = await fetch('/api/chat/writing-assistant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content,
+            action: toolId,
+            isThread,
+          }),
+        })
 
-      if (!res.ok) {
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || 'Failed to process')
+        }
+
         const data = await res.json()
-        throw new Error(data.error || 'Failed to process')
+        
+        // Calculate score AFTER the edit
+        const afterScore = scoreEngagement(data.content).score
+        
+        // Show score change feedback
+        const toolLabel = TOOLS.find(t => t.id === toolId)?.shortLabel || toolId
+        setScoreChange({ before: beforeScore.score, after: afterScore, tool: toolLabel })
+        
+        // Auto-hide the score change after 4 seconds
+        setTimeout(() => setScoreChange(null), 4000)
+        
+        onContentChange(data.content)
       }
-
-      const data = await res.json()
-      
-      // Calculate score AFTER the edit
-      const afterScore = scoreEngagement(data.content).score
-      
-      // Show score change feedback
-      const toolLabel = TOOLS.find(t => t.id === toolId)?.shortLabel || toolId
-      setScoreChange({ before: beforeScore, after: afterScore, tool: toolLabel })
-      
-      // Auto-hide the score change after 4 seconds
-      setTimeout(() => setScoreChange(null), 4000)
-      
-      onContentChange(data.content)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
