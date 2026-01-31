@@ -712,6 +712,7 @@ async function injectWatchButton(handle) {
     chart: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
     loader: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="xthread-spinner"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" opacity="1"/></svg>`,
     message: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+    voice: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
   };
 
   // Create watch button
@@ -743,8 +744,16 @@ async function injectWatchButton(handle) {
   messageBtn.setAttribute('data-handle', handle);
   messageBtn.innerHTML = `<span class="xthread-message-icon">${icons.message}</span><span class="xthread-message-text">Message</span>`;
   messageBtn.title = 'Send a DM using templates';
+
+  // Create "Add to Voice" button
+  const voiceBtn = document.createElement('button');
+  voiceBtn.className = 'xthread-voice-btn';
+  voiceBtn.setAttribute('data-handle', handle);
+  voiceBtn.innerHTML = `<span class="xthread-voice-icon">${icons.voice}</span><span class="xthread-voice-text">Add to Voice</span>`;
+  voiceBtn.title = 'Add this account to your voice training';
   
-  // Insert before follow button (message, top tweets, analyze, watch)
+  // Insert before follow button (voice, message, top tweets, analyze, watch)
+  buttonContainer.insertBefore(voiceBtn, followContainer);
   buttonContainer.insertBefore(messageBtn, followContainer);
   buttonContainer.insertBefore(topTweetsBtn, followContainer);
   buttonContainer.insertBefore(analyzeBtn, followContainer);
@@ -776,6 +785,13 @@ async function injectWatchButton(handle) {
     e.preventDefault();
     e.stopPropagation();
     await handleMessageClick(messageBtn, handle);
+  });
+
+  // Voice button click handler
+  voiceBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await handleVoiceClick(voiceBtn, handle);
   });
 }
 
@@ -1498,6 +1514,53 @@ async function handleMessageClick(btn, handle) {
     isLoadingTemplates = false;
     btn.classList.remove('xthread-loading');
     btn.innerHTML = `<span class="xthread-message-icon">${getIcon('message')}</span><span class="xthread-message-text">Message</span>`;
+  }
+}
+
+// Handle "Add to Voice" button click
+async function handleVoiceClick(btn, handle) {
+  if (!userToken) {
+    showToast('Please sign in to xthread first. Click the extension icon.');
+    return;
+  }
+  
+  btn.classList.add('xthread-loading');
+  btn.innerHTML = `<span class="xthread-voice-icon">${getIcon('loader')}</span><span class="xthread-voice-text">Adding...</span>`;
+  
+  try {
+    const response = await fetch(`${XTHREAD_API}/admired-accounts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({ username: handle })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Failed to add account');
+    }
+    
+    const data = await response.json();
+    
+    // Update button to show success
+    btn.classList.add('xthread-voice-added');
+    btn.innerHTML = `<span class="xthread-voice-icon">${getIcon('check')}</span><span class="xthread-voice-text">Added!</span>`;
+    showToast(data.message || `Added @${handle} to your voice profile`);
+    
+    // Reset button after 2 seconds
+    setTimeout(() => {
+      btn.classList.remove('xthread-voice-added');
+      btn.innerHTML = `<span class="xthread-voice-icon">${getIcon('voice')}</span><span class="xthread-voice-text">Add to Voice</span>`;
+    }, 2000);
+    
+  } catch (err) {
+    console.error('[xthread] Error adding to voice:', err);
+    showToast(err.message || 'Failed to add account. Please try again.');
+    btn.innerHTML = `<span class="xthread-voice-icon">${getIcon('voice')}</span><span class="xthread-voice-text">Add to Voice</span>`;
+  } finally {
+    btn.classList.remove('xthread-loading');
   }
 }
 
