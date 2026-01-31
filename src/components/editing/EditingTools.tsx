@@ -157,16 +157,34 @@ export default function EditingTools({ content, onContentChange, isThread = fals
         const bd = beforeScore.breakdown
         const toolsToApply: ToolId[] = []
         
-        // If hook score is low, add hook
+        // If hook score is low (<70), add hook
         if (bd.hookStrength.score < 70) toolsToApply.push('add_hook')
-        // If reply potential is low, add question  
-        if (bd.replyPotential.score < 60) toolsToApply.push('add_question')
+        
+        // If reply potential is low (<50), make spicy first, then add question
+        if (bd.replyPotential.score < 50) {
+          toolsToApply.push('make_spicy')
+        } else if (bd.replyPotential.score < 70) {
+          // Medium reply potential - just add question
+          toolsToApply.push('add_question')
+        }
+        
         // If length is bad (too long), sharpen
         if (bd.length.score < 80 && content.length > 280) toolsToApply.push('sharpen')
+        
         // If readability is low, humanize
         if (bd.readability.score < 70) toolsToApply.push('humanize')
         
-        // If nothing obvious, just humanize + sharpen for polish
+        // If overall score is mediocre (<60) and we haven't added spicy yet, add it
+        if (beforeScore.score < 60 && !toolsToApply.includes('make_spicy')) {
+          toolsToApply.push('make_spicy')
+        }
+        
+        // Always end with question if reply potential could be better
+        if (bd.replyPotential.score < 80 && !toolsToApply.includes('add_question')) {
+          toolsToApply.push('add_question')
+        }
+        
+        // If nothing obvious, polish with humanize
         if (toolsToApply.length === 0) {
           toolsToApply.push('humanize')
         }
