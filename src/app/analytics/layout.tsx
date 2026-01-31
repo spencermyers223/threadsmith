@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Header } from '@/components/dashboard/Header'
+import { XAccountProvider } from '@/contexts/XAccountContext'
 
 export default async function AnalyticsLayout({
   children,
@@ -15,11 +16,13 @@ export default async function AnalyticsLayout({
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 overflow-y-auto">
-        {children}
-      </main>
-    </div>
+    <XAccountProvider>
+      <div className="h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+      </div>
+    </XAccountProvider>
   )
 }
