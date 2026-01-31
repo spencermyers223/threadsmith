@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useXAccount } from '@/contexts/XAccountContext';
-import { ChevronDown, Plus, Check, X, Sparkles, Settings, LogOut, AlertCircle, ExternalLink } from 'lucide-react';
+import { ChevronDown, Plus, Check, X, Sparkles, Settings, LogOut, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 
@@ -83,10 +83,26 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
     }
   };
 
-  // Proceed with OAuth after user confirms
+  // Proceed with OAuth after user confirms - open in popup for better control
   const proceedWithOAuth = () => {
     setShowAddAccountModal(false);
-    window.location.href = '/api/auth/x?action=link';
+    
+    // Open OAuth in a popup window so user can switch accounts within X's interface
+    const width = 600;
+    const height = 700;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    
+    const popup = window.open(
+      '/api/auth/x?action=link',
+      'xthread_oauth',
+      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
+    );
+    
+    // If popup was blocked, fall back to redirect
+    if (!popup || popup.closed) {
+      window.location.href = '/api/auth/x?action=link';
+    }
   };
 
   // Close dropdown when clicking outside
@@ -345,14 +361,16 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
               <div className="bg-white/5 rounded-lg p-4 mb-5">
                 <p className="text-sm text-gray-400 mb-3">To add a different X account:</p>
                 <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside">
-                  <li>Open <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-[#D4A574] hover:underline inline-flex items-center gap-1">x.com <ExternalLink className="w-3 h-3" /></a> in this browser</li>
-                  <li>Log out, then log into the account you want to add</li>
-                  <li>Come back here and click &quot;Continue&quot;</li>
+                  <li>Click &quot;Continue&quot; below to open X in a popup</li>
+                  <li>In the popup, click your <strong>profile icon</strong> (top right)</li>
+                  <li>Select &quot;Log out&quot; or &quot;Add an existing account&quot;</li>
+                  <li>Log into the account you want to connect</li>
+                  <li>Then click &quot;Authorize app&quot;</li>
                 </ol>
               </div>
 
               <p className="text-xs text-gray-500 mb-5">
-                💡 Tip: Or use an incognito window for the entire xthread session with the other X account already logged in.
+                💡 The popup lets you switch accounts within X before authorizing.
               </p>
 
               <div className="flex gap-3">
