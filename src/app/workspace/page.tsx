@@ -707,12 +707,10 @@ export default function WorkspacePage() {
               content={getPlainText()}
               onContentChange={(newContent) => {
                 if (contentType === 'thread') {
-                  // For threads, replace first tweet content
-                  const updated = [...threadTweets]
-                  if (updated.length > 0) {
-                    updated[0] = { ...updated[0], content: newContent }
-                    setThreadTweets(updated)
-                  }
+                  // For threads, parse the returned content back into individual tweets
+                  // The AI returns numbered format (1/, 2/, etc.) which parseThreadFromContent handles
+                  const parsedTweets = parseThreadFromContent(newContent)
+                  setThreadTweets(parsedTweets)
                 } else {
                   setContent(newContent)
                 }
