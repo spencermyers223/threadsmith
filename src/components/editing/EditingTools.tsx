@@ -191,32 +191,43 @@ export default function EditingTools({ content, onContentChange, isThread = fals
         
         // Apply tools in sequence
         for (const tool of toolsToApply) {
-          const res = await fetch('/api/chat/writing-assistant', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              content: currentContent,
-              action: tool,
-              isThread,
-            }),
-          })
-          
-          if (res.ok) {
-            const data = await res.json()
-            currentContent = data.content
-            const toolLabel = TOOLS.find(t => t.id === tool)?.shortLabel || tool
-            toolsApplied.push(toolLabel)
+          try {
+            const res = await fetch('/api/chat/writing-assistant', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                content: currentContent,
+                action: tool,
+                isThread,
+              }),
+            })
+            
+            if (res.ok) {
+              const data = await res.json()
+              currentContent = data.content
+              const toolLabel = TOOLS.find(t => t.id === tool)?.shortLabel || tool
+              toolsApplied.push(toolLabel)
+            }
+          } catch {
+            // Continue with next tool if one fails
           }
         }
         
-        const afterScore = scoreEngagement(currentContent).score
-        setScoreChange({ 
-          before: beforeScore.score, 
-          after: afterScore, 
-          tool: `Auto (${toolsApplied.join(' → ')})` 
-        })
-        setTimeout(() => setScoreChange(null), 6000)
-        onContentChange(currentContent)
+        // Only update if at least one tool was applied successfully
+        if (toolsApplied.length > 0) {
+          const afterScore = scoreEngagement(currentContent).score
+          setScoreChange({ 
+            before: beforeScore.score, 
+            after: afterScore, 
+            tool: `Auto (${toolsApplied.join(' → ')})` 
+          })
+          setTimeout(() => setScoreChange(null), 6000)
+          onContentChange(currentContent)
+        } else {
+          // All tools failed
+          setError('Auto-optimize failed. Try individual tools instead.')
+          setPreviousContent(null) // Clear undo since nothing changed
+        }
       } else {
         // Single tool application
         const res = await fetch('/api/chat/writing-assistant', {
