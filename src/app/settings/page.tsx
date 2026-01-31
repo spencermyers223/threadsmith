@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Bell, Moon, Sun, User, Check, AlertCircle, LogOut,
   Target, Mic, Users, Plus, X, ChevronDown, ChevronUp, MessageSquare,
-  Edit2, Trash2, Copy
+  Edit2, Trash2, Copy, CreditCard, ExternalLink
 } from 'lucide-react'
 import Link from 'next/link'
 import { useTheme } from '@/components/providers/ThemeProvider'
@@ -92,6 +92,14 @@ export default function SettingsPage() {
   const [editingTemplate, setEditingTemplate] = useState<DMTemplate | null>(null)
   const [templateForm, setTemplateForm] = useState({ title: '', message_body: '' })
   const [savingTemplate, setSavingTemplate] = useState(false)
+
+  // Subscription state
+  const [subscription, setSubscription] = useState<{
+    hasSubscription: boolean
+    tier: 'premium' | 'pro' | null
+    billingPeriod: 'monthly' | 'annual' | 'lifetime' | null
+    status: string | null
+  } | null>(null)
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
@@ -209,6 +217,17 @@ export default function SettingsPage() {
       if (!user) return
 
       setUserId(user.id)
+      
+      // Load subscription status
+      try {
+        const subRes = await fetch('/api/subscription/current')
+        if (subRes.ok) {
+          const subData = await subRes.json()
+          setSubscription(subData)
+        }
+      } catch (err) {
+        console.error('Failed to load subscription:', err)
+      }
       
       // Get X username from user metadata or x_accounts table
       const xUsernameFromMeta = user.user_metadata?.x_username
@@ -402,6 +421,47 @@ export default function SettingsPage() {
                   {xUsername ? `@${xUsername}` : 'Not connected'}
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Subscription Section */}
+        <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--background)]">
+            <h2 className="font-semibold flex items-center gap-2">
+              <CreditCard className="w-4 h-4" />
+              Subscription
+            </h2>
+          </div>
+          <div className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Current Plan</p>
+                <p className="text-sm text-[var(--muted)]">
+                  {subscription?.hasSubscription ? (
+                    <>
+                      {subscription.tier === 'pro' ? 'Professional' : 'Premium'}
+                      {subscription.billingPeriod && subscription.billingPeriod !== 'lifetime' && (
+                        <span className="text-[var(--muted)]">
+                          {' '}({subscription.billingPeriod === 'annual' ? 'Annual' : 'Monthly'})
+                        </span>
+                      )}
+                      {subscription.billingPeriod === 'lifetime' && (
+                        <span className="text-[var(--muted)]"> (Lifetime)</span>
+                      )}
+                    </>
+                  ) : (
+                    'Free'
+                  )}
+                </p>
+              </div>
+              <Link
+                href="/pricing"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[var(--foreground)] text-[var(--background)] rounded-lg hover:opacity-90 transition-opacity"
+              >
+                Manage Subscription
+                <ExternalLink className="w-4 h-4" />
+              </Link>
             </div>
           </div>
         </section>
