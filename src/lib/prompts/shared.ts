@@ -219,6 +219,83 @@ Specificity beats vagueness:
 // Legacy alias for backwards compatibility
 export const CT_VOICE = TECH_TWITTER_VOICE;
 
+/**
+ * Smart Emoji Insertion Guidelines
+ * Research-backed rules for effective emoji usage on X/Twitter
+ */
+export const EMOJI_GUIDELINES = `
+## SMART EMOJI USAGE
+
+Emojis increase engagement when used strategically. Misused, they signal AI slop.
+
+### When Emojis WORK (Use These Patterns)
+
+**1. Hook Amplifiers** — Single emoji at start to catch attention
+✅ "🔥 Just hit $10K MRR"
+✅ "💀 The thing nobody tells you about..."
+✅ "🚀 Shipped the feature that changed everything"
+
+**2. Visual Bullet Points** — Replace dashes in lists
+✅ "My morning routine:
+📧 Inbox zero
+🏋️ 30 min workout
+💻 Deep work block"
+
+**3. Emotional Punctuation** — End of tweet to add tone
+✅ "Took 3 years but finally made it 🎉"
+✅ "Lost the deal. Back to the drawing board 😅"
+
+**4. Section Breaks in Threads** — Visual separation
+✅ Thread structure: 🧵 → 📊 → 💡 → 🎯
+
+**5. Brand/Niche Signatures** — Consistent emojis that become part of your voice
+- Builders: 🛠️ ⚡ 🚀
+- Finance: 📈 💰 📊
+- AI/Tech: 🤖 🧠 ⚡
+- Content: ✍️ 📝 🎯
+
+### When Emojis FAIL (Avoid These)
+
+❌ **Emoji Spam** — More than 3 per tweet looks desperate
+❌ "🔥🔥🔥 OMG this is SO good 🙌🙌🙌 you NEED to see this 👀👀"
+
+❌ **Random Decoration** — Emojis that don't add meaning
+❌ "Just had a meeting 📞 about our product 💻 with the team 👥"
+
+❌ **Mismatched Tone** — Playful emojis on serious content
+❌ "Lost my biggest client today 🎉" (obviously wrong)
+
+❌ **Replacing Words** — Makes content hard to read
+❌ "I ❤️ when we 🚀 new 💡s to our 👥"
+
+❌ **End-of-Every-Tweet Pattern** — Dead giveaway of AI
+❌ Every tweet ending with 🚀 or 💪 or ✨
+
+### Emoji Frequency by Content Type
+
+| Content Type | Emoji Level | Example |
+|--------------|-------------|---------|
+| Hot take | 0-1 | Hook emoji only, let words hit hard |
+| Build in public | 1-2 | Milestone markers |
+| Thread | 2-4 total | Section headers only |
+| List post | Match list items | One per bullet |
+| Celebration | 1-2 | 🎉 or 🚀 to punctuate |
+| Educational | 0-1 | Keep it clean, content is king |
+
+### The 3 Rules
+
+1. **One purpose per emoji** — Each emoji should ADD something
+2. **Match the user's voice** — If they don't use emojis, neither should you
+3. **When in doubt, leave it out** — No emoji > wrong emoji
+
+### Adapt to User's Style
+If the voice profile shows:
+- "frequent" emoji usage → Use 1-2 per tweet
+- "occasional" emoji usage → Use 0-1 per tweet  
+- "rare/minimal" emoji usage → Avoid emojis entirely
+- Specific favorites → Use THOSE emojis naturally
+`;
+
 // ============================================
 // Helper functions for building context sections
 // ============================================

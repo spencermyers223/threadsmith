@@ -7,7 +7,7 @@ import { ALGORITHM_KNOWLEDGE, ALGORITHM_WARNINGS, HOOK_PATTERNS } from './algori
 import { SCROLL_STOPPER_PROMPT, SCROLL_STOPPER_HOOKS } from './scroll-stopper';
 import { DEBATE_STARTER_PROMPT, DEBATE_STARTER_HOOKS } from './debate-starter';
 import { VIRAL_CATALYST_PROMPT, VIRAL_CATALYST_HOOKS } from './viral-catalyst';
-import { buildUserContext, type UserVoiceProfile } from './shared';
+import { buildUserContext, EMOJI_GUIDELINES, type UserVoiceProfile } from './shared';
 
 // Types
 export type Archetype = 'scroll-stopper' | 'debate-starter' | 'viral-catalyst' | 'balanced';
@@ -170,6 +170,8 @@ ${ARCHETYPE_PROMPTS[archetype]}
 ${TONE_INSTRUCTIONS[tone]}
 
 ${CONTENT_TYPE_INSTRUCTIONS[contentType]}
+
+${EMOJI_GUIDELINES}
 
 LENGTH: ${length.toUpperCase()}
 ${LENGTH_GUIDELINES[length][contentType]}

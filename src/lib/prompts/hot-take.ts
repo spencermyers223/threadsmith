@@ -6,6 +6,8 @@
  * Key insight: Disagreement = replies = 27x algorithmic value
  */
 
+import { EMOJI_GUIDELINES } from './shared';
+
 export interface HotTakeContext {
   niche?: string;
   tone?: 'spicy' | 'thoughtful-contrarian' | 'industry-insider';
@@ -88,6 +90,10 @@ The take should END in a way that makes silence feel like agreement:
 - Don't take positions you can't defend when challenged
 - Don't be offensive just for engagement (algorithm punishes blocks/reports)
 - Don't hedge the take into meaninglessness
+
+${EMOJI_GUIDELINES}
+
+**For Hot Takes:** Use 0-1 emojis MAX. A single hook emoji (🔥 💀 ⚠️) can work, but the words should hit hard enough on their own. Overusing emojis weakens the punch.
 
 ### Output Format
 Generate 3 variations. Each must be READY TO POST - no explanation needed.

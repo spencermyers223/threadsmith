@@ -8,7 +8,7 @@
  * Voice: Vulnerable over polished, specific numbers always
  */
 
-import { ALGORITHM_RULES, TECH_TWITTER_VOICE, buildUserContext, OUTPUT_FORMAT_RULES, type UserVoiceProfile } from './shared';
+import { ALGORITHM_RULES, TECH_TWITTER_VOICE, EMOJI_GUIDELINES, buildUserContext, OUTPUT_FORMAT_RULES, type UserVoiceProfile } from './shared';
 
 export const BUILD_IN_PUBLIC_PROMPT = `
 ## BUILD-IN-PUBLIC CONTENT
@@ -180,6 +180,14 @@ What's your onboarding support strategy?"
 - Asking for engagement without providing value
 - Corporate milestone announcements
 - "Excited to announce" energy
+
+${EMOJI_GUIDELINES}
+
+**For Build-in-Public:** Use 1-2 emojis strategically:
+- Milestone markers: 🎉 🚀 💰 for celebrations
+- Metric bullets: ✅ ❌ 📊 for weekly recaps
+- Single hook emoji to grab attention
+- Match the user's established emoji style from their voice profile
 
 ### The End Goal
 

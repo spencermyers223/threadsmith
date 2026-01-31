@@ -10,6 +10,7 @@ export {
   ALGORITHM_RULES,
   TECH_TWITTER_VOICE,
   CT_VOICE, // Legacy alias for backwards compatibility
+  EMOJI_GUIDELINES,
   OUTPUT_FORMAT_RULES,
   buildUserContext,
   buildUserContextSection,
