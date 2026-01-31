@@ -64,9 +64,10 @@ export function buildAuthUrl(params: {
   url.searchParams.set('code_challenge', codeChallenge)
   url.searchParams.set('code_challenge_method', 'S256')
   
-  // Force login screen to allow connecting different accounts
+  // Try multiple parameters to force a fresh login/consent
   if (forceLogin) {
-    url.searchParams.set('force_login', 'true')
+    url.searchParams.set('force_login', 'true')  // OAuth 1.0a style (may not work)
+    url.searchParams.set('prompt', 'consent')    // Standard OAuth 2.0 - force consent
   }
   
   return url.toString()
