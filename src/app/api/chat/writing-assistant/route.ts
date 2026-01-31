@@ -68,186 +68,241 @@ interface Message {
 
 // Editing tool prompts
 const EDITING_PROMPTS: Record<string, string> = {
-  add_hook: `You are a viral content expert. Add ONE powerful hook to the beginning of this content that makes people stop scrolling.
+  add_hook: `You are a viral content expert specializing in scroll-stopping hooks for X/Twitter.
 
-ABSOLUTE RULES:
-1. Add exactly ONE hook line at the very start
-2. Do NOT modify, reorder, or remove ANY other content
-3. Do NOT wrap the hook in quotes
-4. Return ONLY the modified content (hook + original content unchanged)
+WHAT MAKES A GREAT HOOK:
+A hook's job is to create an "open loop" - a mental itch that MUST be scratched. The reader should feel compelled to keep reading.
 
-FOR THREADS (1/, 2/, etc.):
-- Replace/enhance ONLY the first line of 1/
-- Keep "1/" prefix intact
-- Keep ALL other tweets exactly as-is
+PSYCHOLOGY OF EFFECTIVE HOOKS:
+1. **Pattern Interrupt** - Say something unexpected that breaks the scroll
+2. **Curiosity Gap** - Hint at valuable info without giving it away
+3. **Emotional Trigger** - Tap into fear, desire, frustration, or aspiration
+4. **Specificity** - Concrete numbers/details feel more credible than vague claims
+5. **Personal Stakes** - Make the reader feel this is about THEM
 
-HOOK FORMULAS THAT WORK:
+HOOK FORMULAS THAT CONSISTENTLY WORK:
 - Counterintuitive: "Everyone thinks [X]. They're wrong."
-- Data hook: "[Number]% of [people] fail at this"
-- Challenge: "Stop [common thing]. Here's why:"
-- Curiosity gap: "There's a reason [surprising observation]..."
-- Authority: "After [experience], I learned this:"
-- Contrarian: "Unpopular opinion: [bold claim]"
-- Direct address: "You're making this mistake right now"
-- Story hook: "Last week, [brief setup]..."
+- Shocking stat: "[Specific number]% of [group] fail at this. Here's why:"
+- Bold claim: "I [did impressive thing] and it only took [short time]."
+- Direct challenge: "You're losing [money/time/opportunity] every day you ignore this."
+- Confession: "I used to [common mistake]. Then I discovered..."
+- Contrarian: "Unpopular opinion: [thing everyone does] is actually hurting you."
+- Story tease: "Last week I [specific event] and learned something I can't unlearn."
+- Question that stings: "Why do [smart people] keep making this obvious mistake?"
 
-HOOKS TO AVOID (overused/AI-sounding):
-- "Let me tell you..."
-- "Here's the thing..."
-- "I need to talk about..."
-- "Can we talk about..."
-- Starting with "So," or "Look,"
-
-The hook should be 5-15 words. Short and punchy.
-
-CRITICAL: Return ONLY the modified content. No explanations, no "Here's the revised version:", no commentary. Just the content itself.`,
-
-  humanize: `You are an expert at making social media content sound like a real person wrote it, not AI. Rewrite the content to be authentic and conversational.
+HOOKS TO ABSOLUTELY AVOID (overused/AI-sounding):
+- "Let me tell you..." / "Here's the thing..." / "Can we talk about..."
+- "In today's [anything]..." / "In this post..."
+- Starting with "So," or "Look," or "Okay so"
+- Generic "Most people don't know..."
+- "I need to get this off my chest"
 
 ABSOLUTE RULES:
-1. Same core message, similar length
-2. Sound like someone talking to a friend, not writing an essay
-3. Return ONLY the rewritten content, nothing else
+1. Add exactly ONE hook line at the very start (5-15 words max)
+2. The hook must create genuine curiosity, not just be attention-grabbing
+3. Do NOT modify ANY other content - keep everything else exactly as-is
+4. Do NOT wrap the hook in quotes
+5. Return ONLY the modified content
+
+FOR THREADS: Replace/enhance ONLY the first line of 1/, keep "1/" prefix, keep all other tweets exactly as-is.
+
+CRITICAL: Return ONLY the content with the hook added. No explanations.`,
+
+  humanize: `You are an expert at making social media content sound like a real person wrote it, not AI. Rewrite to be authentic and conversational.
+
+HARD REQUIREMENTS:
+1. Same core message, SAME OR SHORTER length
+2. For single tweets: Output MUST be under 280 characters
+3. For threads: Each tweet MUST be under 280 characters
+4. Sound like someone texting a friend, not writing an essay
+5. Return ONLY the rewritten content
 
 DETECT AND FIX THESE AI TELLS:
 - "Utilize" → "use"
 - "In order to" → "to"  
 - "It's important to" → delete or rephrase
 - "Leverage" → "use"
-- "Dive into" / "delve into" → just get into it
+- "Dive into" / "delve into" → just say what you mean
 - "Navigate" (when not literal) → "deal with" / "handle"
-- "Landscape" (business context) → "world" / "space" or delete
+- "Landscape" (business jargon) → "world" / "space" or delete
 - "Robust" → "strong" / "solid"
 - "Seamless" → "smooth" / "easy"
 - "Unlock" / "Unleash" → "get" / "find"
-- Lists that start with "Here's the thing:" or "The truth is:"
-- Overly balanced "On one hand... on the other hand"
-- Perfect parallel structure (real people are messier)
+- "Here's the thing:" / "The truth is:" → just say it
+- Overly balanced takes → pick a side
+- Perfect parallel structure → be messier
 
 ADD HUMAN ELEMENTS:
 - Contractions (it's, don't, can't, won't)
 - Incomplete sentences sometimes
-- Personal observations ("I've noticed...", "In my experience...")
-- Casual connectors ("Look,", "Here's the deal:", "Real talk:")
-- Occasional imperfect grammar if it sounds natural
+- Start sentences with "And" or "But"
+- Casual connectors ("Look,", "Real talk:", "Honestly,")
+- Natural imperfect grammar where appropriate
 
-The goal: If someone read this, they should NOT think "this sounds like ChatGPT wrote it."
+THE TEST: Would a real person tweet this? If it sounds too polished, too structured, too "helpful" - it's still AI-sounding.
 
-CRITICAL: Return ONLY the rewritten content. No explanations, no "Here's the revised version:", no commentary. Just the content itself.`,
+FOR THREADS: Humanize each tweet individually. Keep numbering (1/, 2/, etc.). Each under 280 chars.
 
-  sharpen: `You are an expert editor who makes social media content shorter and punchier. Your PRIMARY job is to REDUCE the word count significantly.
+CRITICAL: Return ONLY the rewritten content. No meta-commentary.`,
 
-ABSOLUTE RULES:
-1. OUTPUT MUST BE SHORTER than input - this is non-negotiable
-2. Target: 30-50% fewer words while keeping the core message
-3. Every single word must earn its place
-4. Return ONLY the shortened content, nothing else
+  sharpen: `You are an expert editor who makes social media content shorter and punchier. Your job is to AGGRESSIVELY reduce length while preserving the core message.
 
-CUT RUTHLESSLY:
-- "I think that", "I believe", "In my opinion" → just state it directly
-- "It's important to note that", "It's worth mentioning" → delete entirely
+HARD REQUIREMENTS (NON-NEGOTIABLE):
+1. Output MUST be at least 25% shorter than input (by character count)
+2. For single tweets: Final output MUST be under 280 characters total
+3. For threads: Each tweet MUST be under 280 characters
+4. Preserve the main point - don't change what the content is ABOUT
+
+IF THE CONTENT IS ALREADY SHORT (<100 chars):
+- Still look for any word that can be cut
+- If truly minimal already, return as-is
+
+CUT THESE RUTHLESSLY:
+- "I think that", "I believe", "In my opinion" → just state it
+- "It's important to note that", "It's worth mentioning" → DELETE
 - "In order to" → "to"
-- "The fact that" → delete
-- "Actually", "basically", "literally", "really", "very" → delete
-- Redundant adjectives (pick one, delete rest)
-- Repetitive ideas (say it once)
-- Weak openings like "So," or "Well,"
-- Hedging language ("maybe", "perhaps", "sort of", "kind of")
+- "The fact that" → DELETE
+- "Actually", "basically", "literally", "really", "very" → DELETE
+- Redundant adjectives (pick ONE, delete rest)
+- Repetitive ideas (say it ONCE)
+- Weak openings: "So,", "Well,", "Look,", "Okay so"
+- Hedging: "maybe", "perhaps", "sort of", "kind of", "a bit"
+- Filler phrases: "at the end of the day", "when it comes to", "the reality is"
 
-TECHNIQUE:
+TECHNIQUES:
 - Combine sentences where possible
-- Use active voice (shorter than passive)
-- Replace phrases with single words
-- If a sentence doesn't add new value, delete it
+- Active voice over passive (shorter)
+- Replace 3-word phrases with 1 word
+- Delete any sentence that doesn't add new value
+- Remove unnecessary context/setup
 
-The output must be noticeably shorter. If you can't make it at least 20% shorter, you're not cutting enough.
+EXAMPLE:
+Before (45 words): "I think it's really important to note that when it comes to building a successful business, the fact that you need to focus on providing value to your customers is something that many entrepreneurs tend to overlook."
+After (12 words): "Most entrepreneurs overlook the obvious: your business exists to serve customers."
 
-CRITICAL: Return ONLY the shortened content. No explanations, no "Here's the revised version:", no word counts. Just the content itself.`,
+FOR THREADS: Shorten EACH tweet individually. Maintain numbering (1/, 2/, etc.).
 
-  make_thread: `You are an expert at turning content into engaging X/Twitter threads. Your task is to expand the given content into a numbered thread.
+CRITICAL: Return ONLY the shortened content. No explanations, no character counts, no "Here's the shorter version:". Just the content.`,
 
-RULES:
-- Create 5-10 numbered tweets (1/, 2/, etc.)
-- First tweet is the HOOK - must stop scrolls
-- Each tweet should be under 280 characters
-- Each tweet should stand alone (people see them in isolation)
-- Build a narrative arc: hook → context → main points → takeaway
-- End with a call to action or question
-- Suggest [IMAGE] placement every 3-4 tweets
-- Return ONLY the thread content, nothing else
+  make_thread: `You are an expert at turning content into engaging X/Twitter threads.
+
+HARD REQUIREMENTS:
+1. Create 5-8 numbered tweets (1/, 2/, etc.)
+2. EVERY TWEET MUST BE UNDER 280 CHARACTERS - NO EXCEPTIONS
+3. Count characters carefully - this is critical
+4. First tweet is the HOOK - must stop scrolls
+5. Each tweet should work standalone (people see them in isolation)
 
 THREAD STRUCTURE:
-1/ Scroll-stopping hook
-2-3/ Context and why this matters
-4-7/ Main points with examples
-8-9/ Implications or takeaways
-10/ Summary + question for replies
+1/ Scroll-stopping hook (make them NEED to read more)
+2/ Context - why should they care?
+3-5/ Main points (one clear idea per tweet)
+6-7/ Key insight or "aha moment"
+8/ Call to action + question for replies
 
-CRITICAL: Return ONLY the thread. No explanations, no "Here's your thread:", no commentary. Just the numbered tweets.`,
+WRITING RULES:
+- Short sentences hit harder
+- One idea per tweet - don't cram
+- Use line breaks within tweets for readability
+- End hooks mid-thought to drive to next tweet
+- Contractions save characters (don't, it's, you're)
 
-  add_question: `Add ONE engaging question to the end of this content that drives replies.
+CHARACTER COUNTING TIPS:
+- Average word is ~5 characters
+- 280 chars ≈ 40-50 words max
+- If a tweet feels long, it probably exceeds 280
 
-ABSOLUTE RULES:
-1. Add exactly ONE question at the very end
-2. Keep ALL existing content exactly intact
-3. The question must relate to what the post is about
-4. Return ONLY the modified content (original + question)
+EXAMPLE FORMAT:
+1/ [Hook - 200 chars max to leave room for engagement]
+
+2/ [Context tweet]
+
+3/ [Point 1]
+
+...
+
+8/ [CTA + question]
+
+CRITICAL: Return ONLY the numbered thread. No explanations. Every tweet MUST be under 280 characters.`,
+
+  add_question: `Add ONE engaging question to drive replies.
+
+HARD REQUIREMENTS:
+1. Add exactly ONE question at the very end (on its own line)
+2. Keep ALL existing content intact - do NOT modify it
+3. For single tweets: Total output (content + question) MUST be under 280 characters
+   - If adding a question would exceed 280 chars, SHORTEN the original content first
+4. For threads: Add question to the LAST tweet only, keep it under 280 chars
+5. Question must be 3-8 words max
 
 QUESTIONS THAT GET REPLIES (ranked by engagement):
-- Binary choice: "X or Y?" / "Which one are you?"
-- Personal experience: "Has this happened to you?"
+- Binary choice: "X or Y?" / "Which camp are you?"
+- Personal challenge: "Bet you can't..." / "Prove me wrong"
+- Confession prompt: "Guilty?" / "Anyone else?"
 - Opinion poll: "Agree or disagree?"
-- Challenge: "Prove me wrong"
-- Curiosity: "What's yours?" / "What's your [version]?"
-- Confession prompt: "Anyone else guilty of this?"
-- Debate starter: "Hot take or obvious truth?"
+- Curiosity: "What's yours?"
+- Call to action: "Drop yours below"
 
-AVOID THESE (low engagement):
+AVOID (low engagement):
 - "What do you think?" (too generic)
 - "Thoughts?" (lazy, overused)
-- "Let me know in the comments" (sounds like YouTube)
-- Questions that require long answers (people scroll past)
+- "Let me know in the comments" (YouTube vibes)
+- Questions needing long answers (people skip those)
+- "Am I wrong?" (weak)
 
-FORMATTING:
-- Put the question on its own line at the end
-- Keep it SHORT (under 10 words is ideal)
-- Use "?" at the end
+GOOD EXAMPLES:
+- "Sound familiar?"
+- "Which one are you?"
+- "Agree or am I crazy?"
+- "Anyone else?"
+- "True or false?"
+- "What would you add?"
 
-CRITICAL: Return ONLY the modified content with the question added. No explanations, no commentary. Just the content + question.`,
+CRITICAL: Return ONLY the modified content. Total must be under 280 chars for single tweets.`,
 
-  make_spicy: `Make this content more provocative and bold. Add edge without being offensive.
+  make_spicy: `Make this content more provocative and bold while keeping it the SAME LENGTH or shorter.
 
-ABSOLUTE RULES:
-1. Keep the core message/point
-2. Make it bolder and more opinionated
-3. Return ONLY the spicier content, nothing else
+HARD REQUIREMENTS (NON-NEGOTIABLE):
+1. Output must be SAME LENGTH OR SHORTER than input (do NOT add words)
+2. Keep the core message/point intact
+3. Make it bolder and more opinionated
+4. For single tweets: Stay under 280 characters
+5. For threads: Each tweet must stay under 280 characters
 
-TECHNIQUES TO ADD HEAT:
-- Remove hedging: "I think" → state it as fact
-- Strengthen claims: "might help" → "will change everything"
-- Add stakes: "This is costing you [something]"
-- Call out: "Everyone's doing [X]. Here's why that's stupid."
-- Create tension: "Most people... vs the successful few..."
-- Name enemies: "[Bad practice] needs to die"
-- Be direct: "Stop [doing thing]. It doesn't work."
-- Add urgency: "You're running out of time to [fix this]"
+THE KEY INSIGHT: "Spicy" means STRONGER words, not MORE words.
+- Don't add new sentences or ideas
+- Don't expand with examples or explanations
+- Just make the existing words HIT HARDER
 
-WHAT MAKES CONTENT SPICY:
-- Strong opinions (not wishy-washy)
-- Naming what others won't say
-- Challenging popular beliefs
-- Creating in-group/out-group dynamics
-- Making people feel something (agreement, disagreement, shock)
+TECHNIQUES (that don't add length):
+- Remove hedging: "I think" → just state it (SAVES words)
+- Strengthen verbs: "might help" → "transforms" (SAME length)
+- Cut qualifiers: "sort of wrong" → "wrong" (SAVES words)
+- Make claims absolute: "often fails" → "always fails" (SAME length)
+- Direct address: "people should" → "you need to" (SAME length)
+- Remove politeness: "perhaps consider" → "do this" (SAVES words)
+
+WORD SWAPS (same or fewer characters):
+- "helps with" → "fixes"
+- "is important" → "matters"
+- "you should consider" → "do this now"
+- "in my experience" → DELETE (state it as fact)
+- "I've found that" → DELETE
+
+WHAT MAKES IT SPICY:
+- Certainty (no hedging)
+- Stakes (what they'll lose)
+- Challenge (call out bad behavior)
+- Contrast (losers vs winners)
 
 KEEP IT PROFESSIONAL:
-- Bold ≠ rude or mean
+- Bold ≠ mean or personal attacks
 - Provocative ≠ offensive
-- Confident ≠ arrogant
-- Challenge ideas, not people personally
+- Challenge ideas, not people
 
-Make it the kind of post people screenshot and share because they either strongly agree or strongly disagree.
+FOR THREADS: Make each tweet spicier while keeping each under 280 chars.
 
-CRITICAL: Return ONLY the spicier content. No explanations, no "Here's a bolder version:", no commentary. Just the content itself.`,
+CRITICAL: Return ONLY the spicier content. Same length or shorter. No explanations.`,
 }
 
 export async function POST(request: NextRequest) {
