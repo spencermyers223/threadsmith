@@ -83,26 +83,10 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
     }
   };
 
-  // Proceed with OAuth after user confirms - open in popup for better control
+  // Proceed with OAuth - redirect in same window to ensure session is used
   const proceedWithOAuth = () => {
     setShowAddAccountModal(false);
-    
-    // Open OAuth in a popup window so user can switch accounts within X's interface
-    const width = 600;
-    const height = 700;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-    
-    const popup = window.open(
-      '/api/auth/x?action=link',
-      'xthread_oauth',
-      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
-    );
-    
-    // If popup was blocked, fall back to redirect
-    if (!popup || popup.closed) {
-      window.location.href = '/api/auth/x?action=link';
-    }
+    window.location.href = '/api/auth/x?action=link';
   };
 
   // Close dropdown when clicking outside
@@ -361,26 +345,23 @@ export function AccountSwitcher({ onAddAccount, hideAddAccount = false }: Accoun
               <div className="bg-white/5 rounded-lg p-4 mb-5">
                 <p className="text-sm text-gray-400 mb-3">To add a different X account:</p>
                 <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside">
-                  <li>Click &quot;Log out of X&quot; below</li>
-                  <li>Log into the X account you want to add</li>
-                  <li>Come back and click &quot;Connect Account&quot;</li>
+                  <li>Open <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-[#D4A574] hover:underline">x.com</a> in <strong>this browser window</strong></li>
+                  <li>Log out of your current account</li>
+                  <li>Log into the account you want to add</li>
+                  <li>Come back here and click &quot;Connect Account&quot;</li>
                 </ol>
               </div>
+              
+              <p className="text-xs text-gray-500 mb-4">
+                ⚠️ Important: Do this in the same browser window, not a popup or incognito.
+              </p>
 
               <div className="flex flex-col gap-3">
-                <button
-                  onClick={() => {
-                    window.open('https://x.com/logout', '_blank', 'width=600,height=500');
-                  }}
-                  className="w-full py-2.5 px-4 border border-white/10 hover:bg-white/5 text-gray-300 font-medium rounded-lg transition-colors"
-                >
-                  Step 1: Log out of X →
-                </button>
                 <button
                   onClick={proceedWithOAuth}
                   className="w-full py-2.5 px-4 bg-[#D4A574] hover:bg-[#C49664] text-black font-semibold rounded-lg transition-colors"
                 >
-                  Step 2: Connect Account
+                  Connect Account
                 </button>
                 <button
                   onClick={() => setShowAddAccountModal(false)}
