@@ -104,21 +104,27 @@ TONE: Inspirational
 `,
 };
 
-// Content length guidelines
+// Content length guidelines - MUST match UI descriptions exactly
 const LENGTH_GUIDELINES: Record<ContentLength, Record<ContentType, string>> = {
   short: {
-    tweet: 'Keep under 200 characters. Punchy and impactful.',
-    thread: '3-5 tweets maximum. Each tweet under 250 characters.',
+    tweet: `⚠️ STRICT: Output MUST be UNDER 140 characters. Count them!
+This is "Punchy" mode - ultra-concise, one powerful sentence.
+Example length: "Most founders fail because they build what they want, not what customers need."`,
+    thread: '3-5 tweets maximum. Each tweet under 200 characters.',
     article: '500-800 words. Quick read, one main point.',
   },
   medium: {
-    tweet: 'Use the full 280 characters if needed. Can go up to 500.',
-    thread: '5-10 tweets. Each tweet can be substantial.',
+    tweet: `⚠️ STRICT: Output MUST be 140-200 characters. Count them!
+This is "Standard" mode - room for one insight with context.
+Example length: "Most founders fail because they build what they want, not what customers need. Talk to 10 customers before writing a single line of code."`,
+    thread: '5-10 tweets. Each tweet 140-200 characters.',
     article: '1000-1500 words. Comprehensive but focused.',
   },
   long: {
-    tweet: 'Use extended tweets (up to 4000 characters for X Premium).',
-    thread: '10-15 tweets. Deep dive on the topic.',
+    tweet: `⚠️ STRICT: Output MUST be 200-280 characters. Count them!
+This is "Developed" mode - full tweet with hook, insight, and call to action.
+Example length: "Most founders fail because they build what they want, not what customers need. I talked to 50 customers before writing code. Result? $100k ARR in 6 months. Talk to customers. Build what they pay for."`,
+    thread: '10-15 tweets. Deep dive on the topic. Each tweet 200-280 characters.',
     article: '2000-3000 words. Thorough exploration.',
   },
 };
