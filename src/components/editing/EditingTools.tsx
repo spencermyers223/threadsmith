@@ -209,49 +209,45 @@ export default function EditingTools({ content, onContentChange, isThread = fals
     const beforeScore = scoreEngagement(content)
 
     try {
-      // Auto-optimize: analyze score and apply best tools in sequence
+      // Auto-optimize: analyze score and apply best tools in optimal order
       if (toolId === 'auto_optimize') {
         let currentContent = content
         const toolsApplied: string[] = []
         
         // Determine which tools to apply based on current scores
         const bd = beforeScore.breakdown
-        const toolsToApply: ToolId[] = []
         
-        // If hook score is low (<70), add hook
-        if (bd.hookStrength.score < 70) toolsToApply.push('add_hook')
+        // Build the optimization plan with priority order:
+        // 1. Hook first (sets up the opening - most important)
+        // 2. Spicy (adds controversial markers throughout)
+        // 3. Sharpen (cut to size BEFORE adding question to avoid overflow)
+        // 4. Question (adds to end - should come after sharpen)
+        // 5. Humanize last (polish without removing score boosters)
         
-        // If reply potential is low (<50), make spicy first, then add question
-        if (bd.replyPotential.score < 50) {
-          toolsToApply.push('make_spicy')
-        } else if (bd.replyPotential.score < 70) {
-          // Medium reply potential - just add question
-          toolsToApply.push('add_question')
-        }
+        const plan: { tool: ToolId; condition: boolean; priority: number }[] = [
+          { tool: 'add_hook', condition: bd.hookStrength.score < 75, priority: 1 },
+          { tool: 'make_spicy', condition: bd.replyPotential.score < 60 || beforeScore.score < 55, priority: 2 },
+          { tool: 'sharpen', condition: content.length > 280 || bd.length.score < 70, priority: 3 },
+          { tool: 'add_question', condition: bd.replyPotential.score < 80, priority: 4 },
+          { tool: 'humanize', condition: bd.readability.score < 65, priority: 5 },
+        ]
         
-        // If length is bad (too long), sharpen
-        if (bd.length.score < 80 && content.length > 280) toolsToApply.push('sharpen')
+        // Filter to tools that meet conditions, sort by priority
+        const toolsToApply = plan
+          .filter(p => p.condition)
+          .sort((a, b) => a.priority - b.priority)
+          .map(p => p.tool)
         
-        // If readability is low, humanize
-        if (bd.readability.score < 70) toolsToApply.push('humanize')
-        
-        // If overall score is mediocre (<60) and we haven't added spicy yet, add it
-        if (beforeScore.score < 60 && !toolsToApply.includes('make_spicy')) {
-          toolsToApply.push('make_spicy')
-        }
-        
-        // Always end with question if reply potential could be better
-        if (bd.replyPotential.score < 80 && !toolsToApply.includes('add_question')) {
-          toolsToApply.push('add_question')
-        }
-        
-        // If nothing obvious, polish with humanize
+        // If no tools needed, apply humanize as a polish pass
         if (toolsToApply.length === 0) {
           toolsToApply.push('humanize')
         }
         
+        // Limit to max 4 tools to avoid over-processing
+        const limitedTools = toolsToApply.slice(0, 4)
+        
         // Apply tools in sequence, with retry to ensure score improvement
-        for (const tool of toolsToApply) {
+        for (const tool of limitedTools) {
           try {
             const toolLabel = TOOLS.find(t => t.id === tool)?.shortLabel || tool
             setAutoProgress(`Applying ${toolLabel}...`)
