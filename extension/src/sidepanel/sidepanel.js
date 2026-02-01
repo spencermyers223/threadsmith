@@ -244,19 +244,6 @@ function showCoaching(coaching, postData) {
       <div class="section-header">🤝 Friendly</div>
       ${renderHooks(friendlyHooks)}
     </div>
-    
-    <div class="cta-section">
-      <button class="start-reply-btn" id="start-reply-btn">
-        Start Writing Reply →
-      </button>
-    </div>
-    
-    <div class="save-draft-section">
-      <textarea id="draft-textarea" class="draft-textarea" placeholder="Write your reply here to save as a draft..." rows="3"></textarea>
-      <button class="save-draft-btn" id="save-draft-btn">
-        💾 Save to xthread Drafts
-      </button>
-    </div>
   `;
   
   // Hook click to copy
@@ -265,63 +252,6 @@ function showCoaching(coaching, postData) {
       navigator.clipboard.writeText(item.dataset.text);
       item.classList.add('copied');
       setTimeout(() => item.classList.remove('copied'), 1500);
-    });
-  });
-  
-  // Start reply button - send message to content script
-  document.getElementById('start-reply-btn')?.addEventListener('click', () => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]) {
-        chrome.tabs.sendMessage(tabs[0].id, { 
-          type: 'OPEN_REPLY',
-          postUrl: postData.url
-        });
-      }
-    });
-  });
-  
-  // Save draft button
-  document.getElementById('save-draft-btn')?.addEventListener('click', async () => {
-    const textarea = document.getElementById('draft-textarea');
-    const content = textarea?.value?.trim();
-    
-    if (!content) {
-      alert('Please write something before saving');
-      return;
-    }
-    
-    const btn = document.getElementById('save-draft-btn');
-    const originalText = btn.textContent;
-    btn.textContent = 'Saving...';
-    btn.disabled = true;
-    
-    const success = await saveDraftToXthread(
-      content,
-      extractHandle(postData.author),
-      postData.url
-    );
-    
-    if (success) {
-      btn.textContent = '✓ Saved!';
-      textarea.value = '';
-      setTimeout(() => {
-        btn.textContent = originalText;
-        btn.disabled = false;
-      }, 2000);
-    } else {
-      btn.textContent = originalText;
-      btn.disabled = false;
-    }
-  });
-  
-  // Pre-fill textarea when clicking a hook
-  coachContent.querySelectorAll('.hook-item').forEach(item => {
-    item.addEventListener('dblclick', () => {
-      const textarea = document.getElementById('draft-textarea');
-      if (textarea) {
-        textarea.value = item.dataset.text + ' ';
-        textarea.focus();
-      }
     });
   });
 }
