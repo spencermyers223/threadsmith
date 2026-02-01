@@ -360,18 +360,34 @@ export default function EditingTools({ content, onContentChange, isThread = fals
           }
         }
         
-        // Special handling for Shorten
-        if (toolId === 'sharpen' && content.length > 280 && bestContent.length < content.length) {
-          const afterScoreObj = scoreEngagement(bestContent)
-          const charsSaved = content.length - bestContent.length
-          setScoreChange({ 
-            before: beforeScore.score, 
-            after: afterScoreObj.score, 
-            tool: `${toolLabel} (-${charsSaved} chars)`,
-            improvements: bestContent.length <= 280 ? ['Now under 280! ✓'] : [`${bestContent.length}/280 chars`]
-          })
-          setTimeout(() => setScoreChange(null), 4000)
-          onContentChange(bestContent)
+        // Special handling for Shorten - ALWAYS apply if content > 280 and result is shorter
+        if (toolId === 'sharpen') {
+          if (content.length <= 280) {
+            // Already under limit
+            setScoreChange({ 
+              before: beforeScore.score, 
+              after: beforeScore.score, 
+              tool: `${toolLabel} ✓ Already under 280 chars` 
+            })
+            setTimeout(() => setScoreChange(null), 3000)
+            setPreviousContent(null)
+          } else if (bestContent.length < content.length) {
+            // Successfully shortened
+            const afterScoreObj = scoreEngagement(bestContent)
+            const charsSaved = content.length - bestContent.length
+            setScoreChange({ 
+              before: beforeScore.score, 
+              after: afterScoreObj.score, 
+              tool: `${toolLabel} (-${charsSaved} chars)`,
+              improvements: bestContent.length <= 280 ? ['Now under 280! ✓'] : [`${bestContent.length}/280 chars`]
+            })
+            setTimeout(() => setScoreChange(null), 4000)
+            onContentChange(bestContent)
+          } else {
+            // Failed to shorten - show error, don't say "optimized"
+            setError(`Shorten failed to reduce length. Content is ${content.length} chars (${content.length - 280} over limit). Try manually trimming.`)
+            setPreviousContent(null)
+          }
         } else if (bestScore > beforeScore.score) {
           const afterScoreObj = scoreEngagement(bestContent)
           const improvements = getImprovements(beforeScore, afterScoreObj)

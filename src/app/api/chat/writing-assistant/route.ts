@@ -185,39 +185,49 @@ THE TEST: Read it out loud. If you wouldn't SAY it that way, rewrite it.
 
 CRITICAL: Return ONLY the rewritten content. PRESERVE line breaks and score boosters.`,
 
-  sharpen: `Shorten content to 180-280 characters (optimal engagement score range).
+  sharpen: `TASK: Aggressively shorten this content to UNDER 280 characters. NO EXCEPTIONS.
 
-RULES:
-1. OUTPUT MUST BE 180-280 CHARACTERS (count them!)
-2. KEEP the first line (hook) intact
-3. KEEP questions at the end
-4. KEEP "Unpopular opinion:", "Hot take:", numbers, "Most people"
-5. CUT from the MIDDLE only
+⚠️ CRITICAL: Your output MUST be shorter than the input. If input is 326 chars, output must be <280.
 
-INSTANT DELETIONS:
-- "I think that" / "I believe" / "In my opinion" → delete
-- "It's important to" / "It's worth noting" → delete  
+PRESERVATION PRIORITY:
+1. First line (hook) - keep but can tighten
+2. Question at end - MUST keep
+3. Core message - condense ruthlessly
+4. Line breaks - PRESERVE
+
+AGGRESSIVE CUTS:
+- Delete entire sentences that repeat the same idea
+- "I think/believe" → delete entirely
+- "It's important/worth noting" → delete
+- "actually/basically/very/really" → delete
 - "In order to" → "to"
-- "Actually" / "basically" / "literally" / "very" → delete
-- "At the end of the day" / "when it comes to" → delete
-- "Sort of" / "kind of" / "a bit" → delete
+- Combine redundant sentences
+- Remove examples if needed to hit limit
+
+TECHNIQUE:
+1. Count input characters
+2. Identify what MUST stay (hook, question, core point)
+3. Delete everything else
+4. Verify output < 280 chars
 
 EXAMPLE:
 INPUT (350 chars):
-Unpopular opinion: Most startups fail because founders spend too much time building features nobody asked for instead of actually talking to customers.
+83% of creators waste time switching between tabs for analytics.
+Built what users kept asking for: Chrome extension + X API analytics + 18 post templates for xthread.
+No more tab switching. Data flows directly in. Templates speed up ideation.
+Early testers say it cuts posting time by 60%.
+Which template type would help you most?
 
-It's really important to understand that customer feedback is the key to everything.
+OUTPUT (198 chars):
+83% of creators waste time tab-switching for analytics.
 
-What do you think?
+Built what you asked for: Chrome extension + X API analytics + templates.
 
-OUTPUT (248 chars):
-Unpopular opinion: Most startups fail because founders build features nobody wants instead of talking to customers.
+Posting time cut by 60%.
 
-Customer feedback is everything.
+Which template would help you most?
 
-What do you think?
-
-⚠️ COUNT YOUR OUTPUT! Must be 180-280 chars. KEEP: hooks, questions, line breaks.`,
+Return ONLY the shortened content. It MUST be under 280 characters.`,
 
   make_thread: `Turn content into an engaging thread optimized for engagement scores.
 
