@@ -280,10 +280,11 @@ export default function EditingTools({ content, onContentChange, isThread = fals
         const limitedTools = toolsToApply.slice(0, 4)
         
         // Apply tools in sequence, with retry to ensure score improvement
-        for (const tool of limitedTools) {
+        for (let i = 0; i < limitedTools.length; i++) {
+          const tool = limitedTools[i]
           try {
             const toolLabel = TOOLS.find(t => t.id === tool)?.shortLabel || tool
-            setAutoProgress(`Applying ${toolLabel}...`)
+            setAutoProgress(`Step ${i + 1}/${limitedTools.length}: ${toolLabel}`)
             
             const currentScore = scoreEngagement(currentContent).score
             let bestResult = currentContent
@@ -479,9 +480,12 @@ export default function EditingTools({ content, onContentChange, isThread = fals
 
       {/* Auto-Optimize Progress */}
       {autoProgress && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-violet-500/10 border border-violet-500/30 rounded-lg text-violet-400 text-sm">
+        <div className="flex items-center gap-3 px-3 py-2 bg-violet-500/10 border border-violet-500/30 rounded-lg text-violet-400 text-sm">
           <Loader2 size={14} className="animate-spin flex-shrink-0" />
-          <span>{autoProgress}</span>
+          <div className="flex-1">
+            <span className="font-medium">{autoProgress}</span>
+            <span className="text-violet-400/60 ml-2">Improving your content...</span>
+          </div>
         </div>
       )}
 
