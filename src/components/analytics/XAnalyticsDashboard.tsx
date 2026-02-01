@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   BarChart3, Eye, Heart, TrendingUp, MessageSquare, Repeat2,
-  RefreshCw, AlertCircle, ExternalLink, Sparkles
+  RefreshCw, AlertCircle, ExternalLink, Sparkles, Clock
 } from 'lucide-react'
 import { useXAccount } from '@/contexts/XAccountContext'
 
@@ -49,14 +49,45 @@ interface AnalyticsData {
   top_performers: TopPerformers
 }
 
+interface CachedData {
+  data: AnalyticsData
+  timestamp: number
+  accountId: string
+}
+
+const CACHE_KEY = 'xthread_analytics_cache'
+
 export function XAnalyticsDashboard() {
   const { activeAccount } = useXAccount()
   const [data, setData] = useState<AnalyticsData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [expandedTweetId, setExpandedTweetId] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [hasLoaded, setHasLoaded] = useState(false)
   const prevAccountIdRef = useRef<string | null>(null)
+
+  // Load cached data on mount
+  useEffect(() => {
+    if (!activeAccount?.id) return
+    
+    try {
+      const cached = localStorage.getItem(CACHE_KEY)
+      if (cached) {
+        const parsed: CachedData = JSON.parse(cached)
+        if (parsed.accountId === activeAccount.id) {
+          setData(parsed.data)
+          setLastUpdated(new Date(parsed.timestamp))
+          setHasLoaded(true)
+        }
+      }
+    } catch {
+      // Ignore cache errors
+    }
+    
+    prevAccountIdRef.current = activeAccount.id
+  }, [activeAccount?.id])
 
   const fetchAnalytics = async (showRefresh = false) => {
     if (!activeAccount?.id) return
@@ -74,6 +105,17 @@ export function XAnalyticsDashboard() {
       }
 
       setData(json)
+      setHasLoaded(true)
+      
+      // Cache the data
+      const cacheData: CachedData = {
+        data: json,
+        timestamp: Date.now(),
+        accountId: activeAccount.id
+      }
+      localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData))
+      setLastUpdated(new Date())
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
@@ -82,13 +124,40 @@ export function XAnalyticsDashboard() {
     }
   }
 
-  // Reload when active account changes
+  // Clear cache when account changes
   useEffect(() => {
     if (!activeAccount?.id) return
-    if (prevAccountIdRef.current === activeAccount.id && data !== null) return
+    if (prevAccountIdRef.current && prevAccountIdRef.current !== activeAccount.id) {
+      setData(null)
+      setHasLoaded(false)
+      setLastUpdated(null)
+      localStorage.removeItem(CACHE_KEY)
+    }
     prevAccountIdRef.current = activeAccount.id
-    fetchAnalytics()
   }, [activeAccount?.id])
+
+  // Initial state - show load button
+  if (!hasLoaded && !loading) {
+    return (
+      <div className="max-w-2xl mx-auto px-6 py-16 text-center">
+        <BarChart3 className="w-16 h-16 mx-auto mb-4 text-accent" />
+        <h2 className="text-xl font-bold mb-2">X Analytics</h2>
+        <p className="text-[var(--muted)] mb-6">
+          View engagement metrics for your recent posts.
+        </p>
+        <button
+          onClick={() => fetchAnalytics()}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-[var(--accent-text)] rounded-xl font-medium hover:bg-[var(--accent-hover)] transition-all shadow-lg shadow-accent/20"
+        >
+          <RefreshCw className="w-5 h-5" />
+          Load Analytics
+        </button>
+        <p className="text-xs text-[var(--muted)] mt-4">
+          Each refresh uses 1 API call
+        </p>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
@@ -109,7 +178,7 @@ export function XAnalyticsDashboard() {
         <p className="text-[var(--muted)] mb-6">{error}</p>
         <button
           onClick={() => fetchAnalytics()}
-          className="px-6 py-3 bg-accent text-[var(--accent-text)] rounded-lg font-medium hover:bg-[var(--accent-hover)] transition-colors"
+          className="px-6 py-3 bg-accent text-[var(--accent-text)] rounded-xl font-medium hover:bg-[var(--accent-hover)] transition-colors"
         >
           Try Again
         </button>
@@ -155,17 +224,25 @@ export function XAnalyticsDashboard() {
             X Analytics
           </h1>
           <p className="text-[var(--muted)] text-sm mt-1">
-            Real-time performance data from your X account · Shows your most recent 50 posts
+            Performance data for your most recent 50 posts
           </p>
         </div>
-        <button
-          onClick={() => fetchAnalytics(true)}
-          disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg text-sm hover:bg-[var(--card-hover)] transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          {lastUpdated && (
+            <div className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
+              <Clock className="w-3.5 h-3.5" />
+              <span>Updated {formatTimeAgo(lastUpdated)}</span>
+            </div>
+          )}
+          <button
+            onClick={() => fetchAnalytics(true)}
+            disabled={refreshing}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[var(--card)] border border-[var(--border)] rounded-xl text-sm font-medium hover:bg-[var(--card-hover)] hover:border-[var(--border-hover)] transition-all disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -399,4 +476,13 @@ function formatNumber(n: number): string {
   if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`
   return n.toString()
+}
+
+function formatTimeAgo(date: Date): string {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000)
+  
+  if (seconds < 60) return 'just now'
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
+  return `${Math.floor(seconds / 86400)}d ago`
 }
