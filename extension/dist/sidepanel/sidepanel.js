@@ -227,11 +227,20 @@ function showCoaching(coaching, postData) {
     if (!hook) return '';
     return `
       <div class="hook-item" data-text="${escapeHtml(hook)}">
-        <div class="hook-header">
-          <span class="hook-emoji">${emoji}</span>
-          <span class="hook-label">${label}</span>
+        <div class="hook-content">
+          <div class="hook-header">
+            <span class="hook-emoji">${emoji}</span>
+            <span class="hook-label">${label}</span>
+          </div>
+          <span class="hook-text">"${escapeHtml(hook)}"</span>
         </div>
-        <span class="hook-text">"${escapeHtml(hook)}"</span>
+        <button class="hook-copy-btn" title="Copy hook">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span>Copy</span>
+        </button>
       </div>
     `;
   };
@@ -246,12 +255,18 @@ function showCoaching(coaching, postData) {
     </div>
   `;
   
-  // Hook click to copy
-  coachContent.querySelectorAll('.hook-item').forEach(item => {
-    item.addEventListener('click', () => {
+  // Hook copy button click
+  coachContent.querySelectorAll('.hook-copy-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const item = btn.closest('.hook-item');
       navigator.clipboard.writeText(item.dataset.text);
-      item.classList.add('copied');
-      setTimeout(() => item.classList.remove('copied'), 1500);
+      btn.classList.add('copied');
+      btn.querySelector('span').textContent = 'Copied!';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.querySelector('span').textContent = 'Copy';
+      }, 1500);
     });
   });
 }
