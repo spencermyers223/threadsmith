@@ -123,9 +123,15 @@ ENGAGEMENT SCORE TARGETS (these are measured):
 - Line breaks in longer text → +10 points (scannability)
 - Avoiding complex vocabulary → better score
 
+⚠️ PRESERVE THESE SCORE BOOSTERS (don't remove!):
+- "Unpopular opinion:", "Hot take:", bold openers → these boost hook score
+- Questions at the end (ending with ?) → these boost reply potential
+- Numbers at the start → these boost hook score
+- "Most people", "Nobody" → these boost reply potential
+
 AI TELLS TO FIX (these sound robotic):
-- "Utilize" → "use" (shorter word)
-- "In order to" → "to" (simpler)
+- "Utilize" → "use"
+- "In order to" → "to"
 - "It's important to" → delete (filler)
 - "Leverage" → "use"
 - "Dive into" / "delve into" → cut
@@ -133,28 +139,23 @@ AI TELLS TO FIX (these sound robotic):
 - "Robust" → "strong"
 - "Seamless" → "smooth"
 - "Unlock" / "Unleash" → "get"
-- "Here's the thing:" → delete
-- Long words → short words
+- "Here's the thing:" → delete (BUT keep "Unpopular opinion:", "Hot take:")
 
 HUMAN ELEMENTS (improve readability score):
 - Contractions: it's, don't, can't, won't, you're
 - Short sentences (break up long ones)
-- Line breaks for breathing room
 - Simple words (avg <5 chars scores better)
 - Natural rhythm, not perfect structure
 
 HARD REQUIREMENTS:
 1. Same or shorter length
 2. Under 280 characters for single tweets
-3. Under 280 chars per tweet for threads
-4. Must sound natural, not polished/robotic
-5. ⚠️ PRESERVE ALL LINE BREAKS - if input has line breaks, output must too
+3. ⚠️ PRESERVE LINE BREAKS
+4. ⚠️ PRESERVE hooks, questions, and controversial markers
 
 THE TEST: Read it out loud. If you wouldn't SAY it that way, rewrite it.
 
-FOR THREADS: Humanize each tweet. Keep numbering. Each under 280 chars.
-
-CRITICAL: Return ONLY the rewritten content. PRESERVE ALL LINE BREAKS.`,
+CRITICAL: Return ONLY the rewritten content. PRESERVE line breaks and score boosters.`,
 
   sharpen: `Shorten content to hit the optimal engagement score length: 180-280 characters.
 
@@ -163,17 +164,18 @@ ENGAGEMENT SCORE TARGETS (these are measured):
 - 50-179 chars → 65 points (needs more meat)
 - 281-320 chars → 70 points (slightly over)
 - >320 chars → 40 points (too long)
-- <50 chars → 30 points (too short)
 
 YOUR GOAL:
 - If content is >280 chars: Reduce to 180-280 chars (max score)
-- If content is <180 chars: Keep it, or slightly expand if room
+- If content is <180 chars: Keep it
 - Target: 200-260 chars is ideal
 
-ALSO IMPROVES READABILITY SCORE:
-- Short sentences (+10 points)
-- Simple words avg <5 chars (+10 points)
-- Line breaks in longer text (+10 points)
+⚠️ NEVER DELETE THESE (they boost other scores):
+- "Unpopular opinion:", "Hot take:" openers
+- Questions at the end (ending with ?)
+- Numbers at the start of sentences
+- "Most people", "Nobody" controversial markers
+- The first line (the hook) - shorten the MIDDLE, not the hook
 
 WORDS TO DELETE (instant cuts):
 - "I think that", "I believe", "In my opinion" → just state it
@@ -185,16 +187,16 @@ WORDS TO DELETE (instant cuts):
 - "Sort of", "kind of", "a bit" → DELETE
 
 TECHNIQUES:
-- Combine sentences (but keep line breaks between ideas)
+- Cut from the MIDDLE, preserve hook (first line) and CTA (last line)
 - Active voice (shorter than passive)
 - Replace phrases with single words
-- Delete anything that doesn't add value
+- Delete filler, keep substance
 
-⚠️ PRESERVE LINE BREAKS: If input has multiple lines, keep that structure. Don't collapse into one paragraph.
+⚠️ PRESERVE: Line breaks, hooks, questions, controversial markers.
 
-FOR THREADS: Each tweet must be under 280 chars. Maintain numbering (1/, 2/, etc.).
+FOR THREADS: Each tweet must be under 280 chars. Maintain numbering.
 
-CRITICAL: Return ONLY the shortened content. Aim for 180-280 chars. PRESERVE LINE BREAKS.`,
+CRITICAL: Return ONLY the shortened content. Aim for 180-280 chars. PRESERVE score boosters.`,
 
   make_thread: `Turn content into an engaging thread optimized for engagement scores.
 
