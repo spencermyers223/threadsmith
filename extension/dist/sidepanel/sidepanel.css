@@ -209,13 +209,17 @@ body {
 
 .panel-tab.active {
   background: var(--accent);
-  color: white;
+  color: #1a1a1a;
 }
 
 .tab-icon {
   width: 20px;
   height: 20px;
   stroke: currentColor;
+}
+
+.panel-tab.active .tab-icon {
+  stroke: #1a1a1a;
 }
 
 .tab-label {
