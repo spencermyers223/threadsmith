@@ -6,6 +6,7 @@ const XTHREAD_API = 'https://xthread.io/api';
 // State
 let userToken = null;
 let isPremium = false;
+let planName = 'Free';
 let userEmail = null;
 let xUsername = null;
 let currentTab = 'coach';
@@ -44,9 +45,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadAuthState() {
-  const stored = await chrome.storage.local.get(['xthreadToken', 'isPremium', 'userEmail', 'xUsername']);
+  const stored = await chrome.storage.local.get(['xthreadToken', 'isPremium', 'planName', 'userEmail', 'xUsername']);
   userToken = stored.xthreadToken;
   isPremium = stored.isPremium || false;
+  planName = stored.planName || 'Free';
   userEmail = stored.userEmail;
   xUsername = stored.xUsername;
   
@@ -70,12 +72,14 @@ async function loadAuthState() {
             userEmail = data.user.email;
           }
           isPremium = data.isPremium || false;
+          planName = data.planName || 'Free';
           
           // Save to storage
           await chrome.storage.local.set({ 
             xUsername, 
             userEmail,
-            isPremium 
+            isPremium,
+            planName
           });
         }
       } else {
@@ -100,7 +104,7 @@ function updateAuthUI() {
     // Display X username if available, otherwise fall back to email
     const displayName = xUsername ? `@${xUsername}` : (userEmail || 'User');
     document.getElementById('user-email').textContent = displayName;
-    document.getElementById('user-plan').textContent = isPremium ? 'Premium' : 'Free';
+    document.getElementById('user-plan').textContent = planName;
     
     // Avatar: use first letter of username or email
     const avatarLetter = xUsername ? xUsername.charAt(0).toUpperCase() : 

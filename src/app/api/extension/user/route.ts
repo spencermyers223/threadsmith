@@ -64,6 +64,13 @@ export async function GET(request: NextRequest) {
     const isPremium = subscription?.status === 'active' || 
                       subscription?.status === 'trialing' ||
                       subscription?.plan_type === 'lifetime';
+    
+    // Get plan display name
+    let planName = 'Free';
+    if (isPremium && subscription?.plan_type) {
+      // Capitalize first letter: 'premium' -> 'Premium', 'professional' -> 'Professional'
+      planName = subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1);
+    }
 
     // Get user profile
     const { data: profile } = await supabase
@@ -104,7 +111,8 @@ export async function GET(request: NextRequest) {
         xDisplayName: xAccount?.x_display_name || null,
         xAvatar: xAccount?.x_profile_image_url || null
       },
-      isPremium
+      isPremium,
+      planName
     });
 
   } catch (error) {
