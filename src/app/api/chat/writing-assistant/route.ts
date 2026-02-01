@@ -69,15 +69,25 @@ interface Message {
 // Common formatting instruction for all prompts
 const FORMATTING_RULE = `
 
-⚠️ CRITICAL FORMATTING RULE:
-PRESERVE ALL LINE BREAKS EXACTLY AS THEY APPEAR IN THE INPUT.
-If the input has text like:
-"Line one
+⚠️ CRITICAL FORMATTING RULES:
 
-Line two
+1. PRESERVE ALL LINE BREAKS exactly as they appear in the input.
+   
+   WRONG (collapsed):
+   "Line one Line two Line three"
+   
+   RIGHT (preserved):
+   "Line one
+   
+   Line two
+   
+   Line three"
 
-Line three"
-Your output MUST maintain those exact line breaks. Never collapse multiple lines into a single paragraph.
+2. DO NOT add markdown formatting (no **, no ## headers)
+
+3. Return ONLY the modified text - no explanations, no "Here's the improved version:", no quotes around the output
+
+4. Count line breaks in input and ensure same number in output
 `
 
 // Editing tool prompts
@@ -337,19 +347,42 @@ export async function POST(request: NextRequest) {
 
       const threadContext = isThread ? '\n\nNOTE: This is a multi-tweet THREAD. Preserve the numbered tweet structure (1/, 2/, etc.) exactly. Only modify the relevant parts.' : ''
 
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2048,
-        system: editingPrompt + FORMATTING_RULE,
-        messages: [{ role: 'user', content: `Here is the content to modify:\n\n${content}${threadContext}\n\n⚠️ IMPORTANT: Preserve all line breaks exactly as shown above.` }],
-      })
+      // Count line breaks in original content
+      const originalLineBreaks = (content.match(/\n/g) || []).length
 
-      const textContent = response.content
-        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-        .map(block => block.text)
-        .join('\n')
+      // Helper to call the API
+      const callApi = async (extraPrompt = ''): Promise<string> => {
+        const response = await anthropic.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 2048,
+          system: editingPrompt + FORMATTING_RULE,
+          messages: [{ role: 'user', content: `Here is the content to modify:\n\n${content}${threadContext}\n\n⚠️ IMPORTANT: Preserve all line breaks exactly as shown above.${extraPrompt}` }],
+        })
 
-      return new Response(JSON.stringify({ content: textContent.trim() }), {
+        return response.content
+          .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+          .map(block => block.text)
+          .join('\n')
+          .trim()
+      }
+
+      // First attempt
+      let result = await callApi()
+
+      // Check if formatting was collapsed (significant loss of line breaks)
+      const resultLineBreaks = (result.match(/\n/g) || []).length
+      if (originalLineBreaks > 2 && resultLineBreaks < originalLineBreaks / 2) {
+        // Retry with stronger formatting emphasis
+        result = await callApi('\n\n⚠️ YOUR OUTPUT MUST HAVE THE SAME LINE BREAKS AS THE INPUT. Count them. The input has ' + originalLineBreaks + ' line breaks. Do NOT collapse into a paragraph.')
+      }
+
+      // Strip common AI prefixes
+      result = result
+        .replace(/^(Here's?( the| your)?( improved| modified| updated)?( version| content)?:?\s*)/i, '')
+        .replace(/^["']|["']$/g, '')
+        .trim()
+
+      return new Response(JSON.stringify({ content: result }), {
         headers: { 'Content-Type': 'application/json' },
       })
     }
