@@ -712,7 +712,13 @@ export default function WorkspacePage() {
                   const parsedTweets = parseThreadFromContent(newContent)
                   setThreadTweets(parsedTweets)
                 } else {
-                  setContent(newContent)
+                  // Convert plain text line breaks to HTML paragraphs
+                  // EditingTools returns plain text with \n, but workspace uses HTML
+                  const htmlContent = newContent
+                    .split(/\n\n+/)  // Split on double newlines (paragraphs)
+                    .map(para => `<p>${para.replace(/\n/g, '<br>')}</p>`)  // Single newlines become <br>
+                    .join('')
+                  setContent(htmlContent)
                 }
                 setHasUnsavedChanges(true)
               }}
