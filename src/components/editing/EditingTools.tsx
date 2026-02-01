@@ -200,13 +200,46 @@ export default function EditingTools({ content, onContentChange, isThread = fals
     }
 
     setEngagementScore(null)
+    
+    // Calculate score BEFORE the edit
+    const beforeScore = scoreEngagement(content)
+
+    // Check for very short content (except for make_thread which expands)
+    if (content.trim().length < 20 && toolId !== 'make_thread') {
+      setError('Content too short to optimize. Add more text first.')
+      setActiveTool(null)
+      return
+    }
+
+    // Check if content is already highly optimized for this specific tool
+    const bd = beforeScore.breakdown
+    const toolSpecificScores: Record<ToolId, number | undefined> = {
+      add_hook: bd.hookStrength.score,
+      humanize: bd.readability.score,
+      sharpen: bd.length.score,
+      add_question: bd.replyPotential.score,
+      make_spicy: bd.replyPotential.score,
+      make_thread: undefined,
+      algorithm_check: undefined,
+      auto_optimize: beforeScore.score,
+    }
+    
+    const relevantScore = toolSpecificScores[toolId]
+    if (relevantScore !== undefined && relevantScore >= 95 && toolId !== 'auto_optimize') {
+      setScoreChange({ 
+        before: beforeScore.score, 
+        after: beforeScore.score, 
+        tool: `${TOOLS.find(t => t.id === toolId)?.shortLabel} ✓ Already excellent (${relevantScore}/100)` 
+      })
+      setTimeout(() => setScoreChange(null), 3000)
+      setActiveTool(null)
+      return
+    }
+
     setIsLoading(true)
     
     // Save current content for undo
     setPreviousContent(content)
-
-    // Calculate score BEFORE the edit
-    const beforeScore = scoreEngagement(content)
 
     try {
       // Auto-optimize: analyze score and apply best tools in optimal order
