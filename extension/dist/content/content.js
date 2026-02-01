@@ -3130,48 +3130,69 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Fill the X compose modal with content without page refresh
 async function fillComposeWithContent(content) {
   try {
-    // Method 1: Press 'n' to open compose modal (X keyboard shortcut)
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'n', code: 'KeyN', bubbles: true }));
+    // Step 1: Copy content to clipboard (always works, preserves formatting)
+    await navigator.clipboard.writeText(content);
+    console.debug('[xthread] Content copied to clipboard');
     
-    // Wait for compose modal to appear
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Step 2: Click the compose button to open modal (doesn't refresh page)
+    const composeButton = document.querySelector('[data-testid="SideNav_NewTweet_Button"]') ||
+                          document.querySelector('a[href="/compose/post"]') ||
+                          document.querySelector('[aria-label="Post"]');
     
-    // Find the compose text input (contenteditable div)
-    const composeInput = document.querySelector('[data-testid="tweetTextarea_0"]') ||
-                         document.querySelector('[role="textbox"][data-testid]') ||
-                         document.querySelector('div[contenteditable="true"][role="textbox"]');
-    
-    if (composeInput) {
-      // Focus the input
-      composeInput.focus();
+    if (composeButton) {
+      composeButton.click();
+      console.debug('[xthread] Compose button clicked');
       
-      // Clear existing content
-      composeInput.innerHTML = '';
+      // Wait for modal to open
+      await new Promise(resolve => setTimeout(resolve, 400));
       
-      // Insert text with line breaks preserved
-      const lines = content.split('\n');
-      lines.forEach((line, index) => {
-        if (index > 0) {
-          // Add line break
-          composeInput.appendChild(document.createElement('br'));
-        }
-        if (line) {
-          composeInput.appendChild(document.createTextNode(line));
-        }
-      });
-      
-      // Dispatch input event so X recognizes the change
-      composeInput.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
-      
-      console.debug('[xthread] Compose filled with content');
+      // Show toast notification
+      showXthreadToast('Tweet copied! Press Ctrl+V to paste');
     } else {
-      console.error('[xthread] Could not find compose input');
-      // Fallback: open intent URL
-      window.location.href = `https://x.com/intent/post?text=${encodeURIComponent(content)}`;
+      // No compose button found, show notification
+      showXthreadToast('Tweet copied! Click compose and press Ctrl+V to paste');
     }
   } catch (err) {
-    console.error('[xthread] Error filling compose:', err);
+    console.error('[xthread] Error:', err);
+    showXthreadToast('Error copying tweet. Please try again.');
   }
+}
+
+// Show a toast notification on the X page
+function showXthreadToast(message) {
+  // Remove existing toast
+  const existing = document.getElementById('xthread-toast');
+  if (existing) existing.remove();
+  
+  // Create toast
+  const toast = document.createElement('div');
+  toast.id = 'xthread-toast';
+  toast.innerHTML = `
+    <div style="
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1d9bf0;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 999999;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    ">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      ${message}
+    </div>
+  `;
+  document.body.appendChild(toast);
+  
+  // Auto-remove after 3 seconds
+  setTimeout(() => toast.remove(), 3000);
 }
 
 // Start
