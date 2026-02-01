@@ -451,20 +451,28 @@
 }
 
 .xthread-save-btn {
-  background: linear-gradient(135deg, #C9B896 0%, #B8A886 100%);
-  border: none;
-  color: #1a1a1a;
-  border-radius: 9999px;
-  padding: 4px 12px;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
+  gap: 4px;
+  padding: 4px 14px;
+  border: none;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #C9B896 0%, #B8A886 100%);
+  color: #1a1a1a;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  width: auto;
+  height: auto;
 }
 
 .xthread-save-btn svg {
   width: 18px;
   height: 18px;
+  flex-shrink: 0;
 }
 
 .xthread-save-btn:hover {
