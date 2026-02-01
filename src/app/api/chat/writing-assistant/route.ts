@@ -245,26 +245,28 @@ ENGAGEMENT SCORE TARGETS (these are measured):
 - Contains engagement phrase → +20 points:
   "what do you think" | "agree?" | "disagree?" | "thoughts?" | "am i wrong" | 
   "change my mind" | "prove me wrong" | "who else" | "reply with" | "drop your"
-- Contains controversial marker → +15 points:
-  "unpopular opinion" | "hot take" | "controversial" | "most people" | "everyone is wrong"
 
 HIGH-SCORING QUESTION PATTERNS (ranked):
-1. "Agree or disagree?" ← triggers engagement phrase + question mark
-2. "Prove me wrong" ← triggers engagement phrase
-3. "What's yours?" ← short, triggers question
-4. "Who else?" ← triggers engagement phrase + question
-5. "Change my mind" ← triggers engagement phrase
+1. "Agree or disagree?" ← engagement phrase + question
+2. "Prove me wrong" ← engagement phrase
+3. "What's yours?" ← short, question
+4. "Who else?" ← engagement phrase + question
+
+⚠️ PRESERVE ALL EXISTING CONTENT:
+- Do NOT modify the hook (first line)
+- Do NOT remove controversial markers (Unpopular opinion, Hot take, Most people)
+- Do NOT remove numbers at the start
+- ONLY ADD a question at the very end
 
 RULES:
-1. Add question at the VERY END (on its own line after a blank line)
-2. Question MUST end with "?" (this is worth +30 points)
-3. Keep total under 280 characters - shorten content if needed
-4. Use one of the engagement phrases above when possible
-5. ⚠️ PRESERVE ALL EXISTING LINE BREAKS in the content
+1. Add question on its own line at the VERY END
+2. Question MUST end with "?"
+3. Keep total under 280 characters - shorten MIDDLE if needed, not hook
+4. PRESERVE all existing line breaks
 
 FOR THREADS: Add question to the LAST tweet only.
 
-CRITICAL: Return ONLY the modified content. PRESERVE LINE BREAKS. Must end with "?".`,
+CRITICAL: Return content + question. PRESERVE everything else exactly.`,
 
   make_spicy: `Make this content more provocative to boost Reply Potential score (+15 points for controversial markers).
 
@@ -274,12 +276,17 @@ ENGAGEMENT SCORE TARGETS (these are measured):
   "nobody" | "everyone is wrong" | "i don't care"
 - Also boosts Hook Strength if used at start (+20 points for bold claim opener)
 
+⚠️ PRESERVE EXISTING SCORE BOOSTERS:
+- Keep any existing questions at the end (ending with ?)
+- Keep numbers at the start of lines
+- Keep existing line breaks
+- Only ADD spicy elements, don't remove what's working
+
 HARD REQUIREMENTS:
 1. Output must be SAME LENGTH OR SHORTER (stronger words, not more words)
 2. For single tweets: Stay under 280 characters
-3. For threads: Each tweet under 280 characters
-4. Add at least ONE controversial marker phrase
-5. ⚠️ PRESERVE ALL LINE BREAKS - do not collapse multiple lines into one paragraph
+3. Add at least ONE controversial marker if not already present
+4. ⚠️ PRESERVE ALL LINE BREAKS
 
 SPICY TRANSFORMATIONS (that maintain or reduce length):
 BEFORE → AFTER
@@ -287,16 +294,13 @@ BEFORE → AFTER
 - "Many people struggle" → "Most people get this completely wrong"
 - "It's important to" → "Stop ignoring this."
 - "You might want to" → "You need to"
-- "In my opinion" → DELETE (just state it as fact)
-- "I think" → DELETE
-- "Perhaps" → DELETE
-- "Sort of" → DELETE
+- Hedging words (I think, perhaps, sort of) → DELETE
 
 HIGH-SCORING SPICY PATTERNS:
-- Start with "Unpopular opinion:" (triggers bold claim + controversial)
-- Start with "Hot take:" (triggers bold claim + controversial)  
-- Include "Most people [do X wrong]" (triggers controversial)
-- Include "Nobody talks about this" (triggers controversial)
+- "Unpopular opinion:" at start (bold claim + controversial)
+- "Hot take:" at start (bold claim + controversial)  
+- "Most people [do X wrong]" in content (controversial)
+- "Nobody talks about this" (controversial)
 - Include "Stop [doing X]" (triggers bold claim)
 
 THE RULE: Make it polarizing enough that people MUST reply to agree or disagree.
