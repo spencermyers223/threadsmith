@@ -220,38 +220,27 @@ function showCoaching(coaching, postData) {
   emptyState.classList.add('hidden');
   coachContent.classList.remove('hidden');
   
-  // Get hooks by tone
+  // Get hooks by tone (now single strings, not arrays)
   const hooks = coaching.hooks || {};
-  const wittyHooks = hooks.witty || [];
-  const insightfulHooks = hooks.insightful || [];
-  const contrarianHooks = hooks.contrarian || [];
-  const friendlyHooks = hooks.friendly || [];
   
-  const renderHooks = (hooksArray) => hooksArray.map(hook => `
-    <div class="hook-item" data-text="${escapeHtml(hook)}">
-      <span class="hook-text">"${escapeHtml(hook)}"</span>
-    </div>
-  `).join('');
+  const renderHook = (emoji, label, hook) => {
+    if (!hook) return '';
+    return `
+      <div class="hook-item" data-text="${escapeHtml(hook)}">
+        <span class="hook-emoji">${emoji}</span>
+        <span class="hook-label">${label}</span>
+        <span class="hook-text">"${escapeHtml(hook)}"</span>
+      </div>
+    `;
+  };
   
   coachContent.innerHTML = `
-    <div class="coach-section">
-      <div class="section-header">😏 Witty</div>
-      ${renderHooks(wittyHooks)}
-    </div>
-    
-    <div class="coach-section">
-      <div class="section-header">💡 Insightful</div>
-      ${renderHooks(insightfulHooks)}
-    </div>
-    
-    <div class="coach-section">
-      <div class="section-header">🤔 Contrarian</div>
-      ${renderHooks(contrarianHooks)}
-    </div>
-    
-    <div class="coach-section">
-      <div class="section-header">🤝 Friendly</div>
-      ${renderHooks(friendlyHooks)}
+    <div class="coach-hooks">
+      ${renderHook('😏', 'Witty', hooks.witty)}
+      ${renderHook('💡', 'Insightful', hooks.insightful)}
+      ${renderHook('🤔', 'Contrarian', hooks.contrarian)}
+      ${renderHook('🤝', 'Friendly', hooks.friendly)}
+      ${renderHook('❓', 'Curious', hooks.curious)}
     </div>
   `;
   

@@ -38,10 +38,11 @@ interface PostData {
 
 interface CoachingResponse {
   hooks: {
-    witty: string[];
-    insightful: string[];
-    contrarian: string[];
-    friendly: string[];
+    witty: string;
+    insightful: string;
+    contrarian: string;
+    friendly: string;
+    curious: string;
   };
 }
 
@@ -99,35 +100,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate coaching using Claude - simplified to just hooks
-    const prompt = `You are an expert X/Twitter reply coach. Generate reply hook starters for this post.
+    // Generate coaching using Claude - 5 hooks, one per tone
+    const prompt = `You are an expert X/Twitter reply coach. Generate ONE perfect hook starter for each tone category.
 
-Post to reply to:
+POST TO REPLY TO:
 Author: ${post.author}
 Content: "${post.text}"
 
-Generate exactly 3 hook starters for each of these 4 tones:
-- witty: clever, playful, shows personality
-- insightful: adds value, shares perspective or experience  
-- contrarian: respectfully challenges or offers different angle
-- friendly: warm, supportive, builds connection
+Generate exactly ONE hook for each of these 5 tones. Each hook MUST:
+1. Be 5-12 words max (just the opening of a reply)
+2. Directly reference something specific from the post above
+3. Perfectly embody its tone category
+
+TONES:
+- witty: clever wordplay, unexpected twist, shows personality with humor
+- insightful: shares valuable perspective, adds depth, "here's what I've learned..."
+- contrarian: respectfully challenges an assumption, offers different angle, "what if..."
+- friendly: warm and supportive, builds connection, encouraging
+- curious: asks a genuine question, invites discussion, shows interest
 
 Respond in this exact JSON format:
 {
   "hooks": {
-    "witty": ["hook 1...", "hook 2...", "hook 3..."],
-    "insightful": ["hook 1...", "hook 2...", "hook 3..."],
-    "contrarian": ["hook 1...", "hook 2...", "hook 3..."],
-    "friendly": ["hook 1...", "hook 2...", "hook 3..."]
+    "witty": "your witty hook here...",
+    "insightful": "your insightful hook here...",
+    "contrarian": "your contrarian hook here...",
+    "friendly": "your friendly hook here...",
+    "curious": "your curious hook here..."
   }
 }
 
-RULES:
-- Each hook is the FIRST 5-15 words of a reply (not the full reply)
-- Hooks should spark ideas, not be copy-paste ready
-- Be specific to the post content
-- No generic starters like "Great post!" or "I agree!"
-- Each hook should feel like a natural conversation opener`;
+CRITICAL RULES:
+- Each hook is SHORT (5-12 words) - it's the FIRST LINE of a reply, not the whole thing
+- Each hook MUST tie directly to the specific post content - no generic starters
+- No "Great post!" or "I agree!" or "This is so true!" - be specific
+- The hook should make someone want to keep reading your reply`;
 
     console.log('[generate-replies] Calling Claude API...');
     const response = await anthropic.messages.create({
@@ -153,13 +160,14 @@ RULES:
 
     const result = JSON.parse(jsonMatch[0]);
 
-    // Validate and normalize the response
+    // Validate and normalize the response - now single strings per category
     const coaching: CoachingResponse = {
       hooks: {
-        witty: (result.hooks?.witty || []).slice(0, 3),
-        insightful: (result.hooks?.insightful || []).slice(0, 3),
-        contrarian: (result.hooks?.contrarian || []).slice(0, 3),
-        friendly: (result.hooks?.friendly || []).slice(0, 3)
+        witty: result.hooks?.witty || '',
+        insightful: result.hooks?.insightful || '',
+        contrarian: result.hooks?.contrarian || '',
+        friendly: result.hooks?.friendly || '',
+        curious: result.hooks?.curious || ''
       }
     };
 
