@@ -89,13 +89,20 @@ export async function GET(request: NextRequest) {
     const formatScheduledDisplay = (date: string | null, time: string | null): string | null => {
       if (!date) return null;
       
-      const now = new Date();
-      const todayStr = now.toISOString().split('T')[0];
-      const postDate = new Date(date + 'T12:00:00');
+      // Parse dates as UTC to avoid timezone issues
+      const todayStr = new Date().toISOString().split('T')[0];
       
-      // Calculate days difference
-      const todayStart = new Date(todayStr + 'T00:00:00');
-      const diffDays = Math.round((postDate.getTime() - todayStart.getTime()) / 86400000);
+      // Compare just the date strings (YYYY-MM-DD)
+      const todayParts = todayStr.split('-').map(Number);
+      const postParts = date.split('-').map(Number);
+      
+      // Convert to days since epoch for comparison
+      const todayDays = Date.UTC(todayParts[0], todayParts[1] - 1, todayParts[2]) / 86400000;
+      const postDays = Date.UTC(postParts[0], postParts[1] - 1, postParts[2]) / 86400000;
+      const diffDays = postDays - todayDays;
+      
+      // For day name display
+      const postDate = new Date(date + 'T12:00:00Z');
       
       let dateStr: string;
       if (diffDays === 0) {
