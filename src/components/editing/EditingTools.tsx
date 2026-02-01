@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Wand2, Zap, Sparkles, ListTree, BarChart3, Loader2,
-  AlertTriangle, MessageCircle, Flame, X, Clock, WandSparkles, Undo2
+  AlertTriangle, MessageCircle, Flame, X, WandSparkles, Undo2, BookOpen
 } from 'lucide-react'
 import { scoreEngagement, type EngagementScore } from '@/lib/engagement-scorer'
 
@@ -32,7 +32,7 @@ const TOOLS: Tool[] = [
     id: 'auto_optimize',
     label: 'Auto-Optimize',
     shortLabel: '✨ Auto',
-    description: 'Analyze and apply best tools automatically. Applies up to 4 tools in optimal order (⌘A)',
+    description: 'Analyze and apply best tools automatically. (⌘A)',
     icon: WandSparkles,
     color: 'text-violet-400',
     hoverBg: 'hover:bg-violet-500/10 hover:border-violet-500/30',
@@ -42,7 +42,7 @@ const TOOLS: Tool[] = [
     id: 'add_hook',
     label: 'Add Hook',
     shortLabel: 'Hook',
-    description: 'Add a hook: number, question, or bold claim. +15-20 hook score (⌘H)',
+    description: 'Add a scroll-stopping hook: number, question, or bold claim. (⌘H)',
     icon: Zap,
     color: 'text-amber-400',
     hoverBg: 'hover:bg-amber-500/10 hover:border-amber-500/30',
@@ -52,7 +52,7 @@ const TOOLS: Tool[] = [
     id: 'humanize',
     label: 'Humanize',
     shortLabel: 'Humanize',
-    description: 'Remove AI tells, use contractions, shorter words. +10-20 readability (⌘U)',
+    description: 'Remove AI tells, add contractions, improve readability. (⌘U)',
     icon: Sparkles,
     color: 'text-pink-400',
     hoverBg: 'hover:bg-pink-500/10 hover:border-pink-500/30',
@@ -62,7 +62,7 @@ const TOOLS: Tool[] = [
     id: 'sharpen',
     label: 'Shorten',
     shortLabel: 'Shorten',
-    description: 'Cut to 180-280 chars (optimal length). Removes filler, keeps hooks (⌘S)',
+    description: 'Cut to 280 chars or less. Removes filler, keeps impact. (⌘S)',
     icon: Wand2,
     color: 'text-cyan-400',
     hoverBg: 'hover:bg-cyan-500/10 hover:border-cyan-500/30',
@@ -72,7 +72,7 @@ const TOOLS: Tool[] = [
     id: 'add_question',
     label: 'Add Question',
     shortLabel: 'Question',
-    description: 'End with a question to drive replies. +30 reply potential (⌘Q)',
+    description: 'End with a question to drive replies. Replies = 75x algo weight. (⌘Q)',
     icon: MessageCircle,
     color: 'text-blue-400',
     hoverBg: 'hover:bg-blue-500/10 hover:border-blue-500/30',
@@ -82,7 +82,7 @@ const TOOLS: Tool[] = [
     id: 'make_spicy',
     label: 'Make Spicier',
     shortLabel: 'Spicier',
-    description: 'Add "most people" or "unpopular opinion" triggers. +15 reply potential (⌘P)',
+    description: 'Add debate triggers: "most people", "unpopular opinion". (⌘P)',
     icon: Flame,
     color: 'text-orange-400',
     hoverBg: 'hover:bg-orange-500/10 hover:border-orange-500/30',
@@ -92,7 +92,7 @@ const TOOLS: Tool[] = [
     id: 'make_thread',
     label: 'Expand to Thread',
     shortLabel: 'Thread',
-    description: 'Turn into a 5-8 tweet thread with hook and CTA (⌘T)',
+    description: 'Turn into a 5-8 tweet thread with hook and CTA. (⌘T)',
     icon: ListTree,
     color: 'text-purple-400',
     hoverBg: 'hover:bg-purple-500/10 hover:border-purple-500/30',
@@ -102,15 +102,13 @@ const TOOLS: Tool[] = [
     id: 'algorithm_check',
     label: 'Check Score',
     shortLabel: 'Score',
-    description: 'Check engagement score: hook, replies, length, readability (⌘E)',
+    description: 'Check engagement score: hook, reply potential, readability. (⌘E)',
     icon: BarChart3,
     color: 'text-emerald-400',
     hoverBg: 'hover:bg-emerald-500/10 hover:border-emerald-500/30',
     shortcut: 'e',
   },
 ]
-
-// Using shared EngagementScore from engagement-scorer for consistency with Workspace
 
 export default function EditingTools({ content, onContentChange, isThread = false, hideScore = false }: EditingToolsProps) {
   const [activeTool, setActiveTool] = useState<ToolId | null>(null)
@@ -121,19 +119,16 @@ export default function EditingTools({ content, onContentChange, isThread = fals
   const [previousContent, setPreviousContent] = useState<string | null>(null)
   const [autoProgress, setAutoProgress] = useState<string | null>(null)
 
-  // Keyboard shortcuts handler - wrapped in useCallback to prevent re-renders
+  // Keyboard shortcuts handler
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // Only trigger if Cmd (Mac) or Ctrl (Windows) is held
     if (!(e.metaKey || e.ctrlKey)) return
     
-    // Don't trigger when typing in input/textarea
     const target = e.target as HTMLElement
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
 
     const tool = TOOLS.find(t => t.shortcut === e.key.toLowerCase())
     if (tool) {
       e.preventDefault()
-      // Trigger the tool - we'll call handleToolClick indirectly via a ref
       const toolBtn = document.querySelector(`[data-tool-id="${tool.id}"]`) as HTMLButtonElement
       if (toolBtn && !toolBtn.disabled) {
         toolBtn.click()
@@ -149,7 +144,6 @@ export default function EditingTools({ content, onContentChange, isThread = fals
     }
   }, [previousContent, onContentChange])
 
-  // Set up keyboard shortcuts
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
@@ -158,11 +152,10 @@ export default function EditingTools({ content, onContentChange, isThread = fals
   // Helper to identify which factors improved
   const getImprovements = (before: EngagementScore, after: EngagementScore): string[] => {
     const improvements: string[] = []
-    const factors = ['hookStrength', 'replyPotential', 'length', 'readability'] as const
+    const factors = ['hookStrength', 'replyPotential', 'readability'] as const
     const labels: Record<typeof factors[number], string> = {
       hookStrength: 'Hook',
       replyPotential: 'Replies',
-      length: 'Length',
       readability: 'Readability',
     }
     for (const factor of factors) {
@@ -188,23 +181,20 @@ export default function EditingTools({ content, onContentChange, isThread = fals
     setScoreChange(null)
 
     if (toolId === 'algorithm_check') {
-      // Toggle score check - if already showing, hide it
       if (engagementScore) {
         setEngagementScore(null)
         setActiveTool(null)
         return
       }
-      // Use shared scorer for consistency with Workspace
       setEngagementScore(scoreEngagement(content))
       return
     }
 
     setEngagementScore(null)
     
-    // Calculate score BEFORE the edit
     const beforeScore = scoreEngagement(content)
 
-    // Check for very short content (except for make_thread which expands)
+    // Check for very short content
     if (content.trim().length < 20 && toolId !== 'make_thread') {
       setError('Content too short to optimize. Add more text first.')
       setActiveTool(null)
@@ -216,7 +206,7 @@ export default function EditingTools({ content, onContentChange, isThread = fals
     const toolSpecificScores: Record<ToolId, number | undefined> = {
       add_hook: bd.hookStrength.score,
       humanize: bd.readability.score,
-      sharpen: bd.length.score,
+      sharpen: undefined, // Shorten always applies if content is over 280
       add_question: bd.replyPotential.score,
       make_spicy: bd.replyPotential.score,
       make_thread: undefined,
@@ -237,49 +227,41 @@ export default function EditingTools({ content, onContentChange, isThread = fals
     }
 
     setIsLoading(true)
-    
-    // Save current content for undo
     setPreviousContent(content)
 
     try {
-      // Auto-optimize: analyze score and apply best tools in optimal order
       if (toolId === 'auto_optimize') {
         let currentContent = content
         const toolsApplied: string[] = []
         
-        // Determine which tools to apply based on current scores
         const bd = beforeScore.breakdown
         
-        // Build the optimization plan with priority order:
-        // 1. Hook first (sets up the opening - most important)
-        // 2. Spicy (adds controversial markers throughout)
-        // 3. Sharpen (cut to size BEFORE adding question to avoid overflow)
-        // 4. Question (adds to end - should come after sharpen)
-        // 5. Humanize last (polish without removing score boosters)
+        // Build optimization plan based on what matters:
+        // 1. Hook first (most important for stopping scroll)
+        // 2. Spicy (adds debate triggers)
+        // 3. Shorten (if over 280)
+        // 4. Question (adds to end)
+        // 5. Humanize last (polish)
         
         const plan: { tool: ToolId; condition: boolean; priority: number }[] = [
           { tool: 'add_hook', condition: bd.hookStrength.score < 75, priority: 1 },
           { tool: 'make_spicy', condition: bd.replyPotential.score < 60 || beforeScore.score < 55, priority: 2 },
-          { tool: 'sharpen', condition: content.length > 280 || bd.length.score < 70, priority: 3 },
+          { tool: 'sharpen', condition: content.length > 280, priority: 3 },
           { tool: 'add_question', condition: bd.replyPotential.score < 80, priority: 4 },
           { tool: 'humanize', condition: bd.readability.score < 65, priority: 5 },
         ]
         
-        // Filter to tools that meet conditions, sort by priority
         const toolsToApply = plan
           .filter(p => p.condition)
           .sort((a, b) => a.priority - b.priority)
           .map(p => p.tool)
         
-        // If no tools needed, apply humanize as a polish pass
         if (toolsToApply.length === 0) {
           toolsToApply.push('humanize')
         }
         
-        // Limit to max 4 tools to avoid over-processing
         const limitedTools = toolsToApply.slice(0, 4)
         
-        // Apply tools in sequence, with retry to ensure score improvement
         for (let i = 0; i < limitedTools.length; i++) {
           const tool = limitedTools[i]
           try {
@@ -290,7 +272,6 @@ export default function EditingTools({ content, onContentChange, isThread = fals
             let bestResult = currentContent
             let bestScore = currentScore
             
-            // Try up to 2 times to improve score with this tool
             for (let attempt = 0; attempt < 2; attempt++) {
               const res = await fetch('/api/chat/writing-assistant', {
                 method: 'POST',
@@ -309,24 +290,22 @@ export default function EditingTools({ content, onContentChange, isThread = fals
                 if (newScore > bestScore) {
                   bestResult = data.content
                   bestScore = newScore
-                  break // Got improvement, stop retrying
+                  break
                 }
               }
             }
             
-            // Only apply if we got an improvement
             if (bestScore > currentScore) {
               currentContent = bestResult
               toolsApplied.push(toolLabel)
             }
           } catch {
-            // Continue with next tool if one fails
+            // Continue with next tool
           }
         }
         
-        setAutoProgress(null) // Clear progress
+        setAutoProgress(null)
         
-        // Only update if at least one tool was applied successfully
         if (toolsApplied.length > 0) {
           const afterScoreObj = scoreEngagement(currentContent)
           const improvements = getImprovements(beforeScore, afterScoreObj)
@@ -339,12 +318,10 @@ export default function EditingTools({ content, onContentChange, isThread = fals
           setTimeout(() => setScoreChange(null), 6000)
           onContentChange(currentContent)
         } else {
-          // All tools failed
           setError('Auto-optimize failed. Try individual tools instead.')
-          setPreviousContent(null) // Clear undo since nothing changed
+          setPreviousContent(null)
         }
       } else {
-        // Single tool application with retry if score doesn't improve
         const toolLabel = TOOLS.find(t => t.id === toolId)?.shortLabel || toolId
         let bestContent = content
         let bestScore = beforeScore.score
@@ -369,25 +346,21 @@ export default function EditingTools({ content, onContentChange, isThread = fals
           const data = await res.json()
           const newScore = scoreEngagement(data.content).score
           
-          // Keep this result if it improves the score
           if (newScore > bestScore) {
             bestContent = data.content
             bestScore = newScore
-            break // Success! Stop retrying
+            break
           }
           
-          // On last attempt, use best result we got (even if not improved)
           if (attempt === maxRetries) {
             if (newScore >= bestScore) {
               bestContent = data.content
               bestScore = newScore
             }
-            // Otherwise keep original content
           }
         }
         
-        // Special handling for Shorten: if content is over 280 chars, ALWAYS apply if result is shorter
-        // The goal of Shorten is to get under the limit, not to improve overall score
+        // Special handling for Shorten
         if (toolId === 'sharpen' && content.length > 280 && bestContent.length < content.length) {
           const afterScoreObj = scoreEngagement(bestContent)
           const charsSaved = content.length - bestContent.length
@@ -400,22 +373,19 @@ export default function EditingTools({ content, onContentChange, isThread = fals
           setTimeout(() => setScoreChange(null), 4000)
           onContentChange(bestContent)
         } else if (bestScore > beforeScore.score) {
-          // Show score change feedback
           const afterScoreObj = scoreEngagement(bestContent)
           const improvements = getImprovements(beforeScore, afterScoreObj)
           setScoreChange({ before: beforeScore.score, after: bestScore, tool: toolLabel, improvements })
           setTimeout(() => setScoreChange(null), 4000)
           onContentChange(bestContent)
         } else if (bestContent !== content) {
-          // Content changed but score didn't improve - still apply but note it
           setScoreChange({ before: beforeScore.score, after: bestScore, tool: `${toolLabel} (applied)` })
           setTimeout(() => setScoreChange(null), 4000)
           onContentChange(bestContent)
         } else {
-          // No change at all - content is already optimal for this tool
           setScoreChange({ before: beforeScore.score, after: beforeScore.score, tool: `${toolLabel} ✓ Already optimized` })
           setTimeout(() => setScoreChange(null), 3000)
-          setPreviousContent(null) // Clear undo since nothing changed
+          setPreviousContent(null)
         }
       }
     } catch (err) {
@@ -428,21 +398,18 @@ export default function EditingTools({ content, onContentChange, isThread = fals
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-emerald-400'
-    if (score >= 60) return 'text-amber-400'
+    if (score >= 50) return 'text-amber-400'
     return 'text-red-400'
   }
 
   const getScoreBg = (score: number) => {
     if (score >= 80) return 'bg-emerald-500/20'
-    if (score >= 60) return 'bg-amber-500/20'
+    if (score >= 50) return 'bg-amber-500/20'
     return 'bg-red-500/20'
   }
 
-  // Filter tools based on context
   const visibleTools = TOOLS.filter(tool => {
-    // Hide "Make Thread" if already a thread
     if (tool.id === 'make_thread' && isThread) return false
-    // Hide "Score" if engagement panel is already visible (Workspace)
     if (tool.id === 'algorithm_check' && hideScore) return false
     return true
   })
@@ -548,7 +515,6 @@ export default function EditingTools({ content, onContentChange, isThread = fals
               <X size={12} />
             </button>
           </div>
-          {/* Show which factors improved */}
           {scoreChange.improvements && scoreChange.improvements.length > 0 && (
             <div className="text-xs opacity-80 ml-5">
               Improved: {scoreChange.improvements.join(' • ')}
@@ -557,7 +523,7 @@ export default function EditingTools({ content, onContentChange, isThread = fals
         </div>
       )}
 
-      {/* Engagement Score Display - matches Workspace panel */}
+      {/* Engagement Score Display - Simple 3-metric view */}
       {engagementScore && (
         <div className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4 space-y-4">
           {/* Header with close button */}
@@ -582,16 +548,13 @@ export default function EditingTools({ content, onContentChange, isThread = fals
             </div>
           </div>
 
-          {/* Factor Breakdown - same factors as Workspace */}
+          {/* Factor Breakdown - Only 3 factors now */}
           <div className="space-y-2">
             {[
-              { key: 'hookStrength', name: 'Hook Strength', icon: Zap },
-              { key: 'replyPotential', name: 'Reply Potential', icon: MessageCircle },
-              { key: 'length', name: 'Length', icon: BarChart3 },
-              { key: 'readability', name: 'Readability', icon: Sparkles },
-              { key: 'hashtagUsage', name: 'Hashtags / Links', icon: AlertTriangle },
-              { key: 'emojiUsage', name: 'Emoji Usage', icon: Sparkles },
-            ].map(({ key, name, icon: Icon }) => {
+              { key: 'hookStrength', name: 'Hook Strength', weight: '35%', icon: Zap },
+              { key: 'replyPotential', name: 'Reply Potential', weight: '45%', icon: MessageCircle },
+              { key: 'readability', name: 'Readability', weight: '20%', icon: BookOpen },
+            ].map(({ key, name, weight, icon: Icon }) => {
               const factor = engagementScore.breakdown[key as keyof typeof engagementScore.breakdown]
               if (!factor || typeof factor !== 'object' || !('score' in factor)) return null
               return (
@@ -600,6 +563,7 @@ export default function EditingTools({ content, onContentChange, isThread = fals
                     <div className="flex items-center gap-1.5">
                       <Icon size={12} className={getScoreColor(factor.score)} />
                       <span className="text-[var(--muted)]">{name}</span>
+                      <span className="text-[var(--muted)] opacity-60">({weight})</span>
                     </div>
                     <span className={getScoreColor(factor.score)}>{factor.score}</span>
                   </div>
@@ -607,7 +571,7 @@ export default function EditingTools({ content, onContentChange, isThread = fals
                     <div
                       className={`h-full rounded-full transition-all ${
                         factor.score >= 80 ? 'bg-emerald-500' :
-                        factor.score >= 60 ? 'bg-amber-500' : 'bg-red-500'
+                        factor.score >= 50 ? 'bg-amber-500' : 'bg-red-500'
                       }`}
                       style={{ width: `${factor.score}%` }}
                     />
@@ -620,14 +584,24 @@ export default function EditingTools({ content, onContentChange, isThread = fals
             })}
           </div>
 
-          {/* Best Time Recommendation */}
-          <div className="flex items-start gap-2 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-            <Clock size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-xs font-medium text-blue-400">{engagementScore.breakdown.bestTime.recommendation}</p>
-              <p className="text-xs text-blue-400/70">{engagementScore.breakdown.bestTime.reason}</p>
+          {/* Warnings (replaces old length/emoji/hashtag factors) */}
+          {engagementScore.warnings && engagementScore.warnings.length > 0 && (
+            <div className="space-y-1.5 pt-2 border-t border-[var(--border)]">
+              {engagementScore.warnings.map((warning, i) => (
+                <div
+                  key={i}
+                  className={`flex items-start gap-2 p-2 rounded-lg text-xs ${
+                    warning.severity === 'warning'
+                      ? 'bg-orange-500/10 border border-orange-500/30 text-orange-400'
+                      : 'bg-blue-500/10 border border-blue-500/30 text-blue-400'
+                  }`}
+                >
+                  <AlertTriangle size={12} className="mt-0.5 flex-shrink-0" />
+                  <span>{warning.message}</span>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>

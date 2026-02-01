@@ -1,54 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { scoreEngagement } from '@/lib/engagement-scorer'
-import { getDefaultBaseline, extractTweetPatterns, type BaselineStats } from '@/lib/baseline-accounts'
-import { createClient } from '@supabase/supabase-js'
-
-const BASELINE_CACHE_KEY = 'engagement_baseline_v1';
-
-interface CachedBaseline {
-  stats: BaselineStats;
-  topTweetExamples: Array<{
-    text: string;
-    username: string;
-    reply_count: number;
-  }>;
-  cachedAt: string;
-}
-
-async function getBaselineData(): Promise<{ stats: BaselineStats; examples: string[] }> {
-  try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    const { data } = await supabase
-      .from('system_cache')
-      .select('value')
-      .eq('key', BASELINE_CACHE_KEY)
-      .single();
-
-    if (data?.value) {
-      const baseline = data.value as CachedBaseline;
-      return {
-        stats: baseline.stats,
-        examples: baseline.topTweetExamples.slice(0, 5).map(t => t.text),
-      };
-    }
-  } catch {
-    // Ignore errors - use defaults
-  }
-
-  return {
-    stats: getDefaultBaseline(),
-    examples: [],
-  };
-}
 
 export async function POST(request: NextRequest) {
   try {
-    const { text, postType, useBaseline = true } = await request.json()
+    const { text, postType } = await request.json()
 
     if (!text || typeof text !== 'string') {
       return NextResponse.json({ error: 'text is required' }, { status: 400 })
@@ -56,27 +12,6 @@ export async function POST(request: NextRequest) {
 
     // Get client-side score first
     const clientScore = scoreEngagement(text)
-    
-    // Extract patterns from this draft
-    const draftPatterns = extractTweetPatterns(text)
-
-    // Get baseline data for comparison
-    const baseline = useBaseline ? await getBaselineData() : { stats: getDefaultBaseline(), examples: [] };
-    
-    // Build baseline context for AI
-    let baselineContext = '';
-    if (baseline.examples.length > 0) {
-      baselineContext = `
-Reference: Here are proven high-engagement tweets to compare against:
-${baseline.examples.map((ex, i) => `${i + 1}. "${ex}"`).join('\n')}
-
-Baseline stats from top performers:
-- Avg length: ${baseline.stats.avgLength} chars
-- ${Math.round(baseline.stats.ctaUsageRate * 100)}% end with a call-to-action
-- ${Math.round(baseline.stats.questionEndingRate * 100)}% end with a question
-- Hook types: ${Math.round(baseline.stats.hookDistribution['bold-claim'] * 100)}% bold claims, ${Math.round(baseline.stats.hookDistribution['question'] * 100)}% questions, ${Math.round(baseline.stats.hookDistribution['number'] * 100)}% numbers
-`;
-    }
 
     // Deep analysis with Claude
     const anthropic = new Anthropic()
@@ -86,44 +21,35 @@ Baseline stats from top performers:
       messages: [
         {
           role: 'user',
-          content: `You are a Tech Twitter engagement expert trained on the patterns of viral tweets. Analyze this ${postType || 'tweet'} draft and provide specific, actionable improvement suggestions.
+          content: `You are an X/Twitter engagement expert. Analyze this ${postType || 'tweet'} draft.
 
 Draft:
 """
 ${text}
 """
 
-Draft analysis:
-- Hook type: ${draftPatterns.hookType}
-- Has question: ${draftPatterns.hasQuestion}
-- Has CTA: ${draftPatterns.hasCTA}
-- Length: ${draftPatterns.length} chars
-- Line breaks: ${draftPatterns.lineBreaks}
-- Has external link: ${draftPatterns.hasLink}
-
 Current scores (from automated analysis):
-- Hook Strength: ${clientScore.breakdown.hookStrength.score}/100
-- Reply Potential: ${clientScore.breakdown.replyPotential.score}/100
-- Length: ${clientScore.breakdown.length.score}/100
-- Readability: ${clientScore.breakdown.readability.score}/100
-${baselineContext}
+- Hook Strength: ${clientScore.breakdown.hookStrength.score}/100 (35% weight)
+- Reply Potential: ${clientScore.breakdown.replyPotential.score}/100 (45% weight)
+- Readability: ${clientScore.breakdown.readability.score}/100 (20% weight)
+- Overall: ${clientScore.score}/100
+
 X Algorithm facts:
-- Replies weighted 75x, retweets 1x, likes minimal
+- Replies are weighted 75x more than likes
 - Questions get 3-5x more replies
 - First line = hook that determines scroll-stop
-- 180-280 chars optimal for single tweets
-- External links get 50% less reach (move to reply)
+- External links reduce reach by ~50%
+- Hashtags can hurt organic reach
+
+Focus on the 3 factors that matter: Hook, Reply Potential, Readability.
 
 Respond in this exact JSON format (no markdown, just JSON):
 {
-  "overallFeedback": "1-2 sentence summary comparing to high performers",
-  "hookRewrite": "Suggested rewrite of the first line (or null if already strong)",
-  "suggestedCTA": "A closing call-to-action to boost replies (or null)",
-  "suggestedHashtags": ["#tag1", "#tag2"],
-  "toneAnalysis": "Brief note on tone/voice",
+  "overallFeedback": "1-2 sentence summary of strengths and main improvement opportunity",
+  "hookRewrite": "Suggested rewrite of the first line to stop the scroll (or null if already strong)",
+  "suggestedCTA": "A closing call-to-action to boost replies (or null if not needed)",
   "viralPotential": "low|medium|high",
-  "specificTips": ["tip1", "tip2", "tip3"],
-  "baselineComparison": "How this draft compares to top-performing tweets"
+  "specificTips": ["tip1", "tip2", "tip3"]
 }`,
         },
       ],
@@ -140,8 +66,6 @@ Respond in this exact JSON format (no markdown, just JSON):
     return NextResponse.json({
       ...clientScore,
       aiAnalysis,
-      draftPatterns,
-      baselineUsed: baseline.examples.length > 0,
     })
   } catch (error) {
     console.error('Engagement score error:', error)

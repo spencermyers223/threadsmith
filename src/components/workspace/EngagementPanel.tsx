@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { scoreEngagement, type EngagementScore, type ScoreDetail } from '@/lib/engagement-scorer'
-import { Sparkles, Clock, ChevronDown, ChevronUp, Zap, MessageCircle, Ruler, BookOpen, Hash, Smile, Loader2, X } from 'lucide-react'
+import { scoreEngagement, type EngagementScore, type ScoreDetail, type Warning } from '@/lib/engagement-scorer'
+import { Sparkles, ChevronDown, ChevronUp, Zap, MessageCircle, BookOpen, Loader2, X, AlertTriangle, Info } from 'lucide-react'
 
 interface EngagementPanelProps {
   text: string
@@ -68,22 +68,22 @@ function ScoreGauge({ score }: { score: number }) {
 const factorIcons: Record<string, React.ReactNode> = {
   hookStrength: <Zap className="w-4 h-4" />,
   replyPotential: <MessageCircle className="w-4 h-4" />,
-  length: <Ruler className="w-4 h-4" />,
   readability: <BookOpen className="w-4 h-4" />,
-  hashtagUsage: <Hash className="w-4 h-4" />,
-  emojiUsage: <Smile className="w-4 h-4" />,
 }
 
 const factorNames: Record<string, string> = {
   hookStrength: 'Hook Strength',
   replyPotential: 'Reply Potential',
-  length: 'Length',
   readability: 'Readability',
-  hashtagUsage: 'Hashtags / Cashtags',
-  emojiUsage: 'Emoji Usage',
 }
 
-function FactorCard({ name, detail, onInsertTag }: { name: string; detail: ScoreDetail; onInsertTag?: (tag: string) => void }) {
+const factorWeights: Record<string, string> = {
+  hookStrength: '35%',
+  replyPotential: '45%',
+  readability: '20%',
+}
+
+function FactorCard({ name, detail }: { name: string; detail: ScoreDetail }) {
   const [expanded, setExpanded] = useState(false)
   const color = getScoreColor(detail.score)
   const hasExpandableContent = detail.suggestion || (detail.explanation && detail.score > 0)
@@ -97,6 +97,7 @@ function FactorCard({ name, detail, onInsertTag }: { name: string; detail: Score
         <div className="flex items-center gap-2">
           <span style={{ color }}>{factorIcons[name]}</span>
           <span className="text-sm font-medium text-[var(--foreground)]">{factorNames[name]}</span>
+          <span className="text-xs text-[var(--muted)]">({factorWeights[name]})</span>
         </div>
         <div className="flex items-center gap-2">
           <span className={`text-sm font-bold ${getScoreTextColor(detail.score)}`}>
@@ -117,29 +118,28 @@ function FactorCard({ name, detail, onInsertTag }: { name: string; detail: Score
       </button>
       {expanded && (
         <div className="mt-2 pt-2 border-t border-[var(--border)]/50 space-y-2">
-          {/* Explanation - what we observed */}
           {detail.explanation && (
             <p className="text-xs text-[var(--foreground)]/80">{detail.explanation}</p>
           )}
-          {/* Suggestion - how to improve */}
           {detail.suggestion && (
             <p className="text-xs text-[var(--muted)] italic">💡 {detail.suggestion}</p>
           )}
-          {detail.suggested && detail.suggested.length > 0 && onInsertTag && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {detail.suggested.map(tag => (
-                <button
-                  key={tag}
-                  onClick={(e) => { e.stopPropagation(); onInsertTag(tag) }}
-                  className="px-2 py-0.5 text-xs font-medium bg-[var(--background)] border border-[var(--border)] rounded-full hover:bg-accent hover:text-white hover:border-accent transition-colors cursor-pointer"
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       )}
+    </div>
+  )
+}
+
+function WarningCard({ warning }: { warning: Warning }) {
+  const isWarning = warning.severity === 'warning'
+  return (
+    <div className={`flex items-start gap-2 p-2 rounded-lg text-xs ${
+      isWarning 
+        ? 'bg-orange-500/10 border border-orange-500/30 text-orange-600 dark:text-orange-400'
+        : 'bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400'
+    }`}>
+      {isWarning ? <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" /> : <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />}
+      <span>{warning.message}</span>
     </div>
   )
 }
@@ -148,7 +148,6 @@ interface AIAnalysis {
   overallFeedback?: string
   hookRewrite?: string | null
   suggestedCTA?: string | null
-  suggestedCashtags?: string[]
   toneAnalysis?: string
   viralPotential?: string
   specificTips?: string[]
@@ -167,7 +166,7 @@ export function EngagementPanel({ text, postType, onInsertText }: EngagementPane
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
       setScore(scoreEngagement(text))
-    }, 500)
+    }, 300)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [text])
 
@@ -196,10 +195,6 @@ export function EngagementPanel({ text, postType, onInsertText }: EngagementPane
       setAiLoading(false)
     }
   }, [text, postType])
-
-  const handleInsertTag = useCallback((tag: string) => {
-    onInsertText?.(' ' + tag)
-  }, [onInsertText])
 
   if (!score) return null
 
@@ -232,26 +227,25 @@ export function EngagementPanel({ text, postType, onInsertText }: EngagementPane
           {/* Gauge */}
           <ScoreGauge score={score.score} />
 
-          {/* Factor Cards */}
+          {/* Factor Cards - Only 3 now */}
           <div className="space-y-2">
-            {(Object.keys(factorNames) as Array<keyof typeof factorNames>).map(key => (
+            {(['hookStrength', 'replyPotential', 'readability'] as const).map(key => (
               <FactorCard
                 key={key}
                 name={key}
-                detail={bd[key as keyof Omit<typeof bd, 'bestTime'>] as ScoreDetail}
-                onInsertTag={key === 'hashtagUsage' ? handleInsertTag : undefined}
+                detail={bd[key]}
               />
             ))}
           </div>
 
-          {/* Best Time */}
-          <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-            <Clock className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{bd.bestTime.recommendation}</p>
-              <p className="text-xs text-blue-500/80 dark:text-blue-400/70">{bd.bestTime.reason}</p>
+          {/* Warnings */}
+          {score.warnings.length > 0 && (
+            <div className="space-y-1.5">
+              {score.warnings.map((warning, i) => (
+                <WarningCard key={i} warning={warning} />
+              ))}
             </div>
-          </div>
+          )}
 
           {/* Deep Analysis Button */}
           <button
@@ -290,9 +284,9 @@ export function EngagementPanel({ text, postType, onInsertText }: EngagementPane
                 <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">AI Analysis</span>
                 {aiAnalysis.viralPotential && (
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    aiAnalysis.viralPotential === 'high' ? 'bg-green-100 text-green-700' :
-                    aiAnalysis.viralPotential === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-red-100 text-red-700'
+                    aiAnalysis.viralPotential === 'high' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300' :
+                    aiAnalysis.viralPotential === 'medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300' :
+                    'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300'
                   }`}>
                     {aiAnalysis.viralPotential} viral potential
                   </span>
@@ -326,20 +320,6 @@ export function EngagementPanel({ text, postType, onInsertText }: EngagementPane
                   >
                     {aiAnalysis.suggestedCTA}
                   </button>
-                </div>
-              )}
-
-              {aiAnalysis.suggestedCashtags && aiAnalysis.suggestedCashtags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {aiAnalysis.suggestedCashtags.map(tag => (
-                    <button
-                      key={tag}
-                      onClick={() => onInsertText?.(' ' + tag)}
-                      className="px-2 py-0.5 text-xs font-medium bg-[var(--background)] border border-purple-500/30 rounded-full hover:bg-accent hover:text-white hover:border-accent transition-colors"
-                    >
-                      {tag}
-                    </button>
-                  ))}
                 </div>
               )}
 

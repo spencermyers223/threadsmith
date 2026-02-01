@@ -1,14 +1,23 @@
 /**
- * Client-side engagement scoring — instant, no API calls.
- * "Yoast SEO for tweets" — scores drafts on X algorithm factors.
+ * Engagement Scorer v2 — Simplified to what actually matters
+ * 
+ * Only 3 factors that truly drive engagement:
+ * 1. Hook Strength (35%) - Does the first line stop the scroll?
+ * 2. Reply Potential (45%) - Will people WANT to respond?
+ * 3. Readability (20%) - Can they consume it fast?
  */
 
 export interface ScoreDetail {
   score: number
   label: string
-  explanation: string // What we observed in the content
-  suggestion: string | null // How to improve
-  suggested?: string[]
+  explanation: string
+  suggestion: string | null
+}
+
+export interface Warning {
+  type: 'length' | 'hashtags' | 'link'
+  message: string
+  severity: 'info' | 'warning'
 }
 
 export interface EngagementScore {
@@ -16,15 +25,9 @@ export interface EngagementScore {
   breakdown: {
     hookStrength: ScoreDetail
     replyPotential: ScoreDetail
-    length: ScoreDetail
     readability: ScoreDetail
-    hashtagUsage: ScoreDetail
-    emojiUsage: ScoreDetail
-    bestTime: {
-      recommendation: string
-      reason: string
-    }
   }
+  warnings: Warning[]
 }
 
 function getLabel(score: number): string {
@@ -37,46 +40,50 @@ function getLabel(score: number): string {
 
 function scoreHookStrength(text: string): ScoreDetail {
   const firstLine = text.split('\n')[0]?.trim() || ''
-  let score = 50
+  let score = 40
   const observations: string[] = []
 
-  // Length: 10-80 chars ideal
+  // Length: 10-80 chars ideal for a hook
   const len = firstLine.length
   if (len >= 10 && len <= 80) {
-    score += 20
+    score += 15
     observations.push('Good hook length')
   } else if (len < 10) {
     score -= 20
     observations.push('Hook too short')
   } else if (len > 120) {
-    score -= 15
+    score -= 10
     observations.push('Hook could be tighter')
   }
 
-  // Starts with number
+  // Starts with number (listicles, data)
   if (/^\d/.test(firstLine)) {
-    score += 15
-    observations.push('Opens with a number (strong pattern)')
+    score += 20
+    observations.push('Opens with a number')
   }
+  
   // Starts with question
   if (/^(what|why|how|when|who|which|do you|have you|is |are |did |will |can )/i.test(firstLine)) {
-    score += 15
-    observations.push('Opens with a question (drives engagement)')
-  }
-  // Bold claim markers
-  if (/^(unpopular opinion|hot take|controversial|nobody talks about|the truth about|stop |don't |never )/i.test(firstLine)) {
     score += 20
-    observations.push('Opens with bold claim (great for replies)')
+    observations.push('Opens with a question')
   }
-  // ALL CAPS opener (1-3 words)
+  
+  // Bold claim markers
+  if (/^(unpopular opinion|hot take|controversial|nobody talks about|the truth about|stop |don't |never |most people|everyone is wrong)/i.test(firstLine)) {
+    score += 25
+    observations.push('Opens with bold claim')
+  }
+  
+  // ALL CAPS opener (1-3 words) for emphasis
   if (/^[A-Z]{2,}(\s[A-Z]{2,}){0,2}[:\s]/.test(firstLine)) {
     score += 10
     observations.push('Uses caps for emphasis')
   }
-  // Has emoji in first line
-  if (/[\uD83C-\uD83E][\uDC00-\uDFFF]|[\u2600-\u26FF]|[\u2700-\u27BF]/.test(firstLine)) {
-    score += 5
-    observations.push('Emoji adds visual interest')
+  
+  // Curiosity gap / incomplete thought
+  if (/\.\.\.$|…$/.test(firstLine) || /^(Here's|This is|I found|The secret|The reason)/i.test(firstLine)) {
+    score += 15
+    observations.push('Creates curiosity gap')
   }
 
   score = Math.min(100, Math.max(0, score))
@@ -86,47 +93,65 @@ function scoreHookStrength(text: string): ScoreDetail {
     : 'Standard opening — could be more attention-grabbing.'
 
   let suggestion: string | null = null
-  if (score < 60) {
+  if (score < 50) {
     suggestion = 'Start with a number, question, or bold claim to stop the scroll'
-  } else if (score < 80) {
-    suggestion = 'Good hook — try making it more provocative or specific'
+  } else if (score < 70) {
+    suggestion = 'Try making your hook more provocative or specific'
   }
 
   return { score, label: getLabel(score), explanation, suggestion }
 }
 
 function scoreReplyPotential(text: string): ScoreDetail {
-  let score = 30
+  let score = 25
   const lower = text.toLowerCase()
   const observations: string[] = []
 
-  // Ends with question mark
+  // Ends with question mark — strongest signal
   if (text.trim().endsWith('?')) {
-    score += 30
-    observations.push('Ends with a question (invites responses)')
+    score += 35
+    observations.push('Ends with a question')
   }
-  // Contains engagement phrases
-  const engagementPhrases = ['what do you think', 'agree?', 'disagree?', 'thoughts?', 'am i wrong', 'change my mind', 'prove me wrong', 'who else', 'reply with', 'drop your']
+  
+  // Contains direct engagement phrases
+  const engagementPhrases = [
+    'what do you think', 'agree?', 'disagree?', 'thoughts?', 
+    'am i wrong', 'change my mind', 'prove me wrong', 'who else', 
+    'reply with', 'drop your', 'tell me', 'what would you',
+    'what\'s your', 'how do you', 'have you ever', 'anyone else'
+  ]
   for (const phrase of engagementPhrases) {
     if (lower.includes(phrase)) {
-      score += 20
-      observations.push('Contains direct call for engagement')
+      score += 25
+      observations.push('Direct call for engagement')
       break
     }
   }
-  // Controversial markers
-  const controversial = ['unpopular opinion', 'hot take', 'controversial', 'most people', 'nobody', 'everyone is wrong', "i don't care"]
+  
+  // Controversial / debate-starter markers
+  const controversial = [
+    'unpopular opinion', 'hot take', 'controversial', 'most people', 
+    'nobody', 'everyone is wrong', "i don't care", 'overrated', 
+    'underrated', 'the truth is', 'stop saying', 'myth:'
+  ]
   for (const marker of controversial) {
     if (lower.includes(marker)) {
-      score += 15
+      score += 20
       observations.push('Takes a stance that invites debate')
       break
     }
   }
-  // Has a list (people love to add their own)
-  if (/\d[\.\)]\s/m.test(text)) {
-    score += 10
+  
+  // Incomplete list (people love to add their own)
+  if (/\d[\.\)]\s/m.test(text) && !/^(1|2|3)0[\.\)]/m.test(text)) {
+    score += 15
     observations.push('List format encourages "you forgot X" replies')
+  }
+  
+  // Personal opinion markers
+  if (/^(i think|i believe|in my opinion|honestly|imo)/im.test(text)) {
+    score += 10
+    observations.push('Personal opinion invites agreement/disagreement')
   }
 
   score = Math.min(100, Math.max(0, score))
@@ -136,44 +161,10 @@ function scoreReplyPotential(text: string): ScoreDetail {
     : 'No obvious reply triggers — readers may scroll past.'
 
   let suggestion: string | null = null
-  if (score < 50) {
-    suggestion = 'End with a question to boost replies (replies weighted 75x by the algo)'
-  } else if (score < 75) {
-    suggestion = 'Try adding "What do you think?" or a controversial angle'
-  }
-
-  return { score, label: getLabel(score), explanation, suggestion }
-}
-
-function scoreLength(text: string): ScoreDetail {
-  const len = text.length
-  let score: number
-  let suggestion: string | null = null
-  let explanation: string
-
-  if (len < 20) {
-    score = 10
-    explanation = `Only ${len} characters — too brief to convey value.`
-    suggestion = 'Way too short — add more substance'
-  } else if (len < 50) {
-    score = 30
-    explanation = `${len} characters — needs more meat.`
-    suggestion = 'Too short — aim for 180-280 characters for optimal engagement'
-  } else if (len >= 50 && len < 180) {
-    score = 65
-    explanation = `${len} characters — good start but could say more.`
-    suggestion = 'A bit short — 180-280 chars is the sweet spot'
-  } else if (len >= 180 && len <= 280) {
-    score = 100
-    explanation = `${len} characters — perfect length for engagement.`
-  } else if (len > 280 && len <= 320) {
-    score = 70
-    explanation = `${len} characters — slightly over the tweet limit.`
-    suggestion = 'Slightly over 280 chars — trim to fit a single tweet'
-  } else {
-    score = 40
-    explanation = `${len} characters — too long for a single tweet.`
-    suggestion = 'Too long for a single tweet — consider making it a thread'
+  if (score < 40) {
+    suggestion = 'End with a question — replies are weighted 75x by the algorithm'
+  } else if (score < 65) {
+    suggestion = 'Add a call to action: "What do you think?" or take a controversial stance'
   }
 
   return { score, label: getLabel(score), explanation, suggestion }
@@ -185,116 +176,110 @@ function scoreReadability(text: string): ScoreDetail {
   const words = text.split(/\s+/).filter(w => w.length > 0)
   const observations: string[] = []
 
-  // Avg word length
+  // Average word length (simpler = better for fast consumption)
   const avgWordLen = words.length > 0 ? words.reduce((sum, w) => sum + w.length, 0) / words.length : 0
   if (avgWordLen > 7) {
-    score -= 15
-    observations.push('Uses complex vocabulary')
+    score -= 20
+    observations.push('Complex vocabulary')
   } else if (avgWordLen <= 5) {
-    score += 10
+    score += 15
     observations.push('Simple, accessible language')
   }
 
-  // Too many sentences = wall of text
-  if (sentences.length > 6) {
-    score -= 15
-    observations.push('Dense with many sentences')
-  }
-  // Line breaks help readability
+  // Line breaks help scannability
   const lineBreaks = (text.match(/\n/g) || []).length
   if (lineBreaks > 0 && text.length > 100) {
-    score += 10
-    observations.push('Good use of line breaks for scannability')
+    score += 15
+    observations.push('Good use of line breaks')
+  } else if (text.length > 200 && lineBreaks === 0) {
+    score -= 15
+    observations.push('Wall of text — add line breaks')
   }
 
-  // Single run-on sentence
-  if (sentences.length === 1 && words.length > 30) {
-    score -= 20
+  // Run-on sentence check
+  if (sentences.length === 1 && words.length > 35) {
+    score -= 25
     observations.push('Single long sentence — hard to scan')
+  }
+  
+  // Too many sentences packed in
+  if (sentences.length > 6 && text.length < 280) {
+    score -= 10
+    observations.push('Very dense — consider simplifying')
+  }
+  
+  // Short punchy sentences are good
+  const avgSentenceLen = sentences.length > 0 ? words.length / sentences.length : 0
+  if (avgSentenceLen <= 10 && sentences.length >= 2) {
+    score += 10
+    observations.push('Punchy sentence structure')
   }
 
   score = Math.min(100, Math.max(0, score))
 
   const explanation = observations.length > 0
     ? observations.join('. ') + '.'
-    : 'Standard readability — no major issues.'
+    : 'Standard readability.'
 
   let suggestion: string | null = null
-  if (score < 60) suggestion = 'Shorter sentences perform better — break it up'
-  else if (avgWordLen > 7) suggestion = 'Use simpler words for better readability'
+  if (score < 50) {
+    suggestion = 'Break up long sentences and use simpler words'
+  } else if (score < 70) {
+    suggestion = 'Add line breaks for easier scanning'
+  }
 
   return { score, label: getLabel(score), explanation, suggestion }
 }
 
-function scoreHashtagUsage(text: string): ScoreDetail {
-  const cashtags = text.match(/\$[A-Z]{2,10}/g) || []
+function getWarnings(text: string): Warning[] {
+  const warnings: Warning[] = []
+  
+  // Length warning (not a scored factor, just helpful)
+  const len = text.length
+  if (len > 280 && len <= 320) {
+    warnings.push({
+      type: 'length',
+      message: `${len} chars — slightly over tweet limit`,
+      severity: 'warning'
+    })
+  } else if (len > 320) {
+    warnings.push({
+      type: 'length',
+      message: `${len} chars — consider a thread or trim`,
+      severity: 'warning'
+    })
+  }
+  
+  // Hashtag warning
   const hashtags = text.match(/#\w+/g) || []
-  const total = cashtags.length + hashtags.length
-
-  let score: number
-  let suggestion: string | null = null
-  let explanation: string
-  const suggested: string[] = []
-
-  if (total === 0) {
-    score = 70 // Not having tags is fine, actually
-    explanation = 'No hashtags or cashtags — clean text only.'
-    suggestion = 'Consider 1-2 relevant tags for discovery (optional)'
-  } else if (total >= 1 && total <= 3) {
-    score = 90
-    const found = [...cashtags, ...hashtags].join(', ')
-    explanation = `Good tag usage: ${found}`
-  } else if (total <= 5) {
-    score = 65
-    explanation = `${total} tags found — slightly heavy.`
-    suggestion = 'Slightly too many tags — 1-3 is optimal'
-  } else {
-    score = 30
-    explanation = `${total} tags detected — looks spammy.`
-    suggestion = 'Too many tags looks spammy — keep to 1-3'
+  if (hashtags.length > 2) {
+    warnings.push({
+      type: 'hashtags',
+      message: `${hashtags.length} hashtags — consider removing (hurts reach)`,
+      severity: 'warning'
+    })
+  } else if (hashtags.length > 0) {
+    warnings.push({
+      type: 'hashtags',
+      message: 'Hashtags can reduce reach on X',
+      severity: 'info'
+    })
   }
-
-  // Check for links (algorithm penalizes)
+  
+  // External link warning
   if (/https?:\/\/\S+/.test(text)) {
-    score -= 30
-    explanation += ' Contains external link (50% reach penalty — move to reply).'
-    suggestion = 'Move external links to first reply to avoid algorithm suppression'
+    warnings.push({
+      type: 'link',
+      message: 'External links get ~50% less reach — move to first reply',
+      severity: 'warning'
+    })
   }
-
-  return { score: Math.max(0, score), label: getLabel(Math.max(0, score)), explanation, suggestion, ...(suggested.length > 0 ? { suggested } : {}) }
-}
-
-function scoreEmojiUsage(text: string): ScoreDetail {
-  const emojiRegex = /[\uD83C-\uD83E][\uDC00-\uDFFF]|[\u2600-\u26FF]|[\u2700-\u27BF]|[\uFE00-\uFE0F]|[\u200D]|[\u20E3]/g
-  const emojis = text.match(emojiRegex) || []
-  const count = emojis.length
-
-  let score: number
-  let suggestion: string | null = null
-  let explanation: string
-
-  if (count === 0) {
-    score = 70 // Not having emojis is fine for professional tone
-    explanation = 'No emojis — clean, professional tone.'
-    suggestion = 'Consider 1-2 emojis as visual hooks (optional for your niche)'
-  } else if (count >= 1 && count <= 3) {
-    score = 90
-    explanation = `${count} emoji${count > 1 ? 's' : ''} — good visual interest without overdoing it.`
-  } else if (count <= 5) {
-    score = 70
-    explanation = `${count} emojis — slightly heavy for most niches.`
-    suggestion = 'Slightly emoji-heavy — 1-3 is ideal'
-  } else {
-    score = 35
-    explanation = `${count} emojis — oversaturated, may reduce credibility.`
-    suggestion = 'Too many emojis — reduces credibility'
-  }
-
-  return { score, label: getLabel(score), explanation, suggestion }
+  
+  return warnings
 }
 
 /**
- * Score a post instantly on the client side.
+ * Score a post on the 3 factors that actually matter for engagement.
  */
 export function scoreEngagement(text: string): EngagementScore {
   if (!text.trim()) {
@@ -304,58 +289,29 @@ export function scoreEngagement(text: string): EngagementScore {
       breakdown: {
         hookStrength: { ...empty, explanation: 'Start writing to see analysis.', suggestion: 'Start writing to see your score' },
         replyPotential: { ...empty, explanation: 'No content to analyze.' },
-        length: { ...empty, explanation: '0 characters.' },
         readability: { ...empty, explanation: 'No content to analyze.' },
-        hashtagUsage: { ...empty, explanation: 'No tags detected.' },
-        emojiUsage: { ...empty, explanation: 'No emojis detected.' },
-        bestTime: {
-          recommendation: 'Weekday 9-11am EST',
-          reason: 'Tech Twitter most active during US market hours',
-        },
       },
+      warnings: [],
     }
   }
 
   const hookStrength = scoreHookStrength(text)
   const replyPotential = scoreReplyPotential(text)
-  const length = scoreLength(text)
   const readability = scoreReadability(text)
-  const hashtagUsage = scoreHashtagUsage(text)
-  const emojiUsage = scoreEmojiUsage(text)
+  const warnings = getWarnings(text)
 
   // Weighted average — reply potential weighted highest (algo weights replies 75x)
-  const weights = { hook: 25, reply: 30, length: 15, readability: 10, hashtag: 10, emoji: 10 }
+  const weights = { hook: 35, reply: 45, readability: 20 }
   const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0)
   const overallScore = Math.round(
     (hookStrength.score * weights.hook +
       replyPotential.score * weights.reply +
-      length.score * weights.length +
-      readability.score * weights.readability +
-      hashtagUsage.score * weights.hashtag +
-      emojiUsage.score * weights.emoji) / totalWeight
+      readability.score * weights.readability) / totalWeight
   )
-
-  // Determine best time recommendation
-  const now = new Date()
-  const estHour = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' })).getHours()
-  const day = now.getDay()
-  const isWeekday = day >= 1 && day <= 5
-
-  let bestTime = {
-    recommendation: 'Weekday 9-11am EST',
-    reason: 'Tech Twitter most active during US market hours',
-  }
-
-  if (isWeekday && estHour >= 9 && estHour <= 11) {
-    bestTime = { recommendation: 'Now is great! 🔥', reason: 'Peak engagement hours — US market open' }
-  } else if (isWeekday && estHour >= 14 && estHour <= 16) {
-    bestTime = { recommendation: 'Good time to post', reason: 'Afternoon engagement wave' }
-  } else if (!isWeekday) {
-    bestTime = { recommendation: 'Wait for Monday 9-11am EST', reason: 'Weekday posts typically get more engagement' }
-  }
 
   return {
     score: overallScore,
-    breakdown: { hookStrength, replyPotential, length, readability, hashtagUsage, emojiUsage, bestTime },
+    breakdown: { hookStrength, replyPotential, readability },
+    warnings,
   }
 }
