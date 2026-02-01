@@ -635,7 +635,7 @@
   }
 }
 
-/* Save button */
+/* Save button - matches Coach button styling */
 .xthread-save-btn {
   display: flex;
   align-items: center;
@@ -644,28 +644,29 @@
   height: 34px;
   border: none;
   border-radius: 50%;
-  background: transparent;
-  color: #71767b;
+  background: linear-gradient(135deg, #C9B896 0%, #B8A886 100%);
+  color: #1a1a1a;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .xthread-save-btn svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .xthread-save-btn:hover {
-  background: rgba(16, 185, 129, 0.1);
-  color: #C9B896;
+  background: linear-gradient(135deg, #B8A886 0%, #a89876 100%);
+  transform: scale(1.05);
 }
 
 .xthread-save-btn.xthread-saved {
-  color: #C9B896;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;
 }
 
 .xthread-save-btn.xthread-saved svg {
-  fill: #C9B896;
+  fill: white;
 }
 
 /* Coaching Panel */
