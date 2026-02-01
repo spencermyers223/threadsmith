@@ -604,9 +604,9 @@ async function loadQueue() {
         </div>
         <div class="item-text">${escapeHtml(truncateText(post.content, 120))}</div>
         <div class="item-actions">
-          <button class="post-to-x-btn" title="Open in X">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            Post
+          <button class="copy-btn" title="Copy to clipboard">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Copy
           </button>
         </div>
       </div>
@@ -618,29 +618,30 @@ async function loadQueue() {
       postContentMap[post.id] = post.content || '';
     });
     
-    // Post to X button - fills compose modal without page refresh
-    queueList.querySelectorAll('.post-to-x-btn').forEach(btn => {
+    // Copy button - copies tweet content to clipboard
+    queueList.querySelectorAll('.copy-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const item = btn.closest('.queue-item');
         const postId = item.dataset.id;
         const content = postContentMap[postId] || '';
         
-        // Find existing X/Twitter tab
-        const tabs = await chrome.tabs.query({ url: ['*://x.com/*', '*://twitter.com/*'] });
-        
-        if (tabs.length > 0) {
-          // Send message to content script to fill compose modal
-          chrome.tabs.sendMessage(tabs[0].id, { 
-            type: 'FILL_COMPOSE', 
-            content: content 
-          });
-          // Focus that tab
-          chrome.tabs.update(tabs[0].id, { active: true });
-        } else {
-          // No X tab open, create one with intent URL
-          const intentUrl = `https://x.com/intent/post?text=${encodeURIComponent(content)}`;
-          chrome.tabs.create({ url: intentUrl });
+        try {
+          await navigator.clipboard.writeText(content);
+          // Show feedback
+          const originalText = btn.innerHTML;
+          btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Copied!`;
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('copied');
+          }, 2000);
+        } catch (err) {
+          console.error('[xthread] Copy failed:', err);
+          btn.textContent = 'Failed';
+          setTimeout(() => {
+            btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy`;
+          }, 2000);
         }
       });
     });
