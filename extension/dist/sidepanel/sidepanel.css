@@ -502,24 +502,23 @@ body {
 .coach-hooks {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .hook-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 12px 14px;
+  gap: 4px;
+  padding: 10px 12px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .hook-item:hover {
   border-color: var(--accent);
-  transform: translateY(-1px);
 }
 
 .hook-item.copied {
@@ -527,24 +526,28 @@ body {
   background: rgba(16, 185, 129, 0.1);
 }
 
+.hook-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .hook-emoji {
-  font-size: 16px;
-  display: inline;
+  font-size: 14px;
 }
 
 .hook-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-left: 6px;
 }
 
 .hook-text {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-primary);
-  line-height: 1.4;
+  line-height: 1.3;
   font-style: italic;
 }
 

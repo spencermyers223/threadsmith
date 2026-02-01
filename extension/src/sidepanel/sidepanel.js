@@ -227,8 +227,10 @@ function showCoaching(coaching, postData) {
     if (!hook) return '';
     return `
       <div class="hook-item" data-text="${escapeHtml(hook)}">
-        <span class="hook-emoji">${emoji}</span>
-        <span class="hook-label">${label}</span>
+        <div class="hook-header">
+          <span class="hook-emoji">${emoji}</span>
+          <span class="hook-label">${label}</span>
+        </div>
         <span class="hook-text">"${escapeHtml(hook)}"</span>
       </div>
     `;
