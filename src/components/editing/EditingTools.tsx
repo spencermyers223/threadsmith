@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Wand2, Zap, Sparkles, ListTree, BarChart3, Loader2,
   AlertTriangle, MessageCircle, Flame, X, Clock, WandSparkles, Undo2
@@ -24,6 +24,7 @@ interface Tool {
   icon: typeof Wand2
   color: string
   hoverBg: string
+  shortcut?: string // Keyboard shortcut (Cmd/Ctrl + key)
 }
 
 const TOOLS: Tool[] = [
@@ -31,73 +32,81 @@ const TOOLS: Tool[] = [
     id: 'auto_optimize',
     label: 'Auto-Optimize',
     shortLabel: '✨ Auto',
-    description: 'Automatically apply the best improvements based on score analysis',
+    description: 'Automatically apply the best improvements (⌘A)',
     icon: WandSparkles,
     color: 'text-violet-400',
     hoverBg: 'hover:bg-violet-500/10 hover:border-violet-500/30',
+    shortcut: 'a',
   },
   {
     id: 'add_hook',
     label: 'Add Hook',
     shortLabel: 'Hook',
-    description: 'Add a scroll-stopping opening line (+15-20 hook score)',
+    description: 'Add a scroll-stopping opening line (⌘H)',
     icon: Zap,
     color: 'text-amber-400',
     hoverBg: 'hover:bg-amber-500/10 hover:border-amber-500/30',
+    shortcut: 'h',
   },
   {
     id: 'humanize',
     label: 'Humanize',
     shortLabel: 'Humanize',
-    description: 'Make it sound natural (+10-20 readability score)',
+    description: 'Make it sound natural (⌘U)',
     icon: Sparkles,
     color: 'text-pink-400',
     hoverBg: 'hover:bg-pink-500/10 hover:border-pink-500/30',
+    shortcut: 'u',
   },
   {
     id: 'sharpen',
     label: 'Shorten',
     shortLabel: 'Shorten',
-    description: 'Reduce to 180-280 chars (+100 length score)',
+    description: 'Reduce to 180-280 chars (⌘S)',
     icon: Wand2,
     color: 'text-cyan-400',
     hoverBg: 'hover:bg-cyan-500/10 hover:border-cyan-500/30',
+    shortcut: 's',
   },
   {
     id: 'add_question',
     label: 'Add Question',
     shortLabel: 'Question',
-    description: 'End with a question (+30 reply potential)',
+    description: 'End with a question (⌘Q)',
     icon: MessageCircle,
     color: 'text-blue-400',
     hoverBg: 'hover:bg-blue-500/10 hover:border-blue-500/30',
+    shortcut: 'q',
   },
   {
     id: 'make_spicy',
     label: 'Make Spicier',
     shortLabel: 'Spicier',
-    description: 'Add controversy (+15 reply potential)',
+    description: 'Add controversy (⌘P)',
     icon: Flame,
     color: 'text-orange-400',
     hoverBg: 'hover:bg-orange-500/10 hover:border-orange-500/30',
+    shortcut: 'p',
   },
   {
     id: 'make_thread',
     label: 'Expand to Thread',
     shortLabel: 'Thread',
-    description: 'Expand into a multi-tweet thread',
+    description: 'Expand into a multi-tweet thread (⌘T)',
     icon: ListTree,
     color: 'text-purple-400',
     hoverBg: 'hover:bg-purple-500/10 hover:border-purple-500/30',
+    shortcut: 't',
   },
   {
     id: 'algorithm_check',
     label: 'Check Score',
     shortLabel: 'Score',
-    description: 'Score against X algorithm factors',
+    description: 'Score against X algorithm factors (⌘E)',
     icon: BarChart3,
     color: 'text-emerald-400',
     hoverBg: 'hover:bg-emerald-500/10 hover:border-emerald-500/30',
+    shortcut: 'e',
   },
 ]
 
@@ -111,6 +120,40 @@ export default function EditingTools({ content, onContentChange, isThread = fals
   const [scoreChange, setScoreChange] = useState<{ before: number; after: number; tool: string } | null>(null)
   const [previousContent, setPreviousContent] = useState<string | null>(null)
   const [autoProgress, setAutoProgress] = useState<string | null>(null)
+
+  // Keyboard shortcuts handler - wrapped in useCallback to prevent re-renders
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Only trigger if Cmd (Mac) or Ctrl (Windows) is held
+    if (!(e.metaKey || e.ctrlKey)) return
+    
+    // Don't trigger when typing in input/textarea
+    const target = e.target as HTMLElement
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+
+    const tool = TOOLS.find(t => t.shortcut === e.key.toLowerCase())
+    if (tool) {
+      e.preventDefault()
+      // Trigger the tool - we'll call handleToolClick indirectly via a ref
+      const toolBtn = document.querySelector(`[data-tool-id="${tool.id}"]`) as HTMLButtonElement
+      if (toolBtn && !toolBtn.disabled) {
+        toolBtn.click()
+      }
+    }
+    
+    // Cmd+Z for undo
+    if (e.key === 'z' && previousContent) {
+      e.preventDefault()
+      onContentChange(previousContent)
+      setPreviousContent(null)
+      setScoreChange(null)
+    }
+  }, [previousContent, onContentChange])
+
+  // Set up keyboard shortcuts
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleKeyDown])
 
   const handleUndo = () => {
     if (previousContent) {
@@ -352,6 +395,7 @@ export default function EditingTools({ content, onContentChange, isThread = fals
           return (
             <button
               key={tool.id}
+              data-tool-id={tool.id}
               onClick={() => handleToolClick(tool.id)}
               disabled={isLoading && activeTool !== tool.id}
               title={tool.description}
