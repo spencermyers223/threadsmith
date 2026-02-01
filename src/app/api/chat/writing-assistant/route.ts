@@ -94,18 +94,13 @@ const FORMATTING_RULE = `
 const EDITING_PROMPTS: Record<string, string> = {
   add_hook: `Add ONE scroll-stopping hook to boost the engagement score.
 
-SCORE TRIGGERS (these are measured by the scorer):
+SCORE TRIGGERS (these are MEASURED - use at least one):
 - Starts with NUMBER → +15 points (e.g., "73% of founders...")
 - Starts with QUESTION → +15 points (What/Why/How/Do you/Have you)
-- Bold claim opener → +20 points (unpopular opinion/hot take/stop/don't/never)
+- Bold claim opener → +20 points (exact phrases: "Unpopular opinion:", "Hot take:", "STOP", "Don't", "Never")
+- ALL CAPS word at start → +10 points (e.g., "STOP ignoring this")
 
-HIGH-SCORING HOOKS:
-- "Unpopular opinion: [bold claim]"
-- "[Number]% of [group] fail at this"
-- "Why do [people] keep [mistake]?"
-- "STOP [doing thing]. Here's why:"
-
-EXAMPLE:
+EXAMPLE 1 (Bold Claim):
 INPUT:
 Building in public is great for accountability.
 
@@ -116,13 +111,37 @@ Unpopular opinion: Building in public is great for accountability.
 
 It keeps you motivated.
 
-RULES:
-1. Add hook at the VERY START (first line)
-2. Use at least ONE score trigger
-3. Keep REST of content EXACTLY the same (same words, same line breaks)
-4. Return ONLY the modified content
+EXAMPLE 2 (Number Hook):
+INPUT:
+Most founders don't track their metrics.
 
-⚠️ DO NOT change anything except adding a hook to the first line. Same words. Same line breaks.`,
+They're flying blind.
+
+OUTPUT:
+83% of founders don't track their metrics.
+
+They're flying blind.
+
+EXAMPLE 3 (Question Hook):
+INPUT:
+You need to ship faster.
+
+Speed wins every time.
+
+OUTPUT:
+Why do so many startups move so slowly?
+
+You need to ship faster.
+
+Speed wins every time.
+
+RULES:
+1. Add hook at the VERY START (first line only)
+2. MUST use one of the exact score triggers above
+3. Keep REST of content EXACTLY the same (same words, same line breaks)
+4. Return ONLY the modified content - no quotes, no explanation
+
+⚠️ ONLY modify the first line. Everything else stays identical.`,
 
   humanize: `Make this sound human to boost Readability score (+10-20 points for natural language).
 
@@ -166,46 +185,39 @@ THE TEST: Read it out loud. If you wouldn't SAY it that way, rewrite it.
 
 CRITICAL: Return ONLY the rewritten content. PRESERVE line breaks and score boosters.`,
 
-  sharpen: `Shorten content to hit the optimal engagement score length: 180-280 characters.
+  sharpen: `Shorten content to 180-280 characters (optimal engagement score range).
 
-ENGAGEMENT SCORE TARGETS (these are measured):
-- 180-280 chars → 100 points (PERFECT)
-- 50-179 chars → 65 points (needs more meat)
-- 281-320 chars → 70 points (slightly over)
-- >320 chars → 40 points (too long)
+RULES:
+1. OUTPUT MUST BE 180-280 CHARACTERS (count them!)
+2. KEEP the first line (hook) intact
+3. KEEP questions at the end
+4. KEEP "Unpopular opinion:", "Hot take:", numbers, "Most people"
+5. CUT from the MIDDLE only
 
-YOUR GOAL:
-- If content is >280 chars: Reduce to 180-280 chars (max score)
-- If content is <180 chars: Keep it
-- Target: 200-260 chars is ideal
-
-⚠️ NEVER DELETE THESE (they boost other scores):
-- "Unpopular opinion:", "Hot take:" openers
-- Questions at the end (ending with ?)
-- Numbers at the start of sentences
-- "Most people", "Nobody" controversial markers
-- The first line (the hook) - shorten the MIDDLE, not the hook
-
-WORDS TO DELETE (instant cuts):
-- "I think that", "I believe", "In my opinion" → just state it
-- "It's important to note that", "It's worth mentioning" → DELETE
+INSTANT DELETIONS:
+- "I think that" / "I believe" / "In my opinion" → delete
+- "It's important to" / "It's worth noting" → delete  
 - "In order to" → "to"
-- "The fact that" → DELETE
-- "Actually", "basically", "literally", "really", "very" → DELETE
-- "At the end of the day", "when it comes to" → DELETE
-- "Sort of", "kind of", "a bit" → DELETE
+- "Actually" / "basically" / "literally" / "very" → delete
+- "At the end of the day" / "when it comes to" → delete
+- "Sort of" / "kind of" / "a bit" → delete
 
-TECHNIQUES:
-- Cut from the MIDDLE, preserve hook (first line) and CTA (last line)
-- Active voice (shorter than passive)
-- Replace phrases with single words
-- Delete filler, keep substance
+EXAMPLE:
+INPUT (350 chars):
+Unpopular opinion: Most startups fail because founders spend too much time building features nobody asked for instead of actually talking to customers.
 
-⚠️ PRESERVE: Line breaks, hooks, questions, controversial markers.
+It's really important to understand that customer feedback is the key to everything.
 
-FOR THREADS: Each tweet must be under 280 chars. Maintain numbering.
+What do you think?
 
-CRITICAL: Return ONLY the shortened content. Aim for 180-280 chars. PRESERVE score boosters.`,
+OUTPUT (248 chars):
+Unpopular opinion: Most startups fail because founders build features nobody wants instead of talking to customers.
+
+Customer feedback is everything.
+
+What do you think?
+
+⚠️ COUNT YOUR OUTPUT! Must be 180-280 chars. KEEP: hooks, questions, line breaks.`,
 
   make_thread: `Turn content into an engaging thread optimized for engagement scores.
 
@@ -277,46 +289,41 @@ FOR THREADS: Add question to the LAST tweet only.
 
 CRITICAL: Return content + question. PRESERVE everything else exactly.`,
 
-  make_spicy: `Make this content more provocative to boost Reply Potential score (+15 points for controversial markers).
+  make_spicy: `Make this more provocative WITHOUT adding length.
 
-ENGAGEMENT SCORE TARGETS (these are measured):
-- Controversial markers → +15 points:
-  "unpopular opinion" | "hot take" | "controversial" | "most people" | 
-  "nobody" | "everyone is wrong" | "i don't care"
-- Also boosts Hook Strength if used at start (+20 points for bold claim opener)
+⚠️ CRITICAL: Output must be SAME CHARACTER COUNT or SHORTER. DO NOT add words!
 
-⚠️ PRESERVE EXISTING SCORE BOOSTERS:
-- Keep any existing questions at the end (ending with ?)
-- Keep numbers at the start of lines
-- Keep existing line breaks
-- Only ADD spicy elements, don't remove what's working
+CONTROVERSY TRIGGERS (use at least one):
+- "Unpopular opinion:" at start
+- "Hot take:" at start
+- "Most people" anywhere
+- "Nobody" anywhere
+- "Stop [doing X]" anywhere
 
-HARD REQUIREMENTS:
-1. Output must be SAME LENGTH OR SHORTER (stronger words, not more words)
-2. For single tweets: Stay under 280 characters
-3. Add at least ONE controversial marker if not already present
-4. ⚠️ PRESERVE ALL LINE BREAKS
+TRANSFORMATIONS (same or shorter length):
+- "This is helpful" → "This is the only thing that works" (stronger, same length)
+- "Many people struggle" → "Most people fail at this" (shorter + trigger)
+- "It's important to" → "Stop ignoring" (shorter + trigger)
+- "You might want to" → "You need to" (shorter)
+- DELETE: "I think", "perhaps", "sort of", "a bit", "kind of"
 
-SPICY TRANSFORMATIONS (that maintain or reduce length):
-BEFORE → AFTER
-- "This is helpful" → "Unpopular opinion: this is the only thing that works"
-- "Many people struggle" → "Most people get this completely wrong"
-- "It's important to" → "Stop ignoring this."
-- "You might want to" → "You need to"
-- Hedging words (I think, perhaps, sort of) → DELETE
+EXAMPLE:
+INPUT (180 chars):
+Building in public is great for accountability.
 
-HIGH-SCORING SPICY PATTERNS:
-- "Unpopular opinion:" at start (bold claim + controversial)
-- "Hot take:" at start (bold claim + controversial)  
-- "Most people [do X wrong]" in content (controversial)
-- "Nobody talks about this" (controversial)
-- Include "Stop [doing X]" (triggers bold claim)
+It keeps you motivated and helps you connect with others.
 
-THE RULE: Make it polarizing enough that people MUST reply to agree or disagree.
+OUTPUT (168 chars):
+Most people fail at building in public.
 
-FOR THREADS: Add spice to at least the first and last tweets.
+It's not about accountability. It's about finding people who get it.
 
-CRITICAL: Return ONLY the content. Same length or shorter. Must include controversial markers.`,
+PRESERVE:
+- All line breaks
+- Questions at the end
+- Numbers at the start
+
+⚠️ COUNT CHARACTERS! Your output cannot be longer than the input.`,
 }
 
 export async function POST(request: NextRequest) {
