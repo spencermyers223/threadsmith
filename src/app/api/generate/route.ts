@@ -432,8 +432,11 @@ export async function POST(request: NextRequest) {
     if (!topic || topic.trim().length === 0) {
       return NextResponse.json({ error: 'Topic is required' }, { status: 400 })
     }
-    if (topic.length > 500) {
-      return NextResponse.json({ error: 'Topic must be 500 characters or less' }, { status: 400 })
+    // Template prompts can be longer since they include system instructions
+    // Regular topic input stays at 500 chars
+    const maxLength = isTemplatePrompt ? 2000 : 500
+    if (topic.length > maxLength) {
+      return NextResponse.json({ error: `Topic must be ${maxLength} characters or less` }, { status: 400 })
     }
 
     // Map input values to our types
