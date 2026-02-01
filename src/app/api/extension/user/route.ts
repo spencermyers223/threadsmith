@@ -72,12 +72,23 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
+    // Get primary X account username
+    const { data: xAccount } = await supabase
+      .from('x_accounts')
+      .select('username, display_name, profile_image_url')
+      .eq('user_id', user.id)
+      .eq('is_primary', true)
+      .single();
+
     return jsonResponse({
       user: {
         id: user.id,
         email: profile?.email || user.email,
         name: profile?.display_name,
-        avatar: profile?.avatar_url
+        avatar: profile?.avatar_url,
+        xUsername: xAccount?.username || null,
+        xDisplayName: xAccount?.display_name || null,
+        xAvatar: xAccount?.profile_image_url || null
       },
       isPremium
     });

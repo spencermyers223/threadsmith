@@ -7,6 +7,7 @@ const XTHREAD_API = 'https://xthread.io/api';
 let userToken = null;
 let isPremium = false;
 let userEmail = null;
+let xUsername = null;
 let currentTab = 'coach';
 
 // ============================================================
@@ -43,10 +44,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadAuthState() {
-  const stored = await chrome.storage.local.get(['xthreadToken', 'isPremium', 'userEmail']);
+  const stored = await chrome.storage.local.get(['xthreadToken', 'isPremium', 'userEmail', 'xUsername']);
   userToken = stored.xthreadToken;
   isPremium = stored.isPremium || false;
   userEmail = stored.userEmail;
+  xUsername = stored.xUsername;
+  
+  // If we have a token but no xUsername, try to fetch it
+  if (userToken && !xUsername) {
+    try {
+      const response = await fetch('https://xthread.io/api/extension/user', {
+        headers: { 'Authorization': `Bearer ${userToken}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user?.xUsername) {
+          xUsername = data.user.xUsername;
+          await chrome.storage.local.set({ xUsername });
+        }
+      }
+    } catch (e) {
+      console.error('[xthread] Failed to fetch user info:', e);
+    }
+  }
   
   updateAuthUI();
 }
@@ -55,13 +75,19 @@ function updateAuthUI() {
   const userSection = document.getElementById('user-section');
   const authSection = document.getElementById('auth-section');
   
-  if (userToken && userEmail) {
+  if (userToken) {
     userSection.classList.remove('hidden');
     authSection.classList.add('hidden');
     
-    document.getElementById('user-email').textContent = userEmail;
+    // Display X username if available, otherwise fall back to email
+    const displayName = xUsername ? `@${xUsername}` : (userEmail || 'User');
+    document.getElementById('user-email').textContent = displayName;
     document.getElementById('user-plan').textContent = isPremium ? 'Premium' : 'Free';
-    document.getElementById('user-avatar').textContent = userEmail.charAt(0).toUpperCase();
+    
+    // Avatar: use first letter of username or email
+    const avatarLetter = xUsername ? xUsername.charAt(0).toUpperCase() : 
+                         userEmail ? userEmail.charAt(0).toUpperCase() : '?';
+    document.getElementById('user-avatar').textContent = avatarLetter;
   } else {
     userSection.classList.add('hidden');
     authSection.classList.remove('hidden');
