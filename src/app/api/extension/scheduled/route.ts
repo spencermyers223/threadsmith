@@ -85,10 +85,63 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Format scheduled date/time for display
+    const formatScheduledDisplay = (date: string | null, time: string | null): string | null => {
+      if (!date) return null;
+      
+      const today = new Date().toISOString().split('T')[0];
+      const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+      
+      let dateStr = date;
+      if (date === today) dateStr = 'Today';
+      else if (date === tomorrow) dateStr = 'Tomorrow';
+      else {
+        // Format as "Feb 5"
+        const d = new Date(date + 'T12:00:00');
+        dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+      
+      if (time) {
+        // Format time as "9:00 AM"
+        const [h, m] = time.split(':');
+        const hour = parseInt(h, 10);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const hour12 = hour % 12 || 12;
+        return `${dateStr} at ${hour12}:${m} ${ampm}`;
+      }
+      
+      return dateStr;
+    };
+
+    // Helper to extract text from content object
+    const extractContent = (content: unknown): string => {
+      if (!content) return '';
+      if (typeof content === 'string') return content;
+      
+      const c = content as Record<string, unknown>;
+      
+      // Handle {html: "..."} format - strip HTML tags
+      if (c.html && typeof c.html === 'string') {
+        return c.html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      }
+      
+      // Handle {tweets: [{content: "..."}, ...]} format
+      if (Array.isArray(c.tweets)) {
+        return c.tweets.map((t: { content?: string }) => t.content || '').join(' ').trim();
+      }
+      
+      // Handle {text: "..."} format
+      if (c.text && typeof c.text === 'string') {
+        return c.text;
+      }
+      
+      return JSON.stringify(content);
+    };
+
     // Transform for extension consumption
     const transformedPosts = posts?.map(post => ({
       id: post.id,
-      content: post.content,
+      content: extractContent(post.content),
       title: post.title,
       type: post.type,
       status: post.status,
@@ -97,9 +150,7 @@ export async function GET(request: NextRequest) {
       generationType: post.generation_type,
       createdAt: post.created_at,
       // Compute display-friendly scheduled datetime
-      scheduledDisplay: post.scheduled_date 
-        ? `${post.scheduled_date}${post.scheduled_time ? ' at ' + post.scheduled_time : ''}`
-        : null
+      scheduledDisplay: formatScheduledDisplay(post.scheduled_date, post.scheduled_time)
     })) || [];
 
     return jsonResponse({
