@@ -612,15 +612,32 @@ async function loadQueue() {
       </div>
     `).join('');
     
-    // Post to X button - opens X intent with content
+    // Store full content for each post (preserving formatting)
+    const postContentMap = {};
+    posts.forEach(post => {
+      postContentMap[post.id] = post.content || '';
+    });
+    
+    // Post to X button - opens X intent in existing X tab
     queueList.querySelectorAll('.post-to-x-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const item = btn.closest('.queue-item');
-        const content = item.dataset.content || '';
-        // Open X intent with pre-filled text
-        const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(content)}`;
-        chrome.tabs.create({ url: intentUrl });
+        const postId = item.dataset.id;
+        const content = postContentMap[postId] || '';
+        
+        // Build intent URL (line breaks preserved as %0A)
+        const intentUrl = `https://x.com/intent/post?text=${encodeURIComponent(content)}`;
+        
+        // Find existing X/Twitter tab and reuse it
+        const tabs = await chrome.tabs.query({ url: ['*://x.com/*', '*://twitter.com/*'] });
+        if (tabs.length > 0) {
+          // Update existing tab
+          chrome.tabs.update(tabs[0].id, { url: intentUrl, active: true });
+        } else {
+          // No X tab open, create one
+          chrome.tabs.create({ url: intentUrl });
+        }
       });
     });
     
