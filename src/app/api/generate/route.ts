@@ -251,7 +251,8 @@ async function generateForCTNativePostType(
   postType: CTNativePostType,
   userProfile: UserProfile | undefined,
   additionalContext: string | undefined,
-  isTemplatePrompt?: boolean
+  isTemplatePrompt?: boolean,
+  contentLength?: ContentLength
 ): Promise<GeneratedPost[]> {
   const voiceProfile = toUserVoiceProfile(userProfile)
   let systemPrompt: string
@@ -311,11 +312,23 @@ async function generateForCTNativePostType(
       break
     }
     case 'build_in_public': {
+      // Map ContentLength to build-in-public length format
+      const bipLength = contentLength === 'short' ? 'single' 
+        : contentLength === 'long' ? 'single'  // Still single tweet but longer
+        : 'single'
+      
+      // Add explicit character limit based on length selection
+      const charLimit = contentLength === 'short' ? 140 
+        : contentLength === 'medium' ? 200 
+        : 280
+      
+      const lengthContext = `\n\n⚠️ STRICT LENGTH REQUIREMENT: Output MUST be under ${charLimit} characters. This is ${contentLength === 'short' ? 'Punchy' : contentLength === 'medium' ? 'Standard' : 'Developed'} mode.`
+      
       const result = buildInPublicPrompt({
         topic,
         userProfile: voiceProfile,
-        additionalContext,
-        length: 'single', // Default to single tweet for build-in-public
+        additionalContext: (additionalContext || '') + lengthContext,
+        length: bipLength,
       })
       systemPrompt = result.systemPrompt
       userPrompt = result.userPrompt
@@ -633,7 +646,8 @@ Blend these stylistic elements with the user's own voice. Don't copy - adapt.
         postType,
         userProfile,
         additionalContext,
-        isTemplatePrompt
+        isTemplatePrompt,
+        contentLength  // Pass the length selection
       )
       // Limit to 3 posts
       allPosts = allPosts.slice(0, 3)
