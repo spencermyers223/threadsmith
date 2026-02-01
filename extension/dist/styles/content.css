@@ -454,13 +454,13 @@
   background: linear-gradient(135deg, #C9B896 0%, #B8A886 100%);
   border: none;
   color: #1a1a1a;
-  border-radius: 50%;
-  width: 34px;
-  height: 34px;
-  padding: 0;
+  border-radius: 9999px;
+  padding: 6px 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  height: 30px;
+  box-sizing: border-box;
 }
 
 .xthread-save-btn svg {
