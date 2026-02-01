@@ -367,7 +367,7 @@ export async function POST(request: NextRequest) {
       // Helper to call the API
       const callApi = async (extraPrompt = ''): Promise<string> => {
         const response = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-opus-4-20250514',
           max_tokens: 2048,
           system: editingPrompt + FORMATTING_RULE,
           messages: [{ role: 'user', content: `Here is the content to modify:\n\n${content}${threadContext}\n\n⚠️ IMPORTANT: Preserve all line breaks exactly as shown above.${extraPrompt}` }],
@@ -486,7 +486,7 @@ Try again and preserve the formatting EXACTLY.`)
     }))
 
     const stream = anthropic.messages.stream({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-opus-4-20250514',
       max_tokens: 1024,
       system: WRITING_ASSISTANT_PROMPT,
       messages: claudeMessages,
