@@ -451,22 +451,36 @@
 }
 
 .xthread-save-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #d1d5db;
+  background: linear-gradient(135deg, #C9B896 0%, #B8A886 100%);
+  border: none;
+  color: #1a1a1a;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.xthread-save-btn svg {
+  width: 16px;
+  height: 16px;
 }
 
 .xthread-save-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.15);
-  color: #f3f4f6;
+  background: linear-gradient(135deg, #B8A886 0%, #a89876 100%);
+  transform: scale(1.05);
 }
 
 .xthread-save-btn.xthread-saved {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-color: #10b981;
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   color: white;
   cursor: default;
+}
+
+.xthread-save-btn.xthread-saved svg {
+  fill: white;
 }
 
 .xthread-repurpose-btn {
