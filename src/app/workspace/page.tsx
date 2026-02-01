@@ -541,13 +541,19 @@ export default function WorkspacePage() {
     return <TiptapEditor content={content} onChange={handleContentChange} />
   }
 
-  // Plain text for engagement scoring
+  // Plain text for engagement scoring - properly converts HTML to plain text with line breaks
   const getPlainText = useCallback(() => {
     if (contentType === 'thread') {
       return threadTweets.map(t => t.content).join('\n\n')
     }
-    // Strip HTML tags for plain text
-    return content.replace(/<[^>]*>/g, '').trim()
+    // Convert HTML to plain text, preserving line breaks
+    return content
+      .replace(/<\/p>\s*<p>/gi, '\n\n')  // Paragraph breaks → double newline
+      .replace(/<br\s*\/?>/gi, '\n')      // <br> → single newline
+      .replace(/<\/p>/gi, '\n')           // Closing </p> → newline
+      .replace(/<p>/gi, '')               // Opening <p> → nothing
+      .replace(/<[^>]*>/g, '')            // Strip remaining HTML tags
+      .trim()
   }, [contentType, content, threadTweets])
 
   const handleInsertText = useCallback((text: string) => {

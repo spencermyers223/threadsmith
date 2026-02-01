@@ -69,25 +69,25 @@ interface Message {
 // Common formatting instruction for all prompts
 const FORMATTING_RULE = `
 
-⚠️ CRITICAL FORMATTING RULES:
+⚠️ CRITICAL FORMATTING RULES - VIOLATION = FAILURE:
 
 1. PRESERVE ALL LINE BREAKS exactly as they appear in the input.
+   WRONG: "Line one Line two"
+   RIGHT: "Line one
    
-   WRONG (collapsed):
-   "Line one Line two Line three"
-   
-   RIGHT (preserved):
-   "Line one
-   
-   Line two
-   
-   Line three"
+   Line two"
 
-2. DO NOT add markdown formatting (no **, no ## headers)
+2. PRESERVE ALL SPACES - especially after periods!
+   WRONG: "First sentence.Second sentence"
+   RIGHT: "First sentence. Second sentence"
+   
+3. Every period (.) MUST be followed by a space, then the next word.
 
-3. Return ONLY the modified text - no explanations, no "Here's the improved version:", no quotes around the output
+4. DO NOT add markdown formatting (no **, no ## headers)
 
-4. Count line breaks in input and ensure same number in output
+5. Return ONLY the modified text - no explanations, no quotes
+
+6. Count: same line breaks in = same line breaks out
 `
 
 // Editing tool prompts
@@ -376,11 +376,39 @@ export async function POST(request: NextRequest) {
       // First attempt
       let result = await callApi()
 
-      // Check if formatting was collapsed (significant loss of line breaks)
-      const resultLineBreaks = (result.match(/\n/g) || []).length
-      if (originalLineBreaks > 2 && resultLineBreaks < originalLineBreaks / 2) {
-        // Retry with stronger formatting emphasis
-        result = await callApi('\n\n⚠️ YOUR OUTPUT MUST HAVE THE SAME LINE BREAKS AS THE INPUT. Count them. The input has ' + originalLineBreaks + ' line breaks. Do NOT collapse into a paragraph.')
+      // Validation helper: check for collapsed formatting
+      const hasCollapsedFormatting = (original: string, modified: string): boolean => {
+        // Check 1: Line breaks significantly reduced
+        const origBreaks = (original.match(/\n/g) || []).length
+        const modBreaks = (modified.match(/\n/g) || []).length
+        if (origBreaks > 2 && modBreaks < origBreaks / 2) return true
+        
+        // Check 2: Sentences running together (period followed by capital with no space)
+        const collapsedSentences = (modified.match(/\.[A-Z]/g) || []).length
+        const origCollapsed = (original.match(/\.[A-Z]/g) || []).length
+        if (collapsedSentences > origCollapsed + 1) return true
+        
+        // Check 3: Significant whitespace loss
+        const origWhitespace = (original.match(/\s/g) || []).length
+        const modWhitespace = (modified.match(/\s/g) || []).length
+        if (origWhitespace > 10 && modWhitespace < origWhitespace * 0.5) return true
+        
+        return false
+      }
+
+      // Check if formatting was collapsed and retry
+      if (hasCollapsedFormatting(content, result)) {
+        result = await callApi(`\n\n⚠️ CRITICAL FORMATTING ERROR! Your output has:
+- Collapsed line breaks (must preserve all \\n characters)
+- Sentences running together without spaces
+- Missing whitespace
+
+RULES:
+1. Every period MUST be followed by a space (". " not ".")
+2. Every line break in input MUST appear in output
+3. Preserve ALL spacing exactly
+
+Try again and preserve the formatting EXACTLY.`)
       }
 
       // For tools that shouldn't add length, verify and retry if needed
@@ -388,7 +416,6 @@ export async function POST(request: NextRequest) {
         const originalLen = content.length
         const resultLen = result.length
         if (resultLen > originalLen + 20) { // Allow 20 char tolerance
-          // Retry with emphasis on not adding length
           result = await callApi(`\n\n⚠️ CRITICAL: Your output (${resultLen} chars) was LONGER than the input (${originalLen} chars). This is not allowed. Output must be ${originalLen} chars or SHORTER. Rewrite to be more concise.`)
         }
       }
