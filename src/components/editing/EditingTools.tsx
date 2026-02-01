@@ -386,8 +386,21 @@ export default function EditingTools({ content, onContentChange, isThread = fals
           }
         }
         
-        // Show score change feedback
-        if (bestScore > beforeScore.score) {
+        // Special handling for Shorten: if content is over 280 chars, ALWAYS apply if result is shorter
+        // The goal of Shorten is to get under the limit, not to improve overall score
+        if (toolId === 'sharpen' && content.length > 280 && bestContent.length < content.length) {
+          const afterScoreObj = scoreEngagement(bestContent)
+          const charsSaved = content.length - bestContent.length
+          setScoreChange({ 
+            before: beforeScore.score, 
+            after: afterScoreObj.score, 
+            tool: `${toolLabel} (-${charsSaved} chars)`,
+            improvements: bestContent.length <= 280 ? ['Now under 280! ✓'] : [`${bestContent.length}/280 chars`]
+          })
+          setTimeout(() => setScoreChange(null), 4000)
+          onContentChange(bestContent)
+        } else if (bestScore > beforeScore.score) {
+          // Show score change feedback
           const afterScoreObj = scoreEngagement(bestContent)
           const improvements = getImprovements(beforeScore, afterScoreObj)
           setScoreChange({ before: beforeScore.score, after: bestScore, tool: toolLabel, improvements })
@@ -395,7 +408,7 @@ export default function EditingTools({ content, onContentChange, isThread = fals
           onContentChange(bestContent)
         } else if (bestContent !== content) {
           // Content changed but score didn't improve - still apply but note it
-          setScoreChange({ before: beforeScore.score, after: bestScore, tool: `${toolLabel} (already optimized)` })
+          setScoreChange({ before: beforeScore.score, after: bestScore, tool: `${toolLabel} (applied)` })
           setTimeout(() => setScoreChange(null), 4000)
           onContentChange(bestContent)
         } else {
