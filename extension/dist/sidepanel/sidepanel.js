@@ -217,31 +217,6 @@ function showCoaching(coaching, postData) {
                        coaching.postScore.timeUrgency === 'medium' ? '⏰' : '📋';
   
   coachContent.innerHTML = `
-    <div class="coach-context">
-      <div class="context-label">Coaching for reply to:</div>
-      <div class="context-author">@${escapeHtml(extractHandle(postData.author))}</div>
-      <div class="context-text">${escapeHtml(truncateText(postData.text, 100))}</div>
-    </div>
-    
-    <div class="score-card ${scoreClass}">
-      <div class="score-left">
-        <span class="score-number">${coaching.postScore.score}</span>
-        <span class="score-max">/10</span>
-      </div>
-      <div class="score-right">
-        <div class="score-title">
-          ${coaching.postScore.worthReplying ? 'Worth Replying' : 'Consider Skipping'}
-          <span style="font-size:11px;color:var(--text-muted);margin-left:8px;">${urgencyEmoji} ${coaching.postScore.timeUrgency}</span>
-        </div>
-        <div class="score-reason">${escapeHtml(coaching.postScore.reasoning)}</div>
-      </div>
-    </div>
-    
-    <div class="tip-banner">
-      <span>💡</span>
-      <span>Replies are weighted <strong>75x</strong> in the algorithm!</span>
-    </div>
-    
     <div class="coach-section">
       <div class="section-header">🎯 Recommended Tone</div>
       <div class="tone-pill">${escapeHtml(coaching.toneRecommendation.primary)}</div>
