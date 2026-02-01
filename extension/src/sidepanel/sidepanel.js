@@ -232,7 +232,7 @@ function showCoaching(coaching, postData) {
             <span class="hook-emoji">${emoji}</span>
             <span class="hook-label">${label}</span>
           </div>
-          <span class="hook-text">"${escapeHtml(hook)}"</span>
+          <span class="hook-text">${escapeHtml(hook)}</span>
         </div>
         <button class="hook-copy-btn" title="Copy hook">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

@@ -134,7 +134,8 @@ CRITICAL RULES:
 - Each hook is SHORT (5-12 words) - it's the FIRST LINE of a reply, not the whole thing
 - Each hook MUST tie directly to the specific post content - no generic starters
 - No "Great post!" or "I agree!" or "This is so true!" - be specific
-- The hook should make someone want to keep reading your reply`;
+- The hook should make someone want to keep reading your reply
+- DO NOT wrap hooks in quotation marks - output plain text only`;
 
     console.log('[generate-replies] Calling Claude API...');
     const response = await anthropic.messages.create({
