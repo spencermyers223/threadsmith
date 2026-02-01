@@ -42,6 +42,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   // Load initial data
   loadTabData(currentTab);
+  
+  // Check for pending coaching data (from Coach button click before panel was open)
+  chrome.runtime.sendMessage({ type: 'GET_PENDING_COACHING' }, (response) => {
+    if (response && response.coaching) {
+      console.log('[xthread] Got pending coaching data');
+      switchTab('coach');
+      showCoaching(response.coaching, response.postData);
+    }
+  });
 });
 
 async function loadAuthState() {

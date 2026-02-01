@@ -3,6 +3,9 @@
 const XTHREAD_API = 'https://xthread.io/api';
 const XTHREAD_URL = 'https://xthread.io';
 
+// Store pending coaching data for sidepanel
+let pendingCoaching = null;
+
 // ============================================================
 // Side Panel Setup - Open when extension icon is clicked
 // ============================================================
@@ -125,6 +128,40 @@ async function updateBadge() {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'COACHING_GENERATED') {
     incrementCoachingCount();
+  }
+  
+  // Store coaching data and open sidepanel
+  if (message.type === 'SHOW_COACHING') {
+    pendingCoaching = {
+      coaching: message.coaching,
+      postData: message.postData
+    };
+    // Forward to sidepanel if it's already open
+    chrome.runtime.sendMessage(message).catch(() => {
+      // Sidepanel not open yet, data is stored in pendingCoaching
+    });
+  }
+  
+  // Open sidepanel when requested
+  if (message.type === 'OPEN_SIDE_PANEL') {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        chrome.sidePanel.open({ tabId: tabs[0].id }).catch(err => {
+          console.error('[xthread] Failed to open side panel:', err);
+        });
+      }
+    });
+  }
+  
+  // Sidepanel requests pending coaching data when it loads
+  if (message.type === 'GET_PENDING_COACHING') {
+    if (pendingCoaching) {
+      sendResponse(pendingCoaching);
+      pendingCoaching = null; // Clear after sending
+    } else {
+      sendResponse(null);
+    }
+    return true; // Keep channel open for async response
   }
   
   if (message.type === 'UPDATE_BADGE') {
