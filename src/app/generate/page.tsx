@@ -29,6 +29,7 @@ import { GenerationCounter } from '@/components/subscription/GenerationCounter'
 import { UpgradeModal } from '@/components/subscription/UpgradeModal'
 import TagSelector from '@/components/tags/TagSelector'
 import TagBadge, { Tag as TagType } from '@/components/tags/TagBadge'
+import EditingTools from '@/components/editing/EditingTools'
 import { postTweet, postThread, openXIntent, openTweet } from '@/lib/x-posting'
 import { useXAccount } from '@/contexts/XAccountContext'
 
@@ -138,6 +139,7 @@ function PostCard({
   onAddToCalendar,
   onAddTags,
   onEditInWorkspace,
+  onContentChange,
   isEditingInWorkspace,
 }: {
   post: GeneratedPost
@@ -145,11 +147,14 @@ function PostCard({
   onAddToCalendar: () => void
   onAddTags: () => void
   onEditInWorkspace: () => void
+  onContentChange: (newContent: string) => void
   isEditingInWorkspace: boolean
 }) {
   const style = archetypeStyles[post.archetype]
   const Icon = style.icon
   const [copied, setCopied] = useState(false)
+  const [showEditingTools, setShowEditingTools] = useState(false)
+  const isThread = post.content.includes('1/') || post.content.includes('2/')
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(post.content)
@@ -166,6 +171,17 @@ function PostCard({
             <Icon className="w-3.5 h-3.5" />
             {style.label}
           </div>
+          <button
+            onClick={() => setShowEditingTools(!showEditingTools)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+              showEditingTools 
+                ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30' 
+                : 'bg-[var(--border)] hover:bg-[var(--muted)]/30 text-[var(--muted)]'
+            }`}
+          >
+            <Sparkles className="w-3 h-3" />
+            {showEditingTools ? 'Hide Tools' : 'Quick Edit'}
+          </button>
         </div>
         {/* Display tags if any */}
         {post.tags && post.tags.length > 0 && (
@@ -196,6 +212,18 @@ function PostCard({
           </button>
         </div>
       </div>
+
+      {/* Editing Tools (collapsible) */}
+      {showEditingTools && (
+        <div className="px-4 pb-4 border-t border-[var(--border)] pt-3">
+          <EditingTools
+            content={post.content}
+            onContentChange={onContentChange}
+            isThread={isThread}
+            hideScore={false}
+          />
+        </div>
+      )}
 
       {/* Footer with character count and actions */}
       <div className="p-4 border-t border-[var(--border)] space-y-3">
@@ -805,6 +833,13 @@ export default function GeneratePage() {
                     onAddToCalendar={handleAddToCalendar}
                     onAddTags={() => handleAddTags(post, index)}
                     onEditInWorkspace={() => handleEditInWorkspace(post, index)}
+                    onContentChange={(newContent: string) => {
+                      setPosts(prev => prev.map((p, i) => 
+                        i === index 
+                          ? { ...p, content: newContent, characterCount: newContent.length }
+                          : p
+                      ))
+                    }}
                     isEditingInWorkspace={editingPostIndex === index}
                   />
                 ))}
