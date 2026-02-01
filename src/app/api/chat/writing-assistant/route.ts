@@ -354,9 +354,6 @@ export async function POST(request: NextRequest) {
 
       const threadContext = isThread ? '\n\nNOTE: This is a multi-tweet THREAD. Preserve the numbered tweet structure (1/, 2/, etc.) exactly. Only modify the relevant parts.' : ''
 
-      // Count line breaks in original content
-      const originalLineBreaks = (content.match(/\n/g) || []).length
-
       // Helper to call the API
       const callApi = async (extraPrompt = ''): Promise<string> => {
         const response = await anthropic.messages.create({
