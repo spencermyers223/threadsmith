@@ -67,12 +67,12 @@ export function XAnalyticsDashboard() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const prevAccountIdRef = useRef<string | null>(null)
 
-  // Load cached data on mount, then auto-fetch
+  // Load cached data on mount (no auto-fetch)
   useEffect(() => {
     if (!activeAccount?.id) return
-    if (prevAccountIdRef.current === activeAccount.id && data !== null) return
+    if (prevAccountIdRef.current === activeAccount.id) return
     
-    // Try to load from cache first
+    // Try to load from cache only
     try {
       const cached = localStorage.getItem(CACHE_KEY)
       if (cached) {
@@ -80,17 +80,13 @@ export function XAnalyticsDashboard() {
         if (parsed.accountId === activeAccount.id) {
           setData(parsed.data)
           setLastUpdated(new Date(parsed.timestamp))
-          prevAccountIdRef.current = activeAccount.id
-          return // Use cached data, don't auto-fetch
         }
       }
     } catch {
       // Ignore cache errors
     }
     
-    // No cache, fetch fresh
     prevAccountIdRef.current = activeAccount.id
-    fetchAnalytics()
   }, [activeAccount?.id])
 
   const fetchAnalytics = async (showRefresh = false) => {
@@ -137,6 +133,26 @@ export function XAnalyticsDashboard() {
     }
     prevAccountIdRef.current = activeAccount.id
   }, [activeAccount?.id])
+
+  // No data yet - prompt to load
+  if (!data && !loading && !error) {
+    return (
+      <div className="max-w-2xl mx-auto px-6 py-16 text-center">
+        <BarChart3 className="w-16 h-16 mx-auto mb-4 text-accent" />
+        <h2 className="text-xl font-bold mb-2">X Analytics</h2>
+        <p className="text-[var(--muted)] mb-6">
+          View engagement metrics for your recent posts.
+        </p>
+        <button
+          onClick={() => fetchAnalytics()}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-[var(--accent-text)] rounded-xl font-medium hover:bg-[var(--accent-hover)] transition-all"
+        >
+          <RefreshCw className="w-5 h-5" />
+          Load Analytics
+        </button>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
