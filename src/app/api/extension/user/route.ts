@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
     let xAccount = null;
     const { data: primaryAccount } = await supabase
       .from('x_accounts')
-      .select('username, display_name, profile_image_url')
+      .select('x_username, x_display_name, x_profile_image_url')
       .eq('user_id', user.id)
       .eq('is_primary', true)
       .single();
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
       // Fallback: get any X account for this user
       const { data: anyAccount } = await supabase
         .from('x_accounts')
-        .select('username, display_name, profile_image_url')
+        .select('x_username, x_display_name, x_profile_image_url')
         .eq('user_id', user.id)
         .limit(1)
         .single();
@@ -100,9 +100,9 @@ export async function GET(request: NextRequest) {
         email: profile?.email || user.email,
         name: profile?.display_name,
         avatar: profile?.avatar_url,
-        xUsername: xAccount?.username || null,
-        xDisplayName: xAccount?.display_name || null,
-        xAvatar: xAccount?.profile_image_url || null
+        xUsername: xAccount?.x_username || null,
+        xDisplayName: xAccount?.x_display_name || null,
+        xAvatar: xAccount?.x_profile_image_url || null
       },
       isPremium
     });
