@@ -597,18 +597,37 @@ async function loadQueue() {
     queueCount.textContent = `${posts.length} scheduled`;
     
     queueList.innerHTML = posts.map(post => `
-      <div class="list-item queue-item" data-id="${escapeHtml(post.id)}">
+      <div class="list-item queue-item" data-id="${escapeHtml(post.id)}" data-content="${escapeHtml(post.content || '')}">
         <div class="item-header">
           <span class="item-type">${getTypeEmoji(post.generationType)} ${escapeHtml(formatGenerationType(post.generationType))}</span>
           <span class="item-time">${escapeHtml(post.scheduledDisplay || 'Not scheduled')}</span>
         </div>
         <div class="item-text">${escapeHtml(truncateText(post.content, 120))}</div>
+        <div class="item-actions">
+          <button class="post-to-x-btn" title="Open in X">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            Post
+          </button>
+        </div>
       </div>
     `).join('');
     
-    // Click to open in xthread
+    // Post to X button - opens X intent with content
+    queueList.querySelectorAll('.post-to-x-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const item = btn.closest('.queue-item');
+        const content = item.dataset.content || '';
+        // Open X intent with pre-filled text
+        const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(content)}`;
+        chrome.tabs.create({ url: intentUrl });
+      });
+    });
+    
+    // Click item to open in xthread calendar
     queueList.querySelectorAll('.queue-item').forEach(item => {
-      item.addEventListener('click', () => {
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('.post-to-x-btn')) return; // Don't trigger if clicking button
         chrome.tabs.create({ url: `https://xthread.io/calendar` });
       });
     });

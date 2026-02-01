@@ -730,6 +730,37 @@ body {
   font-weight: 600;
 }
 
+.queue-item .item-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+.post-to-x-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.post-to-x-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.post-to-x-btn svg {
+  flex-shrink: 0;
+}
+
 .queue-loading {
   display: flex;
   align-items: center;
