@@ -117,7 +117,7 @@ export default function EditingTools({ content, onContentChange, isThread = fals
   const [isLoading, setIsLoading] = useState(false)
   const [engagementScore, setEngagementScore] = useState<EngagementScore | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [scoreChange, setScoreChange] = useState<{ before: number; after: number; tool: string } | null>(null)
+  const [scoreChange, setScoreChange] = useState<{ before: number; after: number; tool: string; improvements?: string[] } | null>(null)
   const [previousContent, setPreviousContent] = useState<string | null>(null)
   const [autoProgress, setAutoProgress] = useState<string | null>(null)
 
@@ -154,6 +154,23 @@ export default function EditingTools({ content, onContentChange, isThread = fals
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
+
+  // Helper to identify which factors improved
+  const getImprovements = (before: EngagementScore, after: EngagementScore): string[] => {
+    const improvements: string[] = []
+    const factors = ['hookStrength', 'replyPotential', 'length', 'readability'] as const
+    const labels: Record<typeof factors[number], string> = {
+      hookStrength: 'Hook',
+      replyPotential: 'Replies',
+      length: 'Length',
+      readability: 'Readability',
+    }
+    for (const factor of factors) {
+      const diff = after.breakdown[factor].score - before.breakdown[factor].score
+      if (diff > 5) improvements.push(`${labels[factor]} +${diff}`)
+    }
+    return improvements
+  }
 
   const handleUndo = () => {
     if (previousContent) {
@@ -281,11 +298,13 @@ export default function EditingTools({ content, onContentChange, isThread = fals
         
         // Only update if at least one tool was applied successfully
         if (toolsApplied.length > 0) {
-          const afterScore = scoreEngagement(currentContent).score
+          const afterScoreObj = scoreEngagement(currentContent)
+          const improvements = getImprovements(beforeScore, afterScoreObj)
           setScoreChange({ 
             before: beforeScore.score, 
-            after: afterScore, 
-            tool: `Auto (${toolsApplied.join(' → ')})` 
+            after: afterScoreObj.score, 
+            tool: `Auto (${toolsApplied.join(' → ')})`,
+            improvements,
           })
           setTimeout(() => setScoreChange(null), 6000)
           onContentChange(currentContent)
@@ -339,7 +358,9 @@ export default function EditingTools({ content, onContentChange, isThread = fals
         
         // Show score change feedback
         if (bestScore > beforeScore.score) {
-          setScoreChange({ before: beforeScore.score, after: bestScore, tool: toolLabel })
+          const afterScoreObj = scoreEngagement(bestContent)
+          const improvements = getImprovements(beforeScore, afterScoreObj)
+          setScoreChange({ before: beforeScore.score, after: bestScore, tool: toolLabel, improvements })
           setTimeout(() => setScoreChange(null), 4000)
           onContentChange(bestContent)
         } else if (bestContent !== content) {
@@ -448,37 +469,45 @@ export default function EditingTools({ content, onContentChange, isThread = fals
 
       {/* Score Change Feedback with Undo */}
       {scoreChange && (
-        <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm animate-fade-in-up ${
+        <div className={`flex flex-col gap-1 px-3 py-2 rounded-lg text-sm animate-fade-in-up ${
           scoreChange.after > scoreChange.before 
             ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
             : scoreChange.after < scoreChange.before
               ? 'bg-amber-500/10 border border-amber-500/30 text-amber-400'
               : 'bg-blue-500/10 border border-blue-500/30 text-blue-400'
         }`}>
-          <BarChart3 size={14} className="flex-shrink-0" />
-          <span className="flex-1">
-            <strong>{scoreChange.tool}:</strong>{' '}
-            {scoreChange.after > scoreChange.before ? (
-              <>Score +{scoreChange.after - scoreChange.before} ({scoreChange.before} → {scoreChange.after})</>
-            ) : scoreChange.after < scoreChange.before ? (
-              <>Score {scoreChange.after - scoreChange.before} ({scoreChange.before} → {scoreChange.after})</>
-            ) : (
-              <>Score unchanged ({scoreChange.after})</>
+          <div className="flex items-center gap-2">
+            <BarChart3 size={14} className="flex-shrink-0" />
+            <span className="flex-1">
+              <strong>{scoreChange.tool}:</strong>{' '}
+              {scoreChange.after > scoreChange.before ? (
+                <>Score +{scoreChange.after - scoreChange.before} ({scoreChange.before} → {scoreChange.after})</>
+              ) : scoreChange.after < scoreChange.before ? (
+                <>Score {scoreChange.after - scoreChange.before} ({scoreChange.before} → {scoreChange.after})</>
+              ) : (
+                <>Score unchanged ({scoreChange.after})</>
+              )}
+            </span>
+            {previousContent && (
+              <button 
+                onClick={handleUndo}
+                className="flex items-center gap-1 px-2 py-0.5 bg-white/10 hover:bg-white/20 rounded text-xs"
+                title="Undo this change"
+              >
+                <Undo2 size={12} />
+                Undo
+              </button>
             )}
-          </span>
-          {previousContent && (
-            <button 
-              onClick={handleUndo}
-              className="flex items-center gap-1 px-2 py-0.5 bg-white/10 hover:bg-white/20 rounded text-xs"
-              title="Undo this change"
-            >
-              <Undo2 size={12} />
-              Undo
+            <button onClick={() => setScoreChange(null)} className="p-0.5 hover:bg-white/10 rounded">
+              <X size={12} />
             </button>
+          </div>
+          {/* Show which factors improved */}
+          {scoreChange.improvements && scoreChange.improvements.length > 0 && (
+            <div className="text-xs opacity-80 ml-5">
+              Improved: {scoreChange.improvements.join(' • ')}
+            </div>
           )}
-          <button onClick={() => setScoreChange(null)} className="p-0.5 hover:bg-white/10 rounded">
-            <X size={12} />
-          </button>
         </div>
       )}
 
