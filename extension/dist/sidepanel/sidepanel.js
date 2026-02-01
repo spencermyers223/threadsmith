@@ -618,7 +618,7 @@ async function loadQueue() {
       postContentMap[post.id] = post.content || '';
     });
     
-    // Post to X button - opens X intent in existing X tab
+    // Post to X button - fills compose modal without page refresh
     queueList.querySelectorAll('.post-to-x-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
@@ -626,16 +626,20 @@ async function loadQueue() {
         const postId = item.dataset.id;
         const content = postContentMap[postId] || '';
         
-        // Build intent URL (line breaks preserved as %0A)
-        const intentUrl = `https://x.com/intent/post?text=${encodeURIComponent(content)}`;
-        
-        // Find existing X/Twitter tab and reuse it
+        // Find existing X/Twitter tab
         const tabs = await chrome.tabs.query({ url: ['*://x.com/*', '*://twitter.com/*'] });
+        
         if (tabs.length > 0) {
-          // Update existing tab
-          chrome.tabs.update(tabs[0].id, { url: intentUrl, active: true });
+          // Send message to content script to fill compose modal
+          chrome.tabs.sendMessage(tabs[0].id, { 
+            type: 'FILL_COMPOSE', 
+            content: content 
+          });
+          // Focus that tab
+          chrome.tabs.update(tabs[0].id, { active: true });
         } else {
-          // No X tab open, create one
+          // No X tab open, create one with intent URL
+          const intentUrl = `https://x.com/intent/post?text=${encodeURIComponent(content)}`;
           chrome.tabs.create({ url: intentUrl });
         }
       });

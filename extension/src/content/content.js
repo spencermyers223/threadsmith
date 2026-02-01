@@ -3119,7 +3119,60 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       updateWatchButtonState(currentProfileHandle);
     }
   }
+  
+  // Fill compose modal with content (from Queue Post button)
+  if (message.type === 'FILL_COMPOSE') {
+    fillComposeWithContent(message.content);
+    sendResponse({ success: true });
+  }
 });
+
+// Fill the X compose modal with content without page refresh
+async function fillComposeWithContent(content) {
+  try {
+    // Method 1: Press 'n' to open compose modal (X keyboard shortcut)
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'n', code: 'KeyN', bubbles: true }));
+    
+    // Wait for compose modal to appear
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Find the compose text input (contenteditable div)
+    const composeInput = document.querySelector('[data-testid="tweetTextarea_0"]') ||
+                         document.querySelector('[role="textbox"][data-testid]') ||
+                         document.querySelector('div[contenteditable="true"][role="textbox"]');
+    
+    if (composeInput) {
+      // Focus the input
+      composeInput.focus();
+      
+      // Clear existing content
+      composeInput.innerHTML = '';
+      
+      // Insert text with line breaks preserved
+      const lines = content.split('\n');
+      lines.forEach((line, index) => {
+        if (index > 0) {
+          // Add line break
+          composeInput.appendChild(document.createElement('br'));
+        }
+        if (line) {
+          composeInput.appendChild(document.createTextNode(line));
+        }
+      });
+      
+      // Dispatch input event so X recognizes the change
+      composeInput.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+      
+      console.debug('[xthread] Compose filled with content');
+    } else {
+      console.error('[xthread] Could not find compose input');
+      // Fallback: open intent URL
+      window.location.href = `https://x.com/intent/post?text=${encodeURIComponent(content)}`;
+    }
+  } catch (err) {
+    console.error('[xthread] Error filling compose:', err);
+  }
+}
 
 // Start
 init();
