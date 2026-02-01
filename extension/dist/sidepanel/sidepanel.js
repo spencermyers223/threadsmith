@@ -211,37 +211,38 @@ function showCoaching(coaching, postData) {
   emptyState.classList.add('hidden');
   coachContent.classList.remove('hidden');
   
-  const scoreClass = coaching.postScore.score >= 7 ? 'high' : 
-                     coaching.postScore.score >= 4 ? 'medium' : 'low';
-  const urgencyEmoji = coaching.postScore.timeUrgency === 'high' ? '🔥' :
-                       coaching.postScore.timeUrgency === 'medium' ? '⏰' : '📋';
+  // Safely handle potential missing data
+  const toneRecommendation = coaching.toneRecommendation || { primary: 'engaging', why: '' };
+  const angles = coaching.angles || [];
+  const hookStarters = coaching.hookStarters || [];
+  const pitfalls = coaching.pitfalls || [];
   
   coachContent.innerHTML = `
     <div class="coach-section">
       <div class="section-header">🎯 Recommended Tone</div>
-      <div class="tone-pill">${escapeHtml(coaching.toneRecommendation.primary)}</div>
-      <div class="tone-reason">${escapeHtml(coaching.toneRecommendation.why)}</div>
+      <div class="tone-pill">${escapeHtml(toneRecommendation.primary)}</div>
+      <div class="tone-reason">${escapeHtml(toneRecommendation.why)}</div>
     </div>
     
     <div class="coach-section">
       <div class="section-header">💡 Strategic Angles</div>
-      ${coaching.angles.map(angle => `
+      ${angles.map(angle => `
         <div class="angle-item">
           <div class="angle-header">
-            <span class="angle-name">${escapeHtml(angle.title)}</span>
-            <span class="angle-tone">${escapeHtml(angle.tone)}</span>
+            <span class="angle-name">${escapeHtml(angle.title || '')}</span>
+            <span class="angle-tone">${escapeHtml(angle.tone || '')}</span>
           </div>
-          <div class="angle-desc">${escapeHtml(angle.description)}</div>
+          <div class="angle-desc">${escapeHtml(angle.description || '')}</div>
         </div>
       `).join('')}
     </div>
     
     <div class="coach-section">
       <div class="section-header">🪝 Hook Starters <span class="section-hint">(click to copy)</span></div>
-      ${coaching.hookStarters.map(hook => `
-        <div class="hook-item" data-text="${escapeHtml(hook.text)}">
-          <span class="hook-text">"${escapeHtml(hook.text)}"</span>
-          <span class="hook-source">${escapeHtml(hook.angle)}</span>
+      ${hookStarters.map(hook => `
+        <div class="hook-item" data-text="${escapeHtml(hook.text || '')}">
+          <span class="hook-text">"${escapeHtml(hook.text || '')}"</span>
+          <span class="hook-source">${escapeHtml(hook.angle || '')}</span>
         </div>
       `).join('')}
     </div>
@@ -249,7 +250,7 @@ function showCoaching(coaching, postData) {
     <div class="coach-section">
       <div class="section-header" style="color:var(--danger);">⚠️ What to Avoid</div>
       <ul class="avoid-list">
-        ${coaching.pitfalls.map(p => `<li>${escapeHtml(p)}</li>`).join('')}
+        ${pitfalls.map(p => `<li>${escapeHtml(p)}</li>`).join('')}
       </ul>
     </div>
     
