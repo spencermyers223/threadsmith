@@ -71,7 +71,9 @@ export async function GET(request: NextRequest) {
 
     // If upcoming, only show future scheduled posts
     if (upcoming) {
-      const today = new Date().toISOString().split('T')[0];
+      // Use client's local date if provided, otherwise fall back to server UTC
+      const clientDate = searchParams.get('clientDate');
+      const today = clientDate || new Date().toISOString().split('T')[0];
       query = query.gte('scheduled_date', today);
     }
 
@@ -86,11 +88,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Format scheduled date/time for display
+    // Use client's local date if provided for accurate "Today/Tomorrow" display
+    const clientDate = searchParams.get('clientDate');
+    const clientTodayStr = clientDate || new Date().toISOString().split('T')[0];
+    
     const formatScheduledDisplay = (date: string | null, time: string | null): string | null => {
       if (!date) return null;
       
-      // Parse dates as UTC to avoid timezone issues
-      const todayStr = new Date().toISOString().split('T')[0];
+      // Use client's date for accurate comparison
+      const todayStr = clientTodayStr;
       
       // Compare just the date strings (YYYY-MM-DD)
       const todayParts = todayStr.split('-').map(Number);

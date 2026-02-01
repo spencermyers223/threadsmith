@@ -563,7 +563,13 @@ async function loadQueue() {
   queueLoading.classList.remove('hidden');
   
   try {
-    const response = await fetch(`${XTHREAD_API}/extension/scheduled?status=scheduled&upcoming=true&limit=15`, {
+    // Pass client's local date to handle timezone correctly
+    const clientDate = new Date().toISOString().split('T')[0];
+    // Adjust for local timezone - get actual local date
+    const localDate = new Date();
+    const localDateStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+    
+    const response = await fetch(`${XTHREAD_API}/extension/scheduled?status=scheduled&upcoming=true&limit=15&clientDate=${localDateStr}`, {
       headers: {
         'Authorization': `Bearer ${userToken}`,
         'Content-Type': 'application/json'
