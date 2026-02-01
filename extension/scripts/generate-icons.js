@@ -2,50 +2,44 @@ const { createCanvas } = require('canvas');
 const fs = require('fs');
 const path = require('path');
 
-// xthread brand colors
+// X-style: clean white on black
 const COLORS = {
-  background: '#0F0F0F',
-  gold: '#C9B896',
-  goldLight: '#D4C4A8'
+  background: '#000000',
+  stroke: '#FFFFFF'
 };
 
 function generateIcon(size) {
   const canvas = createCanvas(size, size);
   const ctx = canvas.getContext('2d');
   
-  // Background with rounded corners
-  const radius = size * 0.22;
+  // Pure black background (no rounded corners for cleaner look)
   ctx.fillStyle = COLORS.background;
-  ctx.beginPath();
-  ctx.roundRect(0, 0, size, size, radius);
-  ctx.fill();
+  ctx.fillRect(0, 0, size, size);
   
-  // Subtle border
-  ctx.strokeStyle = 'rgba(201, 184, 150, 0.2)';
-  ctx.lineWidth = Math.max(1, size * 0.025);
+  // Draw clean X mark - X.com style
+  const padding = size * 0.25;
+  const strokeWidth = Math.max(1.5, size * 0.08);
+  
+  ctx.strokeStyle = COLORS.stroke;
+  ctx.lineWidth = strokeWidth;
+  ctx.lineCap = 'round';
+  
+  // First line (top-left to bottom-right)
   ctx.beginPath();
-  ctx.roundRect(size * 0.03, size * 0.03, size * 0.94, size * 0.94, radius * 0.9);
+  ctx.moveTo(padding, padding);
+  ctx.lineTo(size - padding, size - padding);
   ctx.stroke();
   
-  // Draw "xt" text logo
-  const fontSize = size * 0.52;
-  ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  
-  // Gold gradient for text
-  const gradient = ctx.createLinearGradient(size * 0.2, size * 0.3, size * 0.8, size * 0.7);
-  gradient.addColorStop(0, COLORS.goldLight);
-  gradient.addColorStop(1, COLORS.gold);
-  ctx.fillStyle = gradient;
-  
-  // Draw "xt" centered
-  ctx.fillText('xt', size / 2, size / 2 + size * 0.02);
+  // Second line (top-right to bottom-left)
+  ctx.beginPath();
+  ctx.moveTo(size - padding, padding);
+  ctx.lineTo(padding, size - padding);
+  ctx.stroke();
   
   return canvas.toBuffer('image/png');
 }
 
-// Generate all icon sizes
+// Generate all sizes
 const sizes = [16, 32, 48, 128];
 const iconsDir = path.join(__dirname, '..', 'dist', 'icons');
 
@@ -60,4 +54,4 @@ sizes.forEach(size => {
   console.log(`Generated ${filePath} (${size}x${size})`);
 });
 
-console.log('\nDone! "xt" logo icons generated.');
+console.log('\nDone! Clean X-style icons generated.');
