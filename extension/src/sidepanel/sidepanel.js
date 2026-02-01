@@ -211,47 +211,38 @@ function showCoaching(coaching, postData) {
   emptyState.classList.add('hidden');
   coachContent.classList.remove('hidden');
   
-  // Safely handle potential missing data
-  const toneRecommendation = coaching.toneRecommendation || { primary: 'engaging', why: '' };
-  const angles = coaching.angles || [];
-  const hookStarters = coaching.hookStarters || [];
-  const pitfalls = coaching.pitfalls || [];
+  // Get hooks by tone
+  const hooks = coaching.hooks || {};
+  const wittyHooks = hooks.witty || [];
+  const insightfulHooks = hooks.insightful || [];
+  const contrarianHooks = hooks.contrarian || [];
+  const friendlyHooks = hooks.friendly || [];
+  
+  const renderHooks = (hooksArray) => hooksArray.map(hook => `
+    <div class="hook-item" data-text="${escapeHtml(hook)}">
+      <span class="hook-text">"${escapeHtml(hook)}"</span>
+    </div>
+  `).join('');
   
   coachContent.innerHTML = `
     <div class="coach-section">
-      <div class="section-header">🎯 Recommended Tone</div>
-      <div class="tone-pill">${escapeHtml(toneRecommendation.primary)}</div>
-      <div class="tone-reason">${escapeHtml(toneRecommendation.why)}</div>
+      <div class="section-header">😏 Witty</div>
+      ${renderHooks(wittyHooks)}
     </div>
     
     <div class="coach-section">
-      <div class="section-header">💡 Strategic Angles</div>
-      ${angles.map(angle => `
-        <div class="angle-item">
-          <div class="angle-header">
-            <span class="angle-name">${escapeHtml(angle.title || '')}</span>
-            <span class="angle-tone">${escapeHtml(angle.tone || '')}</span>
-          </div>
-          <div class="angle-desc">${escapeHtml(angle.description || '')}</div>
-        </div>
-      `).join('')}
+      <div class="section-header">💡 Insightful</div>
+      ${renderHooks(insightfulHooks)}
     </div>
     
     <div class="coach-section">
-      <div class="section-header">🪝 Hook Starters <span class="section-hint">(click to copy)</span></div>
-      ${hookStarters.map(hook => `
-        <div class="hook-item" data-text="${escapeHtml(hook.text || '')}">
-          <span class="hook-text">"${escapeHtml(hook.text || '')}"</span>
-          <span class="hook-source">${escapeHtml(hook.angle || '')}</span>
-        </div>
-      `).join('')}
+      <div class="section-header">🤔 Contrarian</div>
+      ${renderHooks(contrarianHooks)}
     </div>
     
     <div class="coach-section">
-      <div class="section-header" style="color:var(--danger);">⚠️ What to Avoid</div>
-      <ul class="avoid-list">
-        ${pitfalls.map(p => `<li>${escapeHtml(p)}</li>`).join('')}
-      </ul>
+      <div class="section-header">🤝 Friendly</div>
+      ${renderHooks(friendlyHooks)}
     </div>
     
     <div class="cta-section">

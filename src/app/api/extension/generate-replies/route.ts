@@ -37,26 +37,11 @@ interface PostData {
 }
 
 interface CoachingResponse {
-  postScore: {
-    score: number; // 1-10
-    reasoning: string;
-    worthReplying: boolean;
-    timeUrgency: 'high' | 'medium' | 'low';
-  };
-  angles: Array<{
-    title: string;
-    description: string;
-    tone: string;
-    example?: string; // Brief example of the approach
-  }>;
-  hookStarters: Array<{
-    text: string; // First 5-10 words
-    angle: string; // Which angle it matches
-  }>;
-  pitfalls: string[]; // What NOT to do
-  toneRecommendation: {
-    primary: string;
-    why: string;
+  hooks: {
+    witty: string[];
+    insightful: string[];
+    contrarian: string[];
+    friendly: string[];
   };
 }
 
@@ -145,69 +130,35 @@ Current Engagement:
 ${post.metrics.views ? `- Views: ${post.metrics.views}` : ''}
 ` : '';
 
-    // Generate coaching using Claude
-    const prompt = `You are an expert X/Twitter reply strategist. Your job is to COACH users on how to craft engaging replies — NOT write the replies for them.
+    // Generate coaching using Claude - simplified to just hooks
+    const prompt = `You are an expert X/Twitter reply coach. Generate reply hook starters for this post.
 
-CONTEXT:
-${voiceContext}
-
-Original Post to Reply To:
+Post to reply to:
 Author: ${post.author}
 Content: "${post.text}"
-${engagementInfo}
-${post.postAge ? `Post Age: ${post.postAge}` : ''}
-${post.authorFollowers ? `Author's Followers: ${post.authorFollowers}` : ''}
 
-KEY ALGORITHM INSIGHTS:
-- Replies are weighted 75x in X's algorithm — this is high-leverage engagement
-- Early replies get more visibility (first 30min is golden)
-- Quality replies that spark conversation > generic praise
-- Adapt your vocabulary to match the community you're engaging with
-
-YOUR TASK:
-Analyze this post and provide strategic coaching for crafting a reply. Help the user think about HOW to reply, not WHAT to reply.
+Generate exactly 3 hook starters for each of these 4 tones:
+- witty: clever, playful, shows personality
+- insightful: adds value, shares perspective or experience  
+- contrarian: respectfully challenges or offers different angle
+- friendly: warm, supportive, builds connection
 
 Respond in this exact JSON format:
 {
-  "postScore": {
-    "score": 7,
-    "reasoning": "Why this post is worth replying to (or not)",
-    "worthReplying": true,
-    "timeUrgency": "high"
-  },
-  "angles": [
-    {
-      "title": "Short angle name",
-      "description": "What this angle does and why it works",
-      "tone": "witty|insightful|contrarian|supportive|playful",
-      "example": "Brief conceptual example of this approach"
-    }
-  ],
-  "hookStarters": [
-    {
-      "text": "First 5-10 words to get started...",
-      "angle": "Which angle this matches"
-    }
-  ],
-  "pitfalls": [
-    "What NOT to do - specific to this post"
-  ],
-  "toneRecommendation": {
-    "primary": "witty",
-    "why": "Why this tone fits best"
+  "hooks": {
+    "witty": ["hook 1...", "hook 2...", "hook 3..."],
+    "insightful": ["hook 1...", "hook 2...", "hook 3..."],
+    "contrarian": ["hook 1...", "hook 2...", "hook 3..."],
+    "friendly": ["hook 1...", "hook 2...", "hook 3..."]
   }
 }
 
-GUIDELINES:
-- Provide exactly 2 angles (not 3 - keep it focused)
-- Each angle description MUST be under 15 words
-- Provide exactly 2 hook starters (conversation openers, NOT full replies)
-- Provide exactly 2 pitfalls (specific to this post)
-- postScore reasoning MUST be under 20 words
-- toneRecommendation why MUST be under 15 words
-- postScore should be 1-10 based on: author influence, topic virality, engagement velocity
-- timeUrgency: "high" if <30min old, "medium" if 30min-2h, "low" if >2h
-- Be punchy and specific. No fluff. Users want quick guidance, not essays.`;
+RULES:
+- Each hook is the FIRST 5-15 words of a reply (not the full reply)
+- Hooks should spark ideas, not be copy-paste ready
+- Be specific to the post content
+- No generic starters like "Great post!" or "I agree!"
+- Each hook should feel like a natural conversation opener`;
 
     console.log('[generate-replies] Calling Claude API...');
     const response = await anthropic.messages.create({
@@ -231,30 +182,15 @@ GUIDELINES:
       throw new Error('Failed to parse response JSON');
     }
 
-    const result: CoachingResponse = JSON.parse(jsonMatch[0]);
+    const result = JSON.parse(jsonMatch[0]);
 
     // Validate and normalize the response
     const coaching: CoachingResponse = {
-      postScore: {
-        score: Math.min(10, Math.max(1, result.postScore?.score || 5)),
-        reasoning: result.postScore?.reasoning || 'Unable to analyze post',
-        worthReplying: result.postScore?.worthReplying ?? true,
-        timeUrgency: result.postScore?.timeUrgency || 'medium'
-      },
-      angles: (result.angles || []).slice(0, 2).map(angle => ({
-        title: angle.title || 'Strategic angle',
-        description: angle.description || '',
-        tone: angle.tone || 'witty',
-        example: angle.example
-      })),
-      hookStarters: (result.hookStarters || []).slice(0, 2).map(hook => ({
-        text: hook.text || '',
-        angle: hook.angle || ''
-      })),
-      pitfalls: (result.pitfalls || []).slice(0, 2),
-      toneRecommendation: {
-        primary: result.toneRecommendation?.primary || 'witty',
-        why: result.toneRecommendation?.why || ''
+      hooks: {
+        witty: (result.hooks?.witty || []).slice(0, 3),
+        insightful: (result.hooks?.insightful || []).slice(0, 3),
+        contrarian: (result.hooks?.contrarian || []).slice(0, 3),
+        friendly: (result.hooks?.friendly || []).slice(0, 3)
       }
     };
 
