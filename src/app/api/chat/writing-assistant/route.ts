@@ -82,38 +82,37 @@ Your output MUST maintain those exact line breaks. Never collapse multiple lines
 
 // Editing tool prompts
 const EDITING_PROMPTS: Record<string, string> = {
-  add_hook: `You are a viral content expert. Add ONE scroll-stopping hook to boost the engagement score.
+  add_hook: `Add ONE scroll-stopping hook to boost the engagement score.
 
-ENGAGEMENT SCORE TARGETS (these are measured):
-- Hook length: 10-80 characters (ideal first line)
+SCORE TRIGGERS (these are measured by the scorer):
 - Starts with NUMBER → +15 points (e.g., "73% of founders...")
 - Starts with QUESTION → +15 points (What/Why/How/Do you/Have you)
 - Bold claim opener → +20 points (unpopular opinion/hot take/stop/don't/never)
-- ALL CAPS emphasis → +10 points (1-3 caps words at start)
-- Emoji in hook → +5 points
 
-HIGH-SCORING HOOK PATTERNS:
-- "Unpopular opinion: [bold claim]" ← triggers bold claim bonus
-- "[Number]% of [group] fail at this" ← triggers number bonus
-- "Why do [people] keep [mistake]?" ← triggers question bonus
-- "STOP [doing thing]. Here's why:" ← triggers caps + bold claim bonus
-- "Hot take: [controversial statement]" ← triggers bold claim bonus
+HIGH-SCORING HOOKS:
+- "Unpopular opinion: [bold claim]"
+- "[Number]% of [group] fail at this"
+- "Why do [people] keep [mistake]?"
+- "STOP [doing thing]. Here's why:"
 
-HOOKS TO AVOID (score neutral or negative):
-- "Let me tell you..." / "Here's the thing..." / "Can we talk about..."
-- Starting with "So," or "Look," or "Okay so"
-- Generic openings without pattern triggers
+EXAMPLE:
+INPUT:
+Building in public is great for accountability.
+
+It keeps you motivated.
+
+OUTPUT:
+Unpopular opinion: Building in public is great for accountability.
+
+It keeps you motivated.
 
 RULES:
-1. Hook must be 10-80 characters (measured by scorer)
-2. Use at least ONE score trigger (number, question, bold claim, caps)
-3. Do NOT modify any other content
-4. PRESERVE ALL LINE BREAKS - do not collapse formatting
-5. Return ONLY the modified content
+1. Add hook at the VERY START (first line)
+2. Use at least ONE score trigger
+3. Keep REST of content EXACTLY the same (same words, same line breaks)
+4. Return ONLY the modified content
 
-FOR THREADS: Replace/enhance ONLY the first line of 1/, keep numbering intact.
-
-CRITICAL: Return ONLY the content. Preserve all line breaks exactly.`,
+⚠️ DO NOT change anything except adding a hook to the first line. Same words. Same line breaks.`,
 
   humanize: `Make this sound human to boost Readability score (+10-20 points for natural language).
 
