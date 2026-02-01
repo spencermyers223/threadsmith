@@ -89,16 +89,25 @@ export async function GET(request: NextRequest) {
     const formatScheduledDisplay = (date: string | null, time: string | null): string | null => {
       if (!date) return null;
       
-      const today = new Date().toISOString().split('T')[0];
-      const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+      const postDate = new Date(date + 'T12:00:00');
       
-      let dateStr = date;
-      if (date === today) dateStr = 'Today';
-      else if (date === tomorrow) dateStr = 'Tomorrow';
-      else {
-        // Format as "Feb 5"
-        const d = new Date(date + 'T12:00:00');
-        dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      // Calculate days difference
+      const todayStart = new Date(todayStr + 'T00:00:00');
+      const diffDays = Math.round((postDate.getTime() - todayStart.getTime()) / 86400000);
+      
+      let dateStr: string;
+      if (diffDays === 0) {
+        dateStr = 'Today';
+      } else if (diffDays === 1) {
+        dateStr = 'Tomorrow';
+      } else if (diffDays >= 2 && diffDays <= 6) {
+        // Show day name for next 6 days (e.g., "Tuesday", "Wednesday")
+        dateStr = postDate.toLocaleDateString('en-US', { weekday: 'long' });
+      } else {
+        // Show "Feb 5" for dates further out
+        dateStr = postDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       }
       
       if (time) {
