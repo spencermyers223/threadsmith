@@ -72,13 +72,27 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    // Get primary X account username
-    const { data: xAccount } = await supabase
+    // Get X account username (try primary first, then any)
+    let xAccount = null;
+    const { data: primaryAccount } = await supabase
       .from('x_accounts')
       .select('username, display_name, profile_image_url')
       .eq('user_id', user.id)
       .eq('is_primary', true)
       .single();
+    
+    if (primaryAccount) {
+      xAccount = primaryAccount;
+    } else {
+      // Fallback: get any X account for this user
+      const { data: anyAccount } = await supabase
+        .from('x_accounts')
+        .select('username, display_name, profile_image_url')
+        .eq('user_id', user.id)
+        .limit(1)
+        .single();
+      xAccount = anyAccount;
+    }
 
     return jsonResponse({
       user: {

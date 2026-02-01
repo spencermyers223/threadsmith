@@ -50,18 +50,36 @@ async function loadAuthState() {
   userEmail = stored.userEmail;
   xUsername = stored.xUsername;
   
-  // If we have a token but no xUsername, try to fetch it
-  if (userToken && !xUsername) {
+  // Always try to fetch fresh user info if we have a token
+  if (userToken) {
     try {
+      console.log('[xthread] Fetching user info from API...');
       const response = await fetch('https://xthread.io/api/extension/user', {
         headers: { 'Authorization': `Bearer ${userToken}` }
       });
       if (response.ok) {
         const data = await response.json();
-        if (data.user?.xUsername) {
-          xUsername = data.user.xUsername;
-          await chrome.storage.local.set({ xUsername });
+        console.log('[xthread] API response:', data);
+        
+        // Update with fresh data
+        if (data.user) {
+          if (data.user.xUsername) {
+            xUsername = data.user.xUsername;
+          }
+          if (data.user.email) {
+            userEmail = data.user.email;
+          }
+          isPremium = data.isPremium || false;
+          
+          // Save to storage
+          await chrome.storage.local.set({ 
+            xUsername, 
+            userEmail,
+            isPremium 
+          });
         }
+      } else {
+        console.error('[xthread] API error:', response.status);
       }
     } catch (e) {
       console.error('[xthread] Failed to fetch user info:', e);

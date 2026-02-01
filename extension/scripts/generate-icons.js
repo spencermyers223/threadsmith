@@ -2,12 +2,11 @@ const { createCanvas } = require('canvas');
 const fs = require('fs');
 const path = require('path');
 
-// xthread brand colors (matching website)
+// xthread brand colors
 const COLORS = {
   background: '#0F0F0F',
   gold: '#C9B896',
-  goldLight: '#D4C4A8',
-  goldDark: '#A8967A'
+  goldLight: '#D4C4A8'
 };
 
 function generateIcon(size) {
@@ -21,48 +20,27 @@ function generateIcon(size) {
   ctx.roundRect(0, 0, size, size, radius);
   ctx.fill();
   
-  // Add subtle inner border/glow
-  ctx.strokeStyle = 'rgba(201, 184, 150, 0.15)';
-  ctx.lineWidth = Math.max(1, size * 0.02);
+  // Subtle border
+  ctx.strokeStyle = 'rgba(201, 184, 150, 0.2)';
+  ctx.lineWidth = Math.max(1, size * 0.025);
   ctx.beginPath();
-  ctx.roundRect(size * 0.04, size * 0.04, size * 0.92, size * 0.92, radius * 0.85);
+  ctx.roundRect(size * 0.03, size * 0.03, size * 0.94, size * 0.94, radius * 0.9);
   ctx.stroke();
   
-  // Draw stylized "x" - thicker, more balanced
-  const padding = size * 0.26;
-  const strokeWidth = size * 0.11;
+  // Draw "xt" text logo
+  const fontSize = size * 0.52;
+  ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
   
-  // Create gradient for the X
-  const gradient = ctx.createLinearGradient(padding, padding, size - padding, size - padding);
+  // Gold gradient for text
+  const gradient = ctx.createLinearGradient(size * 0.2, size * 0.3, size * 0.8, size * 0.7);
   gradient.addColorStop(0, COLORS.goldLight);
-  gradient.addColorStop(0.5, COLORS.gold);
-  gradient.addColorStop(1, COLORS.goldDark);
+  gradient.addColorStop(1, COLORS.gold);
+  ctx.fillStyle = gradient;
   
-  ctx.strokeStyle = gradient;
-  ctx.lineWidth = strokeWidth;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  
-  // First line of X (top-left to bottom-right)
-  ctx.beginPath();
-  ctx.moveTo(padding, padding);
-  ctx.lineTo(size - padding, size - padding);
-  ctx.stroke();
-  
-  // Second line of X (top-right to bottom-left)
-  ctx.beginPath();
-  ctx.moveTo(size - padding, padding);
-  ctx.lineTo(padding, size - padding);
-  ctx.stroke();
-  
-  // Add subtle thread accent (small diagonal line extending from X)
-  const threadSize = size * 0.12;
-  ctx.strokeStyle = COLORS.gold;
-  ctx.lineWidth = Math.max(1.5, size * 0.04);
-  ctx.beginPath();
-  ctx.moveTo(size - padding + threadSize * 0.3, padding - threadSize * 0.3);
-  ctx.lineTo(size - padding + threadSize, padding - threadSize);
-  ctx.stroke();
+  // Draw "xt" centered
+  ctx.fillText('xt', size / 2, size / 2 + size * 0.02);
   
   return canvas.toBuffer('image/png');
 }
@@ -71,7 +49,6 @@ function generateIcon(size) {
 const sizes = [16, 32, 48, 128];
 const iconsDir = path.join(__dirname, '..', 'dist', 'icons');
 
-// Ensure icons directory exists
 if (!fs.existsSync(iconsDir)) {
   fs.mkdirSync(iconsDir, { recursive: true });
 }
@@ -83,4 +60,4 @@ sizes.forEach(size => {
   console.log(`Generated ${filePath} (${size}x${size})`);
 });
 
-console.log('\nDone! All icons generated with professional styling.');
+console.log('\nDone! "xt" logo icons generated.');
