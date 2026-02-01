@@ -383,6 +383,16 @@ export async function POST(request: NextRequest) {
         result = await callApi('\n\n⚠️ YOUR OUTPUT MUST HAVE THE SAME LINE BREAKS AS THE INPUT. Count them. The input has ' + originalLineBreaks + ' line breaks. Do NOT collapse into a paragraph.')
       }
 
+      // For tools that shouldn't add length, verify and retry if needed
+      if (action === 'make_spicy' || action === 'humanize') {
+        const originalLen = content.length
+        const resultLen = result.length
+        if (resultLen > originalLen + 20) { // Allow 20 char tolerance
+          // Retry with emphasis on not adding length
+          result = await callApi(`\n\n⚠️ CRITICAL: Your output (${resultLen} chars) was LONGER than the input (${originalLen} chars). This is not allowed. Output must be ${originalLen} chars or SHORTER. Rewrite to be more concise.`)
+        }
+      }
+
       // Strip common AI prefixes
       result = result
         .replace(/^(Here's?( the| your)?( improved| modified| updated)?( version| content)?:?\s*)/i, '')
