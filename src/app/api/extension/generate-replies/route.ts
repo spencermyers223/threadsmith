@@ -85,14 +85,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Reply Coach is FREE for all users!
-    // Premium check removed to drive adoption
-
-    // Get user's content profile for voice matching
-    const { data: contentProfile } = await supabase
-      .from('content_profiles')
-      .select('tone, niche, content_style, vocabulary_preferences')
-      .eq('user_id', user.id)
-      .single();
 
     // Parse request body
     console.log('[generate-replies] Parsing request body...');
@@ -106,29 +98,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // Build voice context
-    const voiceContext = contentProfile ? `
-User's Voice Profile:
-- Tone: ${contentProfile.tone || 'witty and engaging'}
-- Niche: ${contentProfile.niche || 'tech/general'}
-- Style: ${contentProfile.content_style || 'conversational'}
-${contentProfile.vocabulary_preferences ? `- Vocabulary: ${contentProfile.vocabulary_preferences}` : ''}
-` : `
-User's Voice Profile:
-- Tone: witty and engaging  
-- Niche: tech/general
-- Style: conversational
-`;
-
-    // Parse engagement metrics
-    const engagementInfo = post.metrics ? `
-Current Engagement:
-- Replies: ${post.metrics.replies || '0'}
-- Retweets: ${post.metrics.retweets || '0'}  
-- Likes: ${post.metrics.likes || '0'}
-${post.metrics.views ? `- Views: ${post.metrics.views}` : ''}
-` : '';
 
     // Generate coaching using Claude - simplified to just hooks
     const prompt = `You are an expert X/Twitter reply coach. Generate reply hook starters for this post.
