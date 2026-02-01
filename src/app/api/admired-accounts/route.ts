@@ -83,14 +83,25 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { username, x_account_id } = body;
+    const { username } = body;
+    let { x_account_id } = body;
 
     if (!username) {
       return jsonResponse({ error: 'Username is required' }, { status: 400 });
     }
     
+    // If x_account_id not provided (e.g., from extension), get user's first X account
     if (!x_account_id) {
-      return jsonResponse({ error: 'x_account_id is required' }, { status: 400 });
+      const { data: xAccounts } = await supabase
+        .from('x_accounts')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+      
+      if (!xAccounts || xAccounts.length === 0) {
+        return jsonResponse({ error: 'No X account connected. Please connect your X account at xthread.io first.' }, { status: 400 });
+      }
+      x_account_id = xAccounts[0].id;
     }
 
     // Normalize username (remove @ if present)
