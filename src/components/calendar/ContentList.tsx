@@ -303,7 +303,7 @@ export function ContentList({ onSelectPost, filters }: ContentListProps) {
                       {post.scheduled_date && (
                         <span className="flex items-center gap-1">
                           <CalendarIcon className="w-3 h-3" />
-                          {format(new Date(post.scheduled_date), 'MMM d, yyyy')}
+                          {format(new Date(post.scheduled_date + 'T00:00:00'), 'MMM d, yyyy')}
                         </span>
                       )}
                       {post.scheduled_time && (
