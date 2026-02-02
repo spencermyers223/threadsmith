@@ -59,6 +59,7 @@ export default function PricingPage() {
   const [error, setError] = useState<string | null>(null)
   const [currentSubscription, setCurrentSubscription] = useState<CurrentSubscription | null>(null)
   const [loadingSubscription, setLoadingSubscription] = useState(true)
+  const [loadingCredits, setLoadingCredits] = useState<number | null>(null)
 
   useEffect(() => {
     async function fetchSubscription() {
@@ -101,6 +102,30 @@ export default function PricingPage() {
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setLoading(false)
       setLoadingPlan(null)
+    }
+  }
+
+  const handleBuyCredits = async (credits: number) => {
+    setLoadingCredits(credits)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/stripe/credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ packSize: credits.toString() }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to start checkout')
+      }
+
+      const { url } = await res.json()
+      window.location.href = url
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setLoadingCredits(null)
     }
   }
 
@@ -360,9 +385,15 @@ export default function PricingPage() {
                   ${pack.pricePerCredit.toFixed(2)} per credit
                 </p>
                 <button
-                  className="w-full py-2 px-4 rounded-lg bg-[var(--card-hover)] hover:bg-accent hover:text-[var(--accent-text)] transition-colors font-medium"
+                  onClick={() => handleBuyCredits(pack.credits)}
+                  disabled={loadingCredits === pack.credits}
+                  className="w-full py-2 px-4 rounded-lg bg-[var(--card-hover)] hover:bg-accent hover:text-[var(--accent-text)] transition-colors font-medium disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  Buy Credits
+                  {loadingCredits === pack.credits ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    'Buy Credits'
+                  )}
                 </button>
               </div>
             ))}
