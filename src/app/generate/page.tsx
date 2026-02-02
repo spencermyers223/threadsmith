@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import {
   Sparkles,
   FileText,
@@ -890,9 +891,27 @@ export default function GeneratePage() {
 
           {/* Error Display */}
           {error && (
-            <div className="mb-6 flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <p>{error}</p>
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+              <div className="flex items-center gap-3 text-red-400">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <p>{error}</p>
+              </div>
+              {(error.includes('limit') || error.includes('Insufficient')) && (
+                <div className="mt-3 flex items-center gap-4">
+                  <Link
+                    href="/pricing"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-accent text-[var(--accent-text)] rounded-lg hover:opacity-90 transition-opacity"
+                  >
+                    Upgrade Plan
+                  </Link>
+                  <Link
+                    href="/settings"
+                    className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] underline"
+                  >
+                    View Usage
+                  </Link>
+                </div>
+              )}
             </div>
           )}
 
