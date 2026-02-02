@@ -59,6 +59,8 @@ interface GenerateRequest {
   templateDescription?: string
   templateWhyItWorks?: string
   templateCategory?: string
+  // Voice System V2
+  styleProfileId?: string // Optional style profile to incorporate
 }
 
 interface GeneratedPost {
@@ -581,18 +583,71 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Fetch user's actual voice samples (their real tweets)
-    // Using 5 samples for quality over quantity - these are the few-shot examples
-    const { data: voiceSamples } = await supabase
-      .from('voice_samples')
+    // Voice System V2: Fetch from voice_library (max 5 hand-picked tweets)
+    const { data: voiceLibrary } = await supabase
+      .from('voice_library')
       .select('tweet_text')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(5) // Quality over quantity - 5 strong examples beat 10 diluted ones
+      .limit(5)
+    
+    // Fallback to old voice_samples if voice_library is empty (migration path)
+    let voiceTweets = voiceLibrary?.map(s => s.tweet_text) || []
+    if (voiceTweets.length === 0) {
+      const { data: legacyVoiceSamples } = await supabase
+        .from('voice_samples')
+        .select('tweet_text')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5)
+      voiceTweets = legacyVoiceSamples?.map(s => s.tweet_text) || []
+    }
     
     // Build the system prompt voice section (high-impact few-shot learning)
-    const voiceSamplesForPrompt = voiceSamples?.map(s => s.tweet_text) || []
-    const voiceSamplesSystemSection = buildVoiceSamplesSection(voiceSamplesForPrompt)
+    const voiceSamplesSystemSection = buildVoiceSamplesSection(voiceTweets)
+    
+    // Voice System V2: Fetch style profile if selected
+    let styleProfileSection = ''
+    if (body.styleProfileId) {
+      const { data: styleProfile } = await supabase
+        .from('style_profiles')
+        .select('account_username, profile_data')
+        .eq('id', body.styleProfileId)
+        .eq('user_id', user.id)
+        .single()
+      
+      if (styleProfile?.profile_data) {
+        const pd = styleProfile.profile_data as {
+          summary?: string
+          patterns?: {
+            avgLength?: number
+            lengthRange?: number[]
+            emojiUsage?: string
+            hookStyles?: string[]
+            toneMarkers?: string[]
+            sentenceStyle?: string
+            questionUsage?: string
+            hashtagUsage?: string
+            ctaStyle?: string
+          }
+        }
+        const patterns = pd.patterns || {}
+        styleProfileSection = `
+STYLE PATTERNS (from @${styleProfile.account_username}):
+${pd.summary ? `- Summary: ${pd.summary}` : ''}
+${patterns.avgLength ? `- Typical length: ${patterns.avgLength} chars` : ''}
+${patterns.lengthRange ? `- Length range: ${patterns.lengthRange[0]}-${patterns.lengthRange[1]} chars` : ''}
+${patterns.emojiUsage ? `- Emoji usage: ${patterns.emojiUsage}` : ''}
+${patterns.hookStyles?.length ? `- Hook styles: ${patterns.hookStyles.join(', ')}` : ''}
+${patterns.toneMarkers?.length ? `- Tone: ${patterns.toneMarkers.join(', ')}` : ''}
+${patterns.sentenceStyle ? `- Sentence style: ${patterns.sentenceStyle}` : ''}
+${patterns.questionUsage ? `- Question usage: ${patterns.questionUsage}` : ''}
+${patterns.ctaStyle ? `- CTA style: ${patterns.ctaStyle}` : ''}
+
+Follow these style patterns while maintaining the user's voice from the examples.
+`
+      }
+    }
 
     // Fetch inspiration tweets from admired accounts (top 5 for shorter prompts)
     const { data: inspirationTweets } = await supabase
@@ -739,7 +794,10 @@ Blend these stylistic elements with the user's own voice. Don't copy - adapt.
         isTemplatePrompt,
         contentLength,  // Pass the length selection
         contentType,    // Pass content type (tweet vs thread)
-        voiceSamplesSystemSection // NEW: Few-shot voice examples injected into system prompt
+        // Combine style profile patterns (if selected) with voice examples
+        styleProfileSection 
+          ? `${styleProfileSection}\n\n${voiceSamplesSystemSection}`
+          : voiceSamplesSystemSection
       )
       // Limit to 3 posts (for single tweets) - threads will have 3 options naturally
       if (contentType !== 'thread') {
