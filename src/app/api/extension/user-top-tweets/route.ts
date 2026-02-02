@@ -142,17 +142,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get valid X tokens for the authenticated user
+    // Try user's OAuth tokens first, fall back to app Bearer token
+    let accessToken: string;
     const tokenResult = await getValidXTokens(user.id);
     
-    if (!tokenResult.success || !tokenResult.tokens) {
-      return jsonResponse(
-        { error: 'X account not connected. Please link your X account in xthread settings.' },
-        { status: 401 }
-      );
+    if (tokenResult.success && tokenResult.tokens) {
+      accessToken = tokenResult.tokens.access_token;
+    } else {
+      // Fallback to app Bearer token for public data
+      const bearerToken = process.env.X_BEARER_TOKEN;
+      if (!bearerToken) {
+        return jsonResponse(
+          { error: 'X API not configured' },
+          { status: 500 }
+        );
+      }
+      accessToken = decodeURIComponent(bearerToken);
     }
-
-    const accessToken = tokenResult.tokens.access_token;
 
     // Step 1: Look up user ID from username
     const userLookupUrl = `https://api.x.com/2/users/by/username/${username}?user.fields=name,username,profile_image_url`;
