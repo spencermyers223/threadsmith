@@ -1486,3 +1486,89 @@ body {
   cursor: pointer;
   margin-top: 8px;
 }
+
+/* ============================================================
+   Account Analysis (Stats Tab)
+   ============================================================ */
+
+.stats-analysis {
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.analysis-section {
+  margin-bottom: 16px;
+}
+
+.analysis-header {
+  font-size: 12px;
+  font-weight: 700;
+  color: #C9B896;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.analysis-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.analysis-list li {
+  font-size: 13px;
+  color: #e5e5e5;
+  line-height: 1.5;
+  padding: 6px 0;
+  padding-left: 16px;
+  position: relative;
+}
+
+.analysis-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #C9B896;
+}
+
+.analysis-list.stealable li::before {
+  content: "→";
+}
+
+.tactics-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tactic-item {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.tactic-label {
+  color: #888;
+  margin-right: 6px;
+}
+
+.tactic-value {
+  color: #e5e5e5;
+}
+
+.analysis-summary {
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.5;
+  padding: 12px;
+  background: #1a1a1a;
+  border-radius: 8px;
+  border-left: 3px solid #C9B896;
+}
+
+.stats-tweets-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #666;
+  padding: 12px 12px 8px;
+  letter-spacing: 1px;
+  border-top: 1px solid #2a2a2a;
+}

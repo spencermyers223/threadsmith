@@ -449,7 +449,7 @@ async function showProfileStats(handle) {
   statsHeader.innerHTML = `
     <div class="stats-profile-header">
       <span class="stats-handle">@${escapeHtml(handle)}</span>
-      <span class="stats-subtitle">Top Tweets (Last 30 Days)</span>
+      <span class="stats-subtitle">Account Analysis • 3 credits</span>
     </div>
   `;
   statsTweets.innerHTML = '';
@@ -502,8 +502,70 @@ async function showProfileStats(handle) {
       return;
     }
     
+    // Render analysis (if available) + tweets
+    let analysisHtml = '';
+    
+    if (data.analysis) {
+      const a = data.analysis;
+      
+      // Why Engaging section
+      const whyEngagingItems = (a.whyEngaging || []).map(item => 
+        `<li>${escapeHtml(item)}</li>`
+      ).join('');
+      
+      // Tactics section
+      const tactics = a.tactics || {};
+      
+      // Stealable tactics
+      const stealableItems = (a.stealable || []).map(item =>
+        `<li>${escapeHtml(item)}</li>`
+      ).join('');
+      
+      analysisHtml = `
+        <div class="stats-analysis">
+          <div class="analysis-section">
+            <div class="analysis-header">🎯 WHY THEY'RE ENGAGING</div>
+            <ul class="analysis-list">${whyEngagingItems}</ul>
+          </div>
+          
+          <div class="analysis-section">
+            <div class="analysis-header">🔧 TACTICS THEY USE</div>
+            <div class="tactics-grid">
+              <div class="tactic-item">
+                <span class="tactic-label">Formatting:</span>
+                <span class="tactic-value">${escapeHtml(tactics.formatting || 'Unknown')}</span>
+              </div>
+              <div class="tactic-item">
+                <span class="tactic-label">Hook Style:</span>
+                <span class="tactic-value">${escapeHtml(tactics.hookStyle || 'Unknown')}</span>
+              </div>
+              <div class="tactic-item">
+                <span class="tactic-label">Topics:</span>
+                <span class="tactic-value">${escapeHtml(tactics.topics || 'Unknown')}</span>
+              </div>
+              <div class="tactic-item">
+                <span class="tactic-label">Rhythm:</span>
+                <span class="tactic-value">${escapeHtml(tactics.rhythm || 'Unknown')}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="analysis-section">
+            <div class="analysis-header">💡 WHAT YOU CAN STEAL</div>
+            <ul class="analysis-list stealable">${stealableItems}</ul>
+          </div>
+          
+          <div class="analysis-summary">
+            <em>${escapeHtml(a.summary || '')}</em>
+          </div>
+        </div>
+        
+        <div class="stats-tweets-header">TOP 10 TWEETS</div>
+      `;
+    }
+    
     // Render tweets
-    statsTweets.innerHTML = data.tweets.map((tweet, i) => `
+    const tweetsHtml = data.tweets.map((tweet, i) => `
       <div class="stats-tweet" data-url="${escapeHtml(tweet.url || '')}">
         <div class="stats-tweet-rank">#${i + 1}</div>
         <div class="stats-tweet-content">
@@ -514,6 +576,8 @@ async function showProfileStats(handle) {
         </div>
       </div>
     `).join('');
+    
+    statsTweets.innerHTML = analysisHtml + tweetsHtml;
     
     // Click to open tweet
     statsTweets.querySelectorAll('.stats-tweet').forEach(el => {
