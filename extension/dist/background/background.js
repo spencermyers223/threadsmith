@@ -6,6 +6,7 @@ const XTHREAD_URL = 'https://xthread.io';
 // Store pending coaching data for sidepanel
 let pendingCoaching = null;
 let pendingStatsRequest = null;
+let pendingVoiceRequest = null;
 
 // ============================================================
 // Side Panel Setup - Open when extension icon is clicked
@@ -230,6 +231,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   
   // Add to Voice (forward to sidepanel)
   if (message.type === 'ADD_TO_VOICE') {
+    // Store the voice request for the sidepanel to pick up
+    pendingVoiceRequest = { 
+      handle: message.handle,
+      displayName: message.displayName,
+      avatar: message.avatar
+    };
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]) {
         chrome.sidePanel.open({ tabId: tabs[0].id }).catch(err => {
@@ -244,6 +251,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }).catch(() => {});
       }
     });
+  }
+  
+  // Get pending voice request
+  if (message.type === 'GET_PENDING_VOICE') {
+    if (pendingVoiceRequest) {
+      sendResponse(pendingVoiceRequest);
+      pendingVoiceRequest = null;
+    } else {
+      sendResponse(null);
+    }
+    return true;
   }
 });
 

@@ -51,6 +51,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       showCoaching(response.coaching, response.postData);
     }
   });
+  
+  // Check for pending stats request (from Stats button click)
+  chrome.runtime.sendMessage({ type: 'GET_PENDING_STATS' }, (response) => {
+    if (response && response.handle) {
+      console.log('[xthread] Got pending stats request for:', response.handle);
+      switchTab('stats');
+      fetchAndStoreProfileStats(response.handle);
+    }
+  });
+  
+  // Check for pending voice request (from Voice button click)
+  chrome.runtime.sendMessage({ type: 'GET_PENDING_VOICE' }, (response) => {
+    if (response && response.handle) {
+      console.log('[xthread] Got pending voice request for:', response.handle);
+      addVoiceAccount(response.handle, response.displayName, response.avatar);
+      switchTab('saved');
+      // Switch to Voice section
+      document.querySelector('.saved-toggle .toggle-btn[data-section="voice"]')?.click();
+    }
+  });
 });
 
 async function loadAuthState() {
@@ -228,19 +248,36 @@ function handleMessage(message, sender, sendResponse) {
 
 // Fetch and store profile stats (top tweets)
 async function fetchAndStoreProfileStats(handle) {
+  console.log('[xthread] fetchAndStoreProfileStats called for:', handle);
+  console.log('[xthread] userToken exists:', !!userToken);
+  
   if (!userToken) {
     console.error('[xthread] No auth token for stats fetch');
+    // Still store basic info even without token
+    await storeBasicProfileInfo(handle);
     return;
   }
   
   try {
-    const response = await fetch(`${XTHREAD_API}/extension/user-top-tweets?handle=${encodeURIComponent(handle)}&days=30&limit=10`, {
+    const url = `${XTHREAD_API}/extension/user-top-tweets?handle=${encodeURIComponent(handle)}&days=30&limit=10`;
+    console.log('[xthread] Fetching:', url);
+    
+    const response = await fetch(url, {
       headers: { 'Authorization': `Bearer ${userToken}` }
     });
     
-    if (!response.ok) throw new Error('Failed to fetch top tweets');
+    console.log('[xthread] Response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[xthread] API error:', errorText);
+      // Store basic info on error
+      await storeBasicProfileInfo(handle);
+      return;
+    }
     
     const data = await response.json();
+    console.log('[xthread] Got data:', data);
     
     // Store in scannedProfiles
     const stored = await chrome.storage.local.get(['scannedProfiles']);
@@ -261,11 +298,33 @@ async function fetchAndStoreProfileStats(handle) {
     const trimmed = filtered.slice(0, 20);
     
     await chrome.storage.local.set({ scannedProfiles: trimmed });
+    console.log('[xthread] Stored profile stats, reloading UI');
     loadStats();
     
   } catch (err) {
     console.error('[xthread] Error fetching profile stats:', err);
+    await storeBasicProfileInfo(handle);
   }
+}
+
+// Store basic profile info when API isn't available
+async function storeBasicProfileInfo(handle) {
+  const stored = await chrome.storage.local.get(['scannedProfiles']);
+  const profiles = stored.scannedProfiles || [];
+  
+  // Check if already exists
+  const exists = profiles.some(p => p.handle.toLowerCase() === handle.toLowerCase());
+  if (exists) return;
+  
+  profiles.unshift({
+    handle: handle,
+    scannedAt: new Date().toISOString(),
+    topTweets: [],
+    styleSummary: 'Sign in to fetch top tweets'
+  });
+  
+  await chrome.storage.local.set({ scannedProfiles: profiles.slice(0, 20) });
+  loadStats();
 }
 
 // Add voice account
