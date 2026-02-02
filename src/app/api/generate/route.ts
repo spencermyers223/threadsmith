@@ -302,11 +302,67 @@ async function generateForCTNativePostType(
   userProfile: UserProfile | undefined,
   additionalContext: string | undefined,
   isTemplatePrompt?: boolean,
-  contentLength?: ContentLength
+  contentLength?: ContentLength,
+  contentType?: ContentType
 ): Promise<GeneratedPost[]> {
   const voiceProfile = toUserVoiceProfile(userProfile)
   let systemPrompt: string
   let userPrompt: string
+  
+  // If generating a thread, add thread-specific instructions
+  const isThread = contentType === 'thread'
+  const threadInstructions = isThread ? `
+
+## CRITICAL: THREAD FORMAT REQUIRED
+
+You are generating a THREAD, not a single tweet. Follow these rules EXACTLY:
+
+1. Generate 3 DISTINCT thread options for the user to choose from
+2. Each thread MUST contain 7-10 individual tweets
+3. Format: "1/ [tweet text]" "2/ [tweet text]" etc. - THE SLASH IS REQUIRED
+4. Each tweet MUST be under 280 characters
+5. The 1/ tweet is the HOOK - it must be irresistible
+
+Format your response EXACTLY as:
+
+**Option 1: [Brief description]**
+
+1/ [First tweet - THE HOOK. Most important! Make people stop scrolling.]
+
+2/ [Second tweet - expand on the hook]
+
+3/ [Third tweet - continue building]
+
+4/ [Fourth tweet - add insight/value]
+
+5/ [Fifth tweet - more depth]
+
+6/ [Sixth tweet - supporting point]
+
+7/ [Seventh tweet - final value or CTA]
+
+*Why this works:* [Brief explanation]
+
+**Option 2: [Different angle]**
+
+1/ [Hook tweet...]
+
+2/ [Continue...]
+
+...continue with 7-10 tweets...
+
+*Why this works:* [Brief explanation]
+
+**Option 3: [Another approach]**
+
+1/ [Hook tweet...]
+
+...continue with 7-10 tweets...
+
+*Why this works:* [Brief explanation]
+
+CRITICAL: You MUST provide 3 options, each with 7-10 tweets numbered "1/" "2/" "3/" etc.
+` : ''
 
   // Select the appropriate prompt builder based on post type
   // When isTemplatePrompt is true, the topic is a template instruction - use it directly
@@ -388,10 +444,15 @@ async function generateForCTNativePostType(
       throw new Error(`Unknown CT-native post type: ${postType}`)
     }
   }
+  
+  // Append thread instructions to system prompt if generating a thread
+  if (threadInstructions) {
+    systemPrompt = systemPrompt + threadInstructions
+  }
 
   const response = await anthropic.messages.create({
     model: 'claude-opus-4-20250514',
-    max_tokens: 4096,
+    max_tokens: isThread ? 8192 : 4096, // More tokens for threads
     system: systemPrompt,
     messages: [{ role: 'user', content: userPrompt }],
   })
@@ -702,10 +763,13 @@ Blend these stylistic elements with the user's own voice. Don't copy - adapt.
         userProfile,
         additionalContext,
         isTemplatePrompt,
-        contentLength  // Pass the length selection
+        contentLength,  // Pass the length selection
+        contentType     // Pass content type (tweet vs thread)
       )
-      // Limit to 3 posts
-      allPosts = allPosts.slice(0, 3)
+      // Limit to 3 posts (for single tweets) - threads will have 3 options naturally
+      if (contentType !== 'thread') {
+        allPosts = allPosts.slice(0, 3)
+      }
     } else if (postType === 'all') {
       // Generate one post of each archetype in parallel (legacy)
       const archetypes: Archetype[] = ['scroll-stopper', 'debate-starter', 'viral-catalyst']
