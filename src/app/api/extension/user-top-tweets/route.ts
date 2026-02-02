@@ -146,18 +146,24 @@ export async function GET(request: NextRequest) {
     let accessToken: string;
     const tokenResult = await getValidXTokens(user.id);
     
+    console.log('[user-top-tweets] Token result:', { success: tokenResult.success, hasTokens: !!(tokenResult as any).tokens });
+    
     if (tokenResult.success && tokenResult.tokens) {
       accessToken = tokenResult.tokens.access_token;
+      console.log('[user-top-tweets] Using user OAuth token');
     } else {
       // Fallback to app Bearer token for public data
       const bearerToken = process.env.X_BEARER_TOKEN;
+      console.log('[user-top-tweets] Bearer token present:', !!bearerToken, 'length:', bearerToken?.length || 0);
       if (!bearerToken) {
+        console.error('[user-top-tweets] X_BEARER_TOKEN env var is missing!');
         return jsonResponse(
           { error: 'X API not configured' },
           { status: 500 }
         );
       }
       accessToken = decodeURIComponent(bearerToken);
+      console.log('[user-top-tweets] Using app Bearer token, decoded length:', accessToken.length);
     }
 
     // Step 1: Look up user ID from username
