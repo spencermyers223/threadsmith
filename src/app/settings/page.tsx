@@ -308,7 +308,8 @@ export default function SettingsPage() {
     }
 
     loadSettings()
-  }, [supabase])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase]) // activeAccount?.id handled by separate effect below
 
   // Reload content profile when active account changes
   const prevAccountIdRef = useRef<string | null>(null)

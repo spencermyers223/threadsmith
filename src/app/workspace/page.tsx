@@ -245,7 +245,7 @@ export default function WorkspacePage() {
     } finally {
       setSaving(false)
     }
-  }, [content, contentType, generationType, postId, title, threadTweets, getCurrentContent, isContentEmpty, selectedTagIds])
+  }, [content, contentType, generationType, postId, title, threadTweets, getCurrentContent, isContentEmpty, selectedTagIds, activeAccount?.id])
 
   // Track content changes
   const handleContentChange = useCallback((newContent: string) => {
@@ -526,7 +526,7 @@ export default function WorkspacePage() {
     } finally {
       setSaving(false)
     }
-  }, [content, contentType, generationType, postId, title, threadTweets, getCurrentContent, selectedTagIds])
+  }, [content, contentType, generationType, postId, title, threadTweets, getCurrentContent, selectedTagIds, activeAccount?.id])
 
   const renderEditor = () => {
     if (contentType === 'thread') {

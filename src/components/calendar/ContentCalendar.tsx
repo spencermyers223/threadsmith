@@ -351,7 +351,8 @@ export function ContentCalendar({ onSelectPost, filters }: ContentCalendarProps)
     if (prevAccountIdRef.current === activeAccount.id && posts.length > 0) return
     prevAccountIdRef.current = activeAccount.id
     fetchPosts()
-  }, [fetchPosts])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchPosts]) // activeAccount.id and posts.length intentionally omitted - ref tracks changes
 
   // Scroll to today's row on initial load
   const hasScrolledToToday = useRef(false)
