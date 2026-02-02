@@ -15,262 +15,79 @@
 }
 
 /* ============================================================
-   Shared Button Base (Profile Pages)
+   Profile Page Buttons - Icon-only Gold Circles
+   Matches Coach & Save button styling on tweets
    ============================================================ */
 
-.xthread-analyze-btn,
-.xthread-watch-btn,
-.xthread-top-tweets-btn,
-.xthread-voice-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 0 16px;
-  height: 34px;
-  border-radius: 9999px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  margin-right: 8px;
-  text-decoration: none;
-  white-space: nowrap;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.xthread-analyze-btn:active,
-.xthread-watch-btn:active,
-.xthread-top-tweets-btn:active,
-.xthread-voice-btn:active {
-  transform: scale(0.96);
-}
-
-/* ============================================================
-   Analyze Button - Warm Gold (Primary brand)
-   ============================================================ */
-
-.xthread-analyze-btn {
-  background: linear-gradient(135deg, rgba(201, 184, 150, 0.15) 0%, rgba(201, 184, 150, 0.05) 100%);
-  border: 1px solid rgba(201, 184, 150, 0.5);
-  color: #C9B896;
-}
-
-.xthread-analyze-btn:hover {
-  background: linear-gradient(135deg, rgba(201, 184, 150, 0.25) 0%, rgba(201, 184, 150, 0.1) 100%);
-  border-color: #C9B896;
-  box-shadow: 0 0 0 3px rgba(201, 184, 150, 0.1);
-}
-
-.xthread-analyze-btn.xthread-loading {
-  opacity: 0.6;
-  pointer-events: none;
-  cursor: wait;
-}
-
-.xthread-analyze-icon {
-  font-size: 14px;
-  line-height: 1;
-}
-
-.xthread-analyze-text {
-  font-size: 14px;
-}
-
-/* ============================================================
-   Watch Button - Warm Gold (matches Analyze)
-   ============================================================ */
-
-.xthread-watch-btn {
-  background: transparent;
-  border: 1px solid rgba(201, 184, 150, 0.4);
-  color: #C9B896;
-}
-
-.xthread-watch-btn:hover {
-  background: rgba(201, 184, 150, 0.1);
-  border-color: rgba(201, 184, 150, 0.6);
-}
-
-.xthread-watch-btn.xthread-watching {
-  background: linear-gradient(135deg, #C9B896 0%, #B8A886 100%);
-  color: #1a1a1a;
-  border-color: #C9B896;
-  font-weight: 700;
-}
-
-.xthread-watch-btn.xthread-watching:hover {
-  background: linear-gradient(135deg, #D4C4A6 0%, #C9B896 100%);
-  box-shadow: 0 0 0 3px rgba(201, 184, 150, 0.2);
-}
-
-.xthread-watch-icon {
-  font-size: 14px;
-  line-height: 1;
-}
-
-.xthread-watch-text {
-  font-size: 14px;
-}
-
-/* ============================================================
-   Top Tweets Button - Violet (Feature highlight)
-   ============================================================ */
-
-.xthread-top-tweets-btn {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(99, 102, 241, 0.08) 100%);
-  border: 1px solid rgba(139, 92, 246, 0.4);
-  color: #A78BFA;
-}
-
-.xthread-top-tweets-btn:hover {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(99, 102, 241, 0.15) 100%);
-  border-color: #8B5CF6;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
-}
-
-.xthread-top-tweets-btn.xthread-loading {
-  opacity: 0.6;
-  pointer-events: none;
-  cursor: wait;
-}
-
-.xthread-top-tweets-icon {
-  font-size: 14px;
-  line-height: 1;
-}
-
-.xthread-top-tweets-text {
-  font-size: 14px;
-}
-
-/* ============================================================
-   Voice Button - Pink/Magenta (Voice Training)
-   ============================================================ */
-
-.xthread-voice-btn {
-  background: linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(168, 85, 247, 0.08) 100%);
-  border: 1px solid rgba(236, 72, 153, 0.4);
-  color: #F472B6;
-}
-
-.xthread-voice-btn:hover {
-  background: linear-gradient(135deg, rgba(236, 72, 153, 0.25) 0%, rgba(168, 85, 247, 0.15) 100%);
-  border-color: rgba(236, 72, 153, 0.6);
-  color: #F9A8D4;
-}
-
-.xthread-voice-btn.xthread-voice-added {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(74, 222, 128, 0.1) 100%);
-  border-color: rgba(34, 197, 94, 0.5);
-  color: #4ADE80;
-}
-
-.xthread-voice-icon {
+/* Base style for all profile action buttons */
+.xthread-profile-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.xthread-voice-text {
-  font-size: 14px;
-}
-
-/* ============================================================
-   Message Button - Teal/Cyan (Communication)
-   ============================================================ */
-
-.xthread-message-btn {
-  background: linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(6, 182, 212, 0.08) 100%);
-  border: 1px solid rgba(20, 184, 166, 0.4);
-  color: #2DD4BF;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 0 16px;
-  height: 34px;
-  border-radius: 9999px;
-  font-size: 14px;
-  font-weight: 600;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #C9B896 0%, #B8A886 100%);
+  color: #1a1a1a;
   cursor: pointer;
-  transition: all 0.15s ease;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  transition: all 0.2s ease;
   margin-right: 8px;
-  text-decoration: none;
-  white-space: nowrap;
-  user-select: none;
-  -webkit-user-select: none;
+  flex-shrink: 0;
 }
 
-.xthread-message-btn:hover {
-  background: linear-gradient(135deg, rgba(20, 184, 166, 0.25) 0%, rgba(6, 182, 212, 0.15) 100%);
-  border-color: #14B8A6;
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+.xthread-profile-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: #1a1a1a;
 }
 
-.xthread-message-btn:active {
-  transform: scale(0.96);
+.xthread-profile-btn:hover {
+  background: linear-gradient(135deg, #D4C4A8 0%, #C9B896 100%);
+  transform: scale(1.05);
 }
 
-.xthread-message-btn.xthread-loading {
-  opacity: 0.6;
+.xthread-profile-btn:active {
+  transform: scale(0.98);
+}
+
+.xthread-profile-btn.xthread-loading {
+  opacity: 0.7;
   pointer-events: none;
   cursor: wait;
 }
 
-.xthread-message-icon {
-  font-size: 14px;
-  line-height: 1;
+/* Active state (e.g., Watchlist when watching) */
+.xthread-profile-btn.xthread-active {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
 }
 
-.xthread-message-text {
-  font-size: 14px;
+.xthread-profile-btn.xthread-active svg {
+  stroke: white;
 }
 
-/* ============================================================
-   Light Mode Adjustments (Profile Buttons)
-   ============================================================ */
+.xthread-profile-btn.xthread-active:hover {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+}
 
+/* Voice added state */
+.xthread-profile-btn.xthread-voice-added {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.xthread-profile-btn.xthread-voice-added svg {
+  stroke: white;
+}
+
+/* Light Mode Adjustments (Profile Buttons) */
 @media (prefers-color-scheme: light) {
-  .xthread-analyze-btn {
-    background: linear-gradient(135deg, rgba(180, 160, 120, 0.12) 0%, rgba(180, 160, 120, 0.04) 100%);
-    border-color: rgba(160, 140, 100, 0.4);
-    color: #8B7355;
+  .xthread-profile-btn {
+    background: linear-gradient(135deg, #B8A886 0%, #A89876 100%);
   }
   
-  .xthread-analyze-btn:hover {
-    background: linear-gradient(135deg, rgba(180, 160, 120, 0.2) 0%, rgba(180, 160, 120, 0.08) 100%);
-    border-color: #8B7355;
-  }
-  
-  .xthread-watch-btn {
-    border-color: rgba(160, 140, 100, 0.3);
-    color: #8B7355;
-  }
-  
-  .xthread-watch-btn:hover {
-    background: rgba(180, 160, 120, 0.1);
-    border-color: rgba(160, 140, 100, 0.5);
-  }
-  
-  .xthread-watch-btn.xthread-watching {
-    background: linear-gradient(135deg, #A08860 0%, #8B7355 100%);
-    color: white;
-    border-color: #8B7355;
-  }
-  
-  .xthread-top-tweets-btn {
-    background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(99, 102, 241, 0.05) 100%);
-    border-color: rgba(124, 58, 237, 0.35);
-    color: #7C3AED;
-  }
-  
-  .xthread-top-tweets-btn:hover {
-    background: linear-gradient(135deg, rgba(124, 58, 237, 0.18) 0%, rgba(99, 102, 241, 0.1) 100%);
-    border-color: #7C3AED;
+  .xthread-profile-btn:hover {
+    background: linear-gradient(135deg, #C9B896 0%, #B8A886 100%);
   }
 }
 
@@ -1480,15 +1297,6 @@
   
   .xthread-analysis-footer {
     border-top-color: #e5e7eb;
-  }
-  
-  .xthread-analyze-btn {
-    border-color: #C9B896;
-    color: #C9B896;
-  }
-  
-  .xthread-analyze-btn:hover {
-    background: rgba(16, 185, 129, 0.1);
   }
 }
 

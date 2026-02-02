@@ -907,3 +907,416 @@ body {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* ============================================
+   Queue Mode Toggle (Posts/DMs)
+   ============================================ */
+
+.queue-mode-toggle {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mode-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.mode-btn.active {
+  background: var(--accent);
+  color: #1a1a1a;
+}
+
+/* ============================================
+   Stats Tab - Scanned Profiles
+   ============================================ */
+
+.scanned-profile {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.scanned-profile:hover {
+  border-color: var(--accent-border);
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.profile-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-handle {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.profile-date {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.expand-icon {
+  color: var(--text-muted);
+  font-size: 12px;
+  transition: transform 0.2s ease;
+}
+
+.scanned-profile.expanded .expand-icon {
+  transform: rotate(180deg);
+}
+
+.profile-content {
+  display: none;
+  padding: 0 12px 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.scanned-profile.expanded .profile-content {
+  display: block;
+}
+
+.style-summary {
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.tweets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tweet-item {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.tweet-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.tweet-metrics {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.metric {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ============================================
+   Watchlist Tab - Categories
+   ============================================ */
+
+.watchlist-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.watchlist-dropdown {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.watchlist-dropdown:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.manage-lists-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.manage-lists-btn:hover {
+  background: var(--bg-hover);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+.watchlist-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.account-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.account-card:hover {
+  border-color: var(--accent-border);
+  background: var(--bg-hover);
+}
+
+.account-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.account-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.account-handle {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.remove-account-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s ease;
+}
+
+.account-card:hover .remove-account-btn {
+  opacity: 1;
+}
+
+.remove-account-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+/* Manage Lists Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 320px;
+  max-height: 80%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.add-category-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.add-category-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.add-category-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.add-category-btn {
+  padding: 8px 16px;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #1a1a1a;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-category-btn:hover {
+  background: var(--accent-hover);
+}
+
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.category-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.category-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.category-action-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.category-action-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.category-action-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}

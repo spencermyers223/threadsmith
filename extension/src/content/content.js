@@ -666,23 +666,13 @@ function checkProfilePage() {
   setTimeout(() => injectWatchButton(handle), 500);
 }
 
-// Inject the watch button and analyze button on profile page
+// Inject the profile action buttons (icon-only gold circles)
 async function injectWatchButton(handle) {
   // Don't re-inject if already present ANYWHERE on page
-  const existingBtns = document.querySelectorAll('.xthread-watch-btn');
+  const existingBtns = document.querySelectorAll('.xthread-profile-btn');
   if (existingBtns.length > 0) {
     // Update state if handle changed, but don't add more buttons
     updateWatchButtonState(handle);
-    updateAnalyzeButtonState(handle);
-    // Also remove any duplicates that may have been created
-    if (existingBtns.length > 1) {
-      for (let i = 1; i < existingBtns.length; i++) {
-        existingBtns[i].remove();
-      }
-      document.querySelectorAll('.xthread-analyze-btn').forEach((btn, i) => {
-        if (i > 0) btn.remove();
-      });
-    }
     return;
   }
   
@@ -699,119 +689,97 @@ async function injectWatchButton(handle) {
   if (!buttonContainer) return;
   
   // Double-check this specific container doesn't already have our buttons
-  if (buttonContainer.querySelector('.xthread-watch-btn')) return;
+  if (buttonContainer.querySelector('.xthread-profile-btn')) return;
   
   // Check if user is watching this account
   const watching = await isWatching(handle);
   
-  // SVG icons for cleaner look
+  // SVG icons (16x16 for 32px circles)
   const icons = {
-    eye: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
-    check: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
-    search: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
-    chart: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
-    loader: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="xthread-spinner"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" opacity="1"/></svg>`,
-    message: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
-    voice: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
+    mic: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
+    chart: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+    eye: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
+    check: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+    loader: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="xthread-spinner"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`,
   };
 
-  // Create watch button
-  const watchBtn = document.createElement('button');
-  watchBtn.className = 'xthread-watch-btn' + (watching ? ' xthread-watching' : '');
-  watchBtn.setAttribute('data-handle', handle);
-  watchBtn.innerHTML = watching 
-    ? `<span class="xthread-watch-icon">${icons.check}</span><span class="xthread-watch-text">Watching</span>`
-    : `<span class="xthread-watch-icon">${icons.eye}</span><span class="xthread-watch-text">Watch</span>`;
-  watchBtn.title = watching ? 'Remove from watchlist' : 'Add to watchlist';
-  
-  // Create analyze button
-  const analyzeBtn = document.createElement('button');
-  analyzeBtn.className = 'xthread-analyze-btn';
-  analyzeBtn.setAttribute('data-handle', handle);
-  analyzeBtn.innerHTML = `<span class="xthread-analyze-icon">${icons.search}</span><span class="xthread-analyze-text">Analyze</span>`;
-  analyzeBtn.title = 'Analyze this account';
-
-  // Create top tweets button
-  const topTweetsBtn = document.createElement('button');
-  topTweetsBtn.className = 'xthread-top-tweets-btn';
-  topTweetsBtn.setAttribute('data-handle', handle);
-  topTweetsBtn.innerHTML = `<span class="xthread-top-tweets-icon">${icons.chart}</span><span class="xthread-top-tweets-text">Top Tweets</span>`;
-  topTweetsBtn.title = 'See their top performing tweets';
-
-  // Create message button for DM outreach
-  const messageBtn = document.createElement('button');
-  messageBtn.className = 'xthread-message-btn';
-  messageBtn.setAttribute('data-handle', handle);
-  messageBtn.innerHTML = `<span class="xthread-message-icon">${icons.message}</span><span class="xthread-message-text">Message</span>`;
-  messageBtn.title = 'Send a DM using templates';
-
-  // Create "Add to Voice" button
+  // Create Voice button (Mic icon)
   const voiceBtn = document.createElement('button');
-  voiceBtn.className = 'xthread-voice-btn';
+  voiceBtn.className = 'xthread-profile-btn xthread-voice-btn';
   voiceBtn.setAttribute('data-handle', handle);
-  voiceBtn.innerHTML = `<span class="xthread-voice-icon">${icons.voice}</span><span class="xthread-voice-text">Add to Voice</span>`;
-  voiceBtn.title = 'Add this account to your voice training';
+  voiceBtn.innerHTML = icons.mic;
+  voiceBtn.title = 'Add to Voice';
+
+  // Create Stats button (Chart icon) - formerly Top Tweets
+  const statsBtn = document.createElement('button');
+  statsBtn.className = 'xthread-profile-btn xthread-stats-btn';
+  statsBtn.setAttribute('data-handle', handle);
+  statsBtn.innerHTML = icons.chart;
+  statsBtn.title = 'View Stats';
+
+  // Create Watchlist button (Eye icon) - formerly Watch
+  const watchlistBtn = document.createElement('button');
+  watchlistBtn.className = 'xthread-profile-btn xthread-watchlist-btn' + (watching ? ' xthread-active' : '');
+  watchlistBtn.setAttribute('data-handle', handle);
+  watchlistBtn.innerHTML = watching ? icons.check : icons.eye;
+  watchlistBtn.title = watching ? 'Remove from Watchlist' : 'Add to Watchlist';
   
-  // Insert before follow button (voice, message, top tweets, analyze, watch)
+  // Insert before follow button: Mic, Stats, Watchlist (left to right)
   buttonContainer.insertBefore(voiceBtn, followContainer);
-  buttonContainer.insertBefore(messageBtn, followContainer);
-  buttonContainer.insertBefore(topTweetsBtn, followContainer);
-  buttonContainer.insertBefore(analyzeBtn, followContainer);
-  buttonContainer.insertBefore(watchBtn, followContainer);
+  buttonContainer.insertBefore(statsBtn, followContainer);
+  buttonContainer.insertBefore(watchlistBtn, followContainer);
   
-  // Watch button click handler
-  watchBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    await handleWatchClick(watchBtn, handle);
-  });
-  
-  // Analyze button click handler
-  analyzeBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    await handleAnalyzeClick(analyzeBtn, handle);
-  });
-
-  // Top Tweets button click handler
-  topTweetsBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    await handleTopTweetsClick(topTweetsBtn, handle);
-  });
-
-  // Message button click handler
-  messageBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    await handleMessageClick(messageBtn, handle);
-  });
-
   // Voice button click handler
   voiceBtn.addEventListener('click', async (e) => {
     e.preventDefault();
     e.stopPropagation();
     await handleVoiceClick(voiceBtn, handle);
   });
+
+  // Stats button click handler (uses existing Top Tweets logic)
+  statsBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await handleTopTweetsClick(statsBtn, handle);
+  });
+
+  // Watchlist button click handler
+  watchlistBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await handleWatchClick(watchlistBtn, handle);
+  });
 }
 
 // Update watch button state (when navigating between profiles)
 async function updateWatchButtonState(handle) {
-  const watchBtn = document.querySelector('.xthread-watch-btn');
-  if (!watchBtn) return;
+  const watchlistBtn = document.querySelector('.xthread-watchlist-btn');
+  if (!watchlistBtn) return;
   
-  // Update handle reference
-  watchBtn.setAttribute('data-handle', handle);
+  // Update handle reference for all profile buttons
+  document.querySelectorAll('.xthread-profile-btn').forEach(btn => {
+    btn.setAttribute('data-handle', handle);
+  });
   
   const watching = await isWatching(handle);
-  watchBtn.className = 'xthread-watch-btn' + (watching ? ' xthread-watching' : '');
-  watchBtn.innerHTML = watching 
-    ? `<span class="xthread-watch-icon">${getIcon('check')}</span><span class="xthread-watch-text">Watching</span>`
-    : `<span class="xthread-watch-icon">${getIcon('eye')}</span><span class="xthread-watch-text">Watch</span>`;
-  watchBtn.title = watching ? 'Remove from watchlist' : 'Add to watchlist';
+  watchlistBtn.className = 'xthread-profile-btn xthread-watchlist-btn' + (watching ? ' xthread-active' : '');
+  watchlistBtn.innerHTML = watching ? getProfileIcon('check') : getProfileIcon('eye');
+  watchlistBtn.title = watching ? 'Remove from Watchlist' : 'Add to Watchlist';
 }
 
-// SVG icon helper
+// SVG icon helper for profile buttons (16x16 for 32px circles)
+function getProfileIcon(name) {
+  const icons = {
+    mic: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
+    chart: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+    eye: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
+    check: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+    loader: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="xthread-spinner"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`,
+  };
+  return icons[name] || '';
+}
+
+// Legacy icon helper (used by other parts of the code)
 function getIcon(name) {
   const icons = {
     eye: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
@@ -819,12 +787,11 @@ function getIcon(name) {
     search: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
     chart: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
     loader: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="xthread-spinner"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`,
-    message: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
   };
   return icons[name] || '';
 }
 
-// Handle watch button click
+// Handle watchlist button click
 async function handleWatchClick(btn, handle) {
   const watching = await isWatching(handle);
   
@@ -832,10 +799,10 @@ async function handleWatchClick(btn, handle) {
     // Remove from watchlist
     const result = await removeFromWatchlist(handle);
     if (result.success) {
-      btn.className = 'xthread-watch-btn';
-      btn.innerHTML = `<span class="xthread-watch-icon">${getIcon('eye')}</span><span class="xthread-watch-text">Watch</span>`;
-      btn.title = 'Add to watchlist';
-      showToast('Removed from watchlist');
+      btn.className = 'xthread-profile-btn xthread-watchlist-btn';
+      btn.innerHTML = getProfileIcon('eye');
+      btn.title = 'Add to Watchlist';
+      showToast('Removed from Watchlist');
     } else {
       showToast(result.error || 'Failed to remove');
     }
@@ -849,10 +816,10 @@ async function handleWatchClick(btn, handle) {
     });
     
     if (result.success) {
-      btn.className = 'xthread-watch-btn xthread-watching';
-      btn.innerHTML = `<span class="xthread-watch-icon">${getIcon('check')}</span><span class="xthread-watch-text">Watching</span>`;
-      btn.title = 'Remove from watchlist';
-      showToast('Added to watchlist!');
+      btn.className = 'xthread-profile-btn xthread-watchlist-btn xthread-active';
+      btn.innerHTML = getProfileIcon('check');
+      btn.title = 'Remove from Watchlist';
+      showToast('Added to Watchlist!');
       
       // Update badge
       updateWatchlistBadge();
@@ -863,25 +830,8 @@ async function handleWatchClick(btn, handle) {
 }
 
 // ============================================================
-// Account Analyzer Feature
+// Account Analyzer Feature (accessed via side panel)
 // ============================================================
-
-// Update analyze button state (when navigating between profiles)
-function updateAnalyzeButtonState(handle) {
-  const analyzeBtn = document.querySelector('.xthread-analyze-btn');
-  if (!analyzeBtn) return;
-  
-  // Update handle reference
-  analyzeBtn.setAttribute('data-handle', handle);
-  
-  // Reset to default state
-  analyzeBtn.classList.remove('xthread-loading');
-  analyzeBtn.innerHTML = `<span class="xthread-analyze-icon">🔍</span><span class="xthread-analyze-text">Analyze</span>`;
-  
-  // Close any open analysis panel when switching profiles
-  const existingPanel = document.querySelector('.xthread-analysis-panel');
-  if (existingPanel) existingPanel.remove();
-}
 
 // Handle analyze button click
 async function handleAnalyzeClick(btn, handle, forceRefresh = false) {
@@ -1184,23 +1134,48 @@ function showAnalysisPanel(handle, analysis, cachedAt) {
     panel.remove();
   });
   
-  // Refresh button
+  // Refresh button - directly refresh analysis
   panel.querySelector('.xthread-refresh-btn').addEventListener('click', async () => {
     panel.remove();
-    const analyzeBtn = document.querySelector('.xthread-analyze-btn');
-    if (analyzeBtn) {
-      await handleAnalyzeClick(analyzeBtn, handle, true);
-    }
+    await refreshAnalysis(handle);
   });
   
   // Cache info click also refreshes
   panel.querySelector('.xthread-cache-info').addEventListener('click', async () => {
     panel.remove();
-    const analyzeBtn = document.querySelector('.xthread-analyze-btn');
-    if (analyzeBtn) {
-      await handleAnalyzeClick(analyzeBtn, handle, true);
-    }
+    await refreshAnalysis(handle);
   });
+}
+
+// Refresh analysis for a handle (used by analysis panel)
+async function refreshAnalysis(handle) {
+  if (isAnalyzing) return;
+  
+  if (!userToken) {
+    showToast('Please sign in to xthread first.');
+    return;
+  }
+  
+  isAnalyzing = true;
+  showToast('Refreshing analysis...');
+  
+  try {
+    const tweets = scrapeProfileTweets();
+    if (tweets.length === 0) {
+      showToast('No tweets found. Scroll down to load more tweets first.');
+      return;
+    }
+    
+    const profileStats = extractProfileStats();
+    const analysis = await analyzeAccount(handle, tweets, profileStats);
+    await cacheAnalysis(handle, { analysis });
+    showAnalysisPanel(handle, analysis, Date.now());
+  } catch (err) {
+    console.error('[xthread] Error refreshing analysis:', err);
+    showToast(err.message || 'Failed to refresh analysis.');
+  } finally {
+    isAnalyzing = false;
+  }
 }
 
 // ============================================================
@@ -1220,7 +1195,7 @@ async function handleTopTweetsClick(btn, handle) {
   
   isLoadingTopTweets = true;
   btn.classList.add('xthread-loading');
-  btn.innerHTML = `<span class="xthread-top-tweets-icon">${getIcon('loader')}</span><span class="xthread-top-tweets-text">Loading...</span>`;
+  btn.innerHTML = getProfileIcon('loader');
   
   try {
     const response = await fetch(`${XTHREAD_API}/extension/user-top-tweets?username=${encodeURIComponent(handle)}`, {
@@ -1239,11 +1214,11 @@ async function handleTopTweetsClick(btn, handle) {
     
   } catch (err) {
     console.error('[xthread] Error fetching top tweets:', err);
-    showToast(err.message || 'Failed to load top tweets. Please try again.');
+    showToast(err.message || 'Failed to load stats. Please try again.');
   } finally {
     isLoadingTopTweets = false;
     btn.classList.remove('xthread-loading');
-    btn.innerHTML = `<span class="xthread-top-tweets-icon">${getIcon('chart')}</span><span class="xthread-top-tweets-text">Top Tweets</span>`;
+    btn.innerHTML = getProfileIcon('chart');
   }
 }
 
@@ -1525,7 +1500,7 @@ async function handleVoiceClick(btn, handle) {
   }
   
   btn.classList.add('xthread-loading');
-  btn.innerHTML = `<span class="xthread-voice-icon">${getIcon('loader')}</span><span class="xthread-voice-text">Adding...</span>`;
+  btn.innerHTML = getProfileIcon('loader');
   
   try {
     const response = await fetch(`${XTHREAD_API}/admired-accounts`, {
@@ -1546,19 +1521,19 @@ async function handleVoiceClick(btn, handle) {
     
     // Update button to show success
     btn.classList.add('xthread-voice-added');
-    btn.innerHTML = `<span class="xthread-voice-icon">${getIcon('check')}</span><span class="xthread-voice-text">Added!</span>`;
+    btn.innerHTML = getProfileIcon('check');
     showToast(data.message || `Added @${handle} to your voice profile`);
     
     // Reset button after 2 seconds
     setTimeout(() => {
       btn.classList.remove('xthread-voice-added');
-      btn.innerHTML = `<span class="xthread-voice-icon">${getIcon('voice')}</span><span class="xthread-voice-text">Add to Voice</span>`;
+      btn.innerHTML = getProfileIcon('mic');
     }, 2000);
     
   } catch (err) {
     console.error('[xthread] Error adding to voice:', err);
     showToast(err.message || 'Failed to add account. Please try again.');
-    btn.innerHTML = `<span class="xthread-voice-icon">${getIcon('voice')}</span><span class="xthread-voice-text">Add to Voice</span>`;
+    btn.innerHTML = getProfileIcon('mic');
   } finally {
     btn.classList.remove('xthread-loading');
   }

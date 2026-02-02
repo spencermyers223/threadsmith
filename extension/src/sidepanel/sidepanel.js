@@ -160,13 +160,10 @@ async function loadTabData(tabName) {
     case 'coach':
       // Coach tab shows empty state by default, filled by messages
       break;
-    case 'feed':
-      await loadFeed();
-      break;
     case 'stats':
       await loadStats();
       break;
-    case 'watch':
+    case 'watchlist':
       await loadWatchlist();
       break;
     case 'saved':
@@ -199,8 +196,7 @@ function handleMessage(message, sender, sendResponse) {
       break;
     
     case 'WATCHLIST_UPDATED':
-      if (currentTab === 'watch') loadWatchlist();
-      if (currentTab === 'feed') loadFeed();
+      if (currentTab === 'watchlist') loadWatchlist();
       break;
     
     case 'SAVED_UPDATED':
@@ -272,67 +268,22 @@ function showCoaching(coaching, postData) {
 }
 
 // ============================================================
-// Feed Tab
-// ============================================================
-
-async function loadFeed() {
-  const stored = await chrome.storage.local.get(['watchlistNotifications']);
-  const notifications = stored.watchlistNotifications || [];
-  
-  const feedList = document.getElementById('feed-list');
-  const feedEmpty = document.getElementById('feed-empty');
-  
-  if (notifications.length === 0) {
-    feedList.classList.add('hidden');
-    feedEmpty.classList.remove('hidden');
-    return;
-  }
-  
-  feedList.classList.remove('hidden');
-  feedEmpty.classList.add('hidden');
-  
-  feedList.innerHTML = notifications.slice(0, 20).map(notif => `
-    <div class="list-item" data-url="${escapeHtml(notif.url)}">
-      <div class="item-header">
-        <span class="item-author">@${escapeHtml(notif.handle)}</span>
-        <span class="item-time">${escapeHtml(notif.postAge || '')}</span>
-      </div>
-      <div class="item-text">${escapeHtml(truncateText(notif.text, 100))}</div>
-    </div>
-  `).join('');
-  
-  // Click to open
-  feedList.querySelectorAll('.list-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const url = item.dataset.url;
-      if (url) chrome.tabs.create({ url });
-    });
-  });
-  
-  // Mark as read
-  notifications.forEach(n => n.read = true);
-  await chrome.storage.local.set({ watchlistNotifications: notifications });
-}
-
-// ============================================================
 // Stats Tab
 // ============================================================
 
 async function loadStats() {
-  const stored = await chrome.storage.local.get(['replyHistory']);
-  const history = stored.replyHistory || [];
+  const stored = await chrome.storage.local.get(['scannedProfiles']);
+  const profiles = stored.scannedProfiles || [];
   
-  const total = history.length;
-  const confirmed = history.filter(r => r.followedBack === true).length;
-  const rate = total > 0 ? Math.round((confirmed / total) * 100) : 0;
-  
-  document.getElementById('total-replies').textContent = total;
-  document.getElementById('conversion-rate').textContent = `${rate}%`;
+  // Update header stats
+  const profileCount = profiles.length;
+  document.getElementById('total-replies').textContent = profileCount;
+  document.getElementById('conversion-rate').textContent = `${profileCount} scanned`;
   
   const replyList = document.getElementById('reply-list');
   const statsEmpty = document.getElementById('stats-empty');
   
-  if (history.length === 0) {
+  if (profiles.length === 0) {
     replyList.classList.add('hidden');
     statsEmpty.classList.remove('hidden');
     return;
@@ -341,51 +292,187 @@ async function loadStats() {
   replyList.classList.remove('hidden');
   statsEmpty.classList.add('hidden');
   
-  replyList.innerHTML = history.slice(0, 15).map(reply => `
-    <div class="list-item">
-      <div class="item-header">
-        <span class="item-author">@${escapeHtml(reply.originalAuthorHandle || 'unknown')}</span>
-        <span class="item-time">${formatTimeAgo(reply.repliedAt)}</span>
+  // Sort by most recent scan
+  const sortedProfiles = [...profiles].sort((a, b) => 
+    new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime()
+  );
+  
+  replyList.innerHTML = sortedProfiles.map((profile, index) => `
+    <div class="scanned-profile" data-index="${index}">
+      <div class="profile-header" onclick="toggleProfileExpand(${index})">
+        <img class="profile-avatar" src="${escapeHtml(profile.avatar || '')}" alt="" onerror="this.style.display='none'">
+        <div class="profile-info">
+          <span class="profile-handle">${escapeHtml(profile.handle || '@unknown')}</span>
+          <span class="profile-date">${formatTimeAgo(profile.scannedAt)}</span>
+        </div>
+        <span class="expand-icon">▶</span>
       </div>
-      <div class="item-text">${escapeHtml(truncateText(reply.replyText || '', 80))}</div>
+      <div class="profile-content hidden" id="profile-content-${index}">
+        ${profile.styleSummary ? `
+          <div class="style-summary">
+            <strong>Writing Style:</strong> ${escapeHtml(profile.styleSummary)}
+          </div>
+        ` : ''}
+        <div class="tweets-list">
+          ${(profile.tweets || []).slice(0, 10).map(tweet => `
+            <div class="tweet-item">
+              <div class="tweet-text">${escapeHtml(truncateText(tweet.text || '', 120))}</div>
+              <div class="tweet-metrics">
+                <span class="metric">💬 ${formatNumber(tweet.replies || 0)}</span>
+                <span class="metric">🔁 ${formatNumber(tweet.retweets || 0)}</span>
+                <span class="metric">❤️ ${formatNumber(tweet.likes || 0)}</span>
+                ${tweet.views ? `<span class="metric">👁 ${formatNumber(tweet.views)}</span>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
     </div>
   `).join('');
 }
 
+// Toggle profile expansion in Stats tab
+function toggleProfileExpand(index) {
+  const content = document.getElementById(`profile-content-${index}`);
+  const profile = content?.closest('.scanned-profile');
+  const icon = profile?.querySelector('.expand-icon');
+  
+  if (content) {
+    const isHidden = content.classList.contains('hidden');
+    content.classList.toggle('hidden');
+    if (icon) {
+      icon.textContent = isHidden ? '▼' : '▶';
+    }
+  }
+}
+
+// Format large numbers (1000 -> 1K, etc.)
+function formatNumber(num) {
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+  return num.toString();
+}
+
 // ============================================================
-// Watchlist Tab
+// Watchlist Tab - Category-based Watchlist System
 // ============================================================
 
+const DEFAULT_CATEGORY = 'General';
+
 async function loadWatchlist() {
-  const stored = await chrome.storage.local.get(['watchlist']);
-  const watchlist = stored.watchlist || [];
+  // Get categories and accounts from storage
+  const stored = await chrome.storage.local.get([
+    'watchlistCategories', 
+    'watchlistAccounts', 
+    'activeWatchlist',
+    'watchlist' // Legacy support
+  ]);
   
-  document.getElementById('watch-count').textContent = `${watchlist.length} accounts`;
+  // Handle migration from old flat list
+  let categories = stored.watchlistCategories || [DEFAULT_CATEGORY];
+  let accounts = stored.watchlistAccounts || {};
+  let activeCategory = stored.activeWatchlist || DEFAULT_CATEGORY;
+  
+  // Migrate legacy data if needed
+  if (stored.watchlist && stored.watchlist.length > 0 && !stored.watchlistAccounts) {
+    accounts[DEFAULT_CATEGORY] = stored.watchlist;
+    await chrome.storage.local.set({
+      watchlistCategories: categories,
+      watchlistAccounts: accounts,
+      activeWatchlist: DEFAULT_CATEGORY
+    });
+  }
+  
+  // Ensure active category exists
+  if (!categories.includes(activeCategory)) {
+    activeCategory = categories[0] || DEFAULT_CATEGORY;
+    await chrome.storage.local.set({ activeWatchlist: activeCategory });
+  }
+  
+  const categoryAccounts = accounts[activeCategory] || [];
+  document.getElementById('watch-count').textContent = `${categoryAccounts.length} accounts`;
   
   const watchList = document.getElementById('watch-list');
   const watchEmpty = document.getElementById('watch-empty');
   
-  if (watchlist.length === 0) {
-    watchList.classList.add('hidden');
+  // Build category selector and manage button
+  const headerHtml = `
+    <div class="watchlist-header">
+      <div class="watchlist-selector">
+        <select id="watchlist-category-select" class="category-select">
+          ${categories.map(cat => `
+            <option value="${escapeHtml(cat)}" ${cat === activeCategory ? 'selected' : ''}>
+              ${escapeHtml(cat)} (${(accounts[cat] || []).length})
+            </option>
+          `).join('')}
+        </select>
+        <button id="manage-lists-btn" class="manage-btn" title="Manage Lists">⚙️</button>
+      </div>
+    </div>
+  `;
+  
+  if (categoryAccounts.length === 0) {
+    watchList.innerHTML = headerHtml;
+    watchList.classList.remove('hidden');
     watchEmpty.classList.remove('hidden');
+    watchEmpty.innerHTML = `
+      <div class="empty-state">
+        <span class="empty-icon">👀</span>
+        <p>No accounts in "${escapeHtml(activeCategory)}"</p>
+        <p class="empty-hint">Visit a profile on X and click the Watchlist button to add accounts</p>
+      </div>
+    `;
+    setupWatchlistEventListeners(activeCategory);
     return;
   }
   
   watchList.classList.remove('hidden');
   watchEmpty.classList.add('hidden');
   
-  watchList.innerHTML = watchlist.map(account => `
-    <div class="list-item" data-handle="${escapeHtml(account.handle)}">
-      <div class="item-header">
-        <span class="item-author">@${escapeHtml(account.handle)}</span>
-        <button class="item-remove" data-handle="${escapeHtml(account.handle)}">×</button>
+  // Build account list with avatars
+  const accountsHtml = categoryAccounts.map(account => `
+    <div class="list-item watchlist-account" data-handle="${escapeHtml(account.handle)}">
+      <div class="account-row">
+        <div class="account-avatar">
+          ${account.avatar 
+            ? `<img src="${escapeHtml(account.avatar)}" alt="" class="avatar-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="avatar-fallback" style="display:none">👤</span>`
+            : '<span class="avatar-fallback">👤</span>'
+          }
+        </div>
+        <div class="account-info">
+          <span class="account-handle">@${escapeHtml(account.handle)}</span>
+          <span class="account-name">${escapeHtml(account.displayName || account.handle)}</span>
+        </div>
+        <button class="item-remove" data-handle="${escapeHtml(account.handle)}" title="Remove">×</button>
       </div>
-      <div class="item-text">${escapeHtml(account.displayName || account.handle)}</div>
     </div>
   `).join('');
   
+  watchList.innerHTML = headerHtml + accountsHtml;
+  
+  setupWatchlistEventListeners(activeCategory);
+}
+
+function setupWatchlistEventListeners(activeCategory) {
+  // Category select change
+  const categorySelect = document.getElementById('watchlist-category-select');
+  if (categorySelect) {
+    categorySelect.addEventListener('change', async (e) => {
+      await chrome.storage.local.set({ activeWatchlist: e.target.value });
+      loadWatchlist();
+    });
+  }
+  
+  // Manage lists button
+  const manageBtn = document.getElementById('manage-lists-btn');
+  if (manageBtn) {
+    manageBtn.addEventListener('click', () => showManageListsModal());
+  }
+  
+  const watchList = document.getElementById('watch-list');
+  
   // Click to view profile
-  watchList.querySelectorAll('.list-item').forEach(item => {
+  watchList.querySelectorAll('.watchlist-account').forEach(item => {
     item.addEventListener('click', (e) => {
       if (e.target.closest('.item-remove')) return;
       const handle = item.dataset.handle;
@@ -398,14 +485,187 @@ async function loadWatchlist() {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const handle = btn.dataset.handle;
-      const stored = await chrome.storage.local.get(['watchlist']);
-      const watchlist = stored.watchlist || [];
-      const index = watchlist.findIndex(w => w.handle.toLowerCase() === handle.toLowerCase());
-      if (index >= 0) {
-        watchlist.splice(index, 1);
-        await chrome.storage.local.set({ watchlist });
-        loadWatchlist();
+      const stored = await chrome.storage.local.get(['watchlistAccounts', 'activeWatchlist']);
+      const accounts = stored.watchlistAccounts || {};
+      const category = stored.activeWatchlist || DEFAULT_CATEGORY;
+      
+      if (accounts[category]) {
+        const index = accounts[category].findIndex(w => w.handle.toLowerCase() === handle.toLowerCase());
+        if (index >= 0) {
+          accounts[category].splice(index, 1);
+          await chrome.storage.local.set({ watchlistAccounts: accounts });
+          loadWatchlist();
+        }
       }
+    });
+  });
+}
+
+function showManageListsModal() {
+  // Remove existing modal if present
+  const existingModal = document.getElementById('manage-lists-modal');
+  if (existingModal) existingModal.remove();
+  
+  const modal = document.createElement('div');
+  modal.id = 'manage-lists-modal';
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Manage Watchlists</h3>
+        <button class="modal-close" id="close-manage-modal">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="new-category-row">
+          <input type="text" id="new-category-input" placeholder="New category name..." maxlength="30">
+          <button id="add-category-btn" class="btn-primary">Add</button>
+        </div>
+        <div id="categories-list" class="categories-list"></div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Load categories into modal
+  refreshCategoriesList();
+  
+  // Close modal
+  document.getElementById('close-manage-modal').addEventListener('click', () => {
+    modal.remove();
+  });
+  
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+  
+  // Add new category
+  document.getElementById('add-category-btn').addEventListener('click', async () => {
+    const input = document.getElementById('new-category-input');
+    const name = input.value.trim();
+    if (!name) return;
+    
+    const stored = await chrome.storage.local.get(['watchlistCategories']);
+    const categories = stored.watchlistCategories || [DEFAULT_CATEGORY];
+    
+    if (categories.some(c => c.toLowerCase() === name.toLowerCase())) {
+      alert('Category already exists');
+      return;
+    }
+    
+    if (categories.length >= 20) {
+      alert('Maximum 20 categories allowed');
+      return;
+    }
+    
+    categories.push(name);
+    await chrome.storage.local.set({ watchlistCategories: categories });
+    input.value = '';
+    refreshCategoriesList();
+    loadWatchlist();
+  });
+  
+  // Enter key to add
+  document.getElementById('new-category-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      document.getElementById('add-category-btn').click();
+    }
+  });
+}
+
+async function refreshCategoriesList() {
+  const stored = await chrome.storage.local.get(['watchlistCategories', 'watchlistAccounts']);
+  const categories = stored.watchlistCategories || [DEFAULT_CATEGORY];
+  const accounts = stored.watchlistAccounts || {};
+  
+  const listEl = document.getElementById('categories-list');
+  if (!listEl) return;
+  
+  listEl.innerHTML = categories.map(cat => {
+    const count = (accounts[cat] || []).length;
+    return `
+      <div class="category-item" data-category="${escapeHtml(cat)}">
+        <span class="category-name">${escapeHtml(cat)}</span>
+        <span class="category-count">${count} accounts</span>
+        <div class="category-actions">
+          <button class="btn-icon rename-category" data-category="${escapeHtml(cat)}" title="Rename">✏️</button>
+          <button class="btn-icon delete-category" data-category="${escapeHtml(cat)}" title="Delete" ${categories.length <= 1 ? 'disabled' : ''}>🗑️</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  // Rename handlers
+  listEl.querySelectorAll('.rename-category').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const oldName = btn.dataset.category;
+      const newName = prompt('Enter new name:', oldName);
+      if (!newName || newName.trim() === oldName) return;
+      
+      const stored = await chrome.storage.local.get(['watchlistCategories', 'watchlistAccounts', 'activeWatchlist']);
+      const categories = stored.watchlistCategories || [];
+      const accounts = stored.watchlistAccounts || {};
+      
+      const index = categories.indexOf(oldName);
+      if (index === -1) return;
+      
+      if (categories.some(c => c.toLowerCase() === newName.trim().toLowerCase() && c !== oldName)) {
+        alert('Category name already exists');
+        return;
+      }
+      
+      categories[index] = newName.trim();
+      
+      if (accounts[oldName]) {
+        accounts[newName.trim()] = accounts[oldName];
+        delete accounts[oldName];
+      }
+      
+      const updates = { watchlistCategories: categories, watchlistAccounts: accounts };
+      if (stored.activeWatchlist === oldName) {
+        updates.activeWatchlist = newName.trim();
+      }
+      
+      await chrome.storage.local.set(updates);
+      refreshCategoriesList();
+      loadWatchlist();
+    });
+  });
+  
+  // Delete handlers
+  listEl.querySelectorAll('.delete-category').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const name = btn.dataset.category;
+      const stored = await chrome.storage.local.get(['watchlistCategories', 'watchlistAccounts', 'activeWatchlist']);
+      const categories = stored.watchlistCategories || [];
+      const accounts = stored.watchlistAccounts || {};
+      const count = (accounts[name] || []).length;
+      
+      if (categories.length <= 1) {
+        alert('Cannot delete the last category');
+        return;
+      }
+      
+      const confirmMsg = count > 0 
+        ? `Delete "${name}" and its ${count} accounts?`
+        : `Delete "${name}"?`;
+      
+      if (!confirm(confirmMsg)) return;
+      
+      const index = categories.indexOf(name);
+      if (index === -1) return;
+      
+      categories.splice(index, 1);
+      delete accounts[name];
+      
+      const updates = { watchlistCategories: categories, watchlistAccounts: accounts };
+      if (stored.activeWatchlist === name) {
+        updates.activeWatchlist = categories[0];
+      }
+      
+      await chrome.storage.local.set(updates);
+      refreshCategoriesList();
+      loadWatchlist();
     });
   });
 }
@@ -469,15 +729,59 @@ async function loadQueue() {
     return;
   }
   
+  // Get saved queue mode (posts or dms)
+  const storage = await chrome.storage.local.get(['queueMode']);
+  let queueMode = storage.queueMode || 'posts';
+  
+  // Render mode toggle if not already present
+  let modeToggle = document.getElementById('queue-mode-toggle');
+  if (!modeToggle) {
+    const queueTab = document.getElementById('queue-tab');
+    const tabHeader = queueTab.querySelector('.tab-header');
+    
+    modeToggle = document.createElement('div');
+    modeToggle.id = 'queue-mode-toggle';
+    modeToggle.className = 'queue-mode-toggle';
+    modeToggle.innerHTML = `
+      <button class="mode-btn ${queueMode === 'posts' ? 'active' : ''}" data-mode="posts">Posts</button>
+      <button class="mode-btn ${queueMode === 'dms' ? 'active' : ''}" data-mode="dms">DMs</button>
+    `;
+    
+    // Insert after the tab header
+    tabHeader.insertAdjacentElement('afterend', modeToggle);
+    
+    // Add click handlers
+    modeToggle.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const newMode = btn.dataset.mode;
+        if (newMode !== queueMode) {
+          await chrome.storage.local.set({ queueMode: newMode });
+          loadQueue(); // Reload with new mode
+        }
+      });
+    });
+  } else {
+    // Update active state
+    modeToggle.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === queueMode);
+    });
+  }
+  
   // Show loading
   queueList.classList.add('hidden');
   queueEmpty.classList.add('hidden');
   queueLoading.classList.remove('hidden');
   
+  if (queueMode === 'posts') {
+    await loadQueuePosts(queueList, queueEmpty, queueLoading, queueCount);
+  } else {
+    await loadQueueDMs(queueList, queueEmpty, queueLoading, queueCount);
+  }
+}
+
+async function loadQueuePosts(queueList, queueEmpty, queueLoading, queueCount) {
   try {
     // Pass client's local date to handle timezone correctly
-    const clientDate = new Date().toISOString().split('T')[0];
-    // Adjust for local timezone - get actual local date
     const localDate = new Date();
     const localDateStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
     
@@ -500,6 +804,7 @@ async function loadQueue() {
     if (posts.length === 0) {
       queueList.classList.add('hidden');
       queueEmpty.classList.remove('hidden');
+      queueEmpty.querySelector('.empty-desc').textContent = 'No scheduled posts yet.';
       queueCount.textContent = 'No upcoming posts';
       return;
     }
@@ -561,16 +866,111 @@ async function loadQueue() {
     // Click item to open in xthread calendar
     queueList.querySelectorAll('.queue-item').forEach(item => {
       item.addEventListener('click', (e) => {
-        if (e.target.closest('.post-to-x-btn')) return; // Don't trigger if clicking button
+        if (e.target.closest('.copy-btn')) return; // Don't trigger if clicking button
         chrome.tabs.create({ url: `https://xthread.io/calendar` });
       });
     });
     
   } catch (error) {
-    console.error('[xthread] Error loading queue:', error);
+    console.error('[xthread] Error loading queue posts:', error);
     queueLoading.classList.add('hidden');
     queueEmpty.classList.remove('hidden');
     queueEmpty.querySelector('.empty-desc').textContent = 'Failed to load scheduled posts. Try again later.';
+  }
+}
+
+async function loadQueueDMs(queueList, queueEmpty, queueLoading, queueCount) {
+  try {
+    const response = await fetch(`${XTHREAD_API}/extension/dm-templates`, {
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch DM templates');
+    }
+    
+    const data = await response.json();
+    const templates = data.templates || [];
+    
+    queueLoading.classList.add('hidden');
+    
+    if (templates.length === 0) {
+      queueList.classList.add('hidden');
+      queueEmpty.classList.remove('hidden');
+      queueEmpty.querySelector('.empty-desc').textContent = 'No DM templates yet. Create templates in xthread to quickly copy them here.';
+      queueCount.textContent = 'No templates';
+      return;
+    }
+    
+    queueList.classList.remove('hidden');
+    queueEmpty.classList.add('hidden');
+    queueCount.textContent = `${templates.length} template${templates.length !== 1 ? 's' : ''}`;
+    
+    queueList.innerHTML = templates.map(template => `
+      <div class="list-item queue-item dm-template-item" data-id="${escapeHtml(template.id)}">
+        <div class="item-header">
+          <span class="item-type">💬 ${escapeHtml(template.name || 'Untitled')}</span>
+        </div>
+        <div class="item-text">${escapeHtml(truncateText(template.content, 120))}</div>
+        <div class="item-actions">
+          <button class="copy-btn" title="Copy to clipboard">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Copy
+          </button>
+        </div>
+      </div>
+    `).join('');
+    
+    // Store full content for each template (preserving formatting)
+    const templateContentMap = {};
+    templates.forEach(template => {
+      templateContentMap[template.id] = template.content || '';
+    });
+    
+    // Copy button - copies template content to clipboard
+    queueList.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const item = btn.closest('.dm-template-item');
+        const templateId = item.dataset.id;
+        const content = templateContentMap[templateId] || '';
+        
+        try {
+          await navigator.clipboard.writeText(content);
+          // Show feedback
+          const originalText = btn.innerHTML;
+          btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Copied!`;
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('copied');
+          }, 2000);
+        } catch (err) {
+          console.error('[xthread] Copy failed:', err);
+          btn.textContent = 'Failed';
+          setTimeout(() => {
+            btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy`;
+          }, 2000);
+        }
+      });
+    });
+    
+    // Click item to open in xthread DM templates page
+    queueList.querySelectorAll('.dm-template-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('.copy-btn')) return; // Don't trigger if clicking button
+        chrome.tabs.create({ url: `https://xthread.io/dm-templates` });
+      });
+    });
+    
+  } catch (error) {
+    console.error('[xthread] Error loading DM templates:', error);
+    queueLoading.classList.add('hidden');
+    queueEmpty.classList.remove('hidden');
+    queueEmpty.querySelector('.empty-desc').textContent = 'Failed to load DM templates. Try again later.';
   }
 }
 
