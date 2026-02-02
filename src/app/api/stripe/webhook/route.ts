@@ -5,12 +5,6 @@ import { getTierFromPriceId, type SubscriptionTier } from '@/lib/subscription'
 import { addCredits, resetMonthlyUsage, CREDIT_GRANTS } from '@/lib/credits'
 import Stripe from 'stripe'
 
-// Credit pack product IDs (will be set by Spencer in Stripe)
-const CREDIT_PACK_PRODUCTS = {
-  'credits_25': 25,  // 25 credits for $5
-  'credits_100': 100, // 100 credits for $15
-} as const;
-
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
 if (!webhookSecret) {
@@ -52,13 +46,32 @@ export async function POST(request: NextRequest) {
         const userId = session.metadata?.user_id
         const planType = session.metadata?.plan_type
         const priceId = session.metadata?.price_id
+        const productId = session.metadata?.product_id
+        const credits = session.metadata?.credits
 
         if (!userId) {
           console.error('No user_id in session metadata')
           break
         }
 
-        // Get subscription ID
+        // Check if this is a credit pack purchase (one-time payment)
+        if (session.mode === 'payment' && productId && credits) {
+          const creditAmount = parseInt(credits, 10);
+          if (creditAmount > 0) {
+            await addCredits(
+              supabase,
+              userId,
+              creditAmount,
+              'purchase',
+              `Purchased ${creditAmount} credit pack`,
+              session.id
+            );
+            console.log(`Added ${creditAmount} credits for user ${userId} (credit pack purchase)`);
+          }
+          break; // Exit early for credit pack purchases
+        }
+
+        // Get subscription ID (for subscription purchases)
         let stripeSubscriptionId: string | null = null
         if (session.subscription) {
           stripeSubscriptionId = typeof session.subscription === 'string'
@@ -110,30 +123,6 @@ export async function POST(request: NextRequest) {
             session.id
           );
           console.log(`Granted ${creditGrant} credits to user ${userId}`);
-        }
-        break
-      }
-
-      // Handle credit pack purchases (one-time payments)
-      case 'payment_intent.succeeded': {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        const userId = paymentIntent.metadata?.user_id;
-        const productId = paymentIntent.metadata?.product_id;
-        
-        if (!userId || !productId) break;
-        
-        // Check if this is a credit pack purchase
-        const creditAmount = CREDIT_PACK_PRODUCTS[productId as keyof typeof CREDIT_PACK_PRODUCTS];
-        if (creditAmount) {
-          await addCredits(
-            supabase,
-            userId,
-            creditAmount,
-            'purchase',
-            `Purchased ${creditAmount} credit pack`,
-            paymentIntent.id
-          );
-          console.log(`Added ${creditAmount} credits for user ${userId} (purchase)`);
         }
         break
       }
