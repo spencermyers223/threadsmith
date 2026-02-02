@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTierFromPriceId, type SubscriptionTier } from '@/lib/subscription'
+import { addCredits, resetMonthlyUsage, CREDIT_GRANTS } from '@/lib/credits'
 import Stripe from 'stripe'
+
+// Credit pack product IDs (will be set by Spencer in Stripe)
+const CREDIT_PACK_PRODUCTS = {
+  'credits_25': 25,  // 25 credits for $5
+  'credits_100': 100, // 100 credits for $15
+} as const;
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
@@ -91,6 +98,42 @@ export async function POST(request: NextRequest) {
           console.error('Error updating subscription:', error)
         } else {
           console.log(`Subscription activated for user ${userId}: tier=${tier}, plan=${planType}`)
+          
+          // Grant initial credits for new subscription
+          const creditGrant = CREDIT_GRANTS[tier as keyof typeof CREDIT_GRANTS] || CREDIT_GRANTS.free;
+          await addCredits(
+            supabase,
+            userId,
+            creditGrant,
+            'subscription_grant',
+            `Initial ${tier} subscription credit grant`,
+            session.id
+          );
+          console.log(`Granted ${creditGrant} credits to user ${userId}`);
+        }
+        break
+      }
+
+      // Handle credit pack purchases (one-time payments)
+      case 'payment_intent.succeeded': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        const userId = paymentIntent.metadata?.user_id;
+        const productId = paymentIntent.metadata?.product_id;
+        
+        if (!userId || !productId) break;
+        
+        // Check if this is a credit pack purchase
+        const creditAmount = CREDIT_PACK_PRODUCTS[productId as keyof typeof CREDIT_PACK_PRODUCTS];
+        if (creditAmount) {
+          await addCredits(
+            supabase,
+            userId,
+            creditAmount,
+            'purchase',
+            `Purchased ${creditAmount} credit pack`,
+            paymentIntent.id
+          );
+          console.log(`Added ${creditAmount} credits for user ${userId} (purchase)`);
         }
         break
       }
@@ -104,7 +147,7 @@ export async function POST(request: NextRequest) {
         // Find user by stripe customer ID
         const { data: sub } = await supabase
           .from('subscriptions')
-          .select('user_id')
+          .select('user_id, tier, current_period_start')
           .eq('stripe_customer_id', customerId)
           .single()
 
@@ -117,6 +160,11 @@ export async function POST(request: NextRequest) {
         const currentItem = subscription.items?.data?.[0]
         const periodStart = currentItem?.current_period_start
         const periodEnd = currentItem?.current_period_end
+        
+        // Check if this is a renewal (period start changed)
+        const oldPeriodStart = sub.current_period_start ? new Date(sub.current_period_start).getTime() : 0;
+        const newPeriodStart = periodStart ? periodStart * 1000 : 0;
+        const isRenewal = newPeriodStart > oldPeriodStart;
 
         // Update period dates
         const { error } = await supabase
@@ -131,6 +179,13 @@ export async function POST(request: NextRequest) {
 
         if (error) {
           console.error('Error updating subscription period:', error)
+        }
+        
+        // If this is a renewal, reset monthly usage and grant credits
+        if (isRenewal && subscription.status === 'active') {
+          const tier = (sub.tier || 'free') as 'free' | 'premium' | 'pro';
+          await resetMonthlyUsage(supabase, sub.user_id, tier);
+          console.log(`Monthly reset for user ${sub.user_id}: tier=${tier}`);
         }
         break
       }

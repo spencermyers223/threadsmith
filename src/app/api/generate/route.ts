@@ -71,6 +71,8 @@ interface GenerateResponse {
   posts: GeneratedPost[]
   generationId: string
   remaining: number // -1 means unlimited
+  postsUsed?: number
+  postsLimit?: number // -1 means unlimited (Pro tier)
 }
 
 // Check if post type is CT-native
@@ -411,14 +413,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Check generation limits first
-    const limitCheck = await checkCanGenerate(supabase, user.id)
+    // Check generation limits first (don't increment yet)
+    const limitCheck = await checkCanGenerate(supabase, user.id, false)
     if (!limitCheck.canGenerate) {
       return NextResponse.json(
         {
-          error: 'Generation limit reached',
+          error: limitCheck.postLimitError || 'Generation limit reached',
           code: 'LIMIT_REACHED',
           remaining: 0,
+          postsUsed: limitCheck.postsUsed,
+          postsLimit: limitCheck.postsLimit,
           isSubscribed: limitCheck.isSubscribed,
         },
         { status: 403 }
@@ -696,17 +700,19 @@ Blend these stylistic elements with the user's own voice. Don't copy - adapt.
       allPosts = allPosts.slice(0, 3)
     }
 
-    // Record the generation (only counts against limit for free users)
+    // Record the generation and increment post count
     const sourceType: SourceType = sourceFileId ? 'file_based' : 'manual'
     await recordGeneration(supabase, user.id, generationId, sourceType)
 
-    // Re-check remaining after recording
-    const updatedLimits = await checkCanGenerate(supabase, user.id)
+    // Increment post count and re-check remaining
+    const updatedLimits = await checkCanGenerate(supabase, user.id, true)
 
     const response: GenerateResponse = {
       posts: allPosts,
       generationId,
       remaining: updatedLimits.remaining,
+      postsUsed: updatedLimits.postsUsed,
+      postsLimit: updatedLimits.postsLimit,
     }
 
     return NextResponse.json(response)
