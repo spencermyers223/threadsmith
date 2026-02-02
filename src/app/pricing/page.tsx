@@ -14,28 +14,42 @@ interface CurrentSubscription {
   status: string | null
 }
 
+const freeFeatures = [
+  '10 posts per month',
+  '5 credits per month',
+  'Basic post generation',
+  'Chrome extension access',
+]
+
 const premiumFeatures = [
+  '300 posts per month',
+  '50 credits per month',
   'All post types (Scroll Stoppers, Debate Starters, etc.)',
-  'Unlimited AI generations',
   'Voice training / custom tone',
-  'Chrome extension',
+  'Account Analysis (3 credits)',
+  'Reply Coaching (1 credit)',
   'Folders & tags',
   'Content calendar',
   '1 X account',
   'Impressions & engagement metrics',
-  'Growth trends over time',
-  'Post comparison',
 ]
 
 const professionalFeatures = [
+  'Unlimited posts',
+  '100 credits per month',
   'Everything in Premium',
   'Up to 5 X accounts',
   'Separate voice profiles per account',
   'URL click tracking',
   'Profile visit tracking',
-  'Video retention curves',
   'Optimal posting times',
   'Priority support',
+]
+
+// Credit pack options
+const creditPacks = [
+  { credits: 25, price: 5, pricePerCredit: 0.20 },
+  { credits: 100, price: 15, pricePerCredit: 0.15 },
 ]
 
 export default function PricingPage() {
@@ -318,6 +332,45 @@ export default function PricingPage() {
               ))}
             </ul>
           </div>
+        </div>
+
+        {/* Credit Packs */}
+        <div className="max-w-4xl mx-auto mb-16">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold mb-2">Need More Credits?</h2>
+            <p className="text-[var(--muted)]">
+              Buy additional credits anytime. Credits never expire.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+            {creditPacks.map((pack) => (
+              <div 
+                key={pack.credits}
+                className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 hover:border-accent/50 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">⚡</span>
+                    <span className="text-xl font-bold">{pack.credits} Credits</span>
+                  </div>
+                  <span className="text-2xl font-bold text-accent">${pack.price}</span>
+                </div>
+                <p className="text-sm text-[var(--muted)] mb-4">
+                  ${pack.pricePerCredit.toFixed(2)} per credit
+                </p>
+                <button
+                  className="w-full py-2 px-4 rounded-lg bg-[var(--card-hover)] hover:bg-accent hover:text-[var(--accent-text)] transition-colors font-medium"
+                >
+                  Buy Credits
+                </button>
+              </div>
+            ))}
+          </div>
+          
+          <p className="text-center text-sm text-[var(--muted)] mt-6">
+            Use credits for Account Analysis (3 credits), Reply Coaching (1 credit), and more.
+          </p>
         </div>
 
         {/* Footer */}
