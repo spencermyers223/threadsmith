@@ -26,15 +26,15 @@ export default function OnboardingCheck({ children }: OnboardingCheckProps) {
         return
       }
 
-      // Check if user has completed onboarding
-      const { data: profile } = await supabase
+      // Check if user has completed onboarding (may have multiple profiles for different X accounts)
+      const { data: profiles } = await supabase
         .from('content_profiles')
         .select('onboarding_completed')
         .eq('user_id', user.id)
-        .single()
 
-      // Show onboarding if no profile exists or onboarding not completed
-      if (!profile || !profile.onboarding_completed) {
+      // Show onboarding if no profiles exist or NONE have completed onboarding
+      const hasCompletedOnboarding = profiles && profiles.some(p => p.onboarding_completed)
+      if (!hasCompletedOnboarding) {
         setShowOnboarding(true)
       }
     } catch (error) {
