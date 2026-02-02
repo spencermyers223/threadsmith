@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
-  Sparkles, FileText, Loader2, X, Send, Calendar, PenLine, Check,
+  Sparkles, FileText, Loader2, X, Calendar, PenLine, Check,
   Copy, RefreshCw, Crown, AlertCircle, ChevronLeft, ChevronRight, 
   MessageCircle, Repeat2, Heart, Search, TrendingUp, Flame, Rocket,
   Clock, Target, ArrowRight
@@ -14,7 +14,6 @@ import { GenerationCounter } from '@/components/subscription/GenerationCounter'
 import { UpgradeModal } from '@/components/subscription/UpgradeModal'
 
 import type { FileRecord } from '@/components/generate/FilesSidebar'
-import { postTweet, postThread, openXIntent, openTweet } from '@/lib/x-posting'
 
 // Types
 interface TemplateVariable {
@@ -436,33 +435,6 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
     await navigator.clipboard.writeText(content)
     setCopiedIndex(index)
     setTimeout(() => setCopiedIndex(null), 2000)
-  }
-
-  const handlePostNow = async (content: string) => {
-    try {
-      const isThread = selectedLength === 'thread'
-      
-      if (isThread) {
-        const tweets = parseThreadContent(content).map(t => t.text)
-        const result = await postThread(tweets)
-        
-        if (result.success && result.first_tweet_id) {
-          openTweet(result.first_tweet_id)
-        } else {
-          openXIntent(tweets[0])
-        }
-      } else {
-        const result = await postTweet(content)
-        
-        if (result.success && result.tweet_id) {
-          openTweet(result.tweet_id)
-        } else {
-          openXIntent(content)
-        }
-      }
-    } catch {
-      openXIntent(content)
-    }
   }
 
   const handleEditInWorkspace = async (post: GeneratedPost) => {
