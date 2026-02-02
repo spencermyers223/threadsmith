@@ -318,55 +318,81 @@ async function generateForCTNativePostType(
   const isThread = contentType === 'thread'
   const threadInstructions = isThread ? `
 
-## CRITICAL: THREAD FORMAT REQUIRED
+## ⚠️ OVERRIDE: IGNORE ALL PREVIOUS FORMAT INSTRUCTIONS ⚠️
 
-You are generating a THREAD, not a single tweet. Follow these rules EXACTLY:
+You are generating a TWITTER THREAD, NOT a single tweet. 
 
-1. Generate 3 DISTINCT thread options for the user to choose from
-2. Each thread MUST contain 7-10 individual tweets
-3. Format: "1/ [tweet text]" "2/ [tweet text]" etc. - THE SLASH IS REQUIRED
+IGNORE any instructions above about "single tweet", "under 100 characters", or "---" delimiter format.
+
+## THREAD FORMAT (MANDATORY)
+
+1. Generate **3 DISTINCT thread options** for the user to choose from
+2. Each thread MUST contain **7-10 individual tweets**
+3. Number each tweet: "1/ [text]" "2/ [text]" - THE SLASH AFTER THE NUMBER IS REQUIRED
 4. Each tweet MUST be under 280 characters
-5. The 1/ tweet is the HOOK - it must be irresistible
+5. The 1/ tweet is the HOOK - make it irresistible
 
-Format your response EXACTLY as:
+## EXACT OUTPUT FORMAT REQUIRED:
 
-**Option 1: [Brief description]**
+**Option 1: [Brief 3-5 word description]**
 
-1/ [First tweet - THE HOOK. Most important! Make people stop scrolling.]
+1/ [First tweet - THE HOOK that stops the scroll]
 
-2/ [Second tweet - expand on the hook]
+2/ [Second tweet - expand on hook]
 
-3/ [Third tweet - continue building]
+3/ [Third tweet - build momentum]
 
-4/ [Fourth tweet - add insight/value]
+4/ [Fourth tweet - key insight]
 
-5/ [Fifth tweet - more depth]
+5/ [Fifth tweet - more value]
 
 6/ [Sixth tweet - supporting point]
 
-7/ [Seventh tweet - final value or CTA]
+7/ [Seventh tweet - call to action or summary]
 
-*Why this works:* [Brief explanation]
+*Why this works:* [One sentence]
 
 **Option 2: [Different angle]**
 
-1/ [Hook tweet...]
+1/ [Hook...]
 
 2/ [Continue...]
 
-...continue with 7-10 tweets...
+3/ [...]
 
-*Why this works:* [Brief explanation]
+4/ [...]
 
-**Option 3: [Another approach]**
+5/ [...]
 
-1/ [Hook tweet...]
+6/ [...]
 
-...continue with 7-10 tweets...
+7/ [...]
 
-*Why this works:* [Brief explanation]
+*Why this works:* [One sentence]
 
-CRITICAL: You MUST provide 3 options, each with 7-10 tweets numbered "1/" "2/" "3/" etc.
+**Option 3: [Third approach]**
+
+1/ [Hook...]
+
+2/ [...]
+
+3/ [...]
+
+4/ [...]
+
+5/ [...]
+
+6/ [...]
+
+7/ [...]
+
+*Why this works:* [One sentence]
+
+## CRITICAL RULES:
+- You MUST output exactly 3 options using "**Option 1:**" "**Option 2:**" "**Option 3:**" headers
+- Each option MUST have 7-10 tweets numbered with slash: "1/" "2/" "3/" etc.
+- DO NOT use "---" delimiters
+- DO NOT output single tweets
 ` : ''
 
   // Select the appropriate prompt builder based on post type
@@ -453,6 +479,10 @@ CRITICAL: You MUST provide 3 options, each with 7-10 tweets numbered "1/" "2/" "
   // Append thread instructions to system prompt if generating a thread
   if (threadInstructions) {
     systemPrompt = systemPrompt + threadInstructions
+    // Also add reminder to user prompt for emphasis
+    userPrompt = userPrompt + `
+
+REMINDER: Generate exactly 3 thread options. Each thread must have 7-10 tweets numbered "1/" "2/" "3/" etc. Use the **Option 1:** **Option 2:** **Option 3:** format.`
   }
 
   const response = await anthropic.messages.create({
