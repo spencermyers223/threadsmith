@@ -890,18 +890,17 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
                       </div>
                       <EditingTools content={post.content} onContentChange={(newContent) => { setPosts(prev => prev.map((p, i) => i === post.index ? { ...p, content: newContent, characterCount: newContent.length } : p)) }} isThread={false} />
                       <div className="flex gap-2">
-                        <button onClick={() => handlePostNow(post.content)} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--accent)] hover:opacity-90 text-[var(--background)] rounded-lg font-medium text-sm transition-opacity">
-                          <Send size={14} />
-                          Post
-                        </button>
-                        <button onClick={() => handleCopy(post.content, post.index)} className="p-2 bg-[var(--border)] hover:bg-[var(--muted)]/30 rounded-lg transition-colors" title="Copy">
+                        <button onClick={() => handleCopy(post.content, post.index)} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--border)] hover:bg-[var(--muted)]/30 rounded-lg font-medium text-sm transition-colors">
                           {copiedIndex === post.index ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                          Copy
                         </button>
-                        <button onClick={() => handleEditInWorkspace(post)} disabled={savingIndex === post.index} className="p-2 bg-[var(--border)] hover:bg-[var(--muted)]/30 rounded-lg transition-colors disabled:opacity-50" title="Edit">
+                        <button onClick={() => handleEditInWorkspace(post)} disabled={savingIndex === post.index} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--border)] hover:bg-[var(--muted)]/30 rounded-lg font-medium text-sm transition-colors disabled:opacity-50">
                           {savingIndex === post.index ? <Loader2 size={14} className="animate-spin" /> : <PenLine size={14} />}
+                          Edit
                         </button>
-                        <button onClick={() => handleAddToCalendar(post)} disabled={savingIndex === post.index} className="p-2 bg-[var(--border)] hover:bg-[var(--muted)]/30 rounded-lg transition-colors disabled:opacity-50" title="Schedule">
-                          <Calendar size={14} />
+                        <button onClick={() => handleAddToCalendar(post)} disabled={savingIndex === post.index} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--accent)] hover:opacity-90 text-[var(--background)] rounded-lg font-medium text-sm transition-opacity disabled:opacity-50">
+                          {savingIndex === post.index ? <Loader2 size={14} className="animate-spin" /> : <Calendar size={14} />}
+                          Schedule
                         </button>
                       </div>
                     </div>
