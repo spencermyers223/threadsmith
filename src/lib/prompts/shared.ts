@@ -498,6 +498,44 @@ export function buildUserContextSection(profile: UserVoiceProfile): string {
 }
 
 /**
+ * Build few-shot voice examples from user's actual tweets
+ * This is the highest-impact technique for humanizing AI output
+ * 
+ * @param samples - Array of user's actual tweets (ideally 3-5 best ones)
+ * @returns Formatted section for system prompt injection
+ */
+export function buildVoiceSamplesSection(samples: string[]): string {
+  if (!samples || samples.length === 0) {
+    return '';
+  }
+
+  // Limit to 5 samples max - quality over quantity
+  const topSamples = samples.slice(0, 5);
+  
+  const examplesList = topSamples
+    .map((tweet, i) => `${i + 1}. "${tweet}"`)
+    .join('\n');
+
+  return `
+## FEW-SHOT VOICE EXAMPLES (HIGHEST PRIORITY)
+
+These are ACTUAL tweets written by this user. Your output MUST match their voice.
+
+${examplesList}
+
+**CRITICAL VOICE MATCHING RULES:**
+1. Study the sentence structure in these examples - match it exactly
+2. Note their punctuation patterns (periods, dashes, ellipsis) - replicate them
+3. Observe emoji usage (frequency, position, type) - match their pattern
+4. Match their vocabulary level and word choices
+5. Copy their energy level (calm, excited, provocative)
+6. If they use fragments, use fragments. If they use long sentences, use long sentences.
+
+The generated content should feel like tweet #6 in this list - written by the same person.
+`;
+}
+
+/**
  * Common output format instructions for all generation prompts
  * Optimized for clean, postable output with no AI meta-discussion
  */

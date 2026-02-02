@@ -19,6 +19,7 @@ import {
   alphaThreadPrompt,
   protocolBreakdownPrompt,
   buildInPublicPrompt,
+  buildVoiceSamplesSection,
   type UserVoiceProfile,
 } from '@/lib/prompts'
 // Import dedicated thread prompt
@@ -310,7 +311,8 @@ async function generateForCTNativePostType(
   additionalContext: string | undefined,
   isTemplatePrompt?: boolean,
   contentLength?: ContentLength,
-  contentType?: ContentType
+  contentType?: ContentType,
+  voiceSamplesSection?: string // NEW: Few-shot voice examples for system prompt
 ): Promise<GeneratedPost[]> {
   const voiceProfile = toUserVoiceProfile(userProfile)
   let systemPrompt: string
@@ -321,7 +323,10 @@ async function generateForCTNativePostType(
   
   if (isThread) {
     // Use dedicated thread prompt - completely separate from single-tweet prompts
-    systemPrompt = THREAD_SYSTEM_PROMPT
+    // Append voice samples section for few-shot learning if available
+    systemPrompt = voiceSamplesSection 
+      ? `${THREAD_SYSTEM_PROMPT}\n\n${voiceSamplesSection}`
+      : THREAD_SYSTEM_PROMPT
     userPrompt = buildThreadUserPrompt(topic, additionalContext)
     
     console.log('[Thread Gen] Using dedicated thread prompt')
@@ -428,6 +433,11 @@ async function generateForCTNativePostType(
     default: {
       throw new Error(`Unknown CT-native post type: ${postType}`)
     }
+  }
+
+  // Append voice samples section to system prompt for few-shot learning
+  if (voiceSamplesSection) {
+    systemPrompt = `${systemPrompt}\n\n${voiceSamplesSection}`
   }
 
   // Generate single-tweet content (threads handled above)
@@ -572,12 +582,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch user's actual voice samples (their real tweets)
+    // Using 5 samples for quality over quantity - these are the few-shot examples
     const { data: voiceSamples } = await supabase
       .from('voice_samples')
       .select('tweet_text')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(10) // Get up to 10 most recent samples
+      .limit(5) // Quality over quantity - 5 strong examples beat 10 diluted ones
+    
+    // Build the system prompt voice section (high-impact few-shot learning)
+    const voiceSamplesForPrompt = voiceSamples?.map(s => s.tweet_text) || []
+    const voiceSamplesSystemSection = buildVoiceSamplesSection(voiceSamplesForPrompt)
 
     // Fetch inspiration tweets from admired accounts (top 5 for shorter prompts)
     const { data: inspirationTweets } = await supabase
@@ -663,31 +678,9 @@ IMPORTANT: Follow the template's format and structure. The "why it works" explai
       additionalContext = additionalContext ? `${additionalContext}\n\n${templateContext}` : templateContext
     }
 
-    // Add actual tweet examples if available
-    if (voiceSamples && voiceSamples.length > 0) {
-      const exampleTweets = voiceSamples
-        .map((s, i) => `${i + 1}. "${s.tweet_text}"`)
-        .join('\n')
-      
-      const tweetExamplesContext = `<real_tweet_examples>
-CRITICAL: These are ACTUAL tweets written by this user. Study them carefully and match their EXACT style.
-
-${exampleTweets}
-
-Your generated content MUST sound like it was written by the same person who wrote these tweets.
-Match their:
-- Sentence structure and length
-- Word choices and vocabulary
-- Punctuation patterns
-- Use of capitalization
-- Emoji usage (or lack thereof)
-- Overall energy and tone
-</real_tweet_examples>`
-
-      additionalContext = additionalContext 
-        ? `${additionalContext}\n\n${tweetExamplesContext}` 
-        : tweetExamplesContext
-    }
+    // NOTE: User's own voice samples are now injected directly into the SYSTEM prompt
+    // via buildVoiceSamplesSection() for higher priority few-shot learning.
+    // The additionalContext below only includes inspiration from ADMIRED accounts.
 
     // Add inspiration tweets from admired accounts if available
     if (inspirationTweets && inspirationTweets.length > 0) {
@@ -745,7 +738,8 @@ Blend these stylistic elements with the user's own voice. Don't copy - adapt.
         additionalContext,
         isTemplatePrompt,
         contentLength,  // Pass the length selection
-        contentType     // Pass content type (tweet vs thread)
+        contentType,    // Pass content type (tweet vs thread)
+        voiceSamplesSystemSection // NEW: Few-shot voice examples injected into system prompt
       )
       // Limit to 3 posts (for single tweets) - threads will have 3 options naturally
       if (contentType !== 'thread') {

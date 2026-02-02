@@ -14,6 +14,7 @@ export {
   OUTPUT_FORMAT_RULES,
   buildUserContext,
   buildUserContextSection,
+  buildVoiceSamplesSection, // NEW: Few-shot voice examples for system prompt
   type UserVoiceProfile,
   type TonePreferences,
 } from './shared';
