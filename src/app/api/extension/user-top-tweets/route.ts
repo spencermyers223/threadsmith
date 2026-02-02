@@ -157,7 +157,7 @@ Respond with ONLY valid JSON in this exact format (no markdown, no code blocks):
         // Parse the JSON response
         const parsed = JSON.parse(content.text.trim()) as AccountAnalysis;
         return parsed;
-      } catch (parseError) {
+      } catch {
         console.error('Failed to parse Opus response as JSON:', content.text);
         return defaultAnalysis;
       }
