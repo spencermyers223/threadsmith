@@ -124,7 +124,15 @@
               <option value="default">Default</option>
             </select>
             <button class="text-btn" id="manage-lists-btn">Manage</button>
+            <button class="refresh-btn" id="refresh-watchlist-btn" title="Refresh tweets">🔄</button>
           </div>
+        </div>
+        <div class="watchlist-loading hidden" id="watchlist-loading">
+          <div class="spinner"></div>
+          <span>Fetching tweets...</span>
+        </div>
+        <div class="watchlist-feed" id="watchlist-feed">
+          <!-- Filled dynamically with tweets from accounts -->
         </div>
         <div class="watchlist-posts" id="watchlist-posts">
           <!-- Filled dynamically with posts from selected category -->

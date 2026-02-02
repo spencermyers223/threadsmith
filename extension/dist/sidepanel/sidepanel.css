@@ -1262,3 +1262,163 @@ body {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* ============================================================
+   Sign-in Prompts (Stats & Watchlist)
+   ============================================================ */
+
+.stats-signin-prompt,
+.watchlist-signin-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 20px;
+  background: #1a1a1a;
+  border-radius: 12px;
+}
+
+.signin-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.signin-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #e5e5e5;
+  margin-bottom: 8px;
+}
+
+.signin-desc {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.signin-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #C9B896 0%, #C9B896 100%);
+  color: #1a1a1a;
+  border: none;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.signin-btn:hover {
+  background: linear-gradient(135deg, #D4C4A8 0%, #C9B896 100%);
+  transform: scale(1.02);
+}
+
+/* ============================================================
+   Watchlist Feed Styles
+   ============================================================ */
+
+.refresh-btn {
+  background: none;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.refresh-btn:hover {
+  background: #2a2a2a;
+  border-color: #C9B896;
+}
+
+.watchlist-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px;
+  color: #888;
+}
+
+.watchlist-loading.hidden {
+  display: none;
+}
+
+.watchlist-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.watchlist-feed.hidden {
+  display: none;
+}
+
+.watchlist-account-feed {
+  background: #1a1a1a;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.watchlist-feed-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #222;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.watchlist-feed-header:hover {
+  background: #2a2a2a;
+}
+
+.watchlist-feed-handle {
+  font-weight: 600;
+  color: #C9B896;
+  font-size: 14px;
+}
+
+.watchlist-feed-name {
+  font-size: 12px;
+  color: #888;
+}
+
+.watchlist-feed-tweets {
+  display: flex;
+  flex-direction: column;
+}
+
+.watchlist-tweet {
+  padding: 10px 12px;
+  border-top: 1px solid #2a2a2a;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.watchlist-tweet:hover {
+  background: #222;
+}
+
+.watchlist-tweet-text {
+  font-size: 13px;
+  color: #e5e5e5;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
+.watchlist-tweet-metrics {
+  font-size: 11px;
+  color: #666;
+}
+
+.watchlist-no-tweets {
+  padding: 24px;
+  text-align: center;
+  color: #888;
+  background: #1a1a1a;
+  border-radius: 10px;
+}

@@ -254,7 +254,7 @@ async function fetchAndStoreProfileStats(handle) {
   await showProfileStats(handle);
 }
 
-// Add voice account
+// Add voice account - now fetches top tweets for voice prompts
 async function addVoiceAccount(handle, displayName, avatar) {
   const stored = await chrome.storage.local.get(['savedVoiceAccounts']);
   const accounts = stored.savedVoiceAccounts || [];
@@ -266,11 +266,36 @@ async function addVoiceAccount(handle, displayName, avatar) {
     return;
   }
   
+  // Fetch top tweets for voice prompts
+  let topTweets = [];
+  let tweetsFetchedAt = null;
+  
+  if (userToken) {
+    try {
+      console.log('[xthread] Fetching top tweets for voice account:', handle);
+      const url = `${XTHREAD_API}/extension/user-top-tweets?username=${encodeURIComponent(handle)}&limit=5`;
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${userToken}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        topTweets = data.tweets || [];
+        tweetsFetchedAt = new Date().toISOString();
+        console.log('[xthread] Got top tweets for voice:', topTweets.length);
+      }
+    } catch (err) {
+      console.error('[xthread] Failed to fetch voice tweets:', err);
+    }
+  }
+  
   accounts.unshift({
     handle: handle,
     displayName: displayName || handle,
     avatar: avatar || null,
-    addedAt: new Date().toISOString()
+    addedAt: new Date().toISOString(),
+    topTweets: topTweets,
+    tweetsFetchedAt: tweetsFetchedAt
   });
   
   // Keep only last 50
@@ -427,14 +452,29 @@ async function showProfileStats(handle) {
       <span class="stats-subtitle">Top Tweets (Last 30 Days)</span>
     </div>
   `;
-  statsLoading.classList.remove('hidden');
   statsTweets.innerHTML = '';
+  
+  // Check if user is signed in - show prompt if not
+  if (!userToken) {
+    statsLoading.classList.add('hidden');
+    statsTweets.innerHTML = `
+      <div class="stats-signin-prompt">
+        <div class="signin-icon">🔒</div>
+        <div class="signin-title">Sign in to xthread</div>
+        <div class="signin-desc">Sign in to fetch top tweets and analytics for @${escapeHtml(handle)}</div>
+        <button class="signin-btn" id="stats-signin-btn">Sign in with xthread</button>
+      </div>
+    `;
+    document.getElementById('stats-signin-btn')?.addEventListener('click', () => {
+      chrome.tabs.create({ url: 'https://xthread.io/auth/extension-callback' });
+    });
+    return;
+  }
+  
+  statsLoading.classList.remove('hidden');
   
   // Fetch top tweets
   try {
-    if (!userToken) {
-      throw new Error('Please sign in to fetch tweets');
-    }
     
     const url = `${XTHREAD_API}/extension/user-top-tweets?username=${encodeURIComponent(handle)}&days=30&limit=10`;
     console.log('[xthread] Fetching top tweets:', url);
@@ -586,6 +626,130 @@ function setupWatchlistHandlers() {
   if (manageBtn) {
     manageBtn.addEventListener('click', showManageListsModal);
   }
+  
+  const refreshBtn = document.getElementById('refresh-watchlist-btn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => refreshWatchlist());
+  }
+}
+
+// Refresh watchlist - fetch tweets for all accounts in current category
+async function refreshWatchlist() {
+  const dropdown = document.getElementById('watchlist-category-dropdown');
+  const stored = await chrome.storage.local.get(['watchlistCategories']);
+  const categories = stored.watchlistCategories || [{ id: 'default', name: 'Default', accounts: [] }];
+  const selectedCategory = categories.find(c => c.id === dropdown.value) || categories[0];
+  const accounts = selectedCategory?.accounts || [];
+  
+  const watchlistFeed = document.getElementById('watchlist-feed');
+  const watchlistPosts = document.getElementById('watchlist-posts');
+  const watchlistLoading = document.getElementById('watchlist-loading');
+  const watchlistEmpty = document.getElementById('watchlist-empty');
+  
+  if (accounts.length === 0) {
+    watchlistFeed.classList.add('hidden');
+    watchlistPosts.classList.add('hidden');
+    watchlistEmpty.classList.remove('hidden');
+    return;
+  }
+  
+  if (!userToken) {
+    watchlistFeed.innerHTML = `
+      <div class="watchlist-signin-prompt">
+        <div class="signin-icon">🔒</div>
+        <div class="signin-title">Sign in to xthread</div>
+        <div class="signin-desc">Sign in to fetch latest tweets from your watchlist</div>
+        <button class="signin-btn" id="watchlist-signin-btn">Sign in with xthread</button>
+      </div>
+    `;
+    watchlistFeed.classList.remove('hidden');
+    watchlistPosts.classList.add('hidden');
+    watchlistEmpty.classList.add('hidden');
+    document.getElementById('watchlist-signin-btn')?.addEventListener('click', () => {
+      chrome.tabs.create({ url: 'https://xthread.io/auth/extension-callback' });
+    });
+    return;
+  }
+  
+  // Show loading
+  watchlistLoading.classList.remove('hidden');
+  watchlistPosts.classList.add('hidden');
+  watchlistEmpty.classList.add('hidden');
+  watchlistFeed.classList.add('hidden');
+  
+  // Fetch tweets for each account
+  const accountTweets = [];
+  for (const account of accounts.slice(0, 10)) { // Limit to 10 accounts
+    try {
+      const url = `${XTHREAD_API}/extension/user-top-tweets?username=${encodeURIComponent(account.handle)}&limit=3`;
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${userToken}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.tweets && data.tweets.length > 0) {
+          accountTweets.push({
+            handle: account.handle,
+            displayName: account.displayName,
+            tweets: data.tweets
+          });
+        }
+      }
+    } catch (err) {
+      console.error(`[xthread] Failed to fetch tweets for @${account.handle}:`, err);
+    }
+  }
+  
+  watchlistLoading.classList.add('hidden');
+  
+  if (accountTweets.length === 0) {
+    watchlistFeed.innerHTML = `
+      <div class="watchlist-no-tweets">
+        No recent tweets found for accounts in this list.
+      </div>
+    `;
+    watchlistFeed.classList.remove('hidden');
+    return;
+  }
+  
+  // Render feed grouped by account
+  watchlistFeed.innerHTML = accountTweets.map(account => `
+    <div class="watchlist-account-feed">
+      <div class="watchlist-feed-header" data-handle="${escapeHtml(account.handle)}">
+        <span class="watchlist-feed-handle">@${escapeHtml(account.handle)}</span>
+        ${account.displayName ? `<span class="watchlist-feed-name">${escapeHtml(account.displayName)}</span>` : ''}
+      </div>
+      <div class="watchlist-feed-tweets">
+        ${account.tweets.map(tweet => `
+          <div class="watchlist-tweet" data-url="${escapeHtml(tweet.url || '')}">
+            <div class="watchlist-tweet-text">${escapeHtml(truncateText(tweet.text, 150))}</div>
+            <div class="watchlist-tweet-metrics">
+              ❤️ ${formatNumber(tweet.likes || 0)} · 🔄 ${formatNumber(tweet.retweets || 0)} · 💬 ${formatNumber(tweet.replies || 0)}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+  
+  watchlistFeed.classList.remove('hidden');
+  
+  // Click to open tweets
+  watchlistFeed.querySelectorAll('.watchlist-tweet').forEach(el => {
+    el.addEventListener('click', () => {
+      const url = el.dataset.url;
+      if (url) chrome.tabs.create({ url });
+    });
+  });
+  
+  // Click header to open profile
+  watchlistFeed.querySelectorAll('.watchlist-feed-header').forEach(el => {
+    el.addEventListener('click', () => {
+      const handle = el.dataset.handle;
+      if (handle) chrome.tabs.create({ url: `https://x.com/${handle}` });
+    });
+  });
 }
 
 // Show manage lists modal
