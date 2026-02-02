@@ -154,7 +154,12 @@ function parseGeneratedPosts(
   // Primary method: **Option N:** format (most reliable)
   const optionRegex = /\*\*Option\s+(\d+)[^*]*\*\*\s*([\s\S]*?)(?=\*\*Option\s+\d+|\*\*Recommendation|$)/gi
 
+  // Debug: count option matches
+  const optionMatches = response.match(/\*\*Option\s+\d+/gi)
+  console.log('[Parse Debug] Found', optionMatches?.length || 0, 'option matches in response')
+
   while ((match = optionRegex.exec(response)) !== null) {
+    console.log('[Parse Debug] Processing Option', match[1], 'content length:', match[2]?.length)
     let rawContent = match[2].trim()
     
     // Remove the "*Why this works:*" and everything after it from the content
@@ -462,6 +467,16 @@ CRITICAL: You MUST provide 3 options, each with 7-10 tweets numbered "1/" "2/" "
     .filter((block): block is Anthropic.TextBlock => block.type === 'text')
     .map(block => block.text)
     .join('\n')
+
+  // Debug logging for thread generation
+  if (isThread) {
+    console.log('[Thread Debug] contentType:', contentType)
+    console.log('[Thread Debug] Response length:', textContent.length)
+    console.log('[Thread Debug] First 500 chars:', textContent.substring(0, 500))
+    console.log('[Thread Debug] Contains **Option 1:', textContent.includes('**Option 1'))
+    console.log('[Thread Debug] Contains **Option 2:', textContent.includes('**Option 2'))
+    console.log('[Thread Debug] Contains **Option 3:', textContent.includes('**Option 3'))
+  }
 
   // Map CT-native post type to legacy archetype for compatibility
   const archetypeMapping: Record<CTNativePostType, Archetype> = {
