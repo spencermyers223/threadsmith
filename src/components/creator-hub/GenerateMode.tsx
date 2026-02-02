@@ -488,7 +488,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
             ? { tweets: parseThreadContent(post.content).map((t) => ({ id: t.number, content: t.text })) }
             : { html: `<p>${post.content.replace(/\n/g, '</p><p>')}</p>` },
           status: 'draft',
-          generation_type: templateMode?.templateCategory || 'general',
+          generation_type: templateMode?.templateCategory || 'user_generated',
         }),
       })
 
@@ -539,7 +539,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
             : { html: `<p>${post.content.replace(/\n/g, '</p><p>')}</p>` },
           status: 'scheduled',
           scheduled_date: tomorrow.toISOString().split('T')[0],
-          generation_type: templateMode?.templateCategory || 'general',
+          generation_type: templateMode?.templateCategory || 'user_generated',
         }),
       })
 
