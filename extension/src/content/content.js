@@ -2666,6 +2666,10 @@ function extractPostData(post) {
     authorFollowers = followerEl.textContent;
   }
   
+  // Extract author avatar
+  const avatarImg = post.querySelector('img[src*="profile_images"]');
+  const avatar = avatarImg?.src || null;
+  
   return {
     author,
     handle,
@@ -2673,7 +2677,8 @@ function extractPostData(post) {
     metrics,
     url: postLink,
     postAge,
-    authorFollowers
+    authorFollowers,
+    avatar
   };
 }
 

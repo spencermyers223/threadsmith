@@ -908,257 +908,270 @@ body {
   cursor: not-allowed;
 }
 
-/* ============================================================
-   Stats Tab - Live Profile View
-   ============================================================ */
+/* ============================================
+   Queue Mode Toggle (Posts/DMs)
+   ============================================ */
 
-.stats-profile-view {
-  padding: 0;
-}
-
-.stats-profile-view.hidden {
-  display: none;
-}
-
-.stats-header {
-  margin-bottom: 16px;
-}
-
-.stats-profile-header {
+.queue-mode-toggle {
   display: flex;
-  flex-direction: column;
   gap: 4px;
-}
-
-.stats-handle {
-  font-size: 18px;
-  font-weight: 600;
-  color: #C9B896;
-}
-
-.stats-subtitle {
-  font-size: 13px;
-  color: #666;
-}
-
-.stats-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 32px;
-  color: #888;
-}
-
-.stats-loading.hidden {
-  display: none;
-}
-
-.stats-tweets {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.stats-tweet {
-  display: flex;
-  gap: 10px;
-  padding: 12px;
-  background: #1a1a1a;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.stats-tweet:hover {
-  background: #2a2a2a;
-}
-
-.stats-tweet-rank {
-  color: #C9B896;
-  font-weight: 700;
-  font-size: 14px;
-  min-width: 28px;
-}
-
-.stats-tweet-content {
-  flex: 1;
-}
-
-.stats-tweet-text {
-  font-size: 14px;
-  color: #e5e5e5;
-  margin-bottom: 6px;
-  line-height: 1.4;
-}
-
-.stats-tweet-metrics {
-  font-size: 12px;
-  color: #666;
-}
-
-.stats-no-tweets,
-.stats-error {
-  padding: 24px;
-  text-align: center;
-  color: #888;
-  background: #1a1a1a;
-  border-radius: 10px;
-}
-
-.stats-error {
-  color: #ef4444;
-}
-
-/* ============================================================
-   Watchlist Tab - Categories
-   ============================================================ */
-
-.watchlist-category-select {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-#watchlist-category-dropdown {
-  flex: 1;
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 6px;
-  padding: 6px 10px;
-  color: #e5e5e5;
-  font-size: 13px;
-}
-
-.watchlist-account {
-  background: #1a1a1a;
+  padding: 4px;
+  background: var(--bg-secondary);
   border-radius: 8px;
-  padding: 10px 12px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
-.watchlist-account-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.watchlist-handle {
-  font-weight: 600;
-  color: #C9B896;
-}
-
-.watchlist-remove {
-  background: none;
-  border: none;
-  color: #666;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.watchlist-remove:hover {
-  color: #ef4444;
-}
-
-.watchlist-name {
-  font-size: 12px;
-  color: #888;
-  margin-top: 4px;
-}
-
-/* ============================================================
-   Saved Tab - Posts/Voice Toggle
-   ============================================================ */
-
-.saved-toggle {
-  display: flex;
-  background: #2a2a2a;
-  border-radius: 8px;
-  padding: 2px;
-}
-
-.toggle-btn {
+.mode-btn {
   flex: 1;
-  padding: 6px 12px;
-  border: none;
+  padding: 8px 12px;
   background: transparent;
-  color: #888;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
 }
 
-.toggle-btn.active {
-  background: #C9B896;
+.mode-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.mode-btn.active {
+  background: var(--accent);
   color: #1a1a1a;
 }
 
-.toggle-btn:hover:not(.active) {
-  color: #e5e5e5;
+/* ============================================
+   Stats Tab - Scanned Profiles
+   ============================================ */
+
+.scanned-profile {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
 }
 
-.saved-section {
+.scanned-profile:hover {
+  border-color: var(--accent-border);
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.profile-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-handle {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.profile-date {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.expand-icon {
+  color: var(--text-muted);
+  font-size: 12px;
+  transition: transform 0.2s ease;
+}
+
+.scanned-profile.expanded .expand-icon {
+  transform: rotate(180deg);
+}
+
+.profile-content {
   display: none;
+  padding: 0 12px 12px;
+  border-top: 1px solid var(--border-color);
 }
 
-.saved-section.active {
+.scanned-profile.expanded .profile-content {
   display: block;
 }
 
-/* Voice Items */
-.voice-item {
-  background: #1a1a1a;
+.style-summary {
+  background: var(--accent-subtle);
+  border: 1px solid var(--accent-border);
   border-radius: 8px;
   padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.tweets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tweet-item {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.tweet-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.tweet-metrics {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.metric {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ============================================
+   Watchlist Tab - Categories
+   ============================================ */
+
+.watchlist-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.watchlist-dropdown {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.watchlist-dropdown:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.manage-lists-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.manage-lists-btn:hover {
+  background: var(--bg-hover);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+.watchlist-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.account-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
   margin-bottom: 8px;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.voice-item:hover {
-  background: #2a2a2a;
+.account-card:hover {
+  border-color: var(--accent-border);
+  background: var(--bg-hover);
 }
 
-.voice-item-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.account-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
-.voice-handle {
+.account-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-name {
   font-weight: 600;
-  color: #C9B896;
+  color: var(--text-primary);
+  font-size: 13px;
 }
 
-.voice-remove {
-  background: none;
-  border: none;
-  color: #666;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.voice-remove:hover {
-  color: #ef4444;
-}
-
-.voice-name {
+.account-handle {
+  color: var(--text-muted);
   font-size: 12px;
-  color: #888;
-  margin-top: 2px;
 }
 
-.voice-added {
-  font-size: 11px;
-  color: #555;
-  margin-top: 4px;
+.remove-account-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s ease;
 }
 
-/* ============================================================
-   Modal Styles
-   ============================================================ */
+.account-card:hover .remove-account-btn {
+  opacity: 1;
+}
 
+.remove-account-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+/* Manage Lists Modal */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1173,498 +1186,407 @@ body {
 }
 
 .modal-content {
-  background: #1a1a1a;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   width: 90%;
   max-width: 320px;
   max-height: 80%;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.modal-header h3 {
-  margin: 0;
-  font-size: 16px;
-  color: #e5e5e5;
+.modal-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-primary);
 }
 
 .modal-close {
-  background: none;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
   border: none;
-  color: #888;
-  font-size: 20px;
+  border-radius: 6px;
+  color: var(--text-muted);
   cursor: pointer;
+  font-size: 18px;
+}
+
+.modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .modal-body {
   padding: 16px;
+  overflow-y: auto;
 }
 
-.lists-container {
+.add-category-row {
+  display: flex;
+  gap: 8px;
   margin-bottom: 16px;
 }
 
-.list-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  background: #2a2a2a;
-  border-radius: 6px;
-  margin-bottom: 8px;
-}
-
-.list-name {
+.add-category-input {
   flex: 1;
-  color: #e5e5e5;
-}
-
-.list-count {
-  font-size: 12px;
-  color: #666;
-}
-
-.list-delete {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-}
-
-.new-list-form {
-  display: flex;
-  gap: 8px;
-}
-
-.new-list-form input {
-  flex: 1;
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 6px;
   padding: 8px 12px;
-  color: #e5e5e5;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
   font-size: 13px;
 }
 
-.new-list-form button {
-  background: #C9B896;
-  color: #1a1a1a;
-  border: none;
-  border-radius: 6px;
+.add-category-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.add-category-btn {
   padding: 8px 16px;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #1a1a1a;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 }
 
-/* ============================================================
-   Sign-in Prompts (Stats & Watchlist)
-   ============================================================ */
+.add-category-btn:hover {
+  background: var(--accent-hover);
+}
 
-.stats-signin-prompt,
-.watchlist-signin-prompt {
+.category-list {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+}
+
+.category-item {
+  display: flex;
   align-items: center;
-  text-align: center;
-  padding: 32px 20px;
-  background: #1a1a1a;
-  border-radius: 12px;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
 }
 
-.signin-icon {
-  font-size: 40px;
-  margin-bottom: 12px;
-}
-
-.signin-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #e5e5e5;
-  margin-bottom: 8px;
-}
-
-.signin-desc {
+.category-name {
+  flex: 1;
   font-size: 13px;
-  color: #888;
-  margin-bottom: 16px;
-  line-height: 1.4;
+  color: var(--text-primary);
 }
 
-.signin-btn {
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #C9B896 0%, #C9B896 100%);
-  color: #1a1a1a;
-  border: none;
-  border-radius: 9999px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
+.category-actions {
+  display: flex;
+  gap: 4px;
 }
 
-.signin-btn:hover {
-  background: linear-gradient(135deg, #D4C4A8 0%, #C9B896 100%);
-  transform: scale(1.02);
-}
-
-/* ============================================================
-   Watchlist Feed Styles
-   ============================================================ */
-
-.refresh-btn {
-  background: none;
-  border: 1px solid #444;
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.refresh-btn:hover {
-  background: #2a2a2a;
-  border-color: #C9B896;
-}
-
-.watchlist-loading {
+.category-action-btn {
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 32px;
-  color: #888;
-}
-
-.watchlist-loading.hidden {
-  display: none;
-}
-
-.watchlist-feed {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.watchlist-feed.hidden {
-  display: none;
-}
-
-.watchlist-account-feed {
-  background: #1a1a1a;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.watchlist-feed-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  background: #222;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-muted);
   cursor: pointer;
-  transition: background 0.15s;
-}
-
-.watchlist-feed-header:hover {
-  background: #2a2a2a;
-}
-
-.watchlist-feed-handle {
-  font-weight: 600;
-  color: #C9B896;
   font-size: 14px;
 }
 
-.watchlist-feed-name {
-  font-size: 12px;
-  color: #888;
+.category-action-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
-.watchlist-feed-tweets {
-  display: flex;
-  flex-direction: column;
+.category-action-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
 }
 
-.watchlist-tweet {
-  padding: 10px 12px;
-  border-top: 1px solid #2a2a2a;
-  cursor: pointer;
-  transition: background 0.15s;
-}
+/* ============================================
+   Saved Tab - Enhanced with avatars and delete
+   ============================================ */
 
-.watchlist-tweet:hover {
-  background: #222;
-}
-
-.watchlist-tweet-text {
-  font-size: 13px;
-  color: #e5e5e5;
-  line-height: 1.4;
-  margin-bottom: 6px;
-}
-
-.watchlist-tweet-metrics {
-  font-size: 11px;
-  color: #666;
-}
-
-.watchlist-no-tweets {
-  padding: 24px;
-  text-align: center;
-  color: #888;
-  background: #1a1a1a;
-  border-radius: 10px;
-}
-
-/* ============================================================
-   Messages Tab
-   ============================================================ */
-
-.messages-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.message-template {
-  background: #1a1a1a;
-  border-radius: 10px;
-  padding: 12px;
-}
-
-.template-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.template-name {
-  font-weight: 600;
-  color: #C9B896;
-}
-
-.template-copy {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: background 0.15s;
-}
-
-.template-copy:hover {
-  background: #2a2a2a;
-}
-
-.template-content {
-  font-size: 13px;
-  color: #aaa;
-  line-height: 1.4;
-}
-
-.messages-signin-prompt,
-.messages-error {
-  text-align: center;
-  padding: 24px;
-}
-
-.retry-btn {
-  background: #C9B896;
-  color: #1a1a1a;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-top: 8px;
-}
-
-/* ============================================================
-   Account Analysis (Stats Tab)
-   ============================================================ */
-
-.stats-analysis {
-  padding: 12px;
-  margin-bottom: 12px;
-}
-
-.analysis-section {
-  margin-bottom: 16px;
-}
-
-.analysis-header {
-  font-size: 12px;
-  font-weight: 700;
-  color: #C9B896;
-  margin-bottom: 8px;
-  letter-spacing: 0.5px;
-}
-
-.analysis-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.analysis-list li {
-  font-size: 13px;
-  color: #e5e5e5;
-  line-height: 1.5;
-  padding: 6px 0;
-  padding-left: 16px;
+.saved-post-item {
   position: relative;
 }
 
-.analysis-list li::before {
-  content: "•";
-  position: absolute;
-  left: 0;
-  color: #C9B896;
+.saved-post-item .item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
 }
 
-.analysis-list.stealable li::before {
-  content: "→";
+.item-author-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.tactics-grid {
+.item-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.item-avatar-placeholder {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.item-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.item-delete {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  opacity: 0;
+  transition: all 0.15s ease;
+}
+
+.saved-post-item:hover .item-delete {
+  opacity: 1;
+}
+
+.item-delete:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger);
+}
+
+/* ============================================
+   Watchlist Tab - Enhanced avatar styling
+   ============================================ */
+
+.watchlist-account .account-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.watchlist-account .account-avatar {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.watchlist-account .avatar-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.watchlist-account .avatar-fallback {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-hover);
+  border-radius: 50%;
+  font-size: 14px;
+}
+
+.watchlist-account .account-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.watchlist-account .account-handle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.watchlist-account .account-name {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================================
+   Watchlist Selector
+   ============================================ */
+
+.watchlist-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.category-select {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.category-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.manage-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.manage-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent-border);
+}
+
+/* ============================================
+   Categories List Modal
+   ============================================ */
+
+.categories-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.tactic-item {
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.tactic-label {
-  color: #888;
-  margin-right: 6px;
-}
-
-.tactic-value {
-  color: #e5e5e5;
-}
-
-.analysis-summary {
-  font-size: 13px;
-  color: #aaa;
-  line-height: 1.5;
-  padding: 12px;
-  background: #1a1a1a;
-  border-radius: 8px;
-  border-left: 3px solid #C9B896;
-}
-
-.stats-tweets-header {
-  font-size: 11px;
-  font-weight: 700;
-  color: #666;
-  padding: 12px 12px 8px;
-  letter-spacing: 1px;
-  border-top: 1px solid #2a2a2a;
-}
-
-/* ============================================================
-   Credit Display
-   ============================================================ */
-
-.user-credits {
+.category-item {
   display: flex;
   align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.category-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.category-count {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.category-actions {
+  display: flex;
   gap: 4px;
-  padding: 4px 10px;
-  background: linear-gradient(135deg, #C9B896 0%, #D4C4A8 100%);
-  border-radius: 20px;
-  margin-right: 8px;
 }
 
-.credits-icon {
-  font-size: 12px;
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.15s ease;
 }
 
-.credits-count {
-  font-size: 13px;
-  font-weight: 600;
-  color: #1a1a1a;
+.btn-icon:hover:not(:disabled) {
+  background: var(--bg-hover);
 }
 
-.credits-low {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+.btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
-.credits-low .credits-count {
-  color: white;
+.btn-icon.delete-category:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.1);
 }
 
-/* Insufficient credits error */
-.credits-error {
-  text-align: center;
-  padding: 24px;
-  background: #1a1a1a;
-  border-radius: 10px;
-  margin: 12px;
-}
-
-.credits-error-icon {
-  font-size: 32px;
-  margin-bottom: 12px;
-}
-
-.credits-error-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #e5e5e5;
-  margin-bottom: 8px;
-}
-
-.credits-error-desc {
-  font-size: 13px;
-  color: #888;
+.new-category-row {
+  display: flex;
+  gap: 8px;
   margin-bottom: 16px;
 }
 
-.credits-error-btn {
-  background: #C9B896;
-  color: #1a1a1a;
-  border: none;
+#new-category-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+#new-category-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.btn-primary {
   padding: 8px 16px;
-  border-radius: 6px;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #1a1a1a;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
-.credits-error-btn:hover {
-  background: #D4C4A8;
-}
-
-/* Credit cost badge */
-.credit-cost-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 11px;
-  color: #888;
-  margin-left: 8px;
-}
-
-.credit-cost-badge .credits-icon {
-  font-size: 10px;
-}
-
-/* Credit cost info in empty states */
-.credit-cost-info {
-  margin-top: 12px;
-  font-size: 12px;
-  color: #C9B896;
-  opacity: 0.8;
+.btn-primary:hover {
+  background: var(--accent-hover);
 }

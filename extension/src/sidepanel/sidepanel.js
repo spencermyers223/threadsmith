@@ -692,21 +692,57 @@ async function loadSaved() {
   savedList.classList.remove('hidden');
   savedEmpty.classList.add('hidden');
   
-  savedList.innerHTML = posts.slice(0, 20).map(post => `
-    <div class="list-item" data-url="${escapeHtml(post.url)}">
+  savedList.innerHTML = posts.slice(0, 20).map((post, index) => `
+    <div class="list-item saved-post-item" data-url="${escapeHtml(post.url)}" data-index="${index}">
       <div class="item-header">
-        <span class="item-author">${escapeHtml(post.author || 'Unknown')}</span>
-        <span class="item-time">${formatTimeAgo(post.savedAt)}</span>
+        <div class="item-author-row">
+          ${post.avatar 
+            ? `<img src="${escapeHtml(post.avatar)}" alt="" class="item-avatar" onerror="this.style.display='none'">`
+            : '<span class="item-avatar-placeholder">👤</span>'
+          }
+          <span class="item-author">${escapeHtml(post.author || 'Unknown')}</span>
+        </div>
+        <div class="item-actions-row">
+          <span class="item-time">${formatTimeAgo(post.savedAt)}</span>
+          <button class="item-delete" data-index="${index}" title="Delete">×</button>
+        </div>
       </div>
       <div class="item-text">${escapeHtml(truncateText(post.text, 100))}</div>
     </div>
   `).join('');
   
-  // Click to open
-  savedList.querySelectorAll('.list-item').forEach(item => {
-    item.addEventListener('click', () => {
+  // Click to open in same tab
+  savedList.querySelectorAll('.saved-post-item').forEach(item => {
+    item.addEventListener('click', async (e) => {
+      // Don't navigate if clicking delete button
+      if (e.target.closest('.item-delete')) return;
+      
       const url = item.dataset.url;
-      if (url) chrome.tabs.create({ url });
+      if (url) {
+        // Get current active tab and navigate it
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab) {
+          chrome.tabs.update(tab.id, { url });
+        } else {
+          chrome.tabs.create({ url });
+        }
+      }
+    });
+  });
+  
+  // Delete button handlers
+  savedList.querySelectorAll('.item-delete').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const index = parseInt(btn.dataset.index);
+      const stored = await chrome.storage.local.get(['savedPosts']);
+      const posts = stored.savedPosts || [];
+      
+      if (index >= 0 && index < posts.length) {
+        posts.splice(index, 1);
+        await chrome.storage.local.set({ savedPosts: posts });
+        loadSaved(); // Reload the list
+      }
     });
   });
 }

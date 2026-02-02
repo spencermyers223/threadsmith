@@ -827,14 +827,14 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Specific Protocols */}
+              {/* Specific Topics */}
               <div>
-                <label className="block text-sm font-medium mb-2">Specific Protocols/Chains</label>
+                <label className="block text-sm font-medium mb-2">Specific Topics</label>
                 <input
                   type="text"
                   value={contentProfile.specific_protocols}
                   onChange={(e) => updateContentProfile({ specific_protocols: e.target.value })}
-                  placeholder="e.g., LLMs, React, Kubernetes, GPT-4..."
+                  placeholder="e.g., LLMs, React, Next.js, GPT-4, Claude..."
                   className="w-full px-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none"
                 />
               </div>

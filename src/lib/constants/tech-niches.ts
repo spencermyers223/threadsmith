@@ -17,7 +17,8 @@ export interface TechNiche {
  */
 export const TECH_NICHES: TechNiche[] = [
   { id: 'technology', label: 'Technology', description: 'AI, startups, dev tools, gadgets, software' },
-  { id: 'finance', label: 'Finance & Investing', description: 'Markets, trading, crypto, personal finance' },
+  { id: 'crypto', label: 'Crypto & Web3', description: 'Bitcoin, Ethereum, DeFi, NFTs, blockchain' },
+  { id: 'finance', label: 'Finance & Investing', description: 'Markets, trading, personal finance' },
   { id: 'business', label: 'Business & Startups', description: 'Entrepreneurship, leadership, productivity' },
   { id: 'marketing', label: 'Marketing & Sales', description: 'Growth, social media, copywriting, ads' },
   { id: 'sports-fitness', label: 'Sports & Fitness', description: 'Athletics, training, nutrition, sports news' },

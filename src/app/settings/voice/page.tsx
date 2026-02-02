@@ -224,11 +224,16 @@ export default function VoiceSettingsPage() {
   }
 
   async function handleAnalyze() {
+    if (!activeAccount?.id) {
+      setError('No active X account selected')
+      return
+    }
+    
     setAnalyzing(true)
     setError(null)
 
     try {
-      const res = await fetch('/api/voice/analyze', {
+      const res = await fetch(`/api/voice/analyze?x_account_id=${activeAccount.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       })
@@ -588,6 +593,16 @@ export default function VoiceSettingsPage() {
         {samples.length < 3 && samples.length > 0 && (
           <p className="text-xs text-[var(--muted)] text-center -mt-4">
             Need at least 3 tweets to analyze (you have {samples.length})
+          </p>
+        )}
+        {samples.length >= 3 && samples.length <= 5 && (
+          <p className="text-xs text-green-400 text-center -mt-4">
+            ✓ 5 or less tweets recommended for best results
+          </p>
+        )}
+        {samples.length > 5 && (
+          <p className="text-xs text-yellow-400 text-center -mt-4">
+            ⚠️ 5 or less tweets recommended for best results (you have {samples.length})
           </p>
         )}
 

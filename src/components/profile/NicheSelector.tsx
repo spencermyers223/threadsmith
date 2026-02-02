@@ -12,11 +12,13 @@ import {
   Briefcase,
   Palette,
   MoreHorizontal,
+  Bitcoin,
   LucideIcon
 } from 'lucide-react'
 
 export type Niche =
   | 'technology'
+  | 'crypto'
   | 'finance'
   | 'marketing'
   | 'sports-fitness'
@@ -46,13 +48,19 @@ const niches: NicheOption[] = [
     id: 'technology', 
     label: 'Technology', 
     icon: Monitor,
-    description: 'AI, crypto, dev tools, startups, gadgets'
+    description: 'AI, startups, dev tools, gadgets, software'
+  },
+  { 
+    id: 'crypto', 
+    label: 'Crypto & Web3', 
+    icon: Bitcoin,
+    description: 'Bitcoin, Ethereum, DeFi, NFTs, blockchain'
   },
   { 
     id: 'finance', 
     label: 'Finance & Investing', 
     icon: TrendingUp,
-    description: 'Markets, trading, personal finance, crypto'
+    description: 'Markets, trading, personal finance'
   },
   { 
     id: 'marketing', 

@@ -10,8 +10,6 @@ let planName = 'Free';
 let userEmail = null;
 let xUsername = null;
 let currentTab = 'coach';
-let userCredits = 0;
-let creditCosts = { accountAnalysis: 3, replyCoaching: 1, voiceAdd: 1 };
 
 // ============================================================
 // Initialization
@@ -51,26 +49,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log('[xthread] Got pending coaching data');
       switchTab('coach');
       showCoaching(response.coaching, response.postData);
-    }
-  });
-  
-  // Check for pending stats request (from Stats button click)
-  chrome.runtime.sendMessage({ type: 'GET_PENDING_STATS' }, (response) => {
-    if (response && response.handle) {
-      console.log('[xthread] Got pending stats request for:', response.handle);
-      switchTab('stats');
-      fetchAndStoreProfileStats(response.handle);
-    }
-  });
-  
-  // Check for pending voice request (from Voice button click)
-  chrome.runtime.sendMessage({ type: 'GET_PENDING_VOICE' }, (response) => {
-    if (response && response.handle) {
-      console.log('[xthread] Got pending voice request for:', response.handle);
-      addVoiceAccount(response.handle, response.displayName, response.avatar);
-      switchTab('saved');
-      // Switch to Voice section
-      document.querySelector('.saved-toggle .toggle-btn[data-section="voice"]')?.click();
     }
   });
 });
@@ -116,54 +94,12 @@ async function loadAuthState() {
       } else {
         console.error('[xthread] API error:', response.status);
       }
-      
-      // Fetch credits
-      await fetchCredits();
     } catch (e) {
       console.error('[xthread] Failed to fetch user info:', e);
     }
   }
   
   updateAuthUI();
-}
-
-// Fetch user's credit balance
-async function fetchCredits() {
-  if (!userToken) return;
-  
-  try {
-    const response = await fetch(`${XTHREAD_API}/extension/credits`, {
-      headers: { 'Authorization': `Bearer ${userToken}` }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      userCredits = data.credits || 0;
-      creditCosts = data.costs || creditCosts;
-      updateCreditsDisplay();
-    }
-  } catch (e) {
-    console.error('[xthread] Failed to fetch credits:', e);
-  }
-}
-
-// Update the credits display in the header
-function updateCreditsDisplay() {
-  const creditsCount = document.getElementById('credits-count');
-  const creditsContainer = document.getElementById('user-credits');
-  
-  if (creditsCount) {
-    creditsCount.textContent = userCredits;
-  }
-  
-  // Add low credits indicator
-  if (creditsContainer) {
-    if (userCredits <= 2) {
-      creditsContainer.classList.add('credits-low');
-    } else {
-      creditsContainer.classList.remove('credits-low');
-    }
-  }
 }
 
 function updateAuthUI() {
@@ -224,17 +160,17 @@ async function loadTabData(tabName) {
     case 'coach':
       // Coach tab shows empty state by default, filled by messages
       break;
-    case 'queue':
-      await loadQueue();
-      break;
     case 'stats':
       await loadStats();
       break;
-    case 'messages':
-      await loadMessages();
+    case 'watchlist':
+      await loadWatchlist();
       break;
     case 'saved':
       await loadSaved();
+      break;
+    case 'queue':
+      await loadQueue();
       break;
   }
 }
@@ -266,90 +202,7 @@ function handleMessage(message, sender, sendResponse) {
     case 'SAVED_UPDATED':
       if (currentTab === 'saved') loadSaved();
       break;
-    
-    case 'SWITCH_TO_STATS':
-      // Switch to stats tab and load/scan the profile
-      switchTab('stats');
-      if (message.handle) {
-        fetchAndStoreProfileStats(message.handle);
-      }
-      break;
-    
-    case 'ADD_VOICE_PROFILE':
-      // Add account to saved voice accounts
-      addVoiceAccount(message.handle, message.displayName, message.avatar);
-      break;
-    
-    case 'STATS_UPDATED':
-      if (currentTab === 'stats') loadStats();
-      break;
-    
-    case 'VOICE_UPDATED':
-      if (currentTab === 'saved') loadSavedVoice();
-      break;
   }
-}
-
-// Fetch and store profile stats (top tweets)
-// Called when Stats button is clicked - just show the profile stats
-async function fetchAndStoreProfileStats(handle) {
-  console.log('[xthread] fetchAndStoreProfileStats called for:', handle);
-  // Simply call showProfileStats which handles everything
-  await showProfileStats(handle);
-}
-
-// Add voice account - now fetches top tweets for voice prompts
-async function addVoiceAccount(handle, displayName, avatar) {
-  const stored = await chrome.storage.local.get(['savedVoiceAccounts']);
-  const accounts = stored.savedVoiceAccounts || [];
-  
-  // Check if already exists
-  const exists = accounts.some(a => a.handle.toLowerCase() === handle.toLowerCase());
-  if (exists) {
-    console.log('[xthread] Voice account already saved:', handle);
-    return;
-  }
-  
-  // Fetch top tweets for voice prompts
-  let topTweets = [];
-  let tweetsFetchedAt = null;
-  
-  if (userToken) {
-    try {
-      console.log('[xthread] Fetching top tweets for voice account:', handle);
-      const url = `${XTHREAD_API}/extension/user-top-tweets?username=${encodeURIComponent(handle)}&limit=5`;
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${userToken}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        topTweets = data.tweets || [];
-        tweetsFetchedAt = new Date().toISOString();
-        console.log('[xthread] Got top tweets for voice:', topTweets.length);
-      }
-    } catch (err) {
-      console.error('[xthread] Failed to fetch voice tweets:', err);
-    }
-  }
-  
-  accounts.unshift({
-    handle: handle,
-    displayName: displayName || handle,
-    avatar: avatar || null,
-    addedAt: new Date().toISOString(),
-    topTweets: topTweets,
-    tweetsFetchedAt: tweetsFetchedAt
-  });
-  
-  // Keep only last 50
-  const trimmed = accounts.slice(0, 50);
-  
-  await chrome.storage.local.set({ savedVoiceAccounts: trimmed });
-  console.log('[xthread] Added voice account:', handle);
-  
-  // If on saved tab, refresh
-  if (currentTab === 'saved') loadSavedVoice();
 }
 
 // ============================================================
@@ -415,257 +268,85 @@ function showCoaching(coaching, postData) {
 }
 
 // ============================================================
-// Feed Tab
-// ============================================================
-
-async function loadFeed() {
-  const stored = await chrome.storage.local.get(['watchlistNotifications']);
-  const notifications = stored.watchlistNotifications || [];
-  
-  const feedList = document.getElementById('feed-list');
-  const feedEmpty = document.getElementById('feed-empty');
-  
-  if (notifications.length === 0) {
-    feedList.classList.add('hidden');
-    feedEmpty.classList.remove('hidden');
-    return;
-  }
-  
-  feedList.classList.remove('hidden');
-  feedEmpty.classList.add('hidden');
-  
-  feedList.innerHTML = notifications.slice(0, 20).map(notif => `
-    <div class="list-item" data-url="${escapeHtml(notif.url)}">
-      <div class="item-header">
-        <span class="item-author">@${escapeHtml(notif.handle)}</span>
-        <span class="item-time">${escapeHtml(notif.postAge || '')}</span>
-      </div>
-      <div class="item-text">${escapeHtml(truncateText(notif.text, 100))}</div>
-    </div>
-  `).join('');
-  
-  // Click to open
-  feedList.querySelectorAll('.list-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const url = item.dataset.url;
-      if (url) chrome.tabs.create({ url });
-    });
-  });
-  
-  // Mark as read
-  notifications.forEach(n => n.read = true);
-  await chrome.storage.local.set({ watchlistNotifications: notifications });
-}
-
-// ============================================================
 // Stats Tab
 // ============================================================
 
-// Current stats state
-let currentStatsHandle = null;
-
 async function loadStats() {
-  // Stats tab shows empty state until a profile is selected
-  const statsEmpty = document.getElementById('stats-empty');
-  const statsProfileView = document.getElementById('stats-profile-view');
+  const stored = await chrome.storage.local.get(['scannedProfiles']);
+  const profiles = stored.scannedProfiles || [];
   
-  if (!currentStatsHandle) {
+  // Update header stats
+  const profileCount = profiles.length;
+  document.getElementById('total-replies').textContent = profileCount;
+  document.getElementById('conversion-rate').textContent = `${profileCount} scanned`;
+  
+  const replyList = document.getElementById('reply-list');
+  const statsEmpty = document.getElementById('stats-empty');
+  
+  if (profiles.length === 0) {
+    replyList.classList.add('hidden');
     statsEmpty.classList.remove('hidden');
-    statsProfileView.classList.add('hidden');
-  }
-}
-
-// Show stats for a specific handle (called when Stats button clicked)
-async function showProfileStats(handle) {
-  currentStatsHandle = handle;
-  
-  const statsEmpty = document.getElementById('stats-empty');
-  const statsProfileView = document.getElementById('stats-profile-view');
-  const statsHeader = document.getElementById('stats-header');
-  const statsLoading = document.getElementById('stats-loading');
-  const statsTweets = document.getElementById('stats-tweets');
-  
-  // Show the view, hide empty state
-  statsEmpty.classList.add('hidden');
-  statsProfileView.classList.remove('hidden');
-  
-  // Show header and loading
-  statsHeader.innerHTML = `
-    <div class="stats-profile-header">
-      <span class="stats-handle">@${escapeHtml(handle)}</span>
-      <span class="stats-subtitle">Account Analysis • 3 credits</span>
-    </div>
-  `;
-  statsTweets.innerHTML = '';
-  
-  // Check if user is signed in - show prompt if not
-  if (!userToken) {
-    statsLoading.classList.add('hidden');
-    statsTweets.innerHTML = `
-      <div class="stats-signin-prompt">
-        <div class="signin-icon">🔒</div>
-        <div class="signin-title">Sign in to xthread</div>
-        <div class="signin-desc">Sign in to fetch top tweets and analytics for @${escapeHtml(handle)}</div>
-        <button class="signin-btn" id="stats-signin-btn">Sign in with xthread</button>
-      </div>
-    `;
-    document.getElementById('stats-signin-btn')?.addEventListener('click', () => {
-      chrome.tabs.create({ url: 'https://xthread.io/auth/extension-callback' });
-    });
     return;
   }
   
-  statsLoading.classList.remove('hidden');
+  replyList.classList.remove('hidden');
+  statsEmpty.classList.add('hidden');
   
-  // Fetch top tweets
-  try {
-    
-    const url = `${XTHREAD_API}/extension/user-top-tweets?username=${encodeURIComponent(handle)}&days=30&limit=10`;
-    console.log('[xthread] Fetching top tweets:', url);
-    
-    const response = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${userToken}` }
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      
-      // Handle insufficient credits
-      if (response.status === 402) {
-        statsLoading.classList.add('hidden');
-        statsTweets.innerHTML = `
-          <div class="credits-error">
-            <div class="credits-error-icon">⚡</div>
-            <div class="credits-error-title">Insufficient Credits</div>
-            <div class="credits-error-desc">
-              Account Analysis requires ${errorData.creditsNeeded || 3} credits.<br>
-              You have ${errorData.creditsRemaining || 0} credits remaining.
-            </div>
-            <button class="credits-error-btn" onclick="window.open('https://xthread.io/settings', '_blank')">
-              Get More Credits
-            </button>
-          </div>
-        `;
-        return;
-      }
-      
-      throw new Error(errorData.error || 'Failed to fetch tweets');
-    }
-    
-    const data = await response.json();
-    console.log('[xthread] Got tweets:', data);
-    
-    // Refresh credits display after successful use
-    await fetchCredits();
-    
-    statsLoading.classList.add('hidden');
-    
-    if (!data.tweets || data.tweets.length === 0) {
-      statsTweets.innerHTML = `
-        <div class="stats-no-tweets">
-          No tweets found in the last 30 days for @${escapeHtml(handle)}
+  // Sort by most recent scan
+  const sortedProfiles = [...profiles].sort((a, b) => 
+    new Date(b.scannedAt).getTime() - new Date(a.scannedAt).getTime()
+  );
+  
+  replyList.innerHTML = sortedProfiles.map((profile, index) => `
+    <div class="scanned-profile" data-index="${index}">
+      <div class="profile-header" onclick="toggleProfileExpand(${index})">
+        <img class="profile-avatar" src="${escapeHtml(profile.avatar || '')}" alt="" onerror="this.style.display='none'">
+        <div class="profile-info">
+          <span class="profile-handle">${escapeHtml(profile.handle || '@unknown')}</span>
+          <span class="profile-date">${formatTimeAgo(profile.scannedAt)}</span>
         </div>
-      `;
-      return;
-    }
-    
-    // Render analysis (if available) + tweets
-    let analysisHtml = '';
-    
-    if (data.analysis) {
-      const a = data.analysis;
-      
-      // Why Engaging section
-      const whyEngagingItems = (a.whyEngaging || []).map(item => 
-        `<li>${escapeHtml(item)}</li>`
-      ).join('');
-      
-      // Tactics section
-      const tactics = a.tactics || {};
-      
-      // Stealable tactics
-      const stealableItems = (a.stealable || []).map(item =>
-        `<li>${escapeHtml(item)}</li>`
-      ).join('');
-      
-      analysisHtml = `
-        <div class="stats-analysis">
-          <div class="analysis-section">
-            <div class="analysis-header">🎯 WHY THEY'RE ENGAGING</div>
-            <ul class="analysis-list">${whyEngagingItems}</ul>
+        <span class="expand-icon">▶</span>
+      </div>
+      <div class="profile-content hidden" id="profile-content-${index}">
+        ${profile.styleSummary ? `
+          <div class="style-summary">
+            <strong>Writing Style:</strong> ${escapeHtml(profile.styleSummary)}
           </div>
-          
-          <div class="analysis-section">
-            <div class="analysis-header">🔧 TACTICS THEY USE</div>
-            <div class="tactics-grid">
-              <div class="tactic-item">
-                <span class="tactic-label">Formatting:</span>
-                <span class="tactic-value">${escapeHtml(tactics.formatting || 'Unknown')}</span>
-              </div>
-              <div class="tactic-item">
-                <span class="tactic-label">Hook Style:</span>
-                <span class="tactic-value">${escapeHtml(tactics.hookStyle || 'Unknown')}</span>
-              </div>
-              <div class="tactic-item">
-                <span class="tactic-label">Topics:</span>
-                <span class="tactic-value">${escapeHtml(tactics.topics || 'Unknown')}</span>
-              </div>
-              <div class="tactic-item">
-                <span class="tactic-label">Rhythm:</span>
-                <span class="tactic-value">${escapeHtml(tactics.rhythm || 'Unknown')}</span>
+        ` : ''}
+        <div class="tweets-list">
+          ${(profile.tweets || []).slice(0, 10).map(tweet => `
+            <div class="tweet-item">
+              <div class="tweet-text">${escapeHtml(truncateText(tweet.text || '', 120))}</div>
+              <div class="tweet-metrics">
+                <span class="metric">💬 ${formatNumber(tweet.replies || 0)}</span>
+                <span class="metric">🔁 ${formatNumber(tweet.retweets || 0)}</span>
+                <span class="metric">❤️ ${formatNumber(tweet.likes || 0)}</span>
+                ${tweet.views ? `<span class="metric">👁 ${formatNumber(tweet.views)}</span>` : ''}
               </div>
             </div>
-          </div>
-          
-          <div class="analysis-section">
-            <div class="analysis-header">💡 WHAT YOU CAN STEAL</div>
-            <ul class="analysis-list stealable">${stealableItems}</ul>
-          </div>
-          
-          <div class="analysis-summary">
-            <em>${escapeHtml(a.summary || '')}</em>
-          </div>
+          `).join('')}
         </div>
-        
-        <div class="stats-tweets-header">TOP 10 TWEETS</div>
-      `;
+      </div>
+    </div>
+  `).join('');
+}
+
+// Toggle profile expansion in Stats tab
+function toggleProfileExpand(index) {
+  const content = document.getElementById(`profile-content-${index}`);
+  const profile = content?.closest('.scanned-profile');
+  const icon = profile?.querySelector('.expand-icon');
+  
+  if (content) {
+    const isHidden = content.classList.contains('hidden');
+    content.classList.toggle('hidden');
+    if (icon) {
+      icon.textContent = isHidden ? '▼' : '▶';
     }
-    
-    // Render tweets
-    const tweetsHtml = data.tweets.map((tweet, i) => `
-      <div class="stats-tweet" data-url="${escapeHtml(tweet.url || '')}">
-        <div class="stats-tweet-rank">#${i + 1}</div>
-        <div class="stats-tweet-content">
-          <div class="stats-tweet-text">${escapeHtml(tweet.text || '')}</div>
-          <div class="stats-tweet-metrics">
-            ❤️ ${formatNumber(tweet.likes || 0)} · 🔄 ${formatNumber(tweet.retweets || 0)} · 💬 ${formatNumber(tweet.replies || 0)}
-          </div>
-        </div>
-      </div>
-    `).join('');
-    
-    statsTweets.innerHTML = analysisHtml + tweetsHtml;
-    
-    // Click to open tweet
-    statsTweets.querySelectorAll('.stats-tweet').forEach(el => {
-      el.addEventListener('click', () => {
-        const url = el.dataset.url;
-        if (url) chrome.tabs.create({ url });
-      });
-    });
-    
-  } catch (err) {
-    console.error('[xthread] Error fetching stats:', err);
-    statsLoading.classList.add('hidden');
-    statsTweets.innerHTML = `
-      <div class="stats-error">
-        ${escapeHtml(err.message)}
-      </div>
-    `;
   }
 }
 
-// Format large numbers
+// Format large numbers (1000 -> 1K, etc.)
 function formatNumber(num) {
   if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
   if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
@@ -673,87 +354,320 @@ function formatNumber(num) {
 }
 
 // ============================================================
-// Messages Tab (DM Templates)
+// Watchlist Tab - Category-based Watchlist System
 // ============================================================
 
-async function loadMessages() {
-  const messagesList = document.getElementById('messages-list');
-  const messagesEmpty = document.getElementById('messages-empty');
+const DEFAULT_CATEGORY = 'General';
+
+async function loadWatchlist() {
+  // Get categories and accounts from storage
+  const stored = await chrome.storage.local.get([
+    'watchlistCategories', 
+    'watchlistAccounts', 
+    'activeWatchlist',
+    'watchlist' // Legacy support
+  ]);
   
-  if (!userToken) {
-    messagesList.innerHTML = `
-      <div class="messages-signin-prompt">
-        <div class="signin-icon">🔒</div>
-        <div class="signin-title">Sign in to xthread</div>
-        <div class="signin-desc">Sign in to access your DM templates</div>
-        <button class="signin-btn" id="messages-signin-btn">Sign in with xthread</button>
+  // Handle migration from old flat list
+  let categories = stored.watchlistCategories || [DEFAULT_CATEGORY];
+  let accounts = stored.watchlistAccounts || {};
+  let activeCategory = stored.activeWatchlist || DEFAULT_CATEGORY;
+  
+  // Migrate legacy data if needed
+  if (stored.watchlist && stored.watchlist.length > 0 && !stored.watchlistAccounts) {
+    accounts[DEFAULT_CATEGORY] = stored.watchlist;
+    await chrome.storage.local.set({
+      watchlistCategories: categories,
+      watchlistAccounts: accounts,
+      activeWatchlist: DEFAULT_CATEGORY
+    });
+  }
+  
+  // Ensure active category exists
+  if (!categories.includes(activeCategory)) {
+    activeCategory = categories[0] || DEFAULT_CATEGORY;
+    await chrome.storage.local.set({ activeWatchlist: activeCategory });
+  }
+  
+  const categoryAccounts = accounts[activeCategory] || [];
+  document.getElementById('watch-count').textContent = `${categoryAccounts.length} accounts`;
+  
+  const watchList = document.getElementById('watch-list');
+  const watchEmpty = document.getElementById('watch-empty');
+  
+  // Build category selector and manage button
+  const headerHtml = `
+    <div class="watchlist-header">
+      <div class="watchlist-selector">
+        <select id="watchlist-category-select" class="category-select">
+          ${categories.map(cat => `
+            <option value="${escapeHtml(cat)}" ${cat === activeCategory ? 'selected' : ''}>
+              ${escapeHtml(cat)} (${(accounts[cat] || []).length})
+            </option>
+          `).join('')}
+        </select>
+        <button id="manage-lists-btn" class="manage-btn" title="Manage Lists">⚙️</button>
+      </div>
+    </div>
+  `;
+  
+  if (categoryAccounts.length === 0) {
+    watchList.innerHTML = headerHtml;
+    watchList.classList.remove('hidden');
+    watchEmpty.classList.remove('hidden');
+    watchEmpty.innerHTML = `
+      <div class="empty-state">
+        <span class="empty-icon">👀</span>
+        <p>No accounts in "${escapeHtml(activeCategory)}"</p>
+        <p class="empty-hint">Visit a profile on X and click the Watchlist button to add accounts</p>
       </div>
     `;
-    messagesList.classList.remove('hidden');
-    messagesEmpty.classList.add('hidden');
-    document.getElementById('messages-signin-btn')?.addEventListener('click', () => {
-      chrome.tabs.create({ url: 'https://xthread.io/auth/extension-callback' });
-    });
+    setupWatchlistEventListeners(activeCategory);
     return;
   }
   
-  try {
-    const response = await fetch(`${XTHREAD_API}/extension/dm-templates`, {
-      headers: { 'Authorization': `Bearer ${userToken}` }
+  watchList.classList.remove('hidden');
+  watchEmpty.classList.add('hidden');
+  
+  // Build account list with avatars
+  const accountsHtml = categoryAccounts.map(account => `
+    <div class="list-item watchlist-account" data-handle="${escapeHtml(account.handle)}">
+      <div class="account-row">
+        <div class="account-avatar">
+          ${account.avatar 
+            ? `<img src="${escapeHtml(account.avatar)}" alt="" class="avatar-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="avatar-fallback" style="display:none">👤</span>`
+            : '<span class="avatar-fallback">👤</span>'
+          }
+        </div>
+        <div class="account-info">
+          <span class="account-handle">@${escapeHtml(account.handle)}</span>
+          <span class="account-name">${escapeHtml(account.displayName || account.handle)}</span>
+        </div>
+        <button class="item-remove" data-handle="${escapeHtml(account.handle)}" title="Remove">×</button>
+      </div>
+    </div>
+  `).join('');
+  
+  watchList.innerHTML = headerHtml + accountsHtml;
+  
+  setupWatchlistEventListeners(activeCategory);
+}
+
+function setupWatchlistEventListeners(activeCategory) {
+  // Category select change
+  const categorySelect = document.getElementById('watchlist-category-select');
+  if (categorySelect) {
+    categorySelect.addEventListener('change', async (e) => {
+      await chrome.storage.local.set({ activeWatchlist: e.target.value });
+      loadWatchlist();
     });
+  }
+  
+  // Manage lists button
+  const manageBtn = document.getElementById('manage-lists-btn');
+  if (manageBtn) {
+    manageBtn.addEventListener('click', () => showManageListsModal());
+  }
+  
+  const watchList = document.getElementById('watch-list');
+  
+  // Click to view profile
+  watchList.querySelectorAll('.watchlist-account').forEach(item => {
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('.item-remove')) return;
+      const handle = item.dataset.handle;
+      chrome.tabs.create({ url: `https://x.com/${handle}` });
+    });
+  });
+  
+  // Remove button
+  watchList.querySelectorAll('.item-remove').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const handle = btn.dataset.handle;
+      const stored = await chrome.storage.local.get(['watchlistAccounts', 'activeWatchlist']);
+      const accounts = stored.watchlistAccounts || {};
+      const category = stored.activeWatchlist || DEFAULT_CATEGORY;
+      
+      if (accounts[category]) {
+        const index = accounts[category].findIndex(w => w.handle.toLowerCase() === handle.toLowerCase());
+        if (index >= 0) {
+          accounts[category].splice(index, 1);
+          await chrome.storage.local.set({ watchlistAccounts: accounts });
+          loadWatchlist();
+        }
+      }
+    });
+  });
+}
+
+function showManageListsModal() {
+  // Remove existing modal if present
+  const existingModal = document.getElementById('manage-lists-modal');
+  if (existingModal) existingModal.remove();
+  
+  const modal = document.createElement('div');
+  modal.id = 'manage-lists-modal';
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Manage Watchlists</h3>
+        <button class="modal-close" id="close-manage-modal">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="new-category-row">
+          <input type="text" id="new-category-input" placeholder="New category name..." maxlength="30">
+          <button id="add-category-btn" class="btn-primary">Add</button>
+        </div>
+        <div id="categories-list" class="categories-list"></div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Load categories into modal
+  refreshCategoriesList();
+  
+  // Close modal
+  document.getElementById('close-manage-modal').addEventListener('click', () => {
+    modal.remove();
+  });
+  
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+  
+  // Add new category
+  document.getElementById('add-category-btn').addEventListener('click', async () => {
+    const input = document.getElementById('new-category-input');
+    const name = input.value.trim();
+    if (!name) return;
     
-    if (!response.ok) throw new Error('Failed to fetch templates');
+    const stored = await chrome.storage.local.get(['watchlistCategories']);
+    const categories = stored.watchlistCategories || [DEFAULT_CATEGORY];
     
-    const templates = await response.json();
-    
-    if (!templates || templates.length === 0) {
-      messagesList.classList.add('hidden');
-      messagesEmpty.classList.remove('hidden');
+    if (categories.some(c => c.toLowerCase() === name.toLowerCase())) {
+      alert('Category already exists');
       return;
     }
     
-    messagesList.classList.remove('hidden');
-    messagesEmpty.classList.add('hidden');
+    if (categories.length >= 20) {
+      alert('Maximum 20 categories allowed');
+      return;
+    }
     
-    messagesList.innerHTML = templates.map(template => `
-      <div class="message-template" data-id="${escapeHtml(template.id)}">
-        <div class="template-header">
-          <span class="template-name">${escapeHtml(template.name || 'Untitled')}</span>
-          <button class="template-copy" data-content="${escapeHtml(template.content)}" title="Copy to clipboard">📋</button>
-        </div>
-        <div class="template-content">${escapeHtml(truncateText(template.content, 150))}</div>
-      </div>
-    `).join('');
-    
-    // Copy button handlers
-    messagesList.querySelectorAll('.template-copy').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const content = btn.dataset.content;
-        await navigator.clipboard.writeText(content);
-        btn.textContent = '✓';
-        setTimeout(() => { btn.textContent = '📋'; }, 1500);
-      });
-    });
-    
-  } catch (err) {
-    console.error('[xthread] Error loading DM templates:', err);
-    messagesList.innerHTML = `
-      <div class="messages-error">
-        Failed to load templates. <button class="retry-btn" onclick="loadMessages()">Retry</button>
-      </div>
-    `;
-    messagesList.classList.remove('hidden');
-    messagesEmpty.classList.add('hidden');
-  }
+    categories.push(name);
+    await chrome.storage.local.set({ watchlistCategories: categories });
+    input.value = '';
+    refreshCategoriesList();
+    loadWatchlist();
+  });
+  
+  // Enter key to add
+  document.getElementById('new-category-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      document.getElementById('add-category-btn').click();
+    }
+  });
 }
 
-// Setup messages refresh handler
-function setupMessagesHandlers() {
-  const refreshBtn = document.getElementById('refresh-messages-btn');
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', () => loadMessages());
-  }
+async function refreshCategoriesList() {
+  const stored = await chrome.storage.local.get(['watchlistCategories', 'watchlistAccounts']);
+  const categories = stored.watchlistCategories || [DEFAULT_CATEGORY];
+  const accounts = stored.watchlistAccounts || {};
+  
+  const listEl = document.getElementById('categories-list');
+  if (!listEl) return;
+  
+  listEl.innerHTML = categories.map(cat => {
+    const count = (accounts[cat] || []).length;
+    return `
+      <div class="category-item" data-category="${escapeHtml(cat)}">
+        <span class="category-name">${escapeHtml(cat)}</span>
+        <span class="category-count">${count} accounts</span>
+        <div class="category-actions">
+          <button class="btn-icon rename-category" data-category="${escapeHtml(cat)}" title="Rename">✏️</button>
+          <button class="btn-icon delete-category" data-category="${escapeHtml(cat)}" title="Delete" ${categories.length <= 1 ? 'disabled' : ''}>🗑️</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  // Rename handlers
+  listEl.querySelectorAll('.rename-category').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const oldName = btn.dataset.category;
+      const newName = prompt('Enter new name:', oldName);
+      if (!newName || newName.trim() === oldName) return;
+      
+      const stored = await chrome.storage.local.get(['watchlistCategories', 'watchlistAccounts', 'activeWatchlist']);
+      const categories = stored.watchlistCategories || [];
+      const accounts = stored.watchlistAccounts || {};
+      
+      const index = categories.indexOf(oldName);
+      if (index === -1) return;
+      
+      if (categories.some(c => c.toLowerCase() === newName.trim().toLowerCase() && c !== oldName)) {
+        alert('Category name already exists');
+        return;
+      }
+      
+      categories[index] = newName.trim();
+      
+      if (accounts[oldName]) {
+        accounts[newName.trim()] = accounts[oldName];
+        delete accounts[oldName];
+      }
+      
+      const updates = { watchlistCategories: categories, watchlistAccounts: accounts };
+      if (stored.activeWatchlist === oldName) {
+        updates.activeWatchlist = newName.trim();
+      }
+      
+      await chrome.storage.local.set(updates);
+      refreshCategoriesList();
+      loadWatchlist();
+    });
+  });
+  
+  // Delete handlers
+  listEl.querySelectorAll('.delete-category').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const name = btn.dataset.category;
+      const stored = await chrome.storage.local.get(['watchlistCategories', 'watchlistAccounts', 'activeWatchlist']);
+      const categories = stored.watchlistCategories || [];
+      const accounts = stored.watchlistAccounts || {};
+      const count = (accounts[name] || []).length;
+      
+      if (categories.length <= 1) {
+        alert('Cannot delete the last category');
+        return;
+      }
+      
+      const confirmMsg = count > 0 
+        ? `Delete "${name}" and its ${count} accounts?`
+        : `Delete "${name}"?`;
+      
+      if (!confirm(confirmMsg)) return;
+      
+      const index = categories.indexOf(name);
+      if (index === -1) return;
+      
+      categories.splice(index, 1);
+      delete accounts[name];
+      
+      const updates = { watchlistCategories: categories, watchlistAccounts: accounts };
+      if (stored.activeWatchlist === name) {
+        updates.activeWatchlist = categories[0];
+      }
+      
+      await chrome.storage.local.set(updates);
+      refreshCategoriesList();
+      loadWatchlist();
+    });
+  });
 }
 
 // ============================================================
@@ -761,13 +675,10 @@ function setupMessagesHandlers() {
 // ============================================================
 
 async function loadSaved() {
-  await loadSavedPosts();
-  await loadSavedVoice();
-}
-
-async function loadSavedPosts() {
   const stored = await chrome.storage.local.get(['savedPosts']);
   const posts = stored.savedPosts || [];
+  
+  document.getElementById('saved-count').textContent = `${posts.length} posts`;
   
   const savedList = document.getElementById('saved-list');
   const savedEmpty = document.getElementById('saved-empty');
@@ -781,88 +692,57 @@ async function loadSavedPosts() {
   savedList.classList.remove('hidden');
   savedEmpty.classList.add('hidden');
   
-  savedList.innerHTML = posts.slice(0, 20).map(post => `
-    <div class="list-item" data-url="${escapeHtml(post.url)}">
+  savedList.innerHTML = posts.slice(0, 20).map((post, index) => `
+    <div class="list-item saved-post-item" data-url="${escapeHtml(post.url)}" data-index="${index}">
       <div class="item-header">
-        <span class="item-author">${escapeHtml(post.author || 'Unknown')}</span>
-        <span class="item-time">${formatTimeAgo(post.savedAt)}</span>
+        <div class="item-author-row">
+          ${post.avatar 
+            ? `<img src="${escapeHtml(post.avatar)}" alt="" class="item-avatar" onerror="this.style.display='none'">`
+            : '<span class="item-avatar-placeholder">👤</span>'
+          }
+          <span class="item-author">${escapeHtml(post.author || 'Unknown')}</span>
+        </div>
+        <div class="item-actions-row">
+          <span class="item-time">${formatTimeAgo(post.savedAt)}</span>
+          <button class="item-delete" data-index="${index}" title="Delete">×</button>
+        </div>
       </div>
       <div class="item-text">${escapeHtml(truncateText(post.text, 100))}</div>
     </div>
   `).join('');
   
-  // Click to open
-  savedList.querySelectorAll('.list-item').forEach(item => {
-    item.addEventListener('click', () => {
+  // Click to open in same tab
+  savedList.querySelectorAll('.saved-post-item').forEach(item => {
+    item.addEventListener('click', async (e) => {
+      // Don't navigate if clicking delete button
+      if (e.target.closest('.item-delete')) return;
+      
       const url = item.dataset.url;
-      if (url) chrome.tabs.create({ url });
+      if (url) {
+        // Get current active tab and navigate it
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab) {
+          chrome.tabs.update(tab.id, { url });
+        } else {
+          chrome.tabs.create({ url });
+        }
+      }
     });
   });
-}
-
-async function loadSavedVoice() {
-  const stored = await chrome.storage.local.get(['savedVoiceAccounts']);
-  const accounts = stored.savedVoiceAccounts || [];
   
-  const voiceList = document.getElementById('voice-list');
-  const voiceEmpty = document.getElementById('voice-empty');
-  
-  if (accounts.length === 0) {
-    voiceList.classList.add('hidden');
-    voiceEmpty.classList.remove('hidden');
-    return;
-  }
-  
-  voiceList.classList.remove('hidden');
-  voiceEmpty.classList.add('hidden');
-  
-  voiceList.innerHTML = accounts.map(account => `
-    <div class="voice-item" data-handle="${escapeHtml(account.handle)}">
-      <div class="voice-item-header">
-        <span class="voice-handle">@${escapeHtml(account.handle)}</span>
-        <button class="voice-remove" data-handle="${escapeHtml(account.handle)}">×</button>
-      </div>
-      ${account.displayName ? `<div class="voice-name">${escapeHtml(account.displayName)}</div>` : ''}
-      <div class="voice-added">Added ${formatTimeAgo(account.addedAt)}</div>
-    </div>
-  `).join('');
-  
-  // Remove button handlers
-  voiceList.querySelectorAll('.voice-remove').forEach(btn => {
+  // Delete button handlers
+  savedList.querySelectorAll('.item-delete').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const handle = btn.dataset.handle;
-      const stored = await chrome.storage.local.get(['savedVoiceAccounts']);
-      const accounts = stored.savedVoiceAccounts || [];
-      const filtered = accounts.filter(a => a.handle.toLowerCase() !== handle.toLowerCase());
-      await chrome.storage.local.set({ savedVoiceAccounts: filtered });
-      loadSavedVoice();
-    });
-  });
-  
-  // Click to view profile
-  voiceList.querySelectorAll('.voice-item').forEach(item => {
-    item.addEventListener('click', (e) => {
-      if (e.target.closest('.voice-remove')) return;
-      const handle = item.dataset.handle;
-      chrome.tabs.create({ url: `https://x.com/${handle}` });
-    });
-  });
-}
-
-// Setup saved tab toggle
-function setupSavedToggle() {
-  document.querySelectorAll('.saved-toggle .toggle-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const section = btn.dataset.section;
+      const index = parseInt(btn.dataset.index);
+      const stored = await chrome.storage.local.get(['savedPosts']);
+      const posts = stored.savedPosts || [];
       
-      // Update button states
-      document.querySelectorAll('.saved-toggle .toggle-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      
-      // Show/hide sections
-      document.getElementById('saved-posts-section').classList.toggle('active', section === 'posts');
-      document.getElementById('saved-voice-section').classList.toggle('active', section === 'voice');
+      if (index >= 0 && index < posts.length) {
+        posts.splice(index, 1);
+        await chrome.storage.local.set({ savedPosts: posts });
+        loadSaved(); // Reload the list
+      }
     });
   });
 }
@@ -885,15 +765,59 @@ async function loadQueue() {
     return;
   }
   
+  // Get saved queue mode (posts or dms)
+  const storage = await chrome.storage.local.get(['queueMode']);
+  let queueMode = storage.queueMode || 'posts';
+  
+  // Render mode toggle if not already present
+  let modeToggle = document.getElementById('queue-mode-toggle');
+  if (!modeToggle) {
+    const queueTab = document.getElementById('queue-tab');
+    const tabHeader = queueTab.querySelector('.tab-header');
+    
+    modeToggle = document.createElement('div');
+    modeToggle.id = 'queue-mode-toggle';
+    modeToggle.className = 'queue-mode-toggle';
+    modeToggle.innerHTML = `
+      <button class="mode-btn ${queueMode === 'posts' ? 'active' : ''}" data-mode="posts">Posts</button>
+      <button class="mode-btn ${queueMode === 'dms' ? 'active' : ''}" data-mode="dms">DMs</button>
+    `;
+    
+    // Insert after the tab header
+    tabHeader.insertAdjacentElement('afterend', modeToggle);
+    
+    // Add click handlers
+    modeToggle.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const newMode = btn.dataset.mode;
+        if (newMode !== queueMode) {
+          await chrome.storage.local.set({ queueMode: newMode });
+          loadQueue(); // Reload with new mode
+        }
+      });
+    });
+  } else {
+    // Update active state
+    modeToggle.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === queueMode);
+    });
+  }
+  
   // Show loading
   queueList.classList.add('hidden');
   queueEmpty.classList.add('hidden');
   queueLoading.classList.remove('hidden');
   
+  if (queueMode === 'posts') {
+    await loadQueuePosts(queueList, queueEmpty, queueLoading, queueCount);
+  } else {
+    await loadQueueDMs(queueList, queueEmpty, queueLoading, queueCount);
+  }
+}
+
+async function loadQueuePosts(queueList, queueEmpty, queueLoading, queueCount) {
   try {
     // Pass client's local date to handle timezone correctly
-    const clientDate = new Date().toISOString().split('T')[0];
-    // Adjust for local timezone - get actual local date
     const localDate = new Date();
     const localDateStr = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
     
@@ -916,6 +840,7 @@ async function loadQueue() {
     if (posts.length === 0) {
       queueList.classList.add('hidden');
       queueEmpty.classList.remove('hidden');
+      queueEmpty.querySelector('.empty-desc').textContent = 'No scheduled posts yet.';
       queueCount.textContent = 'No upcoming posts';
       return;
     }
@@ -977,16 +902,111 @@ async function loadQueue() {
     // Click item to open in xthread calendar
     queueList.querySelectorAll('.queue-item').forEach(item => {
       item.addEventListener('click', (e) => {
-        if (e.target.closest('.post-to-x-btn')) return; // Don't trigger if clicking button
+        if (e.target.closest('.copy-btn')) return; // Don't trigger if clicking button
         chrome.tabs.create({ url: `https://xthread.io/calendar` });
       });
     });
     
   } catch (error) {
-    console.error('[xthread] Error loading queue:', error);
+    console.error('[xthread] Error loading queue posts:', error);
     queueLoading.classList.add('hidden');
     queueEmpty.classList.remove('hidden');
     queueEmpty.querySelector('.empty-desc').textContent = 'Failed to load scheduled posts. Try again later.';
+  }
+}
+
+async function loadQueueDMs(queueList, queueEmpty, queueLoading, queueCount) {
+  try {
+    const response = await fetch(`${XTHREAD_API}/extension/dm-templates`, {
+      headers: {
+        'Authorization': `Bearer ${userToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch DM templates');
+    }
+    
+    const data = await response.json();
+    const templates = data.templates || [];
+    
+    queueLoading.classList.add('hidden');
+    
+    if (templates.length === 0) {
+      queueList.classList.add('hidden');
+      queueEmpty.classList.remove('hidden');
+      queueEmpty.querySelector('.empty-desc').textContent = 'No DM templates yet. Create templates in xthread to quickly copy them here.';
+      queueCount.textContent = 'No templates';
+      return;
+    }
+    
+    queueList.classList.remove('hidden');
+    queueEmpty.classList.add('hidden');
+    queueCount.textContent = `${templates.length} template${templates.length !== 1 ? 's' : ''}`;
+    
+    queueList.innerHTML = templates.map(template => `
+      <div class="list-item queue-item dm-template-item" data-id="${escapeHtml(template.id)}">
+        <div class="item-header">
+          <span class="item-type">💬 ${escapeHtml(template.name || 'Untitled')}</span>
+        </div>
+        <div class="item-text">${escapeHtml(truncateText(template.content, 120))}</div>
+        <div class="item-actions">
+          <button class="copy-btn" title="Copy to clipboard">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            Copy
+          </button>
+        </div>
+      </div>
+    `).join('');
+    
+    // Store full content for each template (preserving formatting)
+    const templateContentMap = {};
+    templates.forEach(template => {
+      templateContentMap[template.id] = template.content || '';
+    });
+    
+    // Copy button - copies template content to clipboard
+    queueList.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const item = btn.closest('.dm-template-item');
+        const templateId = item.dataset.id;
+        const content = templateContentMap[templateId] || '';
+        
+        try {
+          await navigator.clipboard.writeText(content);
+          // Show feedback
+          const originalText = btn.innerHTML;
+          btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Copied!`;
+          btn.classList.add('copied');
+          setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('copied');
+          }, 2000);
+        } catch (err) {
+          console.error('[xthread] Copy failed:', err);
+          btn.textContent = 'Failed';
+          setTimeout(() => {
+            btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy`;
+          }, 2000);
+        }
+      });
+    });
+    
+    // Click item to open in xthread DM templates page
+    queueList.querySelectorAll('.dm-template-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('.copy-btn')) return; // Don't trigger if clicking button
+        chrome.tabs.create({ url: `https://xthread.io/dm-templates` });
+      });
+    });
+    
+  } catch (error) {
+    console.error('[xthread] Error loading DM templates:', error);
+    queueLoading.classList.add('hidden');
+    queueEmpty.classList.remove('hidden');
+    queueEmpty.querySelector('.empty-desc').textContent = 'Failed to load DM templates. Try again later.';
   }
 }
 
@@ -1071,14 +1091,15 @@ function setupEventListeners() {
     updateAuthUI();
   });
   
-  // Clear saved - now clears based on active section
+  // Clear replies
+  document.getElementById('clear-replies-btn')?.addEventListener('click', async () => {
+    await chrome.storage.local.set({ replyHistory: [] });
+    loadStats();
+  });
+  
+  // Clear saved
   document.getElementById('clear-saved-btn')?.addEventListener('click', async () => {
-    const postsActive = document.getElementById('saved-posts-section')?.classList.contains('active');
-    if (postsActive) {
-      await chrome.storage.local.set({ savedPosts: [] });
-    } else {
-      await chrome.storage.local.set({ savedVoiceAccounts: [] });
-    }
+    await chrome.storage.local.set({ savedPosts: [] });
     loadSaved();
   });
   
@@ -1086,12 +1107,6 @@ function setupEventListeners() {
   document.getElementById('refresh-queue-btn')?.addEventListener('click', () => {
     loadQueue();
   });
-  
-  // Setup watchlist category handlers
-  setupMessagesHandlers();
-  
-  // Setup saved tab toggle (Posts/Voice)
-  setupSavedToggle();
 }
 
 // ============================================================
