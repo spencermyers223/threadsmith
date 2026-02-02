@@ -194,11 +194,11 @@ function buildOutputRequirements(contentType: ContentType): string {
 
 1. Generate 3 distinct THREAD options for the user to choose from
 2. Each thread option MUST contain 5-10 individual tweets
-3. Number each tweet clearly: 1/, 2/, 3/, etc.
+3. CRITICAL FORMAT: Number each tweet as "1/" "2/" "3/" etc. - THE SLASH IS REQUIRED!
 4. Each tweet MUST be under 280 characters
 5. CRITICAL: Every thread must be personalized to the user's profile
 
-Format your response EXACTLY as:
+Format your response EXACTLY as (note the slash after each number):
 
 **Option 1: [Brief description]**
 
@@ -239,8 +239,10 @@ Format your response EXACTLY as:
 **Recommendation:** [Which option and why]
 
 CRITICAL RULES:
-- EVERY option must have 5-10 numbered tweets (1/, 2/, 3/, etc.)
-- Each tweet MUST be on its own line with the number prefix
+- EVERY option must have 5-10 numbered tweets
+- FORMAT: "1/ tweet text" - the number, then slash, then space, then text ON THE SAME LINE
+- WRONG: "1\ntweet text" or "1. tweet text" - DO NOT separate number from text
+- CORRECT: "1/ This is my first tweet about the topic"
 - NO tweet can exceed 280 characters
 - The 1/ tweet is the HOOK - make it irresistible
 `;

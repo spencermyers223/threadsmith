@@ -168,7 +168,10 @@ function parseGeneratedPosts(
     
     if (rawContent && rawContent.length > 10) {
       // For thread content (has numbered tweets), preserve the structure
-      const isThreadContent = /^\d+\//.test(rawContent)
+      // Check for: "1/" pattern OR standalone numbers on their own lines "1\n" OR "1. text"
+      const isThreadContent = /^\d+\//.test(rawContent) || 
+        /^\d+\s*\n[^\n]+/m.test(rawContent) ||
+        /^\d+\.\s+\S/.test(rawContent)
       
       if (isThreadContent) {
         // Don't run through cleanContent for threads - preserve the numbering
@@ -211,7 +214,10 @@ function parseGeneratedPosts(
       }
       
       if (rawContent && rawContent.length > 10) {
-        const isThreadContent = /^\d+\//.test(rawContent)
+        // Check for: "1/" pattern OR standalone numbers on their own lines "1\n" OR "1. text"
+        const isThreadContent = /^\d+\//.test(rawContent) || 
+          /^\d+\s*\n[^\n]+/m.test(rawContent) ||
+          /^\d+\.\s+\S/.test(rawContent)
         
         if (isThreadContent) {
           const cleanedThread = rawContent
@@ -242,7 +248,10 @@ function parseGeneratedPosts(
   // Last fallback: if nothing found, treat entire response as single post
   if (posts.length === 0 && response.trim().length > 0) {
     // Check if the whole response is thread content
-    const isThreadContent = /^\d+\//.test(response.trim())
+    // Check for: "1/" pattern OR standalone numbers on their own lines "1\n" OR "1. text"
+    const isThreadContent = /^\d+\//.test(response.trim()) || 
+      /^\d+\s*\n[^\n]+/m.test(response.trim()) ||
+      /^\d+\.\s+\S/.test(response.trim())
     if (isThreadContent) {
       posts.push({
         content: response.trim(),

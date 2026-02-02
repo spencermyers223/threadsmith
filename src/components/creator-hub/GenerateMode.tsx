@@ -243,20 +243,20 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
     const cleanedContent = content
       .replace(/^---+\s*/gm, '') // Remove --- delimiters
       .replace(/^\*\*[^*]+\*\*\s*/gm, '') // Remove **Option X** headers
-      .replace(/\*Why this works:[\s\S]*?(?=\d+\/|$)/gi, '') // Remove analysis sections
+      .replace(/\*Why this works:[\s\S]*?(?=\d+\/|^\d+\s*$|$)/gim, '') // Remove analysis sections
       .replace(/\*Character count:.*$/gm, '') // Remove character count lines
       .replace(/\[\d+\s*chars?\]/gi, '') // Remove inline char counts
       .trim()
     
-    // Look for numbered patterns like "1/" or "1/7"
-    const numberedPattern = /^(\d+\/\d*)\s*/gm
-    const matches = Array.from(cleanedContent.matchAll(numberedPattern))
+    // Method 1: Look for "1/" or "1/7" patterns (standard format)
+    const slashPattern = /^(\d+\/\d*)\s*/gm
+    const slashMatches = Array.from(cleanedContent.matchAll(slashPattern))
 
-    if (matches.length > 0) {
-      for (let i = 0; i < matches.length; i++) {
-        const match = matches[i]
+    if (slashMatches.length > 0) {
+      for (let i = 0; i < slashMatches.length; i++) {
+        const match = slashMatches[i]
         const startPos = match.index! + match[0].length
-        const endPos = matches[i + 1]?.index ?? cleanedContent.length
+        const endPos = slashMatches[i + 1]?.index ?? cleanedContent.length
         const tweetText = cleanedContent.slice(startPos, endPos).trim()
         
         // Clean the individual tweet text
@@ -267,11 +267,62 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
           .trim()
 
         if (cleanText && cleanText.length > 0) {
-          const totalTweets = matches.length
+          const totalTweets = slashMatches.length
           const num = match[1].includes('/') && !match[1].endsWith('/')
             ? match[1]
             : `${match[1].replace('/', '')}/${totalTweets}`
           tweets.push({ number: num, text: cleanText, charCount: cleanText.length })
+        }
+      }
+    }
+    
+    // Method 2: Look for standalone numbers on their own line (e.g., "1\nTweet text")
+    // This handles the case where AI outputs numbers without slashes
+    if (tweets.length === 0) {
+      // Pattern: number at start of line (possibly with newline), followed by text
+      const standaloneNumberPattern = /^(\d+)\s*\n([^\n]+)/gm
+      const standaloneMatches = Array.from(cleanedContent.matchAll(standaloneNumberPattern))
+      
+      if (standaloneMatches.length >= 2) {
+        for (const match of standaloneMatches) {
+          const num = match[1]
+          const text = match[2].trim()
+          if (text && text.length > 0 && !text.startsWith('*')) {
+            tweets.push({
+              number: `${num}/${standaloneMatches.length}`,
+              text: text,
+              charCount: text.length
+            })
+          }
+        }
+      }
+    }
+    
+    // Method 3: Look for inline numbers like "1 Tweet text" or "1. Tweet text"
+    if (tweets.length === 0) {
+      const lines = cleanedContent.split('\n').filter(l => l.trim())
+      const numberedLines: { num: number; text: string }[] = []
+      
+      for (const line of lines) {
+        const inlineMatch = line.match(/^(\d+)[.\s]+(.+)$/)
+        if (inlineMatch) {
+          const num = parseInt(inlineMatch[1], 10)
+          const text = inlineMatch[2].trim()
+          if (text && text.length > 0 && !text.startsWith('*')) {
+            numberedLines.push({ num, text })
+          }
+        }
+      }
+      
+      // Check if we have sequential numbered lines (at least 2)
+      if (numberedLines.length >= 2) {
+        numberedLines.sort((a, b) => a.num - b.num)
+        for (const item of numberedLines) {
+          tweets.push({
+            number: `${item.num}/${numberedLines.length}`,
+            text: item.text,
+            charCount: item.text.length
+          })
         }
       }
     }
