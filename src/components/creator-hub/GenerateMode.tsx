@@ -466,10 +466,17 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   }
 
   const handleEditInWorkspace = async (post: GeneratedPost) => {
+    console.log('[Edit] Starting handleEditInWorkspace', { post, selectedLength })
     setSavingIndex(post.index)
 
     try {
       const contentType = selectedLength === 'thread' ? 'thread' : 'tweet'
+      console.log('[Edit] contentType:', contentType)
+      
+      const threadTweets = contentType === 'thread' 
+        ? parseThreadContent(post.content).map((t) => ({ id: t.number, content: t.text }))
+        : null
+      console.log('[Edit] Parsed thread tweets:', threadTweets)
 
       const res = await fetch('/api/posts', {
         method: 'POST',
@@ -485,18 +492,28 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
         }),
       })
 
-      if (!res.ok) throw new Error('Failed to save draft')
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        console.error('[Edit] API error:', res.status, errorData)
+        throw new Error(errorData.error || 'Failed to save draft')
+      }
 
       const savedPost = await res.json()
-      localStorage.setItem('edit-post', JSON.stringify({
+      console.log('[Edit] Saved post:', savedPost)
+      
+      const editPostData = {
         id: savedPost.id,
         title: savedPost.title,
         type: savedPost.type,
         content: savedPost.content,
-      }))
+      }
+      console.log('[Edit] Storing in localStorage:', editPostData)
+      localStorage.setItem('edit-post', JSON.stringify(editPostData))
 
+      console.log('[Edit] Redirecting to /workspace')
       router.push('/workspace')
     } catch (err) {
+      console.error('[Edit] Error:', err)
       setError(err instanceof Error ? err.message : 'Failed to save')
     } finally {
       setSavingIndex(null)
