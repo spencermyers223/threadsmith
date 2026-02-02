@@ -37,7 +37,7 @@
       <button id="sign-in-btn" class="primary-btn">Sign in with xthread</button>
     </div>
     
-    <!-- Tabs (5 total: Coach, Stats, Watchlist, Saved, Queue) -->
+    <!-- Tabs (5 total: Coach, Queue, Stats, Messages, Saved) -->
     <div class="panel-tabs">
       <button class="panel-tab active" data-tab="coach">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -47,27 +47,6 @@
         </svg>
         <span class="tab-label">COACH</span>
       </button>
-      <button class="panel-tab" data-tab="stats">
-        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="20" x2="18" y2="10"/>
-          <line x1="12" y1="20" x2="12" y2="4"/>
-          <line x1="6" y1="20" x2="6" y2="14"/>
-        </svg>
-        <span class="tab-label">STATS</span>
-      </button>
-      <button class="panel-tab" data-tab="watchlist">
-        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-          <circle cx="12" cy="12" r="3"/>
-        </svg>
-        <span class="tab-label">WATCHLIST</span>
-      </button>
-      <button class="panel-tab" data-tab="saved">
-        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-        </svg>
-        <span class="tab-label">SAVED</span>
-      </button>
       <button class="panel-tab" data-tab="queue">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -76,6 +55,26 @@
           <line x1="3" y1="10" x2="21" y2="10"/>
         </svg>
         <span class="tab-label">QUEUE</span>
+      </button>
+      <button class="panel-tab" data-tab="stats">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        <span class="tab-label">STATS</span>
+      </button>
+      <button class="panel-tab" data-tab="messages">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span class="tab-label">MESSAGES</span>
+      </button>
+      <button class="panel-tab" data-tab="saved">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span class="tab-label">SAVED</span>
       </button>
     </div>
     
@@ -116,32 +115,20 @@
         </div>
       </div>
       
-      <!-- Watchlist Tab (with categories) -->
-      <div class="tab-content" id="tab-watchlist">
+      <!-- Messages Tab (DM Templates) -->
+      <div class="tab-content" id="tab-messages">
         <div class="tab-header">
-          <div class="watchlist-category-select">
-            <select id="watchlist-category-dropdown">
-              <option value="default">Default</option>
-            </select>
-            <button class="text-btn" id="manage-lists-btn">Manage</button>
-            <button class="refresh-btn" id="refresh-watchlist-btn" title="Refresh tweets">🔄</button>
-          </div>
+          <span class="tab-subtitle">DM Templates</span>
+          <button class="text-btn" id="refresh-messages-btn">Refresh</button>
         </div>
-        <div class="watchlist-loading hidden" id="watchlist-loading">
-          <div class="spinner"></div>
-          <span>Fetching tweets...</span>
+        <div class="messages-list" id="messages-list">
+          <!-- Filled dynamically with DM templates -->
         </div>
-        <div class="watchlist-feed" id="watchlist-feed">
-          <!-- Filled dynamically with tweets from accounts -->
-        </div>
-        <div class="watchlist-posts" id="watchlist-posts">
-          <!-- Filled dynamically with posts from selected category -->
-        </div>
-        <div class="empty-state" id="watchlist-empty">
-          <div class="empty-icon">👁</div>
-          <div class="empty-title">No accounts in this list</div>
+        <div class="empty-state" id="messages-empty">
+          <div class="empty-icon">💬</div>
+          <div class="empty-title">No DM templates</div>
           <div class="empty-desc">
-            Visit any X profile and click the <strong>👁 Watchlist</strong> button to add accounts to your lists.
+            Create DM templates at <a href="https://xthread.io/templates" target="_blank">xthread.io/templates</a> to use them here for quick outreach.
           </div>
         </div>
       </div>

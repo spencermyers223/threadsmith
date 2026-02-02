@@ -180,17 +180,17 @@ async function loadTabData(tabName) {
     case 'coach':
       // Coach tab shows empty state by default, filled by messages
       break;
+    case 'queue':
+      await loadQueue();
+      break;
     case 'stats':
       await loadStats();
       break;
-    case 'watchlist':
-      await loadWatchlist();
+    case 'messages':
+      await loadMessages();
       break;
     case 'saved':
       await loadSaved();
-      break;
-    case 'queue':
-      await loadQueue();
       break;
   }
 }
@@ -542,279 +542,87 @@ function formatNumber(num) {
 }
 
 // ============================================================
-// Watchlist Tab
+// Messages Tab (DM Templates)
 // ============================================================
 
-async function loadWatchlist() {
-  const stored = await chrome.storage.local.get(['watchlistCategories']);
-  const categories = stored.watchlistCategories || [{ id: 'default', name: 'Default', accounts: [] }];
-  
-  // Populate category dropdown
-  const dropdown = document.getElementById('watchlist-category-dropdown');
-  const currentValue = dropdown.value || 'default';
-  dropdown.innerHTML = categories.map(cat => 
-    `<option value="${escapeHtml(cat.id)}">${escapeHtml(cat.name)} (${cat.accounts?.length || 0})</option>`
-  ).join('');
-  dropdown.value = currentValue;
-  
-  // Get selected category
-  const selectedCategory = categories.find(c => c.id === dropdown.value) || categories[0];
-  const accounts = selectedCategory?.accounts || [];
-  
-  const watchlistPosts = document.getElementById('watchlist-posts');
-  const watchlistEmpty = document.getElementById('watchlist-empty');
-  
-  if (accounts.length === 0) {
-    watchlistPosts.classList.add('hidden');
-    watchlistEmpty.classList.remove('hidden');
-    return;
-  }
-  
-  watchlistPosts.classList.remove('hidden');
-  watchlistEmpty.classList.add('hidden');
-  
-  // Show accounts with their info
-  watchlistPosts.innerHTML = accounts.map(account => `
-    <div class="watchlist-account" data-handle="${escapeHtml(account.handle)}">
-      <div class="watchlist-account-header">
-        <span class="watchlist-handle">@${escapeHtml(account.handle)}</span>
-        <button class="watchlist-remove" data-handle="${escapeHtml(account.handle)}">×</button>
-      </div>
-      ${account.displayName ? `<div class="watchlist-name">${escapeHtml(account.displayName)}</div>` : ''}
-    </div>
-  `).join('');
-  
-  // Remove button handlers
-  watchlistPosts.querySelectorAll('.watchlist-remove').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const handle = btn.dataset.handle;
-      await removeFromWatchlistCategory(dropdown.value, handle);
-      loadWatchlist();
-    });
-  });
-  
-  // Click to view profile
-  watchlistPosts.querySelectorAll('.watchlist-account').forEach(item => {
-    item.addEventListener('click', (e) => {
-      if (e.target.closest('.watchlist-remove')) return;
-      const handle = item.dataset.handle;
-      chrome.tabs.create({ url: `https://x.com/${handle}` });
-    });
-  });
-}
-
-// Remove account from watchlist category
-async function removeFromWatchlistCategory(categoryId, handle) {
-  const stored = await chrome.storage.local.get(['watchlistCategories']);
-  const categories = stored.watchlistCategories || [];
-  const category = categories.find(c => c.id === categoryId);
-  if (category && category.accounts) {
-    category.accounts = category.accounts.filter(a => a.handle.toLowerCase() !== handle.toLowerCase());
-    await chrome.storage.local.set({ watchlistCategories: categories });
-  }
-}
-
-// Setup watchlist category dropdown change handler
-function setupWatchlistHandlers() {
-  const dropdown = document.getElementById('watchlist-category-dropdown');
-  if (dropdown) {
-    dropdown.addEventListener('change', () => loadWatchlist());
-  }
-  
-  const manageBtn = document.getElementById('manage-lists-btn');
-  if (manageBtn) {
-    manageBtn.addEventListener('click', showManageListsModal);
-  }
-  
-  const refreshBtn = document.getElementById('refresh-watchlist-btn');
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', () => refreshWatchlist());
-  }
-}
-
-// Refresh watchlist - fetch tweets for all accounts in current category
-async function refreshWatchlist() {
-  const dropdown = document.getElementById('watchlist-category-dropdown');
-  const stored = await chrome.storage.local.get(['watchlistCategories']);
-  const categories = stored.watchlistCategories || [{ id: 'default', name: 'Default', accounts: [] }];
-  const selectedCategory = categories.find(c => c.id === dropdown.value) || categories[0];
-  const accounts = selectedCategory?.accounts || [];
-  
-  const watchlistFeed = document.getElementById('watchlist-feed');
-  const watchlistPosts = document.getElementById('watchlist-posts');
-  const watchlistLoading = document.getElementById('watchlist-loading');
-  const watchlistEmpty = document.getElementById('watchlist-empty');
-  
-  if (accounts.length === 0) {
-    watchlistFeed.classList.add('hidden');
-    watchlistPosts.classList.add('hidden');
-    watchlistEmpty.classList.remove('hidden');
-    return;
-  }
+async function loadMessages() {
+  const messagesList = document.getElementById('messages-list');
+  const messagesEmpty = document.getElementById('messages-empty');
   
   if (!userToken) {
-    watchlistFeed.innerHTML = `
-      <div class="watchlist-signin-prompt">
+    messagesList.innerHTML = `
+      <div class="messages-signin-prompt">
         <div class="signin-icon">🔒</div>
         <div class="signin-title">Sign in to xthread</div>
-        <div class="signin-desc">Sign in to fetch latest tweets from your watchlist</div>
-        <button class="signin-btn" id="watchlist-signin-btn">Sign in with xthread</button>
+        <div class="signin-desc">Sign in to access your DM templates</div>
+        <button class="signin-btn" id="messages-signin-btn">Sign in with xthread</button>
       </div>
     `;
-    watchlistFeed.classList.remove('hidden');
-    watchlistPosts.classList.add('hidden');
-    watchlistEmpty.classList.add('hidden');
-    document.getElementById('watchlist-signin-btn')?.addEventListener('click', () => {
+    messagesList.classList.remove('hidden');
+    messagesEmpty.classList.add('hidden');
+    document.getElementById('messages-signin-btn')?.addEventListener('click', () => {
       chrome.tabs.create({ url: 'https://xthread.io/auth/extension-callback' });
     });
     return;
   }
   
-  // Show loading
-  watchlistLoading.classList.remove('hidden');
-  watchlistPosts.classList.add('hidden');
-  watchlistEmpty.classList.add('hidden');
-  watchlistFeed.classList.add('hidden');
-  
-  // Fetch tweets for each account
-  const accountTweets = [];
-  for (const account of accounts.slice(0, 10)) { // Limit to 10 accounts
-    try {
-      const url = `${XTHREAD_API}/extension/user-top-tweets?username=${encodeURIComponent(account.handle)}&limit=3`;
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${userToken}` }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.tweets && data.tweets.length > 0) {
-          accountTweets.push({
-            handle: account.handle,
-            displayName: account.displayName,
-            tweets: data.tweets
-          });
-        }
-      }
-    } catch (err) {
-      console.error(`[xthread] Failed to fetch tweets for @${account.handle}:`, err);
+  try {
+    const response = await fetch(`${XTHREAD_API}/extension/dm-templates`, {
+      headers: { 'Authorization': `Bearer ${userToken}` }
+    });
+    
+    if (!response.ok) throw new Error('Failed to fetch templates');
+    
+    const templates = await response.json();
+    
+    if (!templates || templates.length === 0) {
+      messagesList.classList.add('hidden');
+      messagesEmpty.classList.remove('hidden');
+      return;
     }
-  }
-  
-  watchlistLoading.classList.add('hidden');
-  
-  if (accountTweets.length === 0) {
-    watchlistFeed.innerHTML = `
-      <div class="watchlist-no-tweets">
-        No recent tweets found for accounts in this list.
+    
+    messagesList.classList.remove('hidden');
+    messagesEmpty.classList.add('hidden');
+    
+    messagesList.innerHTML = templates.map(template => `
+      <div class="message-template" data-id="${escapeHtml(template.id)}">
+        <div class="template-header">
+          <span class="template-name">${escapeHtml(template.name || 'Untitled')}</span>
+          <button class="template-copy" data-content="${escapeHtml(template.content)}" title="Copy to clipboard">📋</button>
+        </div>
+        <div class="template-content">${escapeHtml(truncateText(template.content, 150))}</div>
+      </div>
+    `).join('');
+    
+    // Copy button handlers
+    messagesList.querySelectorAll('.template-copy').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const content = btn.dataset.content;
+        await navigator.clipboard.writeText(content);
+        btn.textContent = '✓';
+        setTimeout(() => { btn.textContent = '📋'; }, 1500);
+      });
+    });
+    
+  } catch (err) {
+    console.error('[xthread] Error loading DM templates:', err);
+    messagesList.innerHTML = `
+      <div class="messages-error">
+        Failed to load templates. <button class="retry-btn" onclick="loadMessages()">Retry</button>
       </div>
     `;
-    watchlistFeed.classList.remove('hidden');
-    return;
+    messagesList.classList.remove('hidden');
+    messagesEmpty.classList.add('hidden');
   }
-  
-  // Render feed grouped by account
-  watchlistFeed.innerHTML = accountTweets.map(account => `
-    <div class="watchlist-account-feed">
-      <div class="watchlist-feed-header" data-handle="${escapeHtml(account.handle)}">
-        <span class="watchlist-feed-handle">@${escapeHtml(account.handle)}</span>
-        ${account.displayName ? `<span class="watchlist-feed-name">${escapeHtml(account.displayName)}</span>` : ''}
-      </div>
-      <div class="watchlist-feed-tweets">
-        ${account.tweets.map(tweet => `
-          <div class="watchlist-tweet" data-url="${escapeHtml(tweet.url || '')}">
-            <div class="watchlist-tweet-text">${escapeHtml(truncateText(tweet.text, 150))}</div>
-            <div class="watchlist-tweet-metrics">
-              ❤️ ${formatNumber(tweet.likes || 0)} · 🔄 ${formatNumber(tweet.retweets || 0)} · 💬 ${formatNumber(tweet.replies || 0)}
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-  `).join('');
-  
-  watchlistFeed.classList.remove('hidden');
-  
-  // Click to open tweets
-  watchlistFeed.querySelectorAll('.watchlist-tweet').forEach(el => {
-    el.addEventListener('click', () => {
-      const url = el.dataset.url;
-      if (url) chrome.tabs.create({ url });
-    });
-  });
-  
-  // Click header to open profile
-  watchlistFeed.querySelectorAll('.watchlist-feed-header').forEach(el => {
-    el.addEventListener('click', () => {
-      const handle = el.dataset.handle;
-      if (handle) chrome.tabs.create({ url: `https://x.com/${handle}` });
-    });
-  });
 }
 
-// Show manage lists modal
-async function showManageListsModal() {
-  const stored = await chrome.storage.local.get(['watchlistCategories']);
-  const categories = stored.watchlistCategories || [{ id: 'default', name: 'Default', accounts: [] }];
-  
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.innerHTML = `
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Manage Watchlists</h3>
-        <button class="modal-close">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="lists-container">
-          ${categories.map(cat => `
-            <div class="list-row" data-id="${escapeHtml(cat.id)}">
-              <span class="list-name">${escapeHtml(cat.name)}</span>
-              <span class="list-count">${cat.accounts?.length || 0} accounts</span>
-              ${cat.id !== 'default' ? `<button class="list-delete" data-id="${escapeHtml(cat.id)}">🗑️</button>` : ''}
-            </div>
-          `).join('')}
-        </div>
-        <div class="new-list-form">
-          <input type="text" placeholder="New list name..." id="new-list-input">
-          <button id="create-list-btn">Create</button>
-        </div>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(modal);
-  
-  // Close modal
-  modal.querySelector('.modal-close').addEventListener('click', () => modal.remove());
-  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
-  
-  // Create new list
-  modal.querySelector('#create-list-btn').addEventListener('click', async () => {
-    const input = modal.querySelector('#new-list-input');
-    const name = input.value.trim();
-    if (!name) return;
-    
-    const stored = await chrome.storage.local.get(['watchlistCategories']);
-    const categories = stored.watchlistCategories || [{ id: 'default', name: 'Default', accounts: [] }];
-    categories.push({ id: `list_${Date.now()}`, name, accounts: [] });
-    await chrome.storage.local.set({ watchlistCategories: categories });
-    modal.remove();
-    loadWatchlist();
-  });
-  
-  // Delete list
-  modal.querySelectorAll('.list-delete').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.dataset.id;
-      const stored = await chrome.storage.local.get(['watchlistCategories']);
-      const categories = stored.watchlistCategories || [];
-      const filtered = categories.filter(c => c.id !== id);
-      await chrome.storage.local.set({ watchlistCategories: filtered });
-      modal.remove();
-      loadWatchlist();
-    });
-  });
+// Setup messages refresh handler
+function setupMessagesHandlers() {
+  const refreshBtn = document.getElementById('refresh-messages-btn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => loadMessages());
+  }
 }
 
 // ============================================================
@@ -1149,7 +957,7 @@ function setupEventListeners() {
   });
   
   // Setup watchlist category handlers
-  setupWatchlistHandlers();
+  setupMessagesHandlers();
   
   // Setup saved tab toggle (Posts/Voice)
   setupSavedToggle();

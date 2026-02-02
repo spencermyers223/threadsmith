@@ -1422,3 +1422,67 @@ body {
   background: #1a1a1a;
   border-radius: 10px;
 }
+
+/* ============================================================
+   Messages Tab
+   ============================================================ */
+
+.messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.message-template {
+  background: #1a1a1a;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.template-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.template-name {
+  font-weight: 600;
+  color: #C9B896;
+}
+
+.template-copy {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.template-copy:hover {
+  background: #2a2a2a;
+}
+
+.template-content {
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.4;
+}
+
+.messages-signin-prompt,
+.messages-error {
+  text-align: center;
+  padding: 24px;
+}
+
+.retry-btn {
+  background: #C9B896;
+  color: #1a1a1a;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 8px;
+}

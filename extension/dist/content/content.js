@@ -712,27 +712,9 @@ async function injectWatchButton(handle) {
   // 2. Stats button (Top Tweets → Stats tab)
   const statsBtn = createIconButton('xthread-stats-btn', icons.chart, 'View top tweets');
   
-  // 3. Watchlist button (with dropdown)
-  const watchlistBtn = createIconButton('xthread-watchlist-btn', icons.eye, 'Add to watchlist');
-  
-  // Create watchlist dropdown (hidden by default)
-  const dropdown = document.createElement('div');
-  dropdown.className = 'xthread-watchlist-dropdown';
-  dropdown.style.display = 'none';
-  dropdown.innerHTML = `
-    <div class="xthread-dropdown-header">Add to watchlist</div>
-    <div class="xthread-dropdown-lists"></div>
-    <div class="xthread-dropdown-create">
-      <input type="text" placeholder="New list name..." class="xthread-dropdown-input">
-      <button class="xthread-dropdown-add-btn">+</button>
-    </div>
-  `;
-  
-  // Insert buttons into our container (left to right: voice, stats, watchlist)
+  // Insert buttons into our container (left to right: voice, stats)
   btnContainer.appendChild(voiceBtn);
   btnContainer.appendChild(statsBtn);
-  btnContainer.appendChild(watchlistBtn);
-  document.body.appendChild(dropdown);
   
   // Voice button click - Add to Voice (existing functionality)
   voiceBtn.addEventListener('click', async (e) => {
@@ -789,53 +771,6 @@ async function injectWatchButton(handle) {
     }
   });
   
-  // Watchlist button click - Show dropdown
-  watchlistBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const isVisible = dropdown.style.display !== 'none';
-    if (isVisible) {
-      dropdown.style.display = 'none';
-      return;
-    }
-    
-    // Position dropdown below button
-    const rect = watchlistBtn.getBoundingClientRect();
-    dropdown.style.top = `${rect.bottom + 8}px`;
-    dropdown.style.left = `${rect.left}px`;
-    dropdown.style.display = 'block';
-    
-    // Load watchlists
-    await loadWatchlistDropdown(dropdown, handle);
-  });
-  
-  // Close dropdown when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!dropdown.contains(e.target) && e.target !== watchlistBtn) {
-      dropdown.style.display = 'none';
-    }
-  });
-  
-  // Create new list handler
-  const createInput = dropdown.querySelector('.xthread-dropdown-input');
-  const createBtn = dropdown.querySelector('.xthread-dropdown-add-btn');
-  
-  createBtn.addEventListener('click', async () => {
-    const name = createInput.value.trim();
-    if (!name) return;
-    
-    // Create list and add account
-    await createWatchlistAndAdd(name, handle);
-    createInput.value = '';
-    dropdown.style.display = 'none';
-  });
-  
-  createInput.addEventListener('keypress', async (e) => {
-    if (e.key === 'Enter') {
-      createBtn.click();
-    }
-  });
 }
 
 // Load watchlist dropdown with existing lists
