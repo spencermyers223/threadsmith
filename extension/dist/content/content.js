@@ -2661,19 +2661,18 @@ function injectButtons(post) {
   const actionBar = post.querySelector('[role="group"]');
   if (!actionBar) return;
   
-  // Create button container
+  // Create button container with two circular icon buttons
   const btnContainer = document.createElement('div');
   btnContainer.className = 'xthread-btn-container';
   btnContainer.innerHTML = `
-    <button class="xthread-coach-btn" title="Get reply coaching">
+    <button class="xthread-action-btn xthread-coach-btn" title="Get reply coaching">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
       </svg>
-      <span class="xthread-btn-text">Coach</span>
     </button>
-    <button class="xthread-save-btn" title="Save for later">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-        <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/>
+    <button class="xthread-action-btn xthread-save-btn" title="Save for later">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+        <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
       </svg>
     </button>
   `;
