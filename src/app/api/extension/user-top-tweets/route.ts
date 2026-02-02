@@ -153,7 +153,8 @@ export async function GET(request: NextRequest) {
       console.log('[user-top-tweets] Using user OAuth token');
     } else {
       // Fallback to app Bearer token for public data
-      const bearerToken = process.env.X_BEARER_TOKEN;
+      // Hardcoded temporarily to debug env var issue
+      const bearerToken = process.env.X_BEARER_TOKEN || 'AAAAAAAAAAAAAAAAAAAAAO4V7QEAAAAAT53aeQ6gxagVJmke/fJO5sVW2dI=npSCEjZtwFUwqIYvTu45ptWdmxeBlQc3ldRkbsoU9jFSPE00YV';
       console.log('[user-top-tweets] Bearer token present:', !!bearerToken, 'length:', bearerToken?.length || 0);
       if (!bearerToken) {
         console.error('[user-top-tweets] X_BEARER_TOKEN env var is missing!');
@@ -162,8 +163,9 @@ export async function GET(request: NextRequest) {
           { status: 500 }
         );
       }
-      accessToken = decodeURIComponent(bearerToken);
-      console.log('[user-top-tweets] Using app Bearer token, decoded length:', accessToken.length);
+      // Don't decode if it's the hardcoded token (already raw)
+      accessToken = bearerToken.includes('%') ? decodeURIComponent(bearerToken) : bearerToken;
+      console.log('[user-top-tweets] Using app Bearer token, length:', accessToken.length);
     }
 
     // Step 1: Look up user ID from username
