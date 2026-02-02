@@ -5,6 +5,7 @@ const XTHREAD_URL = 'https://xthread.io';
 
 // Store pending coaching data for sidepanel
 let pendingCoaching = null;
+let pendingStatsRequest = null;
 
 // ============================================================
 // Side Panel Setup - Open when extension icon is clicked
@@ -195,6 +196,54 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'GET_UNREAD_COUNT') {
     getUnreadNotificationCount().then(count => sendResponse({ count }));
     return true; // Keep channel open for async response
+  }
+  
+  // Open Stats tab and fetch top tweets for a profile
+  if (message.type === 'OPEN_STATS_TAB') {
+    // Store the handle for the sidepanel to pick up
+    pendingStatsRequest = { handle: message.handle };
+    // Open sidepanel
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        chrome.sidePanel.open({ tabId: tabs[0].id }).catch(err => {
+          console.error('[xthread] Failed to open side panel:', err);
+        });
+        // Forward message to sidepanel
+        chrome.runtime.sendMessage({ 
+          type: 'SWITCH_TO_STATS', 
+          handle: message.handle 
+        }).catch(() => {});
+      }
+    });
+  }
+  
+  // Get pending stats request
+  if (message.type === 'GET_PENDING_STATS') {
+    if (pendingStatsRequest) {
+      sendResponse(pendingStatsRequest);
+      pendingStatsRequest = null;
+    } else {
+      sendResponse(null);
+    }
+    return true;
+  }
+  
+  // Add to Voice (forward to sidepanel)
+  if (message.type === 'ADD_TO_VOICE') {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        chrome.sidePanel.open({ tabId: tabs[0].id }).catch(err => {
+          console.error('[xthread] Failed to open side panel:', err);
+        });
+        // Forward message to sidepanel to handle voice addition
+        chrome.runtime.sendMessage({ 
+          type: 'ADD_VOICE_PROFILE', 
+          handle: message.handle,
+          displayName: message.displayName,
+          avatar: message.avatar
+        }).catch(() => {});
+      }
+    });
   }
 });
 
