@@ -247,16 +247,96 @@ while sounding like the person who wrote the VOICE examples.
 
 ## Extension Integration
 
-### Save Tweet Button
-When user is viewing a tweet on X:
-1. Extension shows "Save to Voice" button
-2. Click → calls POST /api/voice/library with tweet URL
-3. Toast: "Saved to voice library (3/5)"
+### Two-Tier Save System
 
-### Implementation
-- Add button next to existing extension buttons on tweet
-- Check current count before showing (hide if 5/5)
-- Use same auth flow as other extension features
+**Tier 1: Saved Posts (unlimited, FREE)**
+- User can save unlimited tweets while browsing
+- Stored locally in extension + synced to DB
+- No X API calls = $0 cost (reads from DOM)
+- Like bookmarks for tweets they like
+
+**Tier 2: Voice Profile (max 5)**
+- User promotes saved posts to their voice profile
+- These 5 are the few-shot examples in prompts
+- Selected from their saved posts library
+
+### Extension UI Flow
+
+**On each tweet (browsing X):**
+```
+[💾 Save] ← saves to Saved Posts (unlimited)
+```
+
+**In Sidepanel — Saved tab:**
+```
+┌─────────────────────────────────────────┐
+│ SAVED POSTS                             │
+│                                         │
+│ ┌─────────────────────────────────────┐ │
+│ │ "Tweet text here..."                │ │
+│ │ @username · [+] [×]                 │ │
+│ │             ↑                       │ │
+│ │     Add to Voice Profile            │ │
+│ └─────────────────────────────────────┘ │
+│                                         │
+│ ┌─────────────────────────────────────┐ │
+│ │ "Another saved tweet..."            │ │
+│ │ @someone · [+] [×]                  │ │
+│ └─────────────────────────────────────┘ │
+│                                         │
+│ VOICE PROFILE (3/5)                     │
+│ ★ "Voice tweet 1..." [×]               │
+│ ★ "Voice tweet 2..." [×]               │
+│ ★ "Voice tweet 3..." [×]               │
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+### Add to Voice Profile Flow
+
+**When user clicks [+] on a saved post:**
+
+1. **If < 5 in voice profile:**
+   - Add immediately
+   - Toast: "Added to voice profile (4/5)"
+   - Tweet moves to Voice Profile section with ★
+
+2. **If already 5/5:**
+   - Modal appears:
+   ```
+   ┌─────────────────────────────────────┐
+   │ Voice Profile Full                  │
+   │                                     │
+   │ Remove one to add this tweet:       │
+   │                                     │
+   │ ○ "Current voice tweet 1..."        │
+   │ ○ "Current voice tweet 2..."        │
+   │ ○ "Current voice tweet 3..."        │
+   │ ○ "Current voice tweet 4..."        │
+   │ ○ "Current voice tweet 5..."        │
+   │                                     │
+   │ [Cancel]  [Replace Selected]        │
+   └─────────────────────────────────────┘
+   ```
+
+### Data Model Update
+
+**saved_posts (new table — unlimited)**
+```sql
+CREATE TABLE saved_posts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES profiles(id) ON DELETE CASCADE,
+  tweet_text text NOT NULL,
+  tweet_url text,
+  author_username text,
+  created_at timestamptz DEFAULT now()
+);
+-- No limit — users can save as many as they want
+```
+
+**voice_library stays the same (max 5)**
+- Promoted from saved_posts
+- These are the few-shot examples
 
 ---
 
@@ -325,14 +405,17 @@ When user is viewing a tweet on X:
 
 ## Build Order (Tonight)
 
-1. ☐ Database tables + migrations
-2. ☐ API endpoints (voice library CRUD)
-3. ☐ API endpoints (style profiles CRUD)  
-4. ☐ Settings UI — saved posts section
-5. ☐ Settings UI — style profiles section
-6. ☐ Generate page — style selector
-7. ☐ Prompt building updates
-8. ☐ Extension — save tweet button
+1. ☐ Database tables + migrations (saved_posts, voice_library, style_profiles)
+2. ☐ API endpoints (saved posts CRUD — unlimited)
+3. ☐ API endpoints (voice library CRUD — max 5)
+4. ☐ API endpoints (style profiles CRUD — max 3)
+5. ☐ Settings UI — voice profile section (show 5 tweets)
+6. ☐ Settings UI — style profiles section
+7. ☐ Generate page — style selector (radio buttons, single select)
+8. ☐ Prompt building updates
+9. ☐ Extension — Save button on tweets
+10. ☐ Extension — Sidepanel Saved tab with [+] to promote to voice profile
+11. ☐ Extension — "Voice Profile Full" modal for replacement flow
 
 ---
 
