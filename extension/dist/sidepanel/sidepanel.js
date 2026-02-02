@@ -436,7 +436,7 @@ async function showProfileStats(handle) {
       throw new Error('Please sign in to fetch tweets');
     }
     
-    const url = `${XTHREAD_API}/extension/user-top-tweets?handle=${encodeURIComponent(handle)}&days=30&limit=10`;
+    const url = `${XTHREAD_API}/extension/user-top-tweets?username=${encodeURIComponent(handle)}&days=30&limit=10`;
     console.log('[xthread] Fetching top tweets:', url);
     
     const response = await fetch(url, {
