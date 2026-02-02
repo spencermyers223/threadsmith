@@ -93,20 +93,25 @@
         </div>
       </div>
       
-      <!-- Stats Tab (Scanned profiles with top tweets) -->
+      <!-- Stats Tab (Live top tweets for current profile) -->
       <div class="tab-content" id="tab-stats">
-        <div class="tab-header">
-          <span class="tab-subtitle">Scanned Profiles</span>
-          <button class="text-btn" id="clear-stats-btn">Clear</button>
-        </div>
-        <div class="stats-list" id="stats-list">
-          <!-- Filled dynamically with scanned profiles -->
+        <div class="stats-profile-view" id="stats-profile-view">
+          <div class="stats-header" id="stats-header">
+            <!-- Profile info filled dynamically -->
+          </div>
+          <div class="stats-loading hidden" id="stats-loading">
+            <div class="spinner"></div>
+            <span>Fetching top tweets...</span>
+          </div>
+          <div class="stats-tweets" id="stats-tweets">
+            <!-- Top tweets filled dynamically -->
+          </div>
         </div>
         <div class="empty-state" id="stats-empty">
           <div class="empty-icon">📊</div>
-          <div class="empty-title">No profiles scanned</div>
+          <div class="empty-title">Profile Stats</div>
           <div class="empty-desc">
-            Visit any X profile and click the <strong>📊 Stats</strong> button to see their top performing tweets and writing style.
+            Visit any X profile and click the <strong>📊 Stats</strong> button to see their top 10 performing tweets.
           </div>
         </div>
       </div>

@@ -247,84 +247,11 @@ function handleMessage(message, sender, sendResponse) {
 }
 
 // Fetch and store profile stats (top tweets)
+// Called when Stats button is clicked - just show the profile stats
 async function fetchAndStoreProfileStats(handle) {
   console.log('[xthread] fetchAndStoreProfileStats called for:', handle);
-  console.log('[xthread] userToken exists:', !!userToken);
-  
-  if (!userToken) {
-    console.error('[xthread] No auth token for stats fetch');
-    // Still store basic info even without token
-    await storeBasicProfileInfo(handle);
-    return;
-  }
-  
-  try {
-    const url = `${XTHREAD_API}/extension/user-top-tweets?handle=${encodeURIComponent(handle)}&days=30&limit=10`;
-    console.log('[xthread] Fetching:', url);
-    
-    const response = await fetch(url, {
-      headers: { 'Authorization': `Bearer ${userToken}` }
-    });
-    
-    console.log('[xthread] Response status:', response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[xthread] API error:', errorText);
-      // Store basic info on error
-      await storeBasicProfileInfo(handle);
-      return;
-    }
-    
-    const data = await response.json();
-    console.log('[xthread] Got data:', data);
-    
-    // Store in scannedProfiles
-    const stored = await chrome.storage.local.get(['scannedProfiles']);
-    const profiles = stored.scannedProfiles || [];
-    
-    // Remove existing entry for this handle
-    const filtered = profiles.filter(p => p.handle.toLowerCase() !== handle.toLowerCase());
-    
-    // Add new entry at the beginning
-    filtered.unshift({
-      handle: handle,
-      scannedAt: new Date().toISOString(),
-      topTweets: data.tweets || [],
-      styleSummary: data.styleSummary || null
-    });
-    
-    // Keep only last 20 profiles
-    const trimmed = filtered.slice(0, 20);
-    
-    await chrome.storage.local.set({ scannedProfiles: trimmed });
-    console.log('[xthread] Stored profile stats, reloading UI');
-    loadStats();
-    
-  } catch (err) {
-    console.error('[xthread] Error fetching profile stats:', err);
-    await storeBasicProfileInfo(handle);
-  }
-}
-
-// Store basic profile info when API isn't available
-async function storeBasicProfileInfo(handle) {
-  const stored = await chrome.storage.local.get(['scannedProfiles']);
-  const profiles = stored.scannedProfiles || [];
-  
-  // Check if already exists
-  const exists = profiles.some(p => p.handle.toLowerCase() === handle.toLowerCase());
-  if (exists) return;
-  
-  profiles.unshift({
-    handle: handle,
-    scannedAt: new Date().toISOString(),
-    topTweets: [],
-    styleSummary: 'Sign in to fetch top tweets'
-  });
-  
-  await chrome.storage.local.set({ scannedProfiles: profiles.slice(0, 20) });
-  loadStats();
+  // Simply call showProfileStats which handles everything
+  await showProfileStats(handle);
 }
 
 // Add voice account
@@ -465,60 +392,106 @@ async function loadFeed() {
 // Stats Tab
 // ============================================================
 
+// Current stats state
+let currentStatsHandle = null;
+
 async function loadStats() {
-  const stored = await chrome.storage.local.get(['scannedProfiles']);
-  const profiles = stored.scannedProfiles || [];
-  
-  const statsList = document.getElementById('stats-list');
+  // Stats tab shows empty state until a profile is selected
   const statsEmpty = document.getElementById('stats-empty');
+  const statsProfileView = document.getElementById('stats-profile-view');
   
-  if (profiles.length === 0) {
-    statsList.classList.add('hidden');
+  if (!currentStatsHandle) {
     statsEmpty.classList.remove('hidden');
-    return;
+    statsProfileView.classList.add('hidden');
   }
+}
+
+// Show stats for a specific handle (called when Stats button clicked)
+async function showProfileStats(handle) {
+  currentStatsHandle = handle;
   
-  statsList.classList.remove('hidden');
+  const statsEmpty = document.getElementById('stats-empty');
+  const statsProfileView = document.getElementById('stats-profile-view');
+  const statsHeader = document.getElementById('stats-header');
+  const statsLoading = document.getElementById('stats-loading');
+  const statsTweets = document.getElementById('stats-tweets');
+  
+  // Show the view, hide empty state
   statsEmpty.classList.add('hidden');
+  statsProfileView.classList.remove('hidden');
   
-  statsList.innerHTML = profiles.map(profile => `
-    <div class="stats-profile" data-handle="${escapeHtml(profile.handle)}">
-      <div class="stats-profile-header">
-        <div class="stats-profile-info">
-          <span class="stats-handle">@${escapeHtml(profile.handle)}</span>
-          <span class="stats-time">${formatTimeAgo(profile.scannedAt)}</span>
-        </div>
-        <button class="stats-remove" data-handle="${escapeHtml(profile.handle)}">×</button>
-      </div>
-      ${profile.styleSummary ? `<div class="stats-style">${escapeHtml(profile.styleSummary)}</div>` : ''}
-      <div class="stats-tweets">
-        ${(profile.topTweets || []).slice(0, 5).map((tweet, i) => `
-          <div class="stats-tweet">
-            <div class="stats-tweet-rank">#${i + 1}</div>
-            <div class="stats-tweet-content">
-              <div class="stats-tweet-text">${escapeHtml(truncateText(tweet.text, 100))}</div>
-              <div class="stats-tweet-metrics">
-                ❤️ ${formatNumber(tweet.likes || 0)} · 🔄 ${formatNumber(tweet.retweets || 0)} · 💬 ${formatNumber(tweet.replies || 0)}
-              </div>
-            </div>
-          </div>
-        `).join('')}
-      </div>
+  // Show header and loading
+  statsHeader.innerHTML = `
+    <div class="stats-profile-header">
+      <span class="stats-handle">@${escapeHtml(handle)}</span>
+      <span class="stats-subtitle">Top Tweets (Last 30 Days)</span>
     </div>
-  `).join('');
+  `;
+  statsLoading.classList.remove('hidden');
+  statsTweets.innerHTML = '';
   
-  // Remove button handlers
-  statsList.querySelectorAll('.stats-remove').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const handle = btn.dataset.handle;
-      const stored = await chrome.storage.local.get(['scannedProfiles']);
-      const profiles = stored.scannedProfiles || [];
-      const filtered = profiles.filter(p => p.handle.toLowerCase() !== handle.toLowerCase());
-      await chrome.storage.local.set({ scannedProfiles: filtered });
-      loadStats();
+  // Fetch top tweets
+  try {
+    if (!userToken) {
+      throw new Error('Please sign in to fetch tweets');
+    }
+    
+    const url = `${XTHREAD_API}/extension/user-top-tweets?handle=${encodeURIComponent(handle)}&days=30&limit=10`;
+    console.log('[xthread] Fetching top tweets:', url);
+    
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Bearer ${userToken}` }
     });
-  });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to fetch tweets');
+    }
+    
+    const data = await response.json();
+    console.log('[xthread] Got tweets:', data);
+    
+    statsLoading.classList.add('hidden');
+    
+    if (!data.tweets || data.tweets.length === 0) {
+      statsTweets.innerHTML = `
+        <div class="stats-no-tweets">
+          No tweets found in the last 30 days for @${escapeHtml(handle)}
+        </div>
+      `;
+      return;
+    }
+    
+    // Render tweets
+    statsTweets.innerHTML = data.tweets.map((tweet, i) => `
+      <div class="stats-tweet" data-url="${escapeHtml(tweet.url || '')}">
+        <div class="stats-tweet-rank">#${i + 1}</div>
+        <div class="stats-tweet-content">
+          <div class="stats-tweet-text">${escapeHtml(tweet.text || '')}</div>
+          <div class="stats-tweet-metrics">
+            ❤️ ${formatNumber(tweet.likes || 0)} · 🔄 ${formatNumber(tweet.retweets || 0)} · 💬 ${formatNumber(tweet.replies || 0)}
+          </div>
+        </div>
+      </div>
+    `).join('');
+    
+    // Click to open tweet
+    statsTweets.querySelectorAll('.stats-tweet').forEach(el => {
+      el.addEventListener('click', () => {
+        const url = el.dataset.url;
+        if (url) chrome.tabs.create({ url });
+      });
+    });
+    
+  } catch (err) {
+    console.error('[xthread] Error fetching stats:', err);
+    statsLoading.classList.add('hidden');
+    statsTweets.innerHTML = `
+      <div class="stats-error">
+        ${escapeHtml(err.message)}
+      </div>
+    `;
+  }
 }
 
 // Format large numbers
@@ -993,12 +966,6 @@ function setupEventListeners() {
     isPremium = false;
     userEmail = null;
     updateAuthUI();
-  });
-  
-  // Clear stats (scanned profiles)
-  document.getElementById('clear-stats-btn')?.addEventListener('click', async () => {
-    await chrome.storage.local.set({ scannedProfiles: [] });
-    loadStats();
   });
   
   // Clear saved - now clears based on active section
