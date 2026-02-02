@@ -21,6 +21,8 @@ import {
   buildInPublicPrompt,
   type UserVoiceProfile,
 } from '@/lib/prompts'
+// Import dedicated thread prompt
+import { THREAD_SYSTEM_PROMPT, buildThreadUserPrompt } from '@/lib/prompts/thread-prompt'
 
 const anthropic = new Anthropic()
 
@@ -314,87 +316,39 @@ async function generateForCTNativePostType(
   let systemPrompt: string
   let userPrompt: string
   
-  // If generating a thread, add thread-specific instructions
+  // If generating a thread, use the DEDICATED thread prompt (not append to other prompts)
   const isThread = contentType === 'thread'
-  const threadInstructions = isThread ? `
+  
+  if (isThread) {
+    // Use dedicated thread prompt - completely separate from single-tweet prompts
+    systemPrompt = THREAD_SYSTEM_PROMPT
+    userPrompt = buildThreadUserPrompt(topic, additionalContext)
+    
+    console.log('[Thread Gen] Using dedicated thread prompt')
+    console.log('[Thread Gen] Topic:', topic)
+    console.log('[Thread Gen] User prompt:', userPrompt.substring(0, 300))
+    
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 8192,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+    })
+    
+    const textContent = response.content
+      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+      .map(block => block.text)
+      .join('\n')
+    
+    console.log('[Thread Gen] Response length:', textContent.length)
+    console.log('[Thread Gen] Contains **Option 1:', textContent.includes('**Option 1'))
+    console.log('[Thread Gen] Contains **Option 2:', textContent.includes('**Option 2'))
+    console.log('[Thread Gen] Contains **Option 3:', textContent.includes('**Option 3'))
+    
+    return parseGeneratedPosts(textContent, 'viral-catalyst', undefined)
+  }
 
-## ⚠️ OVERRIDE: IGNORE ALL PREVIOUS FORMAT INSTRUCTIONS ⚠️
-
-You are generating a TWITTER THREAD, NOT a single tweet. 
-
-IGNORE any instructions above about "single tweet", "under 100 characters", or "---" delimiter format.
-
-## THREAD FORMAT (MANDATORY)
-
-1. Generate **3 DISTINCT thread options** for the user to choose from
-2. Each thread MUST contain **7-10 individual tweets**
-3. Number each tweet: "1/ [text]" "2/ [text]" - THE SLASH AFTER THE NUMBER IS REQUIRED
-4. Each tweet MUST be under 280 characters
-5. The 1/ tweet is the HOOK - make it irresistible
-
-## EXACT OUTPUT FORMAT REQUIRED:
-
-**Option 1: [Brief 3-5 word description]**
-
-1/ [First tweet - THE HOOK that stops the scroll]
-
-2/ [Second tweet - expand on hook]
-
-3/ [Third tweet - build momentum]
-
-4/ [Fourth tweet - key insight]
-
-5/ [Fifth tweet - more value]
-
-6/ [Sixth tweet - supporting point]
-
-7/ [Seventh tweet - call to action or summary]
-
-*Why this works:* [One sentence]
-
-**Option 2: [Different angle]**
-
-1/ [Hook...]
-
-2/ [Continue...]
-
-3/ [...]
-
-4/ [...]
-
-5/ [...]
-
-6/ [...]
-
-7/ [...]
-
-*Why this works:* [One sentence]
-
-**Option 3: [Third approach]**
-
-1/ [Hook...]
-
-2/ [...]
-
-3/ [...]
-
-4/ [...]
-
-5/ [...]
-
-6/ [...]
-
-7/ [...]
-
-*Why this works:* [One sentence]
-
-## CRITICAL RULES:
-- You MUST output exactly 3 options using "**Option 1:**" "**Option 2:**" "**Option 3:**" headers
-- Each option MUST have 7-10 tweets numbered with slash: "1/" "2/" "3/" etc.
-- DO NOT use "---" delimiters
-- DO NOT output single tweets
-` : ''
-
+  // For non-thread content, use the post-type specific prompts
   // Select the appropriate prompt builder based on post type
   // When isTemplatePrompt is true, the topic is a template instruction - use it directly
   switch (postType) {
@@ -475,19 +429,11 @@ IGNORE any instructions above about "single tweet", "under 100 characters", or "
       throw new Error(`Unknown CT-native post type: ${postType}`)
     }
   }
-  
-  // Append thread instructions to system prompt if generating a thread
-  if (threadInstructions) {
-    systemPrompt = systemPrompt + threadInstructions
-    // Also add reminder to user prompt for emphasis
-    userPrompt = userPrompt + `
 
-REMINDER: Generate exactly 3 thread options. Each thread must have 7-10 tweets numbered "1/" "2/" "3/" etc. Use the **Option 1:** **Option 2:** **Option 3:** format.`
-  }
-
+  // Generate single-tweet content (threads handled above)
   const response = await anthropic.messages.create({
-    model: 'claude-opus-4-20250514',
-    max_tokens: isThread ? 8192 : 4096, // More tokens for threads
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 4096,
     system: systemPrompt,
     messages: [{ role: 'user', content: userPrompt }],
   })
@@ -497,16 +443,6 @@ REMINDER: Generate exactly 3 thread options. Each thread must have 7-10 tweets n
     .filter((block): block is Anthropic.TextBlock => block.type === 'text')
     .map(block => block.text)
     .join('\n')
-
-  // Debug logging for thread generation
-  if (isThread) {
-    console.log('[Thread Debug] contentType:', contentType)
-    console.log('[Thread Debug] Response length:', textContent.length)
-    console.log('[Thread Debug] First 500 chars:', textContent.substring(0, 500))
-    console.log('[Thread Debug] Contains **Option 1:', textContent.includes('**Option 1'))
-    console.log('[Thread Debug] Contains **Option 2:', textContent.includes('**Option 2'))
-    console.log('[Thread Debug] Contains **Option 3:', textContent.includes('**Option 3'))
-  }
 
   // Map CT-native post type to legacy archetype for compatibility
   const archetypeMapping: Record<CTNativePostType, Archetype> = {
