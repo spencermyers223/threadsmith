@@ -149,77 +149,116 @@ function parseGeneratedPosts(
   postType?: CTNativePostType
 ): GeneratedPost[] {
   const posts: GeneratedPost[] = []
-
-  // Try the new --- delimited format first
-  const delimiterRegex = /---\s*\n?(VARIATION\s*\d+|THREAD\s*\d+|\d+)?\s*\n([\s\S]*?)(?=\n---|\n*$)/gi
   let match
-  
-  while ((match = delimiterRegex.exec(response)) !== null) {
-    const rawContent = match[2].trim()
+
+  // Primary method: **Option N:** format (most reliable)
+  const optionRegex = /\*\*Option\s+(\d+)[^*]*\*\*\s*([\s\S]*?)(?=\*\*Option\s+\d+|\*\*Recommendation|$)/gi
+
+  while ((match = optionRegex.exec(response)) !== null) {
+    let rawContent = match[2].trim()
+    
+    // Remove the "*Why this works:*" and everything after it from the content
+    const whyWorksIndex = rawContent.search(/\*Why this works:\*/i)
+    if (whyWorksIndex > 0) {
+      rawContent = rawContent.substring(0, whyWorksIndex).trim()
+    }
+    
+    // Also remove any trailing "*Character count:*" lines
+    rawContent = rawContent.replace(/\n\*Character count:.*$/gm, '').trim()
+    
     if (rawContent && rawContent.length > 10) {
-      // Run through content cleaner to remove AI patterns
-      const { cleaned } = cleanContent(rawContent)
-      if (cleaned.length > 0) {
+      // For thread content (has numbered tweets), preserve the structure
+      const isThreadContent = /^\d+\//.test(rawContent)
+      
+      if (isThreadContent) {
+        // Don't run through cleanContent for threads - preserve the numbering
+        // Just do minimal cleanup
+        const cleanedThread = rawContent
+          .replace(/\[\d+\s*chars?\]/gi, '') // Remove char count markers
+          .replace(/^\*[A-Z][\s\S]*$/gm, '') // Remove any analysis lines starting with *
+          .trim()
+        
         posts.push({
-          content: cleaned,
+          content: cleanedThread,
           archetype: archetypeToOutput(archetype),
           postType,
-          characterCount: cleaned.length,
+          characterCount: cleanedThread.length,
         })
+      } else {
+        // For single tweets, run through content cleaner
+        const { cleaned } = cleanContent(rawContent)
+        if (cleaned.length > 0) {
+          posts.push({
+            content: cleaned,
+            archetype: archetypeToOutput(archetype),
+            postType,
+            characterCount: cleaned.length,
+          })
+        }
       }
     }
   }
 
-  // If --- format didn't work, try **Variation** format
+  // Fallback: try **Variation** format
   if (posts.length === 0) {
-    const variationRegex = /\*\*(?:Variation|Option)\s+(\d+)(?:\/\d+)?[^*]*\*\*\s*([\s\S]*?)(?=\*\*(?:Variation|Option)\s+\d+|\*\*Recommendation|\*\*Angle|$)/gi
+    const variationRegex = /\*\*Variation\s+(\d+)[^*]*\*\*\s*([\s\S]*?)(?=\*\*Variation\s+\d+|\*\*Recommendation|$)/gi
 
     while ((match = variationRegex.exec(response)) !== null) {
-      const rawContent = match[2].trim()
+      let rawContent = match[2].trim()
+      const whyWorksIndex = rawContent.search(/\*Why this works:\*/i)
+      if (whyWorksIndex > 0) {
+        rawContent = rawContent.substring(0, whyWorksIndex).trim()
+      }
+      
       if (rawContent && rawContent.length > 10) {
-        // Run through content cleaner to remove AI patterns
-        const { cleaned } = cleanContent(rawContent)
-        if (cleaned.length > 0) {
+        const isThreadContent = /^\d+\//.test(rawContent)
+        
+        if (isThreadContent) {
+          const cleanedThread = rawContent
+            .replace(/\[\d+\s*chars?\]/gi, '')
+            .replace(/^\*[A-Z][\s\S]*$/gm, '')
+            .trim()
           posts.push({
-            content: cleaned,
+            content: cleanedThread,
             archetype: archetypeToOutput(archetype),
             postType,
-            characterCount: cleaned.length,
+            characterCount: cleanedThread.length,
           })
+        } else {
+          const { cleaned } = cleanContent(rawContent)
+          if (cleaned.length > 0) {
+            posts.push({
+              content: cleaned,
+              archetype: archetypeToOutput(archetype),
+              postType,
+              characterCount: cleaned.length,
+            })
+          }
         }
       }
     }
   }
 
-  // If still no posts, try plain **Option N:** format (legacy)
-  if (posts.length === 0) {
-    const optionRegex = /\*\*Option\s+(\d+)(?::\s*[^*]*)?\*\*\s*([\s\S]*?)(?=\*\*Option\s+\d+|$|\*Why|\*Recommendation|---)/gi
-
-    while ((match = optionRegex.exec(response)) !== null) {
-      const rawContent = match[2].trim()
-      if (rawContent && rawContent.length > 10) {
-        const { cleaned } = cleanContent(rawContent)
-        if (cleaned.length > 0) {
-          posts.push({
-            content: cleaned,
-            archetype: archetypeToOutput(archetype),
-            postType,
-            characterCount: cleaned.length,
-          })
-        }
-      }
-    }
-  }
-
-  // Fallback: if no options found, treat entire response as single post
+  // Last fallback: if nothing found, treat entire response as single post
   if (posts.length === 0 && response.trim().length > 0) {
-    const { cleaned } = cleanContent(response.trim())
-    posts.push({
-      content: cleaned,
-      archetype: archetypeToOutput(archetype),
-      postType,
-      characterCount: cleaned.length,
-    })
+    // Check if the whole response is thread content
+    const isThreadContent = /^\d+\//.test(response.trim())
+    if (isThreadContent) {
+      posts.push({
+        content: response.trim(),
+        archetype: archetypeToOutput(archetype),
+        postType,
+        characterCount: response.trim().length,
+      })
+    } else {
+      const { cleaned } = cleanContent(response.trim())
+      posts.push({
+        content: cleaned,
+        archetype: archetypeToOutput(archetype),
+        postType,
+        characterCount: cleaned.length,
+      })
+    }
   }
 
   // Add quality scores and warnings to each post

@@ -150,28 +150,50 @@ export function ThreadPreview({ tweets, onAddTweet, onDeleteTweet, userName = 'Y
 
 // Legacy support: Convert HTML content to tweets array
 export function parseThreadFromContent(content: string): ThreadTweet[] {
-  const plainText = stripHtml(content)
+  let plainText = stripHtml(content)
   if (!plainText.trim()) return [{ id: '1', content: '' }]
+  
+  // Clean formatting artifacts first
+  plainText = plainText
+    .replace(/^---+\s*/gm, '') // Remove --- delimiters
+    .replace(/^\*\*[^*]+\*\*\s*/gm, '') // Remove **Option X** headers
+    .replace(/\*Why this works:[\s\S]*?(?=\d+\/|$)/gi, '') // Remove analysis
+    .replace(/\*Character count:.*$/gm, '') // Remove character count lines
+    .replace(/\[\d+\s*chars?\]/gi, '') // Remove inline char counts
+    .trim()
 
-  // Try to split by numbered patterns (1/, 2/, etc. or 1. 2. etc.)
-  const numberedPattern = /(?:^|\n)(?:\d+[.\/]\s*)/g
-  const parts = plainText.split(numberedPattern).filter(Boolean)
+  // Try to split by numbered patterns (1/, 2/, etc.)
+  const numberedPattern = /(?:^|\n)(\d+\/\d*)\s*/g
+  const matches = Array.from(plainText.matchAll(numberedPattern))
 
-  if (parts.length > 1) {
-    return parts.map((p, i) => ({
-      id: String(i + 1),
-      content: p.trim()
-        .replace(/\[\d+\s*chars?\]/gi, '') // Remove [149 chars] metadata
-        .replace(/^\*Character count:.*$/gm, '') // Remove character count lines
+  if (matches.length > 0) {
+    const tweets: ThreadTweet[] = []
+    for (let i = 0; i < matches.length; i++) {
+      const match = matches[i]
+      const startPos = match.index! + match[0].length
+      const endPos = matches[i + 1]?.index ?? plainText.length
+      const tweetContent = plainText.slice(startPos, endPos)
+        .split('\n')[0] // Take only first line
         .trim()
-    }))
+      
+      if (tweetContent) {
+        tweets.push({
+          id: String(i + 1),
+          content: tweetContent
+        })
+      }
+    }
+    if (tweets.length > 0) return tweets
   }
 
   // Fall back to splitting by double newlines
-  const paragraphs = plainText.split(/\n\n+/).filter(Boolean)
+  const paragraphs = plainText
+    .split(/\n\n+/)
+    .map(p => p.trim())
+    .filter(p => p.length > 0 && !p.startsWith('*') && !p.startsWith('---'))
 
   if (paragraphs.length > 1) {
-    return paragraphs.map((p, i) => ({ id: String(i + 1), content: p.trim() }))
+    return paragraphs.map((p, i) => ({ id: String(i + 1), content: p }))
   }
 
   // If still single block, return as one tweet

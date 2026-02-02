@@ -238,38 +238,68 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   // Helper function to parse thread content into individual tweets
   const parseThreadContent = (content: string): { number: string; text: string; charCount: number }[] => {
     const tweets: { number: string; text: string; charCount: number }[] = []
+    
+    // First, clean the content of any formatting artifacts
+    const cleanedContent = content
+      .replace(/^---+\s*/gm, '') // Remove --- delimiters
+      .replace(/^\*\*[^*]+\*\*\s*/gm, '') // Remove **Option X** headers
+      .replace(/\*Why this works:[\s\S]*?(?=\d+\/|$)/gi, '') // Remove analysis sections
+      .replace(/\*Character count:.*$/gm, '') // Remove character count lines
+      .replace(/\[\d+\s*chars?\]/gi, '') // Remove inline char counts
+      .trim()
+    
+    // Look for numbered patterns like "1/" or "1/7"
     const numberedPattern = /^(\d+\/\d*)\s*/gm
-    const matches = Array.from(content.matchAll(numberedPattern))
+    const matches = Array.from(cleanedContent.matchAll(numberedPattern))
 
     if (matches.length > 0) {
       for (let i = 0; i < matches.length; i++) {
         const match = matches[i]
         const startPos = match.index! + match[0].length
-        const endPos = matches[i + 1]?.index ?? content.length
-        const tweetText = content.slice(startPos, endPos).trim()
+        const endPos = matches[i + 1]?.index ?? cleanedContent.length
+        const tweetText = cleanedContent.slice(startPos, endPos).trim()
+        
+        // Clean the individual tweet text
         const cleanText = tweetText
-          .replace(/\n\*[A-Z][\s\S]*$/, '')
-          .replace(/\n---[\s\S]*$/, '')
-          .replace(/\[\d+\s*chars?\]/gi, '')
-          .replace(/^\*Character count:.*$/gm, '')
+          .replace(/\n\*[A-Z][\s\S]*$/, '') // Remove analysis at end
+          .replace(/\n---[\s\S]*$/, '') // Remove delimiter sections
+          .split('\n')[0] // Take only the first line (the actual tweet)
           .trim()
 
-        if (cleanText) {
+        if (cleanText && cleanText.length > 0) {
+          const totalTweets = matches.length
           const num = match[1].includes('/') && !match[1].endsWith('/')
             ? match[1]
-            : `${match[1]}${matches.length}`
+            : `${match[1].replace('/', '')}/${totalTweets}`
           tweets.push({ number: num, text: cleanText, charCount: cleanText.length })
         }
       }
     }
 
+    // Fallback: if no numbered patterns found, try splitting by double newlines
     if (tweets.length === 0) {
-      const fallbackTweets = content.split('\n\n').filter(t => t.trim())
-      return fallbackTweets.map((text, index) => ({
-        number: `${index + 1}/${fallbackTweets.length}`,
-        text: text.trim(),
-        charCount: text.trim().length
-      }))
+      // Filter out empty lines and metadata
+      const fallbackTweets = cleanedContent
+        .split('\n\n')
+        .map(t => t.trim())
+        .filter(t => t.length > 0 && !t.startsWith('*') && !t.startsWith('---'))
+      
+      if (fallbackTweets.length > 0) {
+        return fallbackTweets.map((text, index) => ({
+          number: `${index + 1}/${fallbackTweets.length}`,
+          text: text,
+          charCount: text.length
+        }))
+      }
+    }
+
+    // If still nothing, return the whole content as a single tweet
+    if (tweets.length === 0 && cleanedContent.length > 0) {
+      return [{
+        number: '1/1',
+        text: cleanedContent,
+        charCount: cleanedContent.length
+      }]
     }
 
     return tweets
