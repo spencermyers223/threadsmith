@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { deductCredits, CREDIT_COSTS } from '@/lib/credits'
 
 const anthropic = new Anthropic()
 
@@ -29,6 +30,26 @@ export async function POST(request: NextRequest) {
   
   if (!xAccount) {
     return NextResponse.json({ error: 'X account not found' }, { status: 404 })
+  }
+
+  // Deduct 1 credit for voice analysis
+  const creditResult = await deductCredits(
+    supabase,
+    user.id,
+    CREDIT_COSTS.VOICE_ADD,
+    'voice_analysis',
+    'Voice profile analysis'
+  )
+
+  if (!creditResult.success) {
+    return NextResponse.json(
+      { 
+        error: 'Insufficient credits',
+        creditsNeeded: CREDIT_COSTS.VOICE_ADD,
+        creditsRemaining: creditResult.creditsRemaining,
+      },
+      { status: 402 }
+    )
   }
 
   try {
