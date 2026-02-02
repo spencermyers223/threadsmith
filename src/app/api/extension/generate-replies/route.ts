@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
+import { deductCredits, CREDIT_COSTS } from '@/lib/credits';
 
 // CORS headers for extension requests
 const corsHeaders = {
@@ -85,7 +86,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Reply Coach is FREE for all users!
+    // Check and deduct credits (1 credit for Reply Coaching)
+    const creditResult = await deductCredits(
+      supabase,
+      user.id,
+      CREDIT_COSTS.REPLY_COACHING,
+      'reply_coaching',
+      'Reply coaching hook generation'
+    );
+
+    if (!creditResult.success) {
+      return jsonResponse(
+        { 
+          error: 'Insufficient credits',
+          creditsNeeded: CREDIT_COSTS.REPLY_COACHING,
+          creditsRemaining: creditResult.creditsRemaining,
+        },
+        { status: 402 }
+      );
+    }
 
     // Parse request body
     console.log('[generate-replies] Parsing request body...');

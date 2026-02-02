@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getValidXTokens } from '@/lib/x-tokens';
 import Anthropic from '@anthropic-ai/sdk';
+import { deductCredits, CREDIT_COSTS } from '@/lib/credits';
 
 // CORS headers for extension requests
 const corsHeaders = {
@@ -192,6 +193,26 @@ export async function GET(request: NextRequest) {
       return jsonResponse(
         { error: 'Invalid or expired token' },
         { status: 401 }
+      );
+    }
+
+    // Check and deduct credits (3 credits for Account Analysis)
+    const creditResult = await deductCredits(
+      supabase,
+      user.id,
+      CREDIT_COSTS.ACCOUNT_ANALYSIS,
+      'account_analysis',
+      'Account Analysis scan'
+    );
+
+    if (!creditResult.success) {
+      return jsonResponse(
+        { 
+          error: 'Insufficient credits',
+          creditsNeeded: CREDIT_COSTS.ACCOUNT_ANALYSIS,
+          creditsRemaining: creditResult.creditsRemaining,
+        },
+        { status: 402 } // Payment Required
       );
     }
 
