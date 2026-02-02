@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js'
-import { checkAndIncrementPosts, POST_LIMITS } from '@/lib/credits'
+import { POST_LIMITS } from '@/lib/credits'
 
 export interface GenerationLimitResult {
   canGenerate: boolean

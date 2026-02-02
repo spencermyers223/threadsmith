@@ -14,13 +14,6 @@ interface CurrentSubscription {
   status: string | null
 }
 
-const freeFeatures = [
-  '10 posts per month',
-  '5 credits per month',
-  'Basic post generation',
-  'Chrome extension access',
-]
-
 const premiumFeatures = [
   '300 posts per month',
   '50 credits per month',
