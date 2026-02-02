@@ -1660,3 +1660,11 @@ body {
 .credit-cost-badge .credits-icon {
   font-size: 10px;
 }
+
+/* Credit cost info in empty states */
+.credit-cost-info {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #C9B896;
+  opacity: 0.8;
+}

@@ -2734,11 +2734,17 @@ async function generateCoaching(postData) {
   
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.message || 'API request failed');
+    
+    // Handle insufficient credits
+    if (response.status === 402) {
+      throw new Error(`Insufficient credits. You have ${error.creditsRemaining || 0} credits. Reply coaching requires 1 credit.`);
+    }
+    
+    throw new Error(error.error || error.message || 'API request failed');
   }
   
   const data = await response.json();
-  return data.coaching;
+  return data;
 }
 
 // Show coaching panel UI
