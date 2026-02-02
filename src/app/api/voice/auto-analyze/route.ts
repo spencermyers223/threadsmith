@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { xApiFetch } from '@/lib/x-tokens'
-import { deductCredits, CREDIT_COSTS } from '@/lib/credits'
+import { deductCredits, hasEnoughCredits, CREDIT_COSTS } from '@/lib/credits'
 
 const anthropic = new Anthropic()
 
@@ -43,21 +43,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'X account not found' }, { status: 404 })
   }
 
-  // Deduct 1 credit for voice refresh
-  const creditResult = await deductCredits(
+  // Check credits (but don't deduct yet - wait for success)
+  const creditCheck = await hasEnoughCredits(
     supabase,
     user.id,
-    CREDIT_COSTS.VOICE_REFRESH,
-    'voice_auto_analyze',
-    'Voice profile auto-refresh'
+    CREDIT_COSTS.VOICE_REFRESH
   )
 
-  if (!creditResult.success) {
+  if (!creditCheck.success) {
     return NextResponse.json(
       { 
         error: 'Insufficient credits',
         creditsNeeded: CREDIT_COSTS.VOICE_REFRESH,
-        creditsRemaining: creditResult.creditsRemaining,
+        creditsRemaining: creditCheck.credits,
       },
       { status: 402 }
     )
@@ -174,6 +172,15 @@ Return this exact JSON structure:
       .eq('x_account_id', xAccountId)
 
     if (updateError) throw updateError
+
+    // NOW deduct credits (after successful analysis + storage)
+    await deductCredits(
+      supabase,
+      user.id,
+      CREDIT_COSTS.VOICE_REFRESH,
+      'voice_auto_analyze',
+      'Voice profile auto-refresh'
+    )
 
     return NextResponse.json({
       voiceProfile,

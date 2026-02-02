@@ -14,7 +14,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getValidXTokens } from '@/lib/x-tokens';
 import Anthropic from '@anthropic-ai/sdk';
-import { deductCredits, CREDIT_COSTS } from '@/lib/credits';
+import { deductCredits, hasEnoughCredits, CREDIT_COSTS } from '@/lib/credits';
 
 // CORS headers for extension requests
 const corsHeaders = {
@@ -196,21 +196,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check and deduct credits (3 credits for Account Analysis)
-    const creditResult = await deductCredits(
+    // Check if user has enough credits (but don't deduct yet - wait for success)
+    const creditCheck = await hasEnoughCredits(
       supabase,
       user.id,
-      CREDIT_COSTS.ACCOUNT_ANALYSIS,
-      'account_analysis',
-      'Account Analysis scan'
+      CREDIT_COSTS.ACCOUNT_ANALYSIS
     );
 
-    if (!creditResult.success) {
+    if (!creditCheck.success) {
       return jsonResponse(
         { 
           error: 'Insufficient credits',
           creditsNeeded: CREDIT_COSTS.ACCOUNT_ANALYSIS,
-          creditsRemaining: creditResult.creditsRemaining,
+          creditsRemaining: creditCheck.credits,
         },
         { status: 402 } // Payment Required
       );
@@ -331,6 +329,15 @@ export async function GET(request: NextRequest) {
       retweets: tweet.public_metrics?.retweet_count || 0,
       views: tweet.public_metrics?.impression_count || 0,
     }));
+
+    // NOW deduct credits (after successful X API + Opus analysis)
+    await deductCredits(
+      supabase,
+      user.id,
+      CREDIT_COSTS.ACCOUNT_ANALYSIS,
+      'account_analysis',
+      `Account Analysis: @${targetUser.username}`
+    );
 
     // Track usage (3 credits for account analysis)
     await supabase

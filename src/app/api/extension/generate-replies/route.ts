@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
-import { deductCredits, CREDIT_COSTS } from '@/lib/credits';
+import { deductCredits, hasEnoughCredits, CREDIT_COSTS } from '@/lib/credits';
 
 // CORS headers for extension requests
 const corsHeaders = {
@@ -86,21 +86,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check and deduct credits (1 credit for Reply Coaching)
-    const creditResult = await deductCredits(
+    // Check if user has enough credits (but don't deduct yet)
+    const creditCheck = await hasEnoughCredits(
       supabase,
       user.id,
-      CREDIT_COSTS.REPLY_COACHING,
-      'reply_coaching',
-      'Reply coaching hook generation'
+      CREDIT_COSTS.REPLY_COACHING
     );
 
-    if (!creditResult.success) {
+    if (!creditCheck.success) {
       return jsonResponse(
         { 
           error: 'Insufficient credits',
           creditsNeeded: CREDIT_COSTS.REPLY_COACHING,
-          creditsRemaining: creditResult.creditsRemaining,
+          creditsRemaining: creditCheck.credits,
         },
         { status: 402 }
       );
@@ -190,6 +188,15 @@ CRITICAL RULES:
         curious: result.hooks?.curious || ''
       }
     };
+
+    // NOW deduct credits (after successful generation)
+    await deductCredits(
+      supabase,
+      user.id,
+      CREDIT_COSTS.REPLY_COACHING,
+      'reply_coaching',
+      'Reply coaching hook generation'
+    );
 
     // Track usage
     await supabase
