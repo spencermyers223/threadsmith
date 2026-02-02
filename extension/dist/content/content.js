@@ -668,28 +668,32 @@ function checkProfilePage() {
 
 // Inject profile buttons (icon-only gold circles)
 // 3 buttons: Voice (mic), Stats (chart), Watchlist (eye with dropdown)
+// Position: Next to account name/username, not competing with X's native buttons
 async function injectWatchButton(handle) {
   // Remove ALL existing xthread buttons first to prevent duplicates
-  document.querySelectorAll('.xthread-profile-btn, .xthread-watch-btn, .xthread-analyze-btn, .xthread-top-tweets-btn, .xthread-message-btn, .xthread-watchlist-dropdown').forEach(el => el.remove());
+  document.querySelectorAll('.xthread-profile-btn, .xthread-btn-container, .xthread-watchlist-dropdown').forEach(el => el.remove());
   
-  // Find the Follow button's container
-  const followContainer = document.querySelector('[data-testid="placementTracking"]');
-  if (!followContainer) {
-    console.debug('[xthread] Follow button container not found');
+  // Find the UserName element (contains display name + @handle)
+  const userNameEl = document.querySelector('[data-testid="UserName"]');
+  if (!userNameEl) {
+    console.debug('[xthread] UserName element not found');
     return;
   }
   
-  // Find parent to insert our button alongside
-  const buttonContainer = followContainer.parentElement;
-  if (!buttonContainer) return;
+  // Create a container for our buttons to sit next to the name
+  const btnContainer = document.createElement('div');
+  btnContainer.className = 'xthread-btn-container';
   
-  // SVG icons (18x18 for better visibility in 32px circles)
+  // Insert after the UserName element
+  userNameEl.parentElement.insertBefore(btnContainer, userNameEl.nextSibling);
+  
+  // SVG icons (16x16 for 28px circles)
   const icons = {
-    mic: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
-    chart: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
-    eye: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
-    check: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
-    loader: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="xthread-spinner"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`,
+    mic: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
+    chart: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+    eye: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
+    check: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+    loader: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="xthread-spinner"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>`,
   };
 
   // Create button helper
@@ -724,10 +728,10 @@ async function injectWatchButton(handle) {
     </div>
   `;
   
-  // Insert buttons (right to left: watchlist, stats, voice)
-  buttonContainer.insertBefore(watchlistBtn, followContainer);
-  buttonContainer.insertBefore(statsBtn, followContainer);
-  buttonContainer.insertBefore(voiceBtn, followContainer);
+  // Insert buttons into our container (left to right: voice, stats, watchlist)
+  btnContainer.appendChild(voiceBtn);
+  btnContainer.appendChild(statsBtn);
+  btnContainer.appendChild(watchlistBtn);
   document.body.appendChild(dropdown);
   
   // Voice button click - Add to Voice (existing functionality)
