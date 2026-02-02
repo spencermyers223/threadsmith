@@ -348,6 +348,14 @@ export default function GeneratePage() {
   const [inspirationTweets, setInspirationTweets] = useState<InspirationTweet[]>([])
   const [loadingInspirationTweets, setLoadingInspirationTweets] = useState(false)
 
+  // Voice System V2: Style profiles
+  const [styleProfiles, setStyleProfiles] = useState<Array<{
+    id: string
+    account_username: string
+    profile_data: { summary?: string }
+  }>>([])
+  const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<string | null>(null)
+
   // Fetch templates
   useEffect(() => {
     async function fetchTemplates() {
@@ -363,6 +371,22 @@ export default function GeneratePage() {
       setLoadingTemplates(false)
     }
     fetchTemplates()
+  }, [])
+
+  // Fetch style profiles (Voice System V2)
+  useEffect(() => {
+    async function fetchStyleProfiles() {
+      try {
+        const res = await fetch('/api/voice/style-profiles')
+        if (res.ok) {
+          const data = await res.json()
+          setStyleProfiles(data.profiles || [])
+        }
+      } catch (err) {
+        console.error('Failed to fetch style profiles:', err)
+      }
+    }
+    fetchStyleProfiles()
   }, [])
 
   // Filter templates
@@ -490,6 +514,7 @@ export default function GeneratePage() {
           postType: 'all',
           sourceFileId: selectedFile?.id || undefined,
           templateData: templateData,
+          styleProfileId: selectedStyleProfileId || undefined, // Voice System V2
         }),
       })
 
@@ -852,6 +877,36 @@ export default function GeneratePage() {
                 </span>
               )}
             </div>
+
+            {/* Style Profile Selector (Voice System V2) */}
+            {styleProfiles.length > 0 && (
+              <div className="flex items-center gap-4 mb-4">
+                <span className="text-sm font-medium text-[var(--muted)]">Incorporate style (select one):</span>
+                <div className="flex gap-2 flex-wrap">
+                  {styleProfiles.map((profile) => (
+                    <button
+                      key={profile.id}
+                      onClick={() => setSelectedStyleProfileId(
+                        selectedStyleProfileId === profile.id ? null : profile.id
+                      )}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                        selectedStyleProfileId === profile.id
+                          ? 'bg-accent text-[var(--accent-text)]'
+                          : 'bg-[var(--background)] border border-[var(--border)] hover:border-[var(--muted)]'
+                      }`}
+                      title={profile.profile_data?.summary || `Style from @${profile.account_username}`}
+                    >
+                      @{profile.account_username}
+                    </button>
+                  ))}
+                </div>
+                {!selectedStyleProfileId && (
+                  <span className="text-xs text-[var(--muted)] italic">
+                    None selected = saved posts only
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex gap-3">
