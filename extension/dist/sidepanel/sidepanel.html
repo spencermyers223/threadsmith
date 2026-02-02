@@ -136,18 +136,39 @@
       <!-- Saved Tab -->
       <div class="tab-content" id="tab-saved">
         <div class="tab-header">
-          <span class="tab-subtitle" id="saved-count">0 posts</span>
+          <div class="saved-toggle">
+            <button class="toggle-btn active" data-section="posts">Posts</button>
+            <button class="toggle-btn" data-section="voice">Voice</button>
+          </div>
           <button class="text-btn" id="clear-saved-btn">Clear</button>
         </div>
-        <div class="saved-list" id="saved-list">
-          <!-- Filled dynamically -->
+        
+        <!-- Posts Section -->
+        <div class="saved-section active" id="saved-posts-section">
+          <div class="saved-list" id="saved-list">
+            <!-- Filled dynamically -->
+          </div>
+          <div class="empty-state" id="saved-empty">
+            <div class="empty-icon">📌</div>
+            <div class="empty-title">No saved posts</div>
+            <div class="empty-desc">
+              Click the <strong>📌</strong> bookmark icon on any tweet to save it here.<br>
+              Great for inspiration and reference!
+            </div>
+          </div>
         </div>
-        <div class="empty-state" id="saved-empty">
-          <div class="empty-icon">📌</div>
-          <div class="empty-title">No saved posts</div>
-          <div class="empty-desc">
-            Click the <strong>📌</strong> bookmark icon on any tweet to save it here.<br>
-            Great for inspiration and reference!
+        
+        <!-- Voice Section -->
+        <div class="saved-section" id="saved-voice-section">
+          <div class="voice-list" id="voice-list">
+            <!-- Filled dynamically with saved voice accounts -->
+          </div>
+          <div class="empty-state" id="voice-empty">
+            <div class="empty-icon">🎤</div>
+            <div class="empty-title">No voice accounts</div>
+            <div class="empty-desc">
+              Visit any X profile and click the <strong>🎤 Voice</strong> button to save their style for content generation.
+            </div>
           </div>
         </div>
       </div>

@@ -160,13 +160,10 @@ async function loadTabData(tabName) {
     case 'coach':
       // Coach tab shows empty state by default, filled by messages
       break;
-    case 'feed':
-      await loadFeed();
-      break;
     case 'stats':
       await loadStats();
       break;
-    case 'watch':
+    case 'watchlist':
       await loadWatchlist();
       break;
     case 'saved':
@@ -199,14 +196,105 @@ function handleMessage(message, sender, sendResponse) {
       break;
     
     case 'WATCHLIST_UPDATED':
-      if (currentTab === 'watch') loadWatchlist();
-      if (currentTab === 'feed') loadFeed();
+      if (currentTab === 'watchlist') loadWatchlist();
       break;
     
     case 'SAVED_UPDATED':
       if (currentTab === 'saved') loadSaved();
       break;
+    
+    case 'SWITCH_TO_STATS':
+      // Switch to stats tab and load/scan the profile
+      switchTab('stats');
+      if (message.handle) {
+        fetchAndStoreProfileStats(message.handle);
+      }
+      break;
+    
+    case 'ADD_VOICE_PROFILE':
+      // Add account to saved voice accounts
+      addVoiceAccount(message.handle, message.displayName, message.avatar);
+      break;
+    
+    case 'STATS_UPDATED':
+      if (currentTab === 'stats') loadStats();
+      break;
+    
+    case 'VOICE_UPDATED':
+      if (currentTab === 'saved') loadSavedVoice();
+      break;
   }
+}
+
+// Fetch and store profile stats (top tweets)
+async function fetchAndStoreProfileStats(handle) {
+  if (!userToken) {
+    console.error('[xthread] No auth token for stats fetch');
+    return;
+  }
+  
+  try {
+    const response = await fetch(`${XTHREAD_API}/extension/user-top-tweets?handle=${encodeURIComponent(handle)}&days=30&limit=10`, {
+      headers: { 'Authorization': `Bearer ${userToken}` }
+    });
+    
+    if (!response.ok) throw new Error('Failed to fetch top tweets');
+    
+    const data = await response.json();
+    
+    // Store in scannedProfiles
+    const stored = await chrome.storage.local.get(['scannedProfiles']);
+    const profiles = stored.scannedProfiles || [];
+    
+    // Remove existing entry for this handle
+    const filtered = profiles.filter(p => p.handle.toLowerCase() !== handle.toLowerCase());
+    
+    // Add new entry at the beginning
+    filtered.unshift({
+      handle: handle,
+      scannedAt: new Date().toISOString(),
+      topTweets: data.tweets || [],
+      styleSummary: data.styleSummary || null
+    });
+    
+    // Keep only last 20 profiles
+    const trimmed = filtered.slice(0, 20);
+    
+    await chrome.storage.local.set({ scannedProfiles: trimmed });
+    loadStats();
+    
+  } catch (err) {
+    console.error('[xthread] Error fetching profile stats:', err);
+  }
+}
+
+// Add voice account
+async function addVoiceAccount(handle, displayName, avatar) {
+  const stored = await chrome.storage.local.get(['savedVoiceAccounts']);
+  const accounts = stored.savedVoiceAccounts || [];
+  
+  // Check if already exists
+  const exists = accounts.some(a => a.handle.toLowerCase() === handle.toLowerCase());
+  if (exists) {
+    console.log('[xthread] Voice account already saved:', handle);
+    return;
+  }
+  
+  accounts.unshift({
+    handle: handle,
+    displayName: displayName || handle,
+    avatar: avatar || null,
+    addedAt: new Date().toISOString()
+  });
+  
+  // Keep only last 50
+  const trimmed = accounts.slice(0, 50);
+  
+  await chrome.storage.local.set({ savedVoiceAccounts: trimmed });
+  console.log('[xthread] Added voice account:', handle);
+  
+  // If on saved tab, refresh
+  if (currentTab === 'saved') loadSavedVoice();
 }
 
 // ============================================================
@@ -319,37 +407,66 @@ async function loadFeed() {
 // ============================================================
 
 async function loadStats() {
-  const stored = await chrome.storage.local.get(['replyHistory']);
-  const history = stored.replyHistory || [];
+  const stored = await chrome.storage.local.get(['scannedProfiles']);
+  const profiles = stored.scannedProfiles || [];
   
-  const total = history.length;
-  const confirmed = history.filter(r => r.followedBack === true).length;
-  const rate = total > 0 ? Math.round((confirmed / total) * 100) : 0;
-  
-  document.getElementById('total-replies').textContent = total;
-  document.getElementById('conversion-rate').textContent = `${rate}%`;
-  
-  const replyList = document.getElementById('reply-list');
+  const statsList = document.getElementById('stats-list');
   const statsEmpty = document.getElementById('stats-empty');
   
-  if (history.length === 0) {
-    replyList.classList.add('hidden');
+  if (profiles.length === 0) {
+    statsList.classList.add('hidden');
     statsEmpty.classList.remove('hidden');
     return;
   }
   
-  replyList.classList.remove('hidden');
+  statsList.classList.remove('hidden');
   statsEmpty.classList.add('hidden');
   
-  replyList.innerHTML = history.slice(0, 15).map(reply => `
-    <div class="list-item">
-      <div class="item-header">
-        <span class="item-author">@${escapeHtml(reply.originalAuthorHandle || 'unknown')}</span>
-        <span class="item-time">${formatTimeAgo(reply.repliedAt)}</span>
+  statsList.innerHTML = profiles.map(profile => `
+    <div class="stats-profile" data-handle="${escapeHtml(profile.handle)}">
+      <div class="stats-profile-header">
+        <div class="stats-profile-info">
+          <span class="stats-handle">@${escapeHtml(profile.handle)}</span>
+          <span class="stats-time">${formatTimeAgo(profile.scannedAt)}</span>
+        </div>
+        <button class="stats-remove" data-handle="${escapeHtml(profile.handle)}">×</button>
       </div>
-      <div class="item-text">${escapeHtml(truncateText(reply.replyText || '', 80))}</div>
+      ${profile.styleSummary ? `<div class="stats-style">${escapeHtml(profile.styleSummary)}</div>` : ''}
+      <div class="stats-tweets">
+        ${(profile.topTweets || []).slice(0, 5).map((tweet, i) => `
+          <div class="stats-tweet">
+            <div class="stats-tweet-rank">#${i + 1}</div>
+            <div class="stats-tweet-content">
+              <div class="stats-tweet-text">${escapeHtml(truncateText(tweet.text, 100))}</div>
+              <div class="stats-tweet-metrics">
+                ❤️ ${formatNumber(tweet.likes || 0)} · 🔄 ${formatNumber(tweet.retweets || 0)} · 💬 ${formatNumber(tweet.replies || 0)}
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
     </div>
   `).join('');
+  
+  // Remove button handlers
+  statsList.querySelectorAll('.stats-remove').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const handle = btn.dataset.handle;
+      const stored = await chrome.storage.local.get(['scannedProfiles']);
+      const profiles = stored.scannedProfiles || [];
+      const filtered = profiles.filter(p => p.handle.toLowerCase() !== handle.toLowerCase());
+      await chrome.storage.local.set({ scannedProfiles: filtered });
+      loadStats();
+    });
+  });
+}
+
+// Format large numbers
+function formatNumber(num) {
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+  return num.toString();
 }
 
 // ============================================================
@@ -357,55 +474,149 @@ async function loadStats() {
 // ============================================================
 
 async function loadWatchlist() {
-  const stored = await chrome.storage.local.get(['watchlist']);
-  const watchlist = stored.watchlist || [];
+  const stored = await chrome.storage.local.get(['watchlistCategories']);
+  const categories = stored.watchlistCategories || [{ id: 'default', name: 'Default', accounts: [] }];
   
-  document.getElementById('watch-count').textContent = `${watchlist.length} accounts`;
+  // Populate category dropdown
+  const dropdown = document.getElementById('watchlist-category-dropdown');
+  const currentValue = dropdown.value || 'default';
+  dropdown.innerHTML = categories.map(cat => 
+    `<option value="${escapeHtml(cat.id)}">${escapeHtml(cat.name)} (${cat.accounts?.length || 0})</option>`
+  ).join('');
+  dropdown.value = currentValue;
   
-  const watchList = document.getElementById('watch-list');
-  const watchEmpty = document.getElementById('watch-empty');
+  // Get selected category
+  const selectedCategory = categories.find(c => c.id === dropdown.value) || categories[0];
+  const accounts = selectedCategory?.accounts || [];
   
-  if (watchlist.length === 0) {
-    watchList.classList.add('hidden');
-    watchEmpty.classList.remove('hidden');
+  const watchlistPosts = document.getElementById('watchlist-posts');
+  const watchlistEmpty = document.getElementById('watchlist-empty');
+  
+  if (accounts.length === 0) {
+    watchlistPosts.classList.add('hidden');
+    watchlistEmpty.classList.remove('hidden');
     return;
   }
   
-  watchList.classList.remove('hidden');
-  watchEmpty.classList.add('hidden');
+  watchlistPosts.classList.remove('hidden');
+  watchlistEmpty.classList.add('hidden');
   
-  watchList.innerHTML = watchlist.map(account => `
-    <div class="list-item" data-handle="${escapeHtml(account.handle)}">
-      <div class="item-header">
-        <span class="item-author">@${escapeHtml(account.handle)}</span>
-        <button class="item-remove" data-handle="${escapeHtml(account.handle)}">×</button>
+  // Show accounts with their info
+  watchlistPosts.innerHTML = accounts.map(account => `
+    <div class="watchlist-account" data-handle="${escapeHtml(account.handle)}">
+      <div class="watchlist-account-header">
+        <span class="watchlist-handle">@${escapeHtml(account.handle)}</span>
+        <button class="watchlist-remove" data-handle="${escapeHtml(account.handle)}">×</button>
       </div>
-      <div class="item-text">${escapeHtml(account.displayName || account.handle)}</div>
+      ${account.displayName ? `<div class="watchlist-name">${escapeHtml(account.displayName)}</div>` : ''}
     </div>
   `).join('');
   
+  // Remove button handlers
+  watchlistPosts.querySelectorAll('.watchlist-remove').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const handle = btn.dataset.handle;
+      await removeFromWatchlistCategory(dropdown.value, handle);
+      loadWatchlist();
+    });
+  });
+  
   // Click to view profile
-  watchList.querySelectorAll('.list-item').forEach(item => {
+  watchlistPosts.querySelectorAll('.watchlist-account').forEach(item => {
     item.addEventListener('click', (e) => {
-      if (e.target.closest('.item-remove')) return;
+      if (e.target.closest('.watchlist-remove')) return;
       const handle = item.dataset.handle;
       chrome.tabs.create({ url: `https://x.com/${handle}` });
     });
   });
+}
+
+// Remove account from watchlist category
+async function removeFromWatchlistCategory(categoryId, handle) {
+  const stored = await chrome.storage.local.get(['watchlistCategories']);
+  const categories = stored.watchlistCategories || [];
+  const category = categories.find(c => c.id === categoryId);
+  if (category && category.accounts) {
+    category.accounts = category.accounts.filter(a => a.handle.toLowerCase() !== handle.toLowerCase());
+    await chrome.storage.local.set({ watchlistCategories: categories });
+  }
+}
+
+// Setup watchlist category dropdown change handler
+function setupWatchlistHandlers() {
+  const dropdown = document.getElementById('watchlist-category-dropdown');
+  if (dropdown) {
+    dropdown.addEventListener('change', () => loadWatchlist());
+  }
   
-  // Remove button
-  watchList.querySelectorAll('.item-remove').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const handle = btn.dataset.handle;
-      const stored = await chrome.storage.local.get(['watchlist']);
-      const watchlist = stored.watchlist || [];
-      const index = watchlist.findIndex(w => w.handle.toLowerCase() === handle.toLowerCase());
-      if (index >= 0) {
-        watchlist.splice(index, 1);
-        await chrome.storage.local.set({ watchlist });
-        loadWatchlist();
-      }
+  const manageBtn = document.getElementById('manage-lists-btn');
+  if (manageBtn) {
+    manageBtn.addEventListener('click', showManageListsModal);
+  }
+}
+
+// Show manage lists modal
+async function showManageListsModal() {
+  const stored = await chrome.storage.local.get(['watchlistCategories']);
+  const categories = stored.watchlistCategories || [{ id: 'default', name: 'Default', accounts: [] }];
+  
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Manage Watchlists</h3>
+        <button class="modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="lists-container">
+          ${categories.map(cat => `
+            <div class="list-row" data-id="${escapeHtml(cat.id)}">
+              <span class="list-name">${escapeHtml(cat.name)}</span>
+              <span class="list-count">${cat.accounts?.length || 0} accounts</span>
+              ${cat.id !== 'default' ? `<button class="list-delete" data-id="${escapeHtml(cat.id)}">🗑️</button>` : ''}
+            </div>
+          `).join('')}
+        </div>
+        <div class="new-list-form">
+          <input type="text" placeholder="New list name..." id="new-list-input">
+          <button id="create-list-btn">Create</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Close modal
+  modal.querySelector('.modal-close').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+  
+  // Create new list
+  modal.querySelector('#create-list-btn').addEventListener('click', async () => {
+    const input = modal.querySelector('#new-list-input');
+    const name = input.value.trim();
+    if (!name) return;
+    
+    const stored = await chrome.storage.local.get(['watchlistCategories']);
+    const categories = stored.watchlistCategories || [{ id: 'default', name: 'Default', accounts: [] }];
+    categories.push({ id: `list_${Date.now()}`, name, accounts: [] });
+    await chrome.storage.local.set({ watchlistCategories: categories });
+    modal.remove();
+    loadWatchlist();
+  });
+  
+  // Delete list
+  modal.querySelectorAll('.list-delete').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const stored = await chrome.storage.local.get(['watchlistCategories']);
+      const categories = stored.watchlistCategories || [];
+      const filtered = categories.filter(c => c.id !== id);
+      await chrome.storage.local.set({ watchlistCategories: filtered });
+      modal.remove();
+      loadWatchlist();
     });
   });
 }
@@ -415,10 +626,13 @@ async function loadWatchlist() {
 // ============================================================
 
 async function loadSaved() {
+  await loadSavedPosts();
+  await loadSavedVoice();
+}
+
+async function loadSavedPosts() {
   const stored = await chrome.storage.local.get(['savedPosts']);
   const posts = stored.savedPosts || [];
-  
-  document.getElementById('saved-count').textContent = `${posts.length} posts`;
   
   const savedList = document.getElementById('saved-list');
   const savedEmpty = document.getElementById('saved-empty');
@@ -447,6 +661,73 @@ async function loadSaved() {
     item.addEventListener('click', () => {
       const url = item.dataset.url;
       if (url) chrome.tabs.create({ url });
+    });
+  });
+}
+
+async function loadSavedVoice() {
+  const stored = await chrome.storage.local.get(['savedVoiceAccounts']);
+  const accounts = stored.savedVoiceAccounts || [];
+  
+  const voiceList = document.getElementById('voice-list');
+  const voiceEmpty = document.getElementById('voice-empty');
+  
+  if (accounts.length === 0) {
+    voiceList.classList.add('hidden');
+    voiceEmpty.classList.remove('hidden');
+    return;
+  }
+  
+  voiceList.classList.remove('hidden');
+  voiceEmpty.classList.add('hidden');
+  
+  voiceList.innerHTML = accounts.map(account => `
+    <div class="voice-item" data-handle="${escapeHtml(account.handle)}">
+      <div class="voice-item-header">
+        <span class="voice-handle">@${escapeHtml(account.handle)}</span>
+        <button class="voice-remove" data-handle="${escapeHtml(account.handle)}">×</button>
+      </div>
+      ${account.displayName ? `<div class="voice-name">${escapeHtml(account.displayName)}</div>` : ''}
+      <div class="voice-added">Added ${formatTimeAgo(account.addedAt)}</div>
+    </div>
+  `).join('');
+  
+  // Remove button handlers
+  voiceList.querySelectorAll('.voice-remove').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const handle = btn.dataset.handle;
+      const stored = await chrome.storage.local.get(['savedVoiceAccounts']);
+      const accounts = stored.savedVoiceAccounts || [];
+      const filtered = accounts.filter(a => a.handle.toLowerCase() !== handle.toLowerCase());
+      await chrome.storage.local.set({ savedVoiceAccounts: filtered });
+      loadSavedVoice();
+    });
+  });
+  
+  // Click to view profile
+  voiceList.querySelectorAll('.voice-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('.voice-remove')) return;
+      const handle = item.dataset.handle;
+      chrome.tabs.create({ url: `https://x.com/${handle}` });
+    });
+  });
+}
+
+// Setup saved tab toggle
+function setupSavedToggle() {
+  document.querySelectorAll('.saved-toggle .toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const section = btn.dataset.section;
+      
+      // Update button states
+      document.querySelectorAll('.saved-toggle .toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      // Show/hide sections
+      document.getElementById('saved-posts-section').classList.toggle('active', section === 'posts');
+      document.getElementById('saved-voice-section').classList.toggle('active', section === 'voice');
     });
   });
 }
@@ -655,15 +936,20 @@ function setupEventListeners() {
     updateAuthUI();
   });
   
-  // Clear replies
-  document.getElementById('clear-replies-btn')?.addEventListener('click', async () => {
-    await chrome.storage.local.set({ replyHistory: [] });
+  // Clear stats (scanned profiles)
+  document.getElementById('clear-stats-btn')?.addEventListener('click', async () => {
+    await chrome.storage.local.set({ scannedProfiles: [] });
     loadStats();
   });
   
-  // Clear saved
+  // Clear saved - now clears based on active section
   document.getElementById('clear-saved-btn')?.addEventListener('click', async () => {
-    await chrome.storage.local.set({ savedPosts: [] });
+    const postsActive = document.getElementById('saved-posts-section')?.classList.contains('active');
+    if (postsActive) {
+      await chrome.storage.local.set({ savedPosts: [] });
+    } else {
+      await chrome.storage.local.set({ savedVoiceAccounts: [] });
+    }
     loadSaved();
   });
   
@@ -671,6 +957,12 @@ function setupEventListeners() {
   document.getElementById('refresh-queue-btn')?.addEventListener('click', () => {
     loadQueue();
   });
+  
+  // Setup watchlist category handlers
+  setupWatchlistHandlers();
+  
+  // Setup saved tab toggle (Posts/Voice)
+  setupSavedToggle();
 }
 
 // ============================================================
