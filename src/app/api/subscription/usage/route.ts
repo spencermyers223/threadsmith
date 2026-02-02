@@ -1,46 +1,32 @@
-import { createClient } from '@/lib/supabase/server'
+/**
+ * Get current user's usage (credits and posts)
+ * 
+ * GET /api/subscription/usage
+ */
+
 import { NextResponse } from 'next/server'
-import { checkCanGenerate } from '@/lib/generation-limits'
+import { createClient } from '@/lib/supabase/server'
+import { getUsageSummary } from '@/lib/credits'
 
 export async function GET() {
   const supabase = await createClient()
+  
   const { data: { user } } = await supabase.auth.getUser()
-
+  
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  try {
-    const result = await checkCanGenerate(supabase, user.id)
-
-    // Get subscription details if subscribed
-    let subscription = null
-    if (result.isSubscribed) {
-      const { data } = await supabase
-        .from('subscriptions')
-        .select('status, plan_type, tier, current_period_end')
-        .eq('user_id', user.id)
-        .in('status', ['active', 'lifetime'])
-        .single()
-
-      subscription = data
-    }
-
-    const response = {
-      canGenerate: result.canGenerate,
-      remaining: result.remaining,
-      isSubscribed: result.isSubscribed,
-      isTrial: result.isTrial,
-      trialDaysRemaining: result.trialDaysRemaining,
-      subscription,
-    }
-
-    return NextResponse.json(response)
-  } catch (err) {
-    console.error('Usage check error:', err)
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Failed to check usage' },
-      { status: 500 }
-    )
+  const usage = await getUsageSummary(supabase, user.id)
+  
+  if (!usage.success) {
+    return NextResponse.json({ error: usage.error }, { status: 500 })
   }
+
+  return NextResponse.json({
+    credits: usage.credits,
+    postsUsed: usage.postsUsed,
+    postsLimit: usage.postsLimit,
+    tier: usage.tier,
+  })
 }

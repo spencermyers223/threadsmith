@@ -102,6 +102,14 @@ export default function SettingsPage() {
     billingPeriod: 'monthly' | 'annual' | 'lifetime' | null
     status: string | null
   } | null>(null)
+  
+  // Usage state (credits and posts)
+  const [usage, setUsage] = useState<{
+    credits: number
+    postsUsed: number
+    postsLimit: number
+    tier: string
+  } | null>(null)
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
@@ -229,6 +237,17 @@ export default function SettingsPage() {
         }
       } catch (err) {
         console.error('Failed to load subscription:', err)
+      }
+      
+      // Load usage (credits and posts)
+      try {
+        const usageRes = await fetch('/api/subscription/usage')
+        if (usageRes.ok) {
+          const usageData = await usageRes.json()
+          setUsage(usageData)
+        }
+      } catch (err) {
+        console.error('Failed to load usage:', err)
       }
       
       // Get X username from user metadata or x_accounts table
@@ -523,6 +542,40 @@ export default function SettingsPage() {
                 <ExternalLink className="w-4 h-4" />
               </Link>
             </div>
+            
+            {/* Usage Stats */}
+            {usage && (
+              <div className="mt-4 pt-4 border-t border-[var(--border)]">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-[var(--background)] rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">⚡</span>
+                      <span className="text-sm font-medium text-[var(--muted)]">Credits</span>
+                    </div>
+                    <p className="text-2xl font-bold">{usage.credits}</p>
+                    <p className="text-xs text-[var(--muted)]">remaining this month</p>
+                  </div>
+                  <div className="bg-[var(--background)] rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">📝</span>
+                      <span className="text-sm font-medium text-[var(--muted)]">Posts</span>
+                    </div>
+                    <p className="text-2xl font-bold">
+                      {usage.postsUsed}
+                      {usage.postsLimit > 0 && <span className="text-sm font-normal text-[var(--muted)]"> / {usage.postsLimit}</span>}
+                      {usage.postsLimit === -1 && <span className="text-sm font-normal text-[var(--muted)]"> / ∞</span>}
+                    </p>
+                    <p className="text-xs text-[var(--muted)]">used this month</p>
+                  </div>
+                </div>
+                <Link
+                  href="/pricing#credits"
+                  className="block mt-3 text-center text-sm text-accent hover:underline"
+                >
+                  Need more credits? Buy credit packs →
+                </Link>
+              </div>
+            )}
           </div>
         </section>
 
