@@ -10,6 +10,8 @@ let planName = 'Free';
 let userEmail = null;
 let xUsername = null;
 let currentTab = 'coach';
+let userCredits = 0;
+let creditCosts = { accountAnalysis: 3, replyCoaching: 1, voiceAdd: 1 };
 
 // ============================================================
 // Initialization
@@ -114,12 +116,54 @@ async function loadAuthState() {
       } else {
         console.error('[xthread] API error:', response.status);
       }
+      
+      // Fetch credits
+      await fetchCredits();
     } catch (e) {
       console.error('[xthread] Failed to fetch user info:', e);
     }
   }
   
   updateAuthUI();
+}
+
+// Fetch user's credit balance
+async function fetchCredits() {
+  if (!userToken) return;
+  
+  try {
+    const response = await fetch(`${XTHREAD_API}/extension/credits`, {
+      headers: { 'Authorization': `Bearer ${userToken}` }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      userCredits = data.credits || 0;
+      creditCosts = data.costs || creditCosts;
+      updateCreditsDisplay();
+    }
+  } catch (e) {
+    console.error('[xthread] Failed to fetch credits:', e);
+  }
+}
+
+// Update the credits display in the header
+function updateCreditsDisplay() {
+  const creditsCount = document.getElementById('credits-count');
+  const creditsContainer = document.getElementById('user-credits');
+  
+  if (creditsCount) {
+    creditsCount.textContent = userCredits;
+  }
+  
+  // Add low credits indicator
+  if (creditsContainer) {
+    if (userCredits <= 2) {
+      creditsContainer.classList.add('credits-low');
+    } else {
+      creditsContainer.classList.remove('credits-low');
+    }
+  }
 }
 
 function updateAuthUI() {
@@ -485,11 +529,34 @@ async function showProfileStats(handle) {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      
+      // Handle insufficient credits
+      if (response.status === 402) {
+        statsLoading.classList.add('hidden');
+        statsTweets.innerHTML = `
+          <div class="credits-error">
+            <div class="credits-error-icon">⚡</div>
+            <div class="credits-error-title">Insufficient Credits</div>
+            <div class="credits-error-desc">
+              Account Analysis requires ${errorData.creditsNeeded || 3} credits.<br>
+              You have ${errorData.creditsRemaining || 0} credits remaining.
+            </div>
+            <button class="credits-error-btn" onclick="window.open('https://xthread.io/settings', '_blank')">
+              Get More Credits
+            </button>
+          </div>
+        `;
+        return;
+      }
+      
       throw new Error(errorData.error || 'Failed to fetch tweets');
     }
     
     const data = await response.json();
     console.log('[xthread] Got tweets:', data);
+    
+    // Refresh credits display after successful use
+    await fetchCredits();
     
     statsLoading.classList.add('hidden');
     

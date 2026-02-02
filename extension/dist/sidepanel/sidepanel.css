@@ -1572,3 +1572,91 @@ body {
   letter-spacing: 1px;
   border-top: 1px solid #2a2a2a;
 }
+
+/* ============================================================
+   Credit Display
+   ============================================================ */
+
+.user-credits {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #C9B896 0%, #D4C4A8 100%);
+  border-radius: 20px;
+  margin-right: 8px;
+}
+
+.credits-icon {
+  font-size: 12px;
+}
+
+.credits-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.credits-low {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+}
+
+.credits-low .credits-count {
+  color: white;
+}
+
+/* Insufficient credits error */
+.credits-error {
+  text-align: center;
+  padding: 24px;
+  background: #1a1a1a;
+  border-radius: 10px;
+  margin: 12px;
+}
+
+.credits-error-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.credits-error-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #e5e5e5;
+  margin-bottom: 8px;
+}
+
+.credits-error-desc {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 16px;
+}
+
+.credits-error-btn {
+  background: #C9B896;
+  color: #1a1a1a;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.credits-error-btn:hover {
+  background: #D4C4A8;
+}
+
+/* Credit cost badge */
+.credit-cost-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: #888;
+  margin-left: 8px;
+}
+
+.credit-cost-badge .credits-icon {
+  font-size: 10px;
+}
