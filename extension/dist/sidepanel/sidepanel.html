@@ -37,7 +37,7 @@
       <button id="sign-in-btn" class="primary-btn">Sign in with xthread</button>
     </div>
     
-    <!-- Tabs -->
+    <!-- Tabs (5 total: Coach, Stats, Watchlist, Saved, Queue) -->
     <div class="panel-tabs">
       <button class="panel-tab active" data-tab="coach">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -47,13 +47,6 @@
         </svg>
         <span class="tab-label">COACH</span>
       </button>
-      <button class="panel-tab" data-tab="feed">
-        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-        </svg>
-        <span class="tab-label">FEED</span>
-      </button>
       <button class="panel-tab" data-tab="stats">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="18" y1="20" x2="18" y2="10"/>
@@ -62,12 +55,12 @@
         </svg>
         <span class="tab-label">STATS</span>
       </button>
-      <button class="panel-tab" data-tab="watch">
+      <button class="panel-tab" data-tab="watchlist">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
           <circle cx="12" cy="12" r="3"/>
         </svg>
-        <span class="tab-label">WATCH</span>
+        <span class="tab-label">WATCHLIST</span>
       </button>
       <button class="panel-tab" data-tab="saved">
         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -100,70 +93,42 @@
         </div>
       </div>
       
-      <!-- Feed Tab -->
-      <div class="tab-content" id="tab-feed">
-        <div class="tab-header">
-          <span class="tab-subtitle">Posts from your watchlist</span>
-        </div>
-        <div class="feed-list" id="feed-list">
-          <!-- Filled dynamically -->
-        </div>
-        <div class="empty-state" id="feed-empty">
-          <div class="empty-icon">🔔</div>
-          <div class="empty-title">No posts yet</div>
-          <div class="empty-desc">
-            <strong>How to use:</strong><br>
-            1. Visit any profile and click <strong>Watch</strong><br>
-            2. Scroll your home feed<br>
-            3. Posts from watched accounts appear here!
-          </div>
-        </div>
-      </div>
-      
-      <!-- Stats Tab -->
+      <!-- Stats Tab (Scanned profiles with top tweets) -->
       <div class="tab-content" id="tab-stats">
-        <div class="stats-overview">
-          <div class="stat-card">
-            <div class="stat-value" id="total-replies">0</div>
-            <div class="stat-label">Replies</div>
-          </div>
-          <div class="stat-card highlight">
-            <div class="stat-value" id="conversion-rate">0%</div>
-            <div class="stat-label">Conversion</div>
-          </div>
-        </div>
         <div class="tab-header">
-          <span class="tab-subtitle">Reply History</span>
-          <button class="text-btn" id="clear-replies-btn">Clear</button>
+          <span class="tab-subtitle">Scanned Profiles</span>
+          <button class="text-btn" id="clear-stats-btn">Clear</button>
         </div>
-        <div class="reply-list" id="reply-list">
-          <!-- Filled dynamically -->
+        <div class="stats-list" id="stats-list">
+          <!-- Filled dynamically with scanned profiles -->
         </div>
         <div class="empty-state" id="stats-empty">
-          <div class="empty-icon">📈</div>
-          <div class="empty-title">No replies tracked</div>
+          <div class="empty-icon">📊</div>
+          <div class="empty-title">No profiles scanned</div>
           <div class="empty-desc">
-            <strong>How it works:</strong><br>
-            When you post replies on X, they're tracked automatically.<br>
-            We'll show your conversion rate (who follows back!).
+            Visit any X profile and click the <strong>📊 Stats</strong> button to see their top performing tweets and writing style.
           </div>
         </div>
       </div>
       
-      <!-- Watch Tab -->
-      <div class="tab-content" id="tab-watch">
+      <!-- Watchlist Tab (with categories) -->
+      <div class="tab-content" id="tab-watchlist">
         <div class="tab-header">
-          <span class="tab-subtitle" id="watch-count">0 accounts</span>
+          <div class="watchlist-category-select">
+            <select id="watchlist-category-dropdown">
+              <option value="default">Default</option>
+            </select>
+            <button class="text-btn" id="manage-lists-btn">Manage</button>
+          </div>
         </div>
-        <div class="watch-list" id="watch-list">
-          <!-- Filled dynamically -->
+        <div class="watchlist-posts" id="watchlist-posts">
+          <!-- Filled dynamically with posts from selected category -->
         </div>
-        <div class="empty-state" id="watch-empty">
+        <div class="empty-state" id="watchlist-empty">
           <div class="empty-icon">👁</div>
-          <div class="empty-title">No accounts yet</div>
+          <div class="empty-title">No accounts in this list</div>
           <div class="empty-desc">
-            Visit any X profile and click the <strong>👁 Watch</strong> button.<br>
-            Their posts will show up in your Feed tab!
+            Visit any X profile and click the <strong>👁 Watchlist</strong> button to add accounts to your lists.
           </div>
         </div>
       </div>
