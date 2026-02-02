@@ -48,6 +48,14 @@ CREATE POLICY "Users can view own credit transactions" ON public.credit_transact
 
 CREATE POLICY "Service role full access" ON public.credit_transactions
   FOR ALL USING (auth.role() = 'service_role');
+
+-- Add check constraint to prevent negative credits (safety net)
+ALTER TABLE public.subscriptions
+ADD CONSTRAINT credits_non_negative CHECK (credits >= 0);
+
+-- Add check constraint to prevent negative posts_used
+ALTER TABLE public.subscriptions
+ADD CONSTRAINT posts_used_non_negative CHECK (posts_used >= 0);
 ```
 
 **Steps:**
