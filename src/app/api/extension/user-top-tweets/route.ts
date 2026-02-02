@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
     let accessToken: string;
     const tokenResult = await getValidXTokens(user.id);
     
-    console.log('[user-top-tweets] Token result:', { success: tokenResult.success, hasTokens: !!(tokenResult as any).tokens });
+    console.log('[user-top-tweets] Token result:', { success: tokenResult.success, hasTokens: tokenResult.success && !!tokenResult.tokens });
     
     if (tokenResult.success && tokenResult.tokens) {
       accessToken = tokenResult.tokens.access_token;
