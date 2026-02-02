@@ -187,7 +187,65 @@ ${LENGTH_GUIDELINES[length][contentType]}
 /**
  * Build the output requirements section
  */
-function buildOutputRequirements(): string {
+function buildOutputRequirements(contentType: ContentType): string {
+  if (contentType === 'thread') {
+    return `
+## OUTPUT REQUIREMENTS FOR THREADS
+
+1. Generate 3 distinct THREAD options for the user to choose from
+2. Each thread option MUST contain 5-10 individual tweets
+3. Number each tweet clearly: 1/, 2/, 3/, etc.
+4. Each tweet MUST be under 280 characters
+5. CRITICAL: Every thread must be personalized to the user's profile
+
+Format your response EXACTLY as:
+
+**Option 1: [Brief description]**
+
+1/ [First tweet - the hook, most important! Under 280 chars]
+
+2/ [Second tweet - expand on the hook. Under 280 chars]
+
+3/ [Third tweet - continue the narrative. Under 280 chars]
+
+4/ [Fourth tweet - add value/insight. Under 280 chars]
+
+5/ [Fifth tweet - more depth. Under 280 chars]
+
+6/ [Sixth tweet - if needed. Under 280 chars]
+
+7/ [Final tweet - call to action or summary. Under 280 chars]
+
+*Why this works:* [Algorithm reasoning]
+
+**Option 2: [Brief description]**
+
+1/ [First tweet...]
+
+2/ [Second tweet...]
+
+[Continue with 5-10 tweets...]
+
+*Why this works:* [Algorithm reasoning]
+
+**Option 3: [Brief description]**
+
+1/ [First tweet...]
+
+[Continue with 5-10 tweets...]
+
+*Why this works:* [Algorithm reasoning]
+
+**Recommendation:** [Which option and why]
+
+CRITICAL RULES:
+- EVERY option must have 5-10 numbered tweets (1/, 2/, 3/, etc.)
+- Each tweet MUST be on its own line with the number prefix
+- NO tweet can exceed 280 characters
+- The 1/ tweet is the HOOK - make it irresistible
+`;
+  }
+  
   return `
 ## OUTPUT REQUIREMENTS
 
@@ -243,7 +301,7 @@ function buildSystemPrompt(options: GenerationOptions): string {
     systemPrompt += buildUserContext(toUserVoiceProfile(userProfile));
   }
 
-  systemPrompt += buildOutputRequirements();
+  systemPrompt += buildOutputRequirements(contentType);
 
   return systemPrompt;
 }
