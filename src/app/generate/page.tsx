@@ -361,9 +361,6 @@ export default function GeneratePage() {
     }
   }>>([])
   const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<string | null>(null)
-  
-  // Get the currently selected style profile for display
-  const selectedStyleProfile = styleProfiles.find(p => p.id === selectedStyleProfileId)
 
   // Fetch templates
   useEffect(() => {
@@ -857,8 +854,9 @@ export default function GeneratePage() {
               </div>
             )}
 
-            {/* Post Length Toggle */}
-            <div className="flex items-center gap-4 mb-4">
+            {/* Post Length Toggle + Style Selector */}
+            <div className="space-y-4 mb-4">
+            <div className="flex items-center gap-4">
               <span className="text-sm font-medium text-[var(--muted)]">Post Length:</span>
               <div className="flex gap-2">
                 <button
@@ -890,40 +888,29 @@ export default function GeneratePage() {
                 </span>
               )}
             </div>
-
-            {/* Style Profile Selector - incorporate a creator's analyzed style */}
-            <div className="mb-4 p-3 border border-violet-500/50 rounded-lg bg-violet-500/10">
-              <div className="flex items-center gap-3 mb-2">
-                <label className="text-sm font-medium text-violet-400">
-                  ✨ Incorporate style from:
-                </label>
-                {styleProfiles.length > 0 ? (
-                  <select
-                    value={selectedStyleProfileId || ''}
-                    onChange={(e) => setSelectedStyleProfileId(e.target.value || null)}
-                    className="px-3 py-1.5 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none cursor-pointer"
-                  >
-                    <option value="">None (use my voice only)</option>
-                    {styleProfiles.map((profile) => (
-                      <option key={profile.id} value={profile.id}>
-                        @{profile.account_username}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <a 
-                    href="/settings" 
-                    className="text-sm text-accent hover:underline"
-                  >
-                    Add style profiles in Settings →
-                  </a>
-                )}
-              </div>
-              {selectedStyleProfile && (
-                <p className="text-xs text-[var(--muted)] italic pl-1">
-                  {selectedStyleProfile.profile_data?.summary || `Using @${selectedStyleProfile.account_username}'s writing patterns`}
-                </p>
+            
+            {/* Style Selector - inline with post length */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-[var(--muted)]">Style:</span>
+              {styleProfiles.length > 0 ? (
+                <select
+                  value={selectedStyleProfileId || ''}
+                  onChange={(e) => setSelectedStyleProfileId(e.target.value || null)}
+                  className="px-3 py-1.5 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none"
+                >
+                  <option value="">My voice only</option>
+                  {styleProfiles.map((profile) => (
+                    <option key={profile.id} value={profile.id}>
+                      @{profile.account_username}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <a href="/settings" className="text-sm text-accent hover:underline">
+                  Add in Settings →
+                </a>
               )}
+            </div>
             </div>
 
             {/* Action Buttons */}
