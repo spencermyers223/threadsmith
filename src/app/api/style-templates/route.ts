@@ -70,7 +70,8 @@ export async function POST(request: NextRequest) {
       admired_account_avatar_url,
       tweets,
       x_account_id,
-      content_type // 'tweet' | 'thread' | 'article'
+      content_type, // 'tweet' | 'thread' | 'article'
+      profile_data // Opus AI analysis data
     } = body
 
     if (!title) {
@@ -92,7 +93,9 @@ export async function POST(request: NextRequest) {
         admired_account_display_name: admired_account_display_name || null,
         admired_account_avatar_url: admired_account_avatar_url || null,
         tweets: tweets || [],
-        content_type: finalContentType
+        content_type: finalContentType,
+        profile_data: profile_data || null,
+        analyzed_at: profile_data ? new Date().toISOString() : null
       })
       .select()
       .single()

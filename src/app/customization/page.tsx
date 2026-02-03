@@ -21,9 +21,33 @@ import {
   PenLine
 } from 'lucide-react'
 import Link from 'next/link'
+import AdmiredAccountAnalyzer from '@/components/customization/AdmiredAccountAnalyzer'
 
 // Types
 type StyleTemplateContentType = 'tweet' | 'thread' | 'article'
+
+interface ProfileData {
+  summary: string
+  personality?: string
+  patterns: {
+    avgLength?: number
+    emojiUsage?: string
+    favoriteEmojis?: string[]
+    hookStyles?: string[]
+    toneMarkers?: string[]
+    sentenceStyle?: string
+    questionUsage?: string
+    hashtagUsage?: string
+    ctaStyle?: string
+    engagementTactics?: string[]
+  }
+  signatureMoves?: string[]
+  topTweets?: Array<{
+    text: string
+    likes: number
+    whyItWorks?: string
+  }>
+}
 
 interface StyleTemplate {
   id: string
@@ -34,6 +58,10 @@ interface StyleTemplate {
   admired_account_avatar_url: string | null
   tweets: Array<{ text: string; url?: string; added_at: string }>
   content_type: StyleTemplateContentType
+  // Opus AI analysis data
+  profile_data?: ProfileData | null
+  analyzed_at?: string | null
+  tweets_analyzed?: number
   // For article templates, store style essence instead of tweets:
   article_style?: {
     opening_hook?: string
@@ -245,6 +273,8 @@ function StyleTemplateEditor({
     description: template?.description || '',
     admired_account_username: template?.admired_account_username || '',
     tweets: template?.tweets || [],
+    // Opus AI analysis data
+    profile_data: template?.profile_data || null as ProfileData | null,
     // Article style essence fields
     article_style: template?.article_style || {
       opening_hook: '',
@@ -379,20 +409,15 @@ function StyleTemplateEditor({
             />
           </div>
 
-          {/* Admired Account */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Admired Account</label>
-            <div className="flex items-center gap-2">
-              <span className="text-[var(--muted)]">@</span>
-              <input
-                type="text"
-                value={formData.admired_account_username}
-                onChange={(e) => setFormData({ ...formData, admired_account_username: e.target.value.replace('@', '') })}
-                placeholder="username"
-                className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
-              />
-            </div>
-          </div>
+          {/* Admired Account with AI Analysis */}
+          <AdmiredAccountAnalyzer
+            username={formData.admired_account_username}
+            onUsernameChange={(username) => setFormData({ ...formData, admired_account_username: username })}
+            profileData={formData.profile_data || null}
+            onAnalysisComplete={(data) => setFormData({ ...formData, profile_data: data })}
+            templateId={template?.id}
+            disabled={saving}
+          />
 
           {/* TWEET TYPE: Example Tweets */}
           {contentType === 'tweet' && (

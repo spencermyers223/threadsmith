@@ -56,7 +56,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       'admired_account_username',
       'admired_account_display_name',
       'admired_account_avatar_url',
-      'tweets'
+      'tweets',
+      'profile_data',
+      'analyzed_at',
+      'tweets_analyzed'
     ]
 
     // Filter to only allowed fields
