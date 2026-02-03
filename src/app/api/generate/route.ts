@@ -156,129 +156,90 @@ function parseGeneratedPosts(
   const posts: GeneratedPost[] = []
   let match
 
-  // Primary method: **Option N:** format (most reliable)
-  const optionRegex = /\*\*Option\s+(\d+)[^*]*\*\*\s*([\s\S]*?)(?=\*\*Option\s+\d+|\*\*Recommendation|$)/gi
+  // Helper to process raw content into a post
+  const processContent = (rawContent: string): GeneratedPost | null => {
+    // Remove metadata and analysis
+    let content = rawContent
+      .replace(/\*Why this works:\*[\s\S]*$/i, '')
+      .replace(/\n\*Character count:.*$/gm, '')
+      .replace(/\[\d+\s*chars?\]/gi, '')
+      .replace(/^\*[A-Z][\s\S]*$/gm, '')
+      .trim()
 
-  // Debug: count option matches
-  const optionMatches = response.match(/\*\*Option\s+\d+/gi)
-  console.log('[Parse Debug] Found', optionMatches?.length || 0, 'option matches in response')
+    if (!content || content.length < 10) return null
 
-  while ((match = optionRegex.exec(response)) !== null) {
-    console.log('[Parse Debug] Processing Option', match[1], 'content length:', match[2]?.length)
-    let rawContent = match[2].trim()
-    
-    // Remove the "*Why this works:*" and everything after it from the content
-    const whyWorksIndex = rawContent.search(/\*Why this works:\*/i)
-    if (whyWorksIndex > 0) {
-      rawContent = rawContent.substring(0, whyWorksIndex).trim()
+    // Check if thread content
+    const isThreadContent = /^\d+\//.test(content) || 
+      /^\d+\s*\n[^\n]+/m.test(content) ||
+      /^\d+\.\s+\S/.test(content)
+
+    if (!isThreadContent) {
+      const { cleaned } = cleanContent(content)
+      content = cleaned
     }
-    
-    // Also remove any trailing "*Character count:*" lines
-    rawContent = rawContent.replace(/\n\*Character count:.*$/gm, '').trim()
-    
-    if (rawContent && rawContent.length > 10) {
-      // For thread content (has numbered tweets), preserve the structure
-      // Check for: "1/" pattern OR standalone numbers on their own lines "1\n" OR "1. text"
-      const isThreadContent = /^\d+\//.test(rawContent) || 
-        /^\d+\s*\n[^\n]+/m.test(rawContent) ||
-        /^\d+\.\s+\S/.test(rawContent)
-      
-      if (isThreadContent) {
-        // Don't run through cleanContent for threads - preserve the numbering
-        // Just do minimal cleanup
-        const cleanedThread = rawContent
-          .replace(/\[\d+\s*chars?\]/gi, '') // Remove char count markers
-          .replace(/^\*[A-Z][\s\S]*$/gm, '') // Remove any analysis lines starting with *
-          .trim()
-        
-        posts.push({
-          content: cleanedThread,
-          archetype: archetypeToOutput(archetype),
-          postType,
-          characterCount: cleanedThread.length,
-        })
-      } else {
-        // For single tweets, run through content cleaner
-        const { cleaned } = cleanContent(rawContent)
-        if (cleaned.length > 0) {
-          posts.push({
-            content: cleaned,
-            archetype: archetypeToOutput(archetype),
-            postType,
-            characterCount: cleaned.length,
-          })
-        }
-      }
+
+    if (!content || content.length === 0) return null
+
+    return {
+      content,
+      archetype: archetypeToOutput(archetype),
+      postType,
+      characterCount: content.length,
     }
   }
 
-  // Fallback: try **Variation** format
+  // Method 1: --- delimited format (used by newer prompts)
+  // Matches: ---\n1\n[content]\n--- or ---\nVARIATION 1\n[content]\n---
+  const dashDelimitedRegex = /---\s*\n(?:(?:VARIATION\s+)?(\d+)|THREAD\s+(\d+))\s*\n([\s\S]*?)(?=\n---(?:\s*\n|$)|$)/gi
+  let dashMatch
+  while ((dashMatch = dashDelimitedRegex.exec(response)) !== null) {
+    const post = processContent(dashMatch[3])
+    if (post) posts.push(post)
+  }
+  
+  if (posts.length > 0) {
+    console.log('[Parse Debug] Found', posts.length, 'dash-delimited sections')
+  }
+
+  // Method 2: **Option N:** format
+  if (posts.length === 0) {
+    const optionRegex = /\*\*Option\s+(\d+)[^*]*\*\*\s*([\s\S]*?)(?=\*\*Option\s+\d+|\*\*Recommendation|$)/gi
+    const optionMatches = response.match(/\*\*Option\s+\d+/gi)
+    console.log('[Parse Debug] Found', optionMatches?.length || 0, 'option matches')
+
+    while ((match = optionRegex.exec(response)) !== null) {
+      const post = processContent(match[2])
+      if (post) posts.push(post)
+    }
+  }
+
+  // Method 3: **Variation N:** format
   if (posts.length === 0) {
     const variationRegex = /\*\*Variation\s+(\d+)[^*]*\*\*\s*([\s\S]*?)(?=\*\*Variation\s+\d+|\*\*Recommendation|$)/gi
-
     while ((match = variationRegex.exec(response)) !== null) {
-      let rawContent = match[2].trim()
-      const whyWorksIndex = rawContent.search(/\*Why this works:\*/i)
-      if (whyWorksIndex > 0) {
-        rawContent = rawContent.substring(0, whyWorksIndex).trim()
-      }
-      
-      if (rawContent && rawContent.length > 10) {
-        // Check for: "1/" pattern OR standalone numbers on their own lines "1\n" OR "1. text"
-        const isThreadContent = /^\d+\//.test(rawContent) || 
-          /^\d+\s*\n[^\n]+/m.test(rawContent) ||
-          /^\d+\.\s+\S/.test(rawContent)
-        
-        if (isThreadContent) {
-          const cleanedThread = rawContent
-            .replace(/\[\d+\s*chars?\]/gi, '')
-            .replace(/^\*[A-Z][\s\S]*$/gm, '')
-            .trim()
-          posts.push({
-            content: cleanedThread,
-            archetype: archetypeToOutput(archetype),
-            postType,
-            characterCount: cleanedThread.length,
-          })
-        } else {
-          const { cleaned } = cleanContent(rawContent)
-          if (cleaned.length > 0) {
-            posts.push({
-              content: cleaned,
-              archetype: archetypeToOutput(archetype),
-              postType,
-              characterCount: cleaned.length,
-            })
-          }
-        }
-      }
+      const post = processContent(match[2])
+      if (post) posts.push(post)
     }
   }
 
-  // Last fallback: if nothing found, treat entire response as single post
-  if (posts.length === 0 && response.trim().length > 0) {
-    // Check if the whole response is thread content
-    // Check for: "1/" pattern OR standalone numbers on their own lines "1\n" OR "1. text"
-    const isThreadContent = /^\d+\//.test(response.trim()) || 
-      /^\d+\s*\n[^\n]+/m.test(response.trim()) ||
-      /^\d+\.\s+\S/.test(response.trim())
-    if (isThreadContent) {
-      posts.push({
-        content: response.trim(),
-        archetype: archetypeToOutput(archetype),
-        postType,
-        characterCount: response.trim().length,
-      })
-    } else {
-      const { cleaned } = cleanContent(response.trim())
-      posts.push({
-        content: cleaned,
-        archetype: archetypeToOutput(archetype),
-        postType,
-        characterCount: cleaned.length,
-      })
+  // Method 4: Simple numbered format (1. or 1:)
+  if (posts.length === 0) {
+    // Look for patterns like "1.\n[content]" or "1:\n[content]" at start of lines
+    const numberedRegex = /(?:^|\n)(\d+)[.:]\s*\n([\s\S]*?)(?=(?:\n\d+[.:]\s*\n)|$)/g
+    while ((match = numberedRegex.exec(response)) !== null) {
+      const post = processContent(match[2])
+      if (post) posts.push(post)
     }
   }
+
+  // Last fallback: treat entire response as single post
+  if (posts.length === 0 && response.trim().length > 0) {
+    console.log('[Parse Debug] Falling back to single post')
+    const post = processContent(response.trim())
+    if (post) posts.push(post)
+  }
+
+  console.log('[Parse Debug] Final parsed posts:', posts.length)
 
   // Add quality scores and warnings to each post
   return posts.map(post => {
