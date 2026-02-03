@@ -23,6 +23,8 @@ import {
 import Link from 'next/link'
 
 // Types
+type StyleTemplateContentType = 'tweet' | 'thread' | 'article'
+
 interface StyleTemplate {
   id: string
   title: string
@@ -31,6 +33,15 @@ interface StyleTemplate {
   admired_account_display_name: string | null
   admired_account_avatar_url: string | null
   tweets: Array<{ text: string; url?: string; added_at: string }>
+  content_type: StyleTemplateContentType
+  // For article templates, store style essence instead of tweets:
+  article_style?: {
+    opening_hook?: string
+    section_headings?: string[]
+    transitions?: string[]
+    closing_style?: string
+    tone_notes?: string
+  }
   created_at: string
   updated_at: string
 }
@@ -106,6 +117,13 @@ function SectionHeader({
   )
 }
 
+// Content type badge colors
+const CONTENT_TYPE_BADGES: Record<StyleTemplateContentType, { bg: string; text: string; label: string }> = {
+  tweet: { bg: 'bg-blue-500/10', text: 'text-blue-400', label: 'Tweet' },
+  thread: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: 'Thread' },
+  article: { bg: 'bg-purple-500/10', text: 'text-purple-400', label: 'Article' }
+}
+
 // Style Template Card Component
 function StyleTemplateCard({ 
   template, 
@@ -117,6 +135,8 @@ function StyleTemplateCard({
   onDelete: () => void 
 }) {
   const [expanded, setExpanded] = useState(false)
+  const contentType = template.content_type || 'tweet'
+  const badge = CONTENT_TYPE_BADGES[contentType]
   const tweetCount = template.tweets?.length || 0
 
   return (
@@ -127,7 +147,12 @@ function StyleTemplateCard({
       >
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h3 className="font-semibold text-lg">{template.title}</h3>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold text-lg">{template.title}</h3>
+              <span className={`px-2 py-0.5 rounded text-xs font-medium ${badge.bg} ${badge.text}`}>
+                {badge.label}
+              </span>
+            </div>
             {template.description && (
               <p className="text-[var(--muted)] text-sm mt-1">{template.description}</p>
             )}
@@ -138,7 +163,9 @@ function StyleTemplateCard({
                   @{template.admired_account_username}
                 </span>
               )}
-              <span>{tweetCount}/5 tweets</span>
+              {contentType === 'tweet' && <span>{tweetCount}/5 tweets</span>}
+              {contentType === 'thread' && <span>{tweetCount} tweet thread</span>}
+              {contentType === 'article' && <span>Style essence</span>}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -178,6 +205,28 @@ function StyleTemplateCard({
   )
 }
 
+// Content type config for style templates
+const CONTENT_TYPE_CONFIG = {
+  tweet: {
+    label: 'Tweet',
+    description: 'For single posts (short or long)',
+    maxExamples: 5,
+    color: 'blue'
+  },
+  thread: {
+    label: 'Thread',
+    description: 'For multi-tweet threads',
+    maxExamples: 15, // max tweets in a thread example
+    color: 'emerald'
+  },
+  article: {
+    label: 'Article',
+    description: 'For long-form articles',
+    maxExamples: 0, // uses style essence instead
+    color: 'purple'
+  }
+}
+
 // Style Template Editor Modal
 function StyleTemplateEditor({
   template,
@@ -190,15 +239,27 @@ function StyleTemplateEditor({
   onCancel: () => void
   saving: boolean
 }) {
+  const [contentType, setContentType] = useState<StyleTemplateContentType>(template?.content_type || 'tweet')
   const [formData, setFormData] = useState({
     title: template?.title || '',
     description: template?.description || '',
     admired_account_username: template?.admired_account_username || '',
-    tweets: template?.tweets || []
+    tweets: template?.tweets || [],
+    // Article style essence fields
+    article_style: template?.article_style || {
+      opening_hook: '',
+      section_headings: ['', '', ''],
+      transitions: [''],
+      closing_style: '',
+      tone_notes: ''
+    }
   })
 
+  // Tweet management for tweet/thread types
+  const maxTweets = contentType === 'tweet' ? 5 : contentType === 'thread' ? 15 : 0
+
   const addTweetSlot = () => {
-    if (formData.tweets.length < 5) {
+    if (formData.tweets.length < maxTweets) {
       setFormData({
         ...formData,
         tweets: [...formData.tweets, { text: '', url: '', added_at: new Date().toISOString() }]
@@ -219,6 +280,39 @@ function StyleTemplateEditor({
     })
   }
 
+  // Article style essence management
+  const updateArticleStyle = (field: string, value: string | string[]) => {
+    setFormData({
+      ...formData,
+      article_style: { ...formData.article_style, [field]: value }
+    })
+  }
+
+  const addHeading = () => {
+    const headings = formData.article_style.section_headings || []
+    if (headings.length < 5) {
+      updateArticleStyle('section_headings', [...headings, ''])
+    }
+  }
+
+  const updateHeading = (idx: number, value: string) => {
+    const headings = [...(formData.article_style.section_headings || [])]
+    headings[idx] = value
+    updateArticleStyle('section_headings', headings)
+  }
+
+  const removeHeading = (idx: number) => {
+    const headings = (formData.article_style.section_headings || []).filter((_, i) => i !== idx)
+    updateArticleStyle('section_headings', headings)
+  }
+
+  const handleSave = () => {
+    onSave({
+      ...formData,
+      content_type: contentType
+    })
+  }
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-[var(--card)] rounded-xl border border-[var(--border)] w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -232,6 +326,35 @@ function StyleTemplateEditor({
         </div>
 
         <div className="p-4 overflow-y-auto flex-1 space-y-4">
+          {/* Content Type Selector */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Template Type *</label>
+            <div className="grid grid-cols-3 gap-2">
+              {(Object.keys(CONTENT_TYPE_CONFIG) as StyleTemplateContentType[]).map(type => {
+                const config = CONTENT_TYPE_CONFIG[type]
+                const isSelected = contentType === type
+                return (
+                  <button
+                    key={type}
+                    onClick={() => setContentType(type)}
+                    disabled={!!template?.id} // Can't change type when editing
+                    className={`p-3 rounded-lg border text-left transition-all ${
+                      isSelected 
+                        ? `bg-${config.color}-500/10 border-${config.color}-500/50 ring-2 ring-${config.color}-500/30`
+                        : 'border-[var(--border)] hover:border-[var(--muted)]'
+                    } ${template?.id ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  >
+                    <div className="font-medium text-sm">{config.label}</div>
+                    <div className="text-xs text-[var(--muted)]">{config.description}</div>
+                  </button>
+                )
+              })}
+            </div>
+            {template?.id && (
+              <p className="text-xs text-[var(--muted)] mt-2">Template type cannot be changed after creation</p>
+            )}
+          </div>
+
           {/* Title */}
           <div>
             <label className="block text-sm font-medium mb-2">Template Name *</label>
@@ -271,65 +394,191 @@ function StyleTemplateEditor({
             </div>
           </div>
 
-          {/* Tweet Slots */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium">Example Tweets ({formData.tweets.length}/5)</label>
-              {formData.tweets.length < 5 && (
-                <button
-                  onClick={addTweetSlot}
-                  className="text-sm text-[var(--accent)] hover:underline flex items-center gap-1"
-                >
-                  <Plus className="w-4 h-4" /> Add Tweet
-                </button>
-              )}
+          {/* TWEET TYPE: Example Tweets */}
+          {contentType === 'tweet' && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium">Example Tweets ({formData.tweets.length}/5)</label>
+                {formData.tweets.length < 5 && (
+                  <button
+                    onClick={addTweetSlot}
+                    className="text-sm text-[var(--accent)] hover:underline flex items-center gap-1"
+                  >
+                    <Plus className="w-4 h-4" /> Add Tweet
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-[var(--muted)] mb-3">
+                Add up to 5 example tweets. No character limit — include short or long tweets.
+              </p>
+              
+              <div className="space-y-3">
+                {formData.tweets.map((tweet, idx) => (
+                  <div key={idx} className="bg-[var(--background)] p-3 rounded-lg border border-[var(--border)]">
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="text-xs text-[var(--muted)]">Tweet {idx + 1}</span>
+                      <button onClick={() => removeTweet(idx)} className="p-1 hover:bg-red-500/20 rounded">
+                        <X className="w-4 h-4 text-red-400" />
+                      </button>
+                    </div>
+                    <textarea
+                      value={tweet.text}
+                      onChange={(e) => updateTweet(idx, 'text', e.target.value)}
+                      placeholder="Paste tweet text here (no character limit)..."
+                      rows={4}
+                      className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 text-sm resize-y"
+                    />
+                    <div className="flex items-center justify-between mt-2">
+                      <input
+                        type="text"
+                        value={tweet.url || ''}
+                        onChange={(e) => updateTweet(idx, 'url', e.target.value)}
+                        placeholder="Tweet URL (optional)"
+                        className="flex-1 px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 text-sm"
+                      />
+                      <span className="ml-2 text-xs text-[var(--muted)]">{tweet.text.length} chars</span>
+                    </div>
+                  </div>
+                ))}
+
+                {formData.tweets.length === 0 && (
+                  <div className="text-center py-8 text-[var(--muted)]">
+                    <p className="mb-2">No tweets added yet</p>
+                    <button onClick={addTweetSlot} className="text-[var(--accent)] hover:underline">
+                      Add your first tweet →
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-            <p className="text-xs text-[var(--muted)] mb-3">
-              Add up to 5 tweets that represent this style. You can add more later.
-            </p>
-            
-            <div className="space-y-3">
-              {formData.tweets.map((tweet, idx) => (
-                <div key={idx} className="bg-[var(--background)] p-3 rounded-lg border border-[var(--border)]">
-                  <div className="flex items-start justify-between mb-2">
-                    <span className="text-xs text-[var(--muted)]">Tweet {idx + 1}</span>
-                    <button
-                      onClick={() => removeTweet(idx)}
-                      className="p-1 hover:bg-red-500/20 rounded"
-                    >
+          )}
+
+          {/* THREAD TYPE: Thread Example */}
+          {contentType === 'thread' && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium">Thread Example ({formData.tweets.length} tweets)</label>
+                {formData.tweets.length < 15 && (
+                  <button
+                    onClick={addTweetSlot}
+                    className="text-sm text-emerald-400 hover:underline flex items-center gap-1"
+                  >
+                    <Plus className="w-4 h-4" /> Add Tweet
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-[var(--muted)] mb-3">
+                Add each tweet in your example thread. Shows the flow and structure.
+              </p>
+              
+              <div className="space-y-2">
+                {formData.tweets.map((tweet, idx) => (
+                  <div key={idx} className="flex gap-2 items-start">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 text-xs font-bold text-emerald-400">
+                      {idx + 1}
+                    </div>
+                    <div className="flex-1">
+                      <textarea
+                        value={tweet.text}
+                        onChange={(e) => updateTweet(idx, 'text', e.target.value)}
+                        placeholder={idx === 0 ? "Hook tweet..." : `Tweet ${idx + 1}...`}
+                        rows={2}
+                        className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 text-sm resize-none"
+                      />
+                    </div>
+                    <button onClick={() => removeTweet(idx)} className="p-1 hover:bg-red-500/20 rounded mt-1">
                       <X className="w-4 h-4 text-red-400" />
                     </button>
                   </div>
-                  <textarea
-                    value={tweet.text}
-                    onChange={(e) => updateTweet(idx, 'text', e.target.value)}
-                    placeholder="Paste tweet text here..."
-                    rows={3}
-                    className="w-full px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 text-sm resize-none"
-                  />
-                  <input
-                    type="text"
-                    value={tweet.url || ''}
-                    onChange={(e) => updateTweet(idx, 'url', e.target.value)}
-                    placeholder="Tweet URL (optional)"
-                    className="w-full mt-2 px-3 py-2 bg-[var(--card)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 text-sm"
-                  />
-                </div>
-              ))}
+                ))}
 
-              {formData.tweets.length === 0 && (
-                <div className="text-center py-8 text-[var(--muted)]">
-                  <p className="mb-2">No tweets added yet</p>
-                  <button
-                    onClick={addTweetSlot}
-                    className="text-[var(--accent)] hover:underline"
-                  >
-                    Add your first tweet →
-                  </button>
-                </div>
-              )}
+                {formData.tweets.length === 0 && (
+                  <div className="text-center py-8 text-[var(--muted)]">
+                    <p className="mb-2">No thread tweets added yet</p>
+                    <button onClick={addTweetSlot} className="text-emerald-400 hover:underline">
+                      Add the first tweet (hook) →
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* ARTICLE TYPE: Style Essence */}
+          {contentType === 'article' && (
+            <div className="space-y-4">
+              <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                <p className="text-sm text-purple-300">
+                  For articles, we capture the <strong>style essence</strong> rather than full examples.
+                  This keeps prompts efficient while capturing the writing patterns.
+                </p>
+              </div>
+
+              {/* Opening Hook */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Opening Hook Style</label>
+                <textarea
+                  value={formData.article_style.opening_hook || ''}
+                  onChange={(e) => updateArticleStyle('opening_hook', e.target.value)}
+                  placeholder="How do their articles typically start? Paste an example of their opening 2-3 sentences..."
+                  rows={3}
+                  className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm resize-y"
+                />
+              </div>
+
+              {/* Section Headings */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium">Section Heading Examples ({(formData.article_style.section_headings || []).length}/5)</label>
+                  {(formData.article_style.section_headings || []).length < 5 && (
+                    <button onClick={addHeading} className="text-sm text-purple-400 hover:underline flex items-center gap-1">
+                      <Plus className="w-4 h-4" /> Add
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  {(formData.article_style.section_headings || []).map((heading, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={heading}
+                        onChange={(e) => updateHeading(idx, e.target.value)}
+                        placeholder="e.g., The Hidden Cost of..., Why Most People Get This Wrong"
+                        className="flex-1 px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm"
+                      />
+                      <button onClick={() => removeHeading(idx)} className="p-2 hover:bg-red-500/20 rounded">
+                        <X className="w-4 h-4 text-red-400" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Closing Style */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Closing Style</label>
+                <textarea
+                  value={formData.article_style.closing_style || ''}
+                  onChange={(e) => updateArticleStyle('closing_style', e.target.value)}
+                  placeholder="How do their articles typically end? CTA style, summary approach, final thought..."
+                  rows={2}
+                  className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm resize-y"
+                />
+              </div>
+
+              {/* Tone Notes */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Tone & Voice Notes</label>
+                <textarea
+                  value={formData.article_style.tone_notes || ''}
+                  onChange={(e) => updateArticleStyle('tone_notes', e.target.value)}
+                  placeholder="Describe their tone: conversational? academic? provocative? Use of humor, metaphors, data..."
+                  rows={3}
+                  className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-sm resize-y"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="p-4 border-t border-[var(--border)] flex items-center justify-end gap-3">
@@ -340,7 +589,7 @@ function StyleTemplateEditor({
             Cancel
           </button>
           <button
-            onClick={() => onSave(formData)}
+            onClick={handleSave}
             disabled={!formData.title || saving}
             className="px-4 py-2 bg-[var(--accent)] text-black rounded-lg hover:bg-[var(--accent)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >

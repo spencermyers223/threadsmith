@@ -11,9 +11,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Optional filter by x_account_id
+    // Optional filters
     const { searchParams } = new URL(request.url)
     const xAccountId = searchParams.get('x_account_id')
+    const contentType = searchParams.get('content_type') // 'tweet' | 'thread' | 'article'
 
     let query = supabase
       .from('style_templates')
@@ -25,6 +26,11 @@ export async function GET(request: NextRequest) {
       query = query.eq('x_account_id', xAccountId)
     }
 
+    // Filter by content type if specified
+    if (contentType) {
+      query = query.eq('content_type', contentType)
+    }
+
     const { data, error } = await query
 
     if (error) {
@@ -32,7 +38,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch style templates' }, { status: 500 })
     }
 
-    return NextResponse.json({ templates: data })
+    // Add default content_type for templates without it (backwards compatibility)
+    const templatesWithType = (data || []).map(t => ({
+      ...t,
+      content_type: t.content_type || 'tweet'
+    }))
+
+    return NextResponse.json({ templates: templatesWithType })
   } catch (error) {
     console.error('Style templates GET error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -57,12 +69,17 @@ export async function POST(request: NextRequest) {
       admired_account_display_name,
       admired_account_avatar_url,
       tweets,
-      x_account_id 
+      x_account_id,
+      content_type // 'tweet' | 'thread' | 'article'
     } = body
 
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
     }
+
+    // Validate content_type
+    const validContentTypes = ['tweet', 'thread', 'article']
+    const finalContentType = validContentTypes.includes(content_type) ? content_type : 'tweet'
 
     const { data, error } = await supabase
       .from('style_templates')
@@ -74,7 +91,8 @@ export async function POST(request: NextRequest) {
         admired_account_username: admired_account_username || null,
         admired_account_display_name: admired_account_display_name || null,
         admired_account_avatar_url: admired_account_avatar_url || null,
-        tweets: tweets || []
+        tweets: tweets || [],
+        content_type: finalContentType
       })
       .select()
       .single()
