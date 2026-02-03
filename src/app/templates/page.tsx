@@ -34,6 +34,7 @@ interface PostTemplate {
 // Category config - matches actual DB categories
 const CATEGORIES = [
   { id: 'all', label: 'All Templates', icon: Sparkles },
+  { id: 'thread', label: 'Threads', icon: MessageCircle },
   { id: 'alpha', label: 'Alpha', icon: TrendingUp },
   { id: 'build-in-public', label: 'Build in Public', icon: Rocket },
   { id: 'contrarian', label: 'Contrarian', icon: Flame },
@@ -41,6 +42,7 @@ const CATEGORIES = [
 ]
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  thread: { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/20' },
   alpha: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/20' },
   'build-in-public': { bg: 'bg-pink-500/10', text: 'text-pink-600 dark:text-pink-400', border: 'border-pink-500/20' },
   contrarian: { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-500/20' },
