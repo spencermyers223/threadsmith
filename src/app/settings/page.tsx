@@ -659,6 +659,18 @@ export default function SettingsPage() {
                 We analyze your X posts to learn your unique writing style. Generated content will sound like you wrote it.
               </p>
               {userId && <VoiceProfileCard userId={userId} />}
+              
+              {/* Link to Voice Library & Style Profiles */}
+              <Link
+                href="/settings/voice"
+                className="mt-4 flex items-center justify-between p-3 rounded-lg bg-accent/10 border border-accent/20 hover:bg-accent/20 transition-colors group"
+              >
+                <div>
+                  <p className="font-medium text-sm">Voice Library & Style Profiles</p>
+                  <p className="text-xs text-[var(--muted)]">Add example tweets and analyze creators you admire</p>
+                </div>
+                <ChevronDown className="w-4 h-4 rotate-[-90deg] text-accent group-hover:translate-x-1 transition-transform" />
+              </Link>
             </div>
 
             {/* Describe your style */}
