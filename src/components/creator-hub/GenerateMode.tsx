@@ -539,8 +539,8 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
       console.log('[Edit] Storing in localStorage:', editPostData)
       localStorage.setItem('edit-post', JSON.stringify(editPostData))
 
-      console.log('[Edit] Redirecting to /workspace')
-      router.push('/workspace')
+      console.log('[Edit] Redirecting to /drafts')
+      router.push('/drafts')
     } catch (err) {
       console.error('[Edit] Error:', err)
       setError(err instanceof Error ? err.message : 'Failed to save')

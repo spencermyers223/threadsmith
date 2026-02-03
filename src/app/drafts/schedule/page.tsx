@@ -27,7 +27,7 @@ export default function SchedulePage() {
   const handleSelectPost = (post: Post) => {
     // Store post data for editing
     localStorage.setItem('edit-post', JSON.stringify(post))
-    router.push('/workspace')
+    router.push('/drafts')
   }
 
   return (
@@ -36,7 +36,7 @@ export default function SchedulePage() {
       <div className="border-b border-[var(--border)] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link
-            href="/workspace"
+            href="/drafts"
             className="p-2 rounded-md hover:bg-[var(--card)] transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -72,7 +72,7 @@ export default function SchedulePage() {
           </div>
 
           <Link
-            href="/workspace"
+            href="/drafts"
             className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" />

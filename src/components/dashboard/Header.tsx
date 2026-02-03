@@ -19,7 +19,7 @@ export function Header() {
           Creator Hub
         </Link>
         <Link
-          href="/workspace"
+          href="/drafts"
           className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
         >
           Workspace

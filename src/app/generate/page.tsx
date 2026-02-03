@@ -269,7 +269,7 @@ function PostCard({
             onClick={onEditInWorkspace}
             disabled={isEditingInWorkspace}
             className="flex items-center justify-center gap-2 px-3 py-2 bg-[var(--border)] hover:bg-[var(--muted)]/30 disabled:opacity-50 rounded-lg transition-colors text-sm"
-            title="Edit in Workspace"
+            title="Edit in Drafts"
           >
             {isEditingInWorkspace ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -723,7 +723,7 @@ export default function GeneratePage() {
         content: savedPost.content,
       }))
 
-      router.push('/workspace')
+      router.push('/drafts')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to open in workspace')
       setEditingPostIndex(null)

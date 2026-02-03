@@ -53,7 +53,7 @@ export default function CalendarPage() {
   const handleSelectPost = (post: Post) => {
     // Store post data for editing
     localStorage.setItem('edit-post', JSON.stringify(post))
-    router.push('/workspace')
+    router.push('/drafts')
   }
 
   return (
@@ -91,7 +91,7 @@ export default function CalendarPage() {
             </div>
 
             <Link
-              href="/workspace"
+              href="/drafts"
               className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg transition-colors"
             >
               <Plus className="w-4 h-4" />

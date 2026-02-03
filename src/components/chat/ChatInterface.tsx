@@ -639,7 +639,7 @@ export function ChatInterface({
     }))
     setCopiedOption({ msgIndex, optionNum: optionNum ?? 0 })
     setTimeout(() => setCopiedOption(null), 2000)
-    router.push('/workspace')
+    router.push('/drafts')
   }
 
   const toggleFileSelection = (fileId: string) => {
@@ -851,7 +851,7 @@ export function ChatInterface({
                     ) : (
                       <>
                         <Copy className="w-4 h-4" />
-                        Copy all to Workspace
+                        Copy all to Drafts
                       </>
                     )}
                   </button>
