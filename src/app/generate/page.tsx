@@ -856,7 +856,7 @@ export default function GeneratePage() {
 
             {/* Post Length + Style - all on one line */}
             <div className="flex flex-wrap items-center gap-4 mb-4">
-              <span className="text-sm font-medium text-[var(--muted)]">Post Length:</span>
+              <span className="text-sm font-medium text-[var(--muted)]">Post Length [v2]:</span>
               <div className="flex gap-2">
                 <button
                   onClick={() => setPostLength('tweet')}
