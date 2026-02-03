@@ -318,7 +318,41 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
             </p>
           </div>
         )}
+
+        {/* Generate Button - inside config card for visibility */}
+        <div className="mt-6 pt-4 border-t border-[var(--border)]">
+          <button
+            onClick={handleGenerate}
+            disabled={!canGenerate || generating}
+            className="w-full py-4 bg-[var(--accent)] text-black rounded-xl font-semibold text-lg hover:bg-[var(--accent)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {generating ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-5 h-5" />
+                Generate 3 Options
+              </>
+            )}
+          </button>
+          {!canGenerate && (
+            <p className="text-center text-sm text-[var(--muted)] mt-2">
+              Select a post format to generate
+            </p>
+          )}
+        </div>
       </div>
+
+      {/* Error - show above template picker */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3 text-red-400">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          {error}
+        </div>
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════
           STEP 2: TEMPLATE PICKER (Tabs for Style vs Post)
@@ -424,42 +458,6 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
           )}
         </div>
       </div>
-
-      {/* ═══════════════════════════════════════════════════════════════
-          STEP 3: GENERATE BUTTON
-          ═══════════════════════════════════════════════════════════════ */}
-      <button
-        onClick={handleGenerate}
-        disabled={!canGenerate || generating}
-        className="w-full py-4 bg-[var(--accent)] text-black rounded-xl font-semibold text-lg hover:bg-[var(--accent)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-      >
-        {generating ? (
-          <>
-            <Loader2 className="w-5 h-5 animate-spin" />
-            Generating...
-          </>
-        ) : (
-          <>
-            <Sparkles className="w-5 h-5" />
-            Generate 3 Options
-          </>
-        )}
-      </button>
-
-      {/* Helper text */}
-      {!canGenerate && (
-        <p className="text-center text-sm text-[var(--muted)] mt-2">
-          Select a post format to generate
-        </p>
-      )}
-
-      {/* Error */}
-      {error && (
-        <div className="mt-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-3 text-red-400">
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          {error}
-        </div>
-      )}
 
       {/* ═══════════════════════════════════════════════════════════════
           GENERATED POSTS
