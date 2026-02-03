@@ -937,12 +937,12 @@ export default function GeneratePage() {
               </div>
             )}
             {!loadingStyleProfiles && styleProfiles.length === 0 && activeAccount && (
-              <div className="mb-4 p-3 bg-violet-500/10 border border-violet-500/20 rounded-lg">
+              <div className="mb-4 p-3 bg-[var(--accent)]/10 border border-[var(--accent)]/20 rounded-lg">
                 <Link
-                  href="/settings/voice"
-                  className="text-sm text-violet-400 hover:text-violet-300 transition-colors"
+                  href="/settings"
+                  className="text-sm text-[var(--accent)] hover:opacity-80 transition-colors"
                 >
-                  ✨ Add style profiles in Settings → Voice to incorporate other creators&apos; styles
+                  ✨ Add style profiles in Settings to incorporate other creators&apos; styles
                 </Link>
               </div>
             )}

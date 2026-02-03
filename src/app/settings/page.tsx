@@ -7,7 +7,7 @@ import { useXAccount } from '@/contexts/XAccountContext'
 import {
   ArrowLeft, Bell, Moon, Sun, User, Check, AlertCircle, LogOut,
   Target, Mic, Users, Plus, X, ChevronDown, ChevronUp, MessageSquare,
-  Edit2, Trash2, Copy, CreditCard, ExternalLink, Sparkles, Loader2
+  Edit2, Trash2, Copy, CreditCard, ExternalLink, Sparkles, Loader2, Upload
 } from 'lucide-react'
 import Link from 'next/link'
 import { useTheme } from '@/components/providers/ThemeProvider'
@@ -110,6 +110,17 @@ export default function SettingsPage() {
     postsLimit: number
     tier: string
   } | null>(null)
+
+  // Voice Library V2 state (max 5 hand-picked tweets)
+  const [voiceLibrary, setVoiceLibrary] = useState<Array<{
+    id: string
+    tweet_text: string
+    tweet_url: string | null
+    author_username: string | null
+    is_own_tweet: boolean
+  }>>([])
+  const [voiceLibraryInput, setVoiceLibraryInput] = useState('')
+  const [addingToLibrary, setAddingToLibrary] = useState(false)
 
   // Style Profiles V2 state
   const [styleProfiles, setStyleProfiles] = useState<Array<{
@@ -373,6 +384,18 @@ export default function SettingsPage() {
         })
       }
 
+      // Load voice library for this X account
+      try {
+        const libraryRes = await fetch(`/api/voice/library?x_account_id=${xAccountId}`)
+        if (libraryRes.ok) {
+          const libraryData = await libraryRes.json()
+          setVoiceLibrary(libraryData.tweets || [])
+        }
+      } catch (err) {
+        console.error('Failed to load voice library:', err)
+        setVoiceLibrary([])
+      }
+
       // Load style profiles for this X account
       try {
         const profilesRes = await fetch(`/api/voice/style-profiles?x_account_id=${xAccountId}`)
@@ -391,6 +414,50 @@ export default function SettingsPage() {
 
   const updateContentProfile = (updates: Partial<ContentProfile>) => {
     setContentProfile(prev => ({ ...prev, ...updates }))
+  }
+
+  // Voice Library V2 handlers
+  const handleAddToVoiceLibrary = async () => {
+    if (!activeAccount?.id || !voiceLibraryInput.trim()) return
+    if (voiceLibrary.length >= 5) {
+      setError('Voice Library is full (max 5). Remove one first.')
+      return
+    }
+
+    setAddingToLibrary(true)
+    try {
+      const res = await fetch('/api/voice/library', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tweet_text: voiceLibraryInput.trim(),
+          x_account_id: activeAccount.id,
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to add')
+      }
+
+      const data = await res.json()
+      setVoiceLibrary(prev => [...prev, data.tweet])
+      setVoiceLibraryInput('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add to voice library')
+    } finally {
+      setAddingToLibrary(false)
+    }
+  }
+
+  const handleRemoveFromVoiceLibrary = async (id: string) => {
+    try {
+      const res = await fetch(`/api/voice/library?id=${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to remove')
+      setVoiceLibrary(prev => prev.filter(t => t.id !== id))
+    } catch {
+      setError('Failed to remove from voice library')
+    }
   }
 
   // Style Profiles V2 handlers
@@ -778,18 +845,6 @@ export default function SettingsPage() {
                 We analyze your X posts to learn your unique writing style. Generated content will sound like you wrote it.
               </p>
               {userId && <VoiceProfileCard userId={userId} />}
-              
-              {/* Link to Voice Library & Style Profiles */}
-              <Link
-                href="/settings/voice"
-                className="mt-4 flex items-center justify-between p-3 rounded-lg bg-accent/10 border border-accent/20 hover:bg-accent/20 transition-colors group"
-              >
-                <div>
-                  <p className="font-medium text-sm">Voice Library & Style Profiles</p>
-                  <p className="text-xs text-[var(--muted)]">Add example tweets and analyze creators you admire</p>
-                </div>
-                <ChevronDown className="w-4 h-4 rotate-[-90deg] text-accent group-hover:translate-x-1 transition-transform" />
-              </Link>
             </div>
 
             {/* Describe your style */}
@@ -849,6 +904,67 @@ export default function SettingsPage() {
                   className="w-full accent-accent"
                 />
               </div>
+            </div>
+
+            {/* Voice Library V2 - Max 5 hand-picked tweets */}
+            <div className="pt-4 border-t border-[var(--border)]">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[var(--accent)]" />
+                  <label className="text-sm font-medium">Voice Library ({voiceLibrary.length}/5)</label>
+                </div>
+              </div>
+              <p className="text-sm text-[var(--muted)] mb-3">
+                These tweets are injected directly into every generation as examples of your voice.
+              </p>
+
+              {/* Existing voice library tweets */}
+              {voiceLibrary.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  {voiceLibrary.map((tweet) => (
+                    <div key={tweet.id} className="flex items-start gap-2 p-3 rounded-lg bg-[var(--background)] border border-[var(--border)] group">
+                      <p className="text-sm flex-1">{tweet.tweet_text}</p>
+                      <button
+                        onClick={() => handleRemoveFromVoiceLibrary(tweet.id)}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 text-red-400 transition-all flex-shrink-0"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add new tweet to voice library */}
+              {voiceLibrary.length < 5 && (
+                <>
+                  <textarea
+                    value={voiceLibraryInput}
+                    onChange={(e) => setVoiceLibraryInput(e.target.value)}
+                    placeholder="Paste a tweet that represents your voice..."
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none resize-none text-sm mb-2"
+                  />
+                  <button
+                    onClick={handleAddToVoiceLibrary}
+                    disabled={addingToLibrary || !voiceLibraryInput.trim()}
+                    className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] hover:opacity-90 disabled:opacity-50 text-[var(--background)] rounded-lg transition-colors text-sm font-medium"
+                  >
+                    {addingToLibrary ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Upload className="w-4 h-4" />
+                    )}
+                    Add to Voice Library
+                  </button>
+                </>
+              )}
+
+              {voiceLibrary.length === 0 && (
+                <p className="text-xs text-[var(--muted)] text-center py-2">
+                  💡 Add tweets that best represent how you write.
+                </p>
+              )}
             </div>
 
             {/* Style Profiles V2 - Accounts with Analyze */}
