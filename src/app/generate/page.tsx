@@ -373,11 +373,15 @@ export default function GeneratePage() {
     fetchTemplates()
   }, [])
 
-  // Fetch style profiles (Voice System V2)
+  // Fetch style profiles (Voice System V2) - per X account
   useEffect(() => {
     async function fetchStyleProfiles() {
+      if (!activeAccount?.id) {
+        setStyleProfiles([])
+        return
+      }
       try {
-        const res = await fetch('/api/voice/style-profiles')
+        const res = await fetch(`/api/voice/style-profiles?x_account_id=${activeAccount.id}`)
         if (res.ok) {
           const data = await res.json()
           setStyleProfiles(data.profiles || [])
@@ -387,7 +391,7 @@ export default function GeneratePage() {
       }
     }
     fetchStyleProfiles()
-  }, [])
+  }, [activeAccount?.id])
 
   // Filter templates
   const filteredTemplates = useMemo(() => {

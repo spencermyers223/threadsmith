@@ -259,16 +259,8 @@ export default function SettingsPage() {
         console.error('Failed to load usage:', err)
       }
 
-      // Load Style Profiles (V2)
-      try {
-        const profilesRes = await fetch('/api/voice/style-profiles')
-        if (profilesRes.ok) {
-          const profilesData = await profilesRes.json()
-          setStyleProfiles(profilesData.profiles || [])
-        }
-      } catch (err) {
-        console.error('Failed to load style profiles:', err)
-      }
+      // Load Style Profiles (V2) - will reload when activeAccount changes
+      // Initial load without x_account_id, will filter after account is set
       
       // Get X username from user metadata or x_accounts table
       const xUsernameFromMeta = user.user_metadata?.x_username
@@ -340,7 +332,8 @@ export default function SettingsPage() {
     
     const xAccountId = activeAccount.id
     
-    async function loadContentProfile() {
+    async function loadAccountData() {
+      // Load content profile
       const { data: contentProfileData } = await supabase
         .from('content_profiles')
         .select('*')
@@ -379,9 +372,21 @@ export default function SettingsPage() {
           admired_accounts: [],
         })
       }
+
+      // Load style profiles for this X account
+      try {
+        const profilesRes = await fetch(`/api/voice/style-profiles?x_account_id=${xAccountId}`)
+        if (profilesRes.ok) {
+          const profilesData = await profilesRes.json()
+          setStyleProfiles(profilesData.profiles || [])
+        }
+      } catch (err) {
+        console.error('Failed to load style profiles:', err)
+        setStyleProfiles([])
+      }
     }
     
-    loadContentProfile()
+    loadAccountData()
   }, [activeAccount?.id, supabase])
 
   const updateContentProfile = (updates: Partial<ContentProfile>) => {
@@ -390,6 +395,10 @@ export default function SettingsPage() {
 
   // Style Profiles V2 handlers
   const handleAnalyzeAccount = async (username: string) => {
+    if (!activeAccount?.id) {
+      setError('Please select an X account first')
+      return
+    }
     if (styleProfiles.length >= 3) {
       setError('Style profiles full (max 3). Remove one first.')
       return
@@ -426,6 +435,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           username: username,
           tweets: topTweets.map((t: { text: string }) => t.text),
+          x_account_id: activeAccount.id,
         }),
       })
 

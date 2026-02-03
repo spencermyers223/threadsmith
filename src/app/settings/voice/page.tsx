@@ -126,15 +126,15 @@ export default function VoiceSettingsPage() {
     setAdmiredAccounts([])
     
     try {
-      // Load Voice Library (V2 - max 5 hand-picked tweets)
-      const libraryRes = await fetch('/api/voice/library')
+      // Load Voice Library (V2 - max 5 per X account)
+      const libraryRes = await fetch(`/api/voice/library?x_account_id=${activeAccount.id}`)
       if (libraryRes.ok) {
         const data = await libraryRes.json()
         setVoiceLibrary(data.tweets || [])
       }
 
-      // Load Style Profiles (V2 - max 3 analyzed accounts)
-      const profilesRes = await fetch('/api/voice/style-profiles')
+      // Load Style Profiles (V2 - max 3 per X account)
+      const profilesRes = await fetch(`/api/voice/style-profiles?x_account_id=${activeAccount.id}`)
       if (profilesRes.ok) {
         const data = await profilesRes.json()
         setStyleProfiles(data.profiles || [])
@@ -188,6 +188,10 @@ export default function VoiceSettingsPage() {
   // Voice Library V2 handlers
   async function handleAddToVoiceLibrary() {
     if (!voiceLibraryInput.trim()) return
+    if (!activeAccount?.id) {
+      setError('Please select an X account first')
+      return
+    }
     setAddingToLibrary(true)
     setError(null)
 
@@ -199,6 +203,7 @@ export default function VoiceSettingsPage() {
           tweet_text: voiceLibraryInput.trim(),
           author_username: activeAccount?.x_username || null,
           is_own_tweet: true,
+          x_account_id: activeAccount.id,
         }),
       })
 
@@ -245,6 +250,10 @@ export default function VoiceSettingsPage() {
   }
 
   async function handleAnalyzeAccount(username: string) {
+    if (!activeAccount?.id) {
+      setError('Please select an X account first')
+      return
+    }
     if (styleProfiles.length >= 3) {
       setError('Style profiles full (max 3). Remove one first.')
       return
@@ -280,6 +289,7 @@ export default function VoiceSettingsPage() {
         body: JSON.stringify({
           username: username,
           tweets: topTweets.map((t: { text: string }) => t.text),
+          x_account_id: activeAccount.id,
         }),
       })
 
