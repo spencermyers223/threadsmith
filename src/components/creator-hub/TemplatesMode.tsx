@@ -76,8 +76,8 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null)
   const [variableValues, setVariableValues] = useState<Record<string, string>>({})
 
-  // UI state
-  const [activeTab, setActiveTab] = useState<'style' | 'post'>('style')
+  // UI state - default to 'post' tab since post format is priority 1
+  const [activeTab, setActiveTab] = useState<'style' | 'post'>('post')
   const [generating, setGenerating] = useState(false)
   const [posts, setPosts] = useState<GeneratedPost[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -127,8 +127,8 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
     [postTemplates, selectedPostId]
   )
 
-  // Check if can generate - need at least one template selected
-  const canGenerate = selectedStyleId || selectedPostId
+  // Check if can generate - post format is required, voice style is optional
+  const canGenerate = selectedPostId !== null
 
   // Handle generation
   const handleGenerate = async () => {
@@ -224,11 +224,42 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
         <h2 className="text-lg font-semibold mb-4">Your Configuration</h2>
         
         <div className="grid grid-cols-2 gap-4">
-          {/* Style Template Selection */}
+          {/* Post Template Selection - PRIORITY 1 */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Layers className="w-4 h-4 text-blue-400" />
+              <span className="text-sm font-medium">Post Format</span>
+              <span className="text-xs text-[var(--accent)] font-medium">Required</span>
+            </div>
+            {selectedPost ? (
+              <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{selectedPost.title}</p>
+                  <p className="text-xs text-[var(--muted)]">{selectedPost.category}</p>
+                </div>
+                <button 
+                  onClick={() => { setSelectedPostId(null); setVariableValues({}); setActiveTab('post'); }}
+                  className="p-1 hover:bg-blue-500/20 rounded"
+                >
+                  <X className="w-4 h-4 text-blue-400" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setActiveTab('post')}
+                className={`w-full p-3 border-2 border-dashed rounded-lg text-sm transition-colors ${activeTab === 'post' ? 'border-blue-500/50 text-blue-400 bg-blue-500/5' : 'border-[var(--border)] text-[var(--muted)] hover:border-blue-500/50 hover:text-blue-400'}`}
+              >
+                + Select a post format first
+              </button>
+            )}
+          </div>
+
+          {/* Style Template Selection - OPTIONAL */}
           <div>
             <div className="flex items-center gap-2 mb-2">
               <PenLine className="w-4 h-4 text-purple-400" />
               <span className="text-sm font-medium">Voice Style</span>
+              <span className="text-xs text-[var(--muted)]">Optional</span>
             </div>
             {selectedStyle ? (
               <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg flex items-center justify-between">
@@ -250,36 +281,7 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
                 onClick={() => setActiveTab('style')}
                 className={`w-full p-3 border-2 border-dashed rounded-lg text-sm text-[var(--muted)] hover:border-purple-500/50 hover:text-purple-400 transition-colors ${activeTab === 'style' ? 'border-purple-500/50 text-purple-400' : 'border-[var(--border)]'}`}
               >
-                + Select a voice style
-              </button>
-            )}
-          </div>
-
-          {/* Post Template Selection */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Layers className="w-4 h-4 text-blue-400" />
-              <span className="text-sm font-medium">Post Format</span>
-            </div>
-            {selectedPost ? (
-              <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{selectedPost.title}</p>
-                  <p className="text-xs text-[var(--muted)]">{selectedPost.category}</p>
-                </div>
-                <button 
-                  onClick={() => { setSelectedPostId(null); setVariableValues({}); setActiveTab('post'); }}
-                  className="p-1 hover:bg-blue-500/20 rounded"
-                >
-                  <X className="w-4 h-4 text-blue-400" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setActiveTab('post')}
-                className={`w-full p-3 border-2 border-dashed rounded-lg text-sm text-[var(--muted)] hover:border-blue-500/50 hover:text-blue-400 transition-colors ${activeTab === 'post' ? 'border-blue-500/50 text-blue-400' : 'border-[var(--border)]'}`}
-              >
-                + Select a post format
+                + Add a voice style
               </button>
             )}
           </div>
@@ -322,19 +324,8 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
           STEP 2: TEMPLATE PICKER (Tabs for Style vs Post)
           ═══════════════════════════════════════════════════════════════ */}
       <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl mb-6">
-        {/* Tabs */}
+        {/* Tabs - Post Formats first (priority), Voice Styles second (optional) */}
         <div className="flex border-b border-[var(--border)]">
-          <button
-            onClick={() => setActiveTab('style')}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-              activeTab === 'style'
-                ? 'text-purple-400 border-b-2 border-purple-400 -mb-px'
-                : 'text-[var(--muted)] hover:text-[var(--foreground)]'
-            }`}
-          >
-            <PenLine className="w-4 h-4" />
-            Voice Styles ({styleTemplates.length})
-          </button>
           <button
             onClick={() => setActiveTab('post')}
             className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
@@ -346,12 +337,54 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
             <Layers className="w-4 h-4" />
             Post Formats ({postTemplates.length})
           </button>
+          <button
+            onClick={() => setActiveTab('style')}
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+              activeTab === 'style'
+                ? 'text-purple-400 border-b-2 border-purple-400 -mb-px'
+                : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+            }`}
+          >
+            <PenLine className="w-4 h-4" />
+            Voice Styles ({styleTemplates.length})
+          </button>
         </div>
 
-        {/* Tab Content */}
+        {/* Tab Content - Post formats first, voice styles second */}
         <div className="p-4">
-          {activeTab === 'style' ? (
-            // Style Templates Grid
+          {activeTab === 'post' ? (
+            // Post Templates Grid (Priority 1)
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {postTemplates.map(template => {
+                const colors = CATEGORY_COLORS[template.category] || { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/30' }
+                return (
+                  <button
+                    key={template.id}
+                    onClick={() => { setSelectedPostId(template.id); setVariableValues({}); }}
+                    className={`p-4 rounded-lg border text-left transition-all ${
+                      selectedPostId === template.id
+                        ? 'bg-blue-500/10 border-blue-500/50 ring-2 ring-blue-500/30'
+                        : 'bg-[var(--background)] border-[var(--border)] hover:border-blue-500/30'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-1">
+                      <span className="font-medium text-sm">{template.title}</span>
+                      {selectedPostId === template.id && (
+                        <Check className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                      )}
+                    </div>
+                    <span className={`inline-block text-xs px-2 py-0.5 rounded ${colors.bg} ${colors.text} ${colors.border} border`}>
+                      {template.category}
+                    </span>
+                    {template.description && (
+                      <p className="text-xs text-[var(--muted)] mt-2 line-clamp-2">{template.description}</p>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            // Style Templates Grid (Optional)
             styleTemplates.length === 0 ? (
               <div className="text-center py-8">
                 <PenLine className="w-10 h-10 text-[var(--muted)] mx-auto mb-3" />
@@ -388,37 +421,6 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
                 ))}
               </div>
             )
-          ) : (
-            // Post Templates Grid
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {postTemplates.map(template => {
-                const colors = CATEGORY_COLORS[template.category] || { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/30' }
-                return (
-                  <button
-                    key={template.id}
-                    onClick={() => { setSelectedPostId(template.id); setVariableValues({}); }}
-                    className={`p-4 rounded-lg border text-left transition-all ${
-                      selectedPostId === template.id
-                        ? 'bg-blue-500/10 border-blue-500/50 ring-2 ring-blue-500/30'
-                        : 'bg-[var(--background)] border-[var(--border)] hover:border-blue-500/30'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-1">
-                      <span className="font-medium text-sm">{template.title}</span>
-                      {selectedPostId === template.id && (
-                        <Check className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                      )}
-                    </div>
-                    <span className={`inline-block text-xs px-2 py-0.5 rounded ${colors.bg} ${colors.text} ${colors.border} border`}>
-                      {template.category}
-                    </span>
-                    {template.description && (
-                      <p className="text-xs text-[var(--muted)] mt-2 line-clamp-2">{template.description}</p>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
           )}
         </div>
       </div>
@@ -447,7 +449,7 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
       {/* Helper text */}
       {!canGenerate && (
         <p className="text-center text-sm text-[var(--muted)] mt-2">
-          Select a voice style or post format to generate
+          Select a post format to generate
         </p>
       )}
 
