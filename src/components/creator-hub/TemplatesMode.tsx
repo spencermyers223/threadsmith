@@ -156,11 +156,20 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
         : selectedPost?.category === 'engagement' ? 'hot_take'
         : 'market_take'
 
+      // Build the topic by substituting variable values into the prompt template
+      let topic = selectedPost?.prompt_template || selectedStyle?.title || 'Generate content'
+      if (selectedPost?.variables && Object.keys(variableValues).length > 0) {
+        for (const [key, value] of Object.entries(variableValues)) {
+          // Replace {{variable_name}} with actual value
+          topic = topic.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'gi'), value)
+        }
+      }
+
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          topic: selectedPost?.prompt_template || selectedStyle?.title || 'Generate content',
+          topic: topic,
           length: 'standard',
           tone: 'casual',
           postType: postType,
@@ -297,12 +306,12 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
                   <label className="block text-sm text-[var(--muted)] mb-1">
                     {v.label} {v.required && <span className="text-red-400">*</span>}
                   </label>
-                  <input
-                    type="text"
+                  <textarea
                     value={variableValues[v.name] || ''}
                     onChange={(e) => setVariableValues(prev => ({ ...prev, [v.name]: e.target.value }))}
                     placeholder={v.placeholder}
-                    className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+                    rows={2}
+                    className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm resize-y min-h-[60px]"
                   />
                 </div>
               ))}
