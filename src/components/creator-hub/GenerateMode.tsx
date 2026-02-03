@@ -6,8 +6,7 @@ import { useRouter } from 'next/navigation'
 import {
   Sparkles, FileText, Loader2, X, Calendar, PenLine, Check,
   Copy, RefreshCw, Crown, AlertCircle, ChevronLeft, ChevronRight, 
-  MessageCircle, Repeat2, Heart, TrendingUp, Flame, Rocket,
-  Clock, Target
+  MessageCircle, Repeat2, Heart, TrendingUp, Flame, Clock, Target
 } from 'lucide-react'
 import { EditingTools } from '@/components/editing'
 import { GenerationCounter } from '@/components/subscription/GenerationCounter'
@@ -58,74 +57,32 @@ interface TemplateData {
   variables: TemplateVariable[] | null
 }
 
-// Prompt categories for Brain Dump quick starts
-const PROMPT_CATEGORIES = [
-  {
-    id: 'build-in-public',
-    label: 'Build in Public',
-    icon: Rocket,
-    prompts: [
-      'Something I shipped this week',
-      'A bug that took hours to fix',
-      'Behind the scenes of my workflow',
-      'Lesson learned building my product',
-      'Feature I almost built but didn\'t',
-      'Tool that 10x\'d my productivity'
-    ]
-  },
-  {
-    id: 'hot-takes',
-    label: 'Hot Takes',
-    icon: Flame,
-    prompts: [
-      'Unpopular opinion about my industry',
-      'Thing everyone does that I think is wrong',
-      'Advice I disagree with',
-      'Trend I think is overhyped',
-      'Contrarian take on a popular tool',
-      'Why the common practice is broken'
-    ]
-  },
-  {
-    id: 'knowledge',
-    label: 'Knowledge Share',
-    icon: TrendingUp,
-    prompts: [
-      'Thing I wish I knew when starting out',
-      'Framework I use to make decisions',
-      'Mistake I see beginners make',
-      'Resource that changed how I work',
-      'Concept that took me years to understand',
-      'Simple trick that gets big results'
-    ]
-  },
-  {
-    id: 'engagement',
-    label: 'Engagement',
-    icon: MessageCircle,
-    prompts: [
-      'Question I want to ask my audience',
-      'Poll idea for my followers',
-      'Hot topic I want opinions on',
-      'Debate I want to start',
-      'Prediction I want to make',
-      'Challenge for my community'
-    ]
-  },
-  {
-    id: 'personal',
-    label: 'Personal Story',
-    icon: Target,
-    prompts: [
-      'Moment that changed my career',
-      'Failure that taught me the most',
-      'Risk I took that paid off',
-      'Person who influenced my path',
-      'Turning point in my journey',
-      'Day in my life that was pivotal'
-    ]
-  }
-]
+// Niche configuration for trending topics
+const NICHE_CONFIG: Record<string, { emoji: string; gradient: string }> = {
+  'ai': { emoji: '🤖', gradient: 'from-violet-500 to-purple-600' },
+  'artificial intelligence': { emoji: '🤖', gradient: 'from-violet-500 to-purple-600' },
+  'crypto': { emoji: '₿', gradient: 'from-amber-500 to-orange-600' },
+  'cryptocurrency': { emoji: '₿', gradient: 'from-amber-500 to-orange-600' },
+  'web3': { emoji: '🌐', gradient: 'from-cyan-500 to-blue-600' },
+  'saas': { emoji: '☁️', gradient: 'from-blue-500 to-indigo-600' },
+  'software': { emoji: '💻', gradient: 'from-slate-500 to-gray-600' },
+  'startups': { emoji: '🚀', gradient: 'from-rose-500 to-pink-600' },
+  'marketing': { emoji: '📣', gradient: 'from-green-500 to-emerald-600' },
+  'fintech': { emoji: '💳', gradient: 'from-emerald-500 to-teal-600' },
+  'defi': { emoji: '🏦', gradient: 'from-purple-500 to-violet-600' },
+  'nft': { emoji: '🎨', gradient: 'from-pink-500 to-rose-600' },
+  'gaming': { emoji: '🎮', gradient: 'from-red-500 to-orange-600' },
+  'health': { emoji: '💚', gradient: 'from-lime-500 to-green-600' },
+  'ecommerce': { emoji: '🛒', gradient: 'from-yellow-500 to-amber-600' },
+  'creator economy': { emoji: '✨', gradient: 'from-fuchsia-500 to-pink-600' },
+  'productivity': { emoji: '⚡', gradient: 'from-sky-500 to-blue-600' },
+  'build in public': { emoji: '🔨', gradient: 'from-orange-500 to-red-600' },
+  'default': { emoji: '🔥', gradient: 'from-gray-500 to-slate-600' }
+}
+
+const getNicheConfig = (niche: string) => {
+  return NICHE_CONFIG[niche.toLowerCase()] || NICHE_CONFIG['default']
+}
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   thread: { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/20' },
@@ -187,8 +144,11 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   const [selectedTemplate, setSelectedTemplate] = useState<PostTemplate | null>(null)
   const [variableValues, setVariableValues] = useState<Record<string, string>>({})
 
-  // Prompt category state for Brain Dump
-  const [selectedPromptCategory, setSelectedPromptCategory] = useState<string | null>(null)
+  // Trending topics state for Brain Dump
+  const [userNiches, setUserNiches] = useState<string[]>([])
+  const [selectedNiche, setSelectedNiche] = useState<string | null>(null)
+  const [trendingTopics, setTrendingTopics] = useState<string[]>([])
+  const [loadingTopics, setLoadingTopics] = useState(false)
 
   // Template mode (when user has filled variables and is ready to generate)
   const [templateMode, setTemplateMode] = useState<TemplateData | null>(null)
@@ -275,6 +235,68 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   useEffect(() => {
     setSuggestMedia(selectedLength === 'article')
   }, [selectedLength])
+
+  // Fetch user's niches from content_profiles
+  useEffect(() => {
+    async function fetchUserNiches() {
+      try {
+        const res = await fetch('/api/content-profile')
+        if (res.ok) {
+          const data = await res.json()
+          const niches: string[] = []
+          
+          // Add primary niche
+          if (data.profile?.primary_niche) {
+            niches.push(data.profile.primary_niche)
+          }
+          
+          // Add secondary interests
+          if (data.profile?.secondary_interests) {
+            const secondary = Array.isArray(data.profile.secondary_interests) 
+              ? data.profile.secondary_interests 
+              : []
+            niches.push(...secondary.filter((n: string) => !niches.includes(n)))
+          }
+          
+          // Add legacy niche if no primary
+          if (niches.length === 0 && data.profile?.niche) {
+            niches.push(data.profile.niche)
+          }
+          
+          setUserNiches(niches.slice(0, 5)) // Max 5 niches
+        }
+      } catch (err) {
+        console.error('Failed to fetch user niches:', err)
+      }
+    }
+    
+    fetchUserNiches()
+  }, [])
+
+  // Fetch trending topics when niche is selected
+  useEffect(() => {
+    async function fetchTrendingTopics() {
+      if (!selectedNiche) {
+        setTrendingTopics([])
+        return
+      }
+      
+      setLoadingTopics(true)
+      try {
+        const res = await fetch(`/api/trending-topics?niche=${encodeURIComponent(selectedNiche)}`)
+        if (res.ok) {
+          const data = await res.json()
+          setTrendingTopics(data.topics || [])
+        }
+      } catch (err) {
+        console.error('Failed to fetch trending topics:', err)
+        setTrendingTopics([])
+      }
+      setLoadingTopics(false)
+    }
+    
+    fetchTrendingTopics()
+  }, [selectedNiche])
 
   // Clear template mode and return to normal input
   const clearTemplateMode = () => {
@@ -718,48 +740,6 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
                 </div>
               </div>
 
-              {/* Prompt Categories */}
-              <div className="mb-4">
-                <p className="text-xs text-[var(--muted)] mb-2">💡 Pick a category for prompt ideas:</p>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {PROMPT_CATEGORIES.map(cat => {
-                    const Icon = cat.icon
-                    const isActive = selectedPromptCategory === cat.id
-                    return (
-                      <button
-                        key={cat.id}
-                        onClick={() => setSelectedPromptCategory(isActive ? null : cat.id)}
-                        className={`
-                          flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all
-                          ${isActive
-                            ? 'bg-[var(--accent)] text-[var(--background)]'
-                            : 'bg-[var(--background)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--muted)] hover:text-[var(--foreground)]'
-                          }
-                        `}
-                      >
-                        <Icon className="w-3.5 h-3.5" />
-                        {cat.label}
-                      </button>
-                    )
-                  })}
-                </div>
-                
-                {/* Show prompts for selected category */}
-                {selectedPromptCategory && (
-                  <div className="flex flex-wrap gap-2 animate-fade-in">
-                    {PROMPT_CATEGORIES.find(c => c.id === selectedPromptCategory)?.prompts.map(prompt => (
-                      <button
-                        key={prompt}
-                        onClick={() => setTopic(prompt)}
-                        className="px-3 py-1.5 text-xs rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/30 hover:bg-[var(--accent)]/20 transition-colors text-[var(--foreground)]"
-                      >
-                        {prompt}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
               {/* Source File */}
               {selectedFile ? (
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/30 mb-4">
@@ -922,7 +902,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
             bg-[var(--accent)] hover:opacity-90
             disabled:opacity-50 disabled:cursor-not-allowed
             text-[var(--background)] rounded-xl font-semibold text-lg
-            transition-opacity mb-8
+            transition-opacity
           "
         >
           {isGenerating ? (
@@ -937,6 +917,123 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
             </>
           )}
         </button>
+
+        {/* Trending Topics Section - Beautiful & Engaging */}
+        {userNiches.length > 0 && !templateMode && (
+          <div className="mt-8 mb-8">
+            {/* Section Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20">
+                <Flame className="w-5 h-5 text-violet-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">What&apos;s trending in your world?</h3>
+                <p className="text-sm text-[var(--muted)]">Click a topic to start brain dumping</p>
+              </div>
+            </div>
+
+            {/* Niche Buttons */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {userNiches.map((niche) => {
+                const config = getNicheConfig(niche)
+                const isSelected = selectedNiche === niche
+                return (
+                  <button
+                    key={niche}
+                    onClick={() => setSelectedNiche(isSelected ? null : niche)}
+                    className={`
+                      group relative px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-300
+                      ${isSelected
+                        ? `bg-gradient-to-r ${config.gradient} text-white shadow-lg shadow-violet-500/25`
+                        : 'bg-[var(--card)] border border-[var(--border)] hover:border-violet-500/50 hover:shadow-md'
+                      }
+                    `}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="text-lg">{config.emoji}</span>
+                      <span className="capitalize">{niche}</span>
+                    </span>
+                    {isSelected && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full animate-pulse" />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Trending Topics */}
+            {selectedNiche && (
+              <div className="animate-fade-in">
+                <div className="p-4 rounded-xl bg-gradient-to-br from-[var(--card)] to-[var(--background)] border border-[var(--border)]">
+                  {loadingTopics ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="flex items-center gap-3 text-[var(--muted)]">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Finding trending topics...</span>
+                      </div>
+                    </div>
+                  ) : trendingTopics.length > 0 ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-lg">{getNicheConfig(selectedNiche).emoji}</span>
+                        <span className="text-sm font-medium text-[var(--muted)]">
+                          Trending in <span className="capitalize text-[var(--foreground)]">{selectedNiche}</span>
+                        </span>
+                      </div>
+                      <div className="grid gap-2">
+                        {trendingTopics.map((topic, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              setTopic(topic)
+                              setSelectedNiche(null)
+                            }}
+                            className="
+                              group w-full text-left px-4 py-3 rounded-lg
+                              bg-[var(--background)] border border-[var(--border)]
+                              hover:border-violet-500/50 hover:bg-violet-500/5
+                              transition-all duration-200
+                            "
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center flex-shrink-0">
+                                <TrendingUp className="w-3.5 h-3.5 text-violet-400" />
+                              </div>
+                              <span className="text-sm font-medium group-hover:text-violet-400 transition-colors">
+                                {topic}
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-[var(--muted)]">
+                      <p>No trending topics found. Try another niche!</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Hint when no niche selected */}
+            {!selectedNiche && (
+              <p className="text-center text-sm text-[var(--muted)]">
+                👆 Select a niche to see what&apos;s happening right now
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* No niches hint */}
+        {userNiches.length === 0 && !templateMode && (
+          <div className="mt-6 mb-8 p-4 rounded-xl bg-[var(--card)] border border-dashed border-[var(--border)] text-center">
+            <p className="text-sm text-[var(--muted)] mb-2">
+              💡 Want trending topic ideas? Set your niches in{' '}
+              <a href="/customization" className="text-[var(--accent)] hover:underline">Customization</a>
+            </p>
+          </div>
+        )}
 
         {/* Error */}
         {error && (
