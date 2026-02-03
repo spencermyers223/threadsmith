@@ -348,19 +348,11 @@ export default function GeneratePage() {
   const [inspirationTweets, setInspirationTweets] = useState<InspirationTweet[]>([])
   const [loadingInspirationTweets, setLoadingInspirationTweets] = useState(false)
 
-  // Style Profiles - analyzed accounts whose style can be incorporated
-  const [styleProfiles, setStyleProfiles] = useState<Array<{
-    id: string
-    account_username: string
-    profile_data: { 
-      summary?: string
-      patterns?: {
-        hookStyles?: string[]
-        toneMarkers?: string[]
-      }
-    }
-  }>>([])
-  const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<string | null>(null)
+  // Style Profiles - temporarily disabled, will re-enable with page redesign
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [styleProfiles] = useState<Array<{ id: string; account_username: string; profile_data: { summary?: string } }>>([])
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars  
+  const [selectedStyleProfileId] = useState<string | null>(null)
 
   // Fetch templates
   useEffect(() => {
@@ -379,25 +371,8 @@ export default function GeneratePage() {
     fetchTemplates()
   }, [])
 
-  // Fetch style profiles (Voice System V2) - per X account
-  useEffect(() => {
-    async function fetchStyleProfiles() {
-      if (!activeAccount?.id) {
-        setStyleProfiles([])
-        return
-      }
-      try {
-        const res = await fetch(`/api/voice/style-profiles?x_account_id=${activeAccount.id}`)
-        if (res.ok) {
-          const data = await res.json()
-          setStyleProfiles(data.profiles || [])
-        }
-      } catch (err) {
-        console.error('Failed to fetch style profiles:', err)
-      }
-    }
-    fetchStyleProfiles()
-  }, [activeAccount?.id])
+  // Style profiles fetch disabled for now - will re-enable with page redesign
+  // useEffect(() => { fetchStyleProfiles() }, [activeAccount?.id])
 
   // Filter templates
   const filteredTemplates = useMemo(() => {
@@ -854,9 +829,9 @@ export default function GeneratePage() {
               </div>
             )}
 
-            {/* Post Length + Style - all on one line */}
-            <div className="flex flex-wrap items-center gap-4 mb-4">
-              <span className="text-sm font-medium text-[var(--muted)]">Post Length [v2]:</span>
+            {/* Post Length Toggle */}
+            <div className="flex items-center gap-4 mb-4">
+              <span className="text-sm font-medium text-[var(--muted)]">Post Length:</span>
               <div className="flex gap-2">
                 <button
                   onClick={() => setPostLength('tweet')}
@@ -881,27 +856,10 @@ export default function GeneratePage() {
                   Thread
                 </button>
               </div>
-              
-              <div className="border-l border-[var(--border)] h-6 mx-2" />
-              
-              <span className="text-sm font-medium text-[var(--muted)]">Style:</span>
-              {styleProfiles.length > 0 ? (
-                <select
-                  value={selectedStyleProfileId || ''}
-                  onChange={(e) => setSelectedStyleProfileId(e.target.value || null)}
-                  className="px-3 py-1.5 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none"
-                >
-                  <option value="">My voice only</option>
-                  {styleProfiles.map((profile) => (
-                    <option key={profile.id} value={profile.id}>
-                      @{profile.account_username}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <a href="/settings" className="text-sm text-accent hover:underline">
-                  Add in Settings →
-                </a>
+              {postLength === 'thread' && (
+                <span className="text-xs text-[var(--muted)] italic">
+                  💡 More context recommended for threads
+                </span>
               )}
             </div>
 
