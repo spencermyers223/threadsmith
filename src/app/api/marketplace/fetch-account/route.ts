@@ -32,20 +32,20 @@ export async function POST(request: NextRequest) {
     // Calculate credit cost
     const creditCost = Math.ceil(tweetCount / 10) * CREDITS_PER_10_TWEETS
 
-    // Check user's credits
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
+    // Check user's credits from subscriptions table
+    const { data: subscription, error: subError } = await supabase
+      .from('subscriptions')
       .select('credits')
-      .eq('id', user.id)
+      .eq('user_id', user.id)
       .single()
 
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'Failed to check credits' }, { status: 500 })
+    if (subError || !subscription) {
+      return NextResponse.json({ error: 'No active subscription found' }, { status: 400 })
     }
 
-    if ((profile.credits || 0) < creditCost) {
+    if ((subscription.credits || 0) < creditCost) {
       return NextResponse.json({ 
-        error: `Insufficient credits. You need ${creditCost} credits but have ${profile.credits || 0}.` 
+        error: `Insufficient credits. You need ${creditCost} credits but have ${subscription.credits || 0}.` 
       }, { status: 400 })
     }
 
@@ -115,9 +115,9 @@ export async function POST(request: NextRequest) {
 
     // Deduct credits AFTER successful fetch
     const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ credits: (profile.credits || 0) - creditCost })
-      .eq('id', user.id)
+      .from('subscriptions')
+      .update({ credits: (subscription.credits || 0) - creditCost })
+      .eq('user_id', user.id)
 
     if (updateError) {
       console.error('Failed to deduct credits:', updateError)
