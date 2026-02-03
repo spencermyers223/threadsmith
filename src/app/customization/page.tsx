@@ -375,9 +375,18 @@ export default function CustomizationPage() {
     admired_accounts: [],
     outreach_templates: []
   })
+  const [originalCustomization, setOriginalCustomization] = useState<UserCustomization | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [savingCustomization, setSavingCustomization] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  
+  // Check if customization has unsaved changes
+  const hasUnsavedChanges = originalCustomization && (
+    customization.style_description !== originalCustomization.style_description ||
+    customization.goals_audience !== originalCustomization.goals_audience ||
+    JSON.stringify(customization.content_niches) !== JSON.stringify(originalCustomization.content_niches)
+  )
 
   // Section expansion state
   const [expandedSections, setExpandedSections] = useState({
@@ -413,14 +422,16 @@ export default function CustomizationPage() {
       )
       if (customRes.ok) {
         const data = await customRes.json()
-        setCustomization(data.customization || {
+        const customData = data.customization || {
           tone_preferences: {},
           content_niches: [],
           goals_audience: null,
           style_description: null,
           admired_accounts: [],
           outreach_templates: []
-        })
+        }
+        setCustomization(customData)
+        setOriginalCustomization(JSON.parse(JSON.stringify(customData))) // Deep copy for comparison
       }
     } catch (error) {
       console.error('Error fetching customization data:', error)
@@ -497,6 +508,39 @@ export default function CustomizationPage() {
     }
   }
 
+  // Save customization (writing style, niches, goals)
+  const saveCustomization = async () => {
+    setSavingCustomization(true)
+    try {
+      const res = await fetch('/api/user-customization', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          x_account_id: activeAccount?.id || null,
+          style_description: customization.style_description,
+          content_niches: customization.content_niches,
+          goals_audience: customization.goals_audience,
+          tone_preferences: customization.tone_preferences,
+          admired_accounts: customization.admired_accounts
+        })
+      })
+
+      if (res.ok) {
+        // Update original to match current (no more unsaved changes)
+        setOriginalCustomization(JSON.parse(JSON.stringify(customization)))
+        setToast({ message: 'Customization saved!', type: 'success' })
+      } else {
+        const error = await res.json()
+        setToast({ message: error.error || 'Failed to save', type: 'error' })
+      }
+    } catch (error) {
+      console.error('Error saving customization:', error)
+      setToast({ message: 'Failed to save customization', type: 'error' })
+    }
+    setSavingCustomization(false)
+  }
+
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
   }
@@ -530,7 +574,7 @@ export default function CustomizationPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+      <main className={`max-w-4xl mx-auto px-4 py-8 space-y-6 ${hasUnsavedChanges ? 'pb-24' : ''}`}>
         
         {/* Style Templates Section */}
         <section className="bg-[var(--card)] border border-[var(--border)] rounded-xl">
@@ -675,6 +719,48 @@ export default function CustomizationPage() {
         </section>
 
       </main>
+
+      {/* Sticky Save Bar */}
+      {hasUnsavedChanges && (
+        <div className="fixed bottom-0 left-0 right-0 bg-[var(--card)] border-t border-[var(--border)] p-4 shadow-float animate-fade-in-up z-40">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-2 text-[var(--muted)]">
+              <AlertCircle className="w-5 h-5 text-amber-400" />
+              <span>You have unsaved changes</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  // Reset to original
+                  if (originalCustomization) {
+                    setCustomization(JSON.parse(JSON.stringify(originalCustomization)))
+                  }
+                }}
+                className="px-4 py-2 text-[var(--muted)] hover:bg-[var(--border)] rounded-lg transition-colors"
+              >
+                Discard
+              </button>
+              <button
+                onClick={saveCustomization}
+                disabled={savingCustomization}
+                className="px-6 py-2 bg-[var(--accent)] text-black rounded-lg hover:bg-[var(--accent)]/90 transition-colors disabled:opacity-50 flex items-center gap-2 font-medium"
+              >
+                {savingCustomization ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Save Changes
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Style Template Editor Modal */}
       {editorOpen && (
