@@ -650,13 +650,13 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
             <>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
-                  What do you want to post about?
+                  What&apos;s on your mind? Brain dump your thoughts here...
                 </label>
                 <div className="relative">
                   <textarea
                     value={topic}
                     onChange={(e) => setTopic(e.target.value.slice(0, 500))}
-                    placeholder="Enter your topic, idea, or select a template below..."
+                    placeholder="Just start typing - raw thoughts, ideas, anything..."
                     rows={3}
                     className="
                       w-full px-4 py-3 rounded-xl resize-none
@@ -669,6 +669,22 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
                   <span className="absolute bottom-3 right-3 text-xs text-[var(--muted)]">
                     {topic.length}/500
                   </span>
+                </div>
+              </div>
+
+              {/* Suggested Topics */}
+              <div className="mb-4">
+                <p className="text-xs text-[var(--muted)] mb-2">💡 Quick topics to get you started:</p>
+                <div className="flex flex-wrap gap-2">
+                  {['Something I learned this week', 'A tool that changed my workflow', 'Hot take on trending topic', 'Behind the scenes of my work', 'Mistake I made and lesson learned', 'Question for my audience'].map(prompt => (
+                    <button
+                      key={prompt}
+                      onClick={() => setTopic(prompt)}
+                      className="px-3 py-1.5 text-xs rounded-full bg-[var(--background)] border border-[var(--border)] hover:border-[var(--accent)] transition-colors text-[var(--muted)] hover:text-[var(--foreground)]"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
                 </div>
               </div>
 
