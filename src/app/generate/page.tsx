@@ -348,13 +348,22 @@ export default function GeneratePage() {
   const [inspirationTweets, setInspirationTweets] = useState<InspirationTweet[]>([])
   const [loadingInspirationTweets, setLoadingInspirationTweets] = useState(false)
 
-  // Voice System V2: Style profiles
+  // Style Profiles - analyzed accounts whose style can be incorporated
   const [styleProfiles, setStyleProfiles] = useState<Array<{
     id: string
     account_username: string
-    profile_data: { summary?: string }
+    profile_data: { 
+      summary?: string
+      patterns?: {
+        hookStyles?: string[]
+        toneMarkers?: string[]
+      }
+    }
   }>>([])
   const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<string | null>(null)
+  
+  // Get the currently selected style profile for display
+  const selectedStyleProfile = styleProfiles.find(p => p.id === selectedStyleProfileId)
 
   // Fetch templates
   useEffect(() => {
@@ -882,39 +891,38 @@ export default function GeneratePage() {
               )}
             </div>
 
-            {/* Style Profile Selector (Voice System V2) */}
-            <div className="flex items-center gap-4 mb-4">
-              <span className="text-sm font-medium text-[var(--muted)]">Incorporate style (select one):</span>
-              {styleProfiles.length > 0 ? (
-                <>
-                  <div className="flex gap-2 flex-wrap">
+            {/* Style Profile Selector - incorporate a creator's analyzed style */}
+            <div className="mb-4">
+              <div className="flex items-center gap-3 mb-2">
+                <label className="text-sm font-medium text-[var(--muted)]">
+                  Incorporate style from:
+                </label>
+                {styleProfiles.length > 0 ? (
+                  <select
+                    value={selectedStyleProfileId || ''}
+                    onChange={(e) => setSelectedStyleProfileId(e.target.value || null)}
+                    className="px-3 py-1.5 rounded-lg text-sm bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none cursor-pointer"
+                  >
+                    <option value="">None (use my voice only)</option>
                     {styleProfiles.map((profile) => (
-                      <button
-                        key={profile.id}
-                        onClick={() => setSelectedStyleProfileId(
-                          selectedStyleProfileId === profile.id ? null : profile.id
-                        )}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                          selectedStyleProfileId === profile.id
-                            ? 'bg-accent text-[var(--accent-text)]'
-                            : 'bg-[var(--background)] border border-[var(--border)] hover:border-[var(--muted)]'
-                        }`}
-                        title={profile.profile_data?.summary || `Style from @${profile.account_username}`}
-                      >
+                      <option key={profile.id} value={profile.id}>
                         @{profile.account_username}
-                      </button>
+                      </option>
                     ))}
-                  </div>
-                  {!selectedStyleProfileId && (
-                    <span className="text-xs text-[var(--muted)] italic">
-                      None selected = saved posts only
-                    </span>
-                  )}
-                </>
-              ) : (
-                <span className="text-xs text-[var(--muted)] italic">
-                  No style profiles yet — <a href="/settings/voice" className="text-accent hover:underline">add in Settings</a>
-                </span>
+                  </select>
+                ) : (
+                  <a 
+                    href="/settings" 
+                    className="text-sm text-accent hover:underline"
+                  >
+                    Add style profiles in Settings →
+                  </a>
+                )}
+              </div>
+              {selectedStyleProfile && (
+                <p className="text-xs text-[var(--muted)] italic pl-1">
+                  {selectedStyleProfile.profile_data?.summary || `Using @${selectedStyleProfile.account_username}'s writing patterns`}
+                </p>
               )}
             </div>
 
