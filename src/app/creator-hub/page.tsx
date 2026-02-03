@@ -4,12 +4,13 @@ import { useState, useCallback } from 'react'
 import { FilesSidebar, FileRecord } from '@/components/generate/FilesSidebar'
 import WriteMode from '@/components/creator-hub/WriteMode'
 import GenerateMode from '@/components/creator-hub/GenerateMode'
-import { PenLine, Sparkles } from 'lucide-react'
+import TemplatesMode from '@/components/creator-hub/TemplatesMode'
+import { PenLine, Sparkles, Layers, Lightbulb } from 'lucide-react'
 
-type Mode = 'write' | 'generate'
+type Mode = 'write' | 'braindump' | 'templates'
 
 export default function CreatorHubPage() {
-  const [mode, setMode] = useState<Mode>('generate')
+  const [mode, setMode] = useState<Mode>('braindump')
   const [sidebarExpanded, setSidebarExpanded] = useState(true)
   const [selectedFile, setSelectedFile] = useState<FileRecord | null>(null)
   const [editingFile, setEditingFile] = useState<FileRecord | null>(null)
@@ -72,40 +73,60 @@ export default function CreatorHubPage() {
                 Write
               </button>
               <button
-                onClick={() => setMode('generate')}
+                onClick={() => setMode('braindump')}
                 className={`
                   flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
-                  ${mode === 'generate'
+                  ${mode === 'braindump'
                     ? 'bg-[var(--background)] text-[var(--foreground)] shadow-sm'
                     : 'text-[var(--muted)] hover:text-[var(--foreground)]'
                   }
                 `}
               >
-                <Sparkles size={16} />
-                Generate
+                <Lightbulb size={16} />
+                Brain Dump
+              </button>
+              <button
+                onClick={() => setMode('templates')}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
+                  ${mode === 'templates'
+                    ? 'bg-[var(--background)] text-[var(--foreground)] shadow-sm'
+                    : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+                  }
+                `}
+              >
+                <Layers size={16} />
+                Templates
               </button>
             </div>
 
             {/* Mode description */}
             <p className="text-sm text-[var(--muted)] hidden sm:block">
-              {mode === 'write'
-                ? 'Write and organize your research notes'
-                : 'Generate algorithm-optimized posts'
-              }
+              {mode === 'write' && 'Write and organize your research notes'}
+              {mode === 'braindump' && 'Free-flow your ideas and get inspired'}
+              {mode === 'templates' && 'Use presets for quick generation'}
             </p>
           </div>
         </div>
 
         {/* Mode Content */}
         <div className="flex-1 overflow-auto">
-          {mode === 'write' ? (
+          {mode === 'write' && (
             <WriteMode
               editingFile={editingFile}
               onFileSaved={handleFileSaved}
               onNewFile={handleNewFile}
             />
-          ) : (
+          )}
+          {mode === 'braindump' && (
             <GenerateMode
+              selectedFile={selectedFile}
+              onOpenSidebar={() => setSidebarExpanded(true)}
+              onClearFile={() => setSelectedFile(null)}
+            />
+          )}
+          {mode === 'templates' && (
+            <TemplatesMode
               selectedFile={selectedFile}
               onOpenSidebar={() => setSidebarExpanded(true)}
               onClearFile={() => setSelectedFile(null)}
