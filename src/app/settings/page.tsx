@@ -482,9 +482,20 @@ export default function SettingsPage() {
 
   const handleRemoveStyleProfile = async (id: string) => {
     try {
+      // Find the profile to get the username before deleting
+      const profileToRemove = styleProfiles.find(p => p.id === id)
+      
       const res = await fetch(`/api/voice/style-profiles?id=${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Failed to remove')
       setStyleProfiles(prev => prev.filter(p => p.id !== id))
+      
+      // Also remove from admired_accounts so it doesn't show in quick analyze
+      if (profileToRemove) {
+        const updatedAdmired = contentProfile.admired_accounts.filter(
+          acc => acc.toLowerCase() !== profileToRemove.account_username.toLowerCase()
+        )
+        updateContentProfile({ admired_accounts: updatedAdmired })
+      }
     } catch {
       setError('Failed to remove style profile')
     }
@@ -844,7 +855,7 @@ export default function SettingsPage() {
             <div className="pt-4 border-t border-[var(--border)]">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-violet-500" />
+                  <Sparkles className="w-4 h-4 text-[var(--accent)]" />
                   <label className="text-sm font-medium">Style Profiles ({styleProfiles.length}/3)</label>
                 </div>
               </div>
@@ -856,11 +867,11 @@ export default function SettingsPage() {
               {styleProfiles.length > 0 && (
                 <div className="space-y-2 mb-4">
                   {styleProfiles.map((profile) => (
-                    <div key={profile.id} className="flex items-center gap-3 p-3 rounded-lg bg-violet-500/10 border border-violet-500/20 group">
+                    <div key={profile.id} className="flex items-center gap-3 p-3 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/20 group">
                       <div className="flex-1">
                         <p className="text-sm font-medium flex items-center gap-2">
                           @{profile.account_username}
-                          <span className="text-xs text-violet-400">✓ Analyzed</span>
+                          <span className="text-xs text-[var(--accent)]">✓ Analyzed</span>
                         </p>
                         <p className="text-xs text-[var(--muted)] mt-0.5">
                           {profile.profile_data?.summary || `Analyzed ${profile.tweets_analyzed} tweets`}
@@ -901,7 +912,7 @@ export default function SettingsPage() {
                         }
                       }}
                       disabled={!newAccount.trim() || analyzingAccount !== null}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-50 font-medium"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent)] text-[var(--background)] hover:opacity-90 disabled:opacity-50 font-medium"
                     >
                       {analyzingAccount ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -924,12 +935,12 @@ export default function SettingsPage() {
                               key={handle}
                               onClick={() => handleAnalyzeAccount(handle)}
                               disabled={analyzingAccount === handle}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] hover:border-violet-500 text-sm transition-colors"
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] hover:border-[var(--accent)] text-sm transition-colors"
                             >
                               {analyzingAccount === handle ? (
                                 <Loader2 className="w-3 h-3 animate-spin" />
                               ) : (
-                                <Sparkles className="w-3 h-3 text-violet-500" />
+                                <Sparkles className="w-3 h-3 text-[var(--accent)]" />
                               )}
                               @{handle}
                             </button>
