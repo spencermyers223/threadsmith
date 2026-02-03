@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
 import {
   ChevronDown, ChevronRight, Folder, Image as ImageIcon,
-  Film, Loader2, Plus
+  Film, Loader2, Plus, Upload
 } from 'lucide-react'
 import type { MediaItem } from '@/components/drafts/MediaUpload'
 
@@ -33,7 +33,6 @@ interface MediaLibraryPanelProps {
 }
 
 export function MediaLibraryPanel({ onSelectMedia }: MediaLibraryPanelProps) {
-  const [isExpanded, setIsExpanded] = useState(true)
   const [media, setMedia] = useState<UserMediaItem[]>([])
   const [folders, setFolders] = useState<MediaFolder[]>([])
   const [loading, setLoading] = useState(true)
@@ -160,34 +159,16 @@ export function MediaLibraryPanel({ onSelectMedia }: MediaLibraryPanelProps) {
     mediaByFolder[folderId].push(item)
   })
 
-  if (!isExpanded) {
-    return (
-      <div className="border-t border-[var(--border)] p-3">
-        <button
-          onClick={() => setIsExpanded(true)}
-          className="w-full flex items-center justify-between text-sm text-[var(--muted)] hover:text-[var(--foreground)]"
-        >
-          <span className="flex items-center gap-2">
-            <ImageIcon size={16} />
-            Media Library
-          </span>
-          <ChevronRight size={16} />
-        </button>
-      </div>
-    )
-  }
+// Panel is always expanded in drafts sidebar
 
   return (
-    <div className="border-t border-[var(--border)] flex flex-col max-h-[400px]">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-3 border-b border-[var(--border)] flex items-center justify-between">
-        <button
-          onClick={() => setIsExpanded(false)}
-          className="flex items-center gap-2 text-sm font-medium"
-        >
-          <ChevronDown size={16} />
-          Media Library
-        </button>
+      <div className="p-3 border-b border-[var(--border)] flex items-center justify-between flex-shrink-0">
+        <span className="flex items-center gap-2 text-sm font-medium">
+          <ImageIcon size={16} />
+          Your Media
+        </span>
         
         <div className="flex items-center gap-2">
           {/* Type Filter */}
@@ -222,7 +203,7 @@ export function MediaLibraryPanel({ onSelectMedia }: MediaLibraryPanelProps) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-y-auto p-3 min-h-0">
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 size={24} className="animate-spin text-[var(--muted)]" />
@@ -327,10 +308,31 @@ export function MediaLibraryPanel({ onSelectMedia }: MediaLibraryPanelProps) {
         )}
       </div>
 
-      {/* Drop zone hint */}
-      <div className="p-2 border-t border-[var(--border)] text-center">
-        <p className="text-[10px] text-[var(--muted)]">
-          Click media to attach to post • Drop files to upload
+      {/* Upload zone at bottom */}
+      <div
+        className="p-3 border-t border-[var(--border)] flex-shrink-0"
+        onDragOver={e => { e.preventDefault() }}
+        onDrop={e => {
+          e.preventDefault()
+          if (e.dataTransfer.files.length) {
+            handleUpload(e.dataTransfer.files)
+          }
+        }}
+      >
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-[var(--border)] hover:border-accent rounded-lg text-sm text-[var(--muted)] hover:text-accent transition-colors"
+        >
+          {uploading ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <Upload size={16} />
+          )}
+          {uploading ? 'Uploading...' : 'Upload Media'}
+        </button>
+        <p className="text-[10px] text-[var(--muted)] text-center mt-2">
+          Click image to attach to post
         </p>
       </div>
     </div>

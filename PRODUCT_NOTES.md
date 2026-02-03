@@ -1,36 +1,37 @@
-# Media Library Feature for xthread
+# xthread Future Features (2026 Roadmap)
 
-## User Workflow Requirements
-- Batch upload media for week's content
-- Organize media by folders/tags
-- Easy access during post creation
-- Reuse media across multiple posts
+## Content Generation Evolution
+- **Multi-platform Optimization**
+  - Automatic format adaptation for X, LinkedIn, Instagram
+  - Platform-specific tone and style detection
+- **Trend Analysis Integration**
+  - Real-time trend tracking
+  - Content idea suggestions based on current social media momentum
+- **Visual Content**
+  - AI-powered image/video generation
+  - Seamless media library integration
 
-## Proposed MVP Features
-1. **Media Library Tab**
-   - Grid view of uploaded media
-   - Drag-and-drop upload
-   - Basic folder/tag organization
-   - Search and filter capabilities
+## AI Assistance Improvements
+- Contextual content suggestions
+- A/B testing for post variations
+- Engagement prediction metrics
+- Persona-based content generation
 
-2. **Media Picker in Post Editor**
-   - Sidebar or modal with recent uploads
-   - Quick preview and selection
-   - One-click attach to post
+## Workflow Enhancements
+- Advanced scheduling with optimal posting times
+- Cross-platform content syndication
+- Performance tracking and insights
+- Collaborative editing and team workflows
 
-3. **Organizational Metadata**
-   - Folder fields
-   - Tags (product, lifestyle, etc.)
-   - Upload date
-   - Quick star/favorite option
+## Technical North Stars
+- Lower latency in content generation
+- More nuanced context understanding
+- Reduced hallucination
+- Better multi-modal support
 
-## Technical Considerations
-- Use existing Supabase storage
-- Add metadata fields to media uploads
-- Create new API endpoints for media library management
-- Ensure performant retrieval of media items
+---
 
-## User Experience Goals
-- Zero-friction media management
-- Reduce context switching
-- Support batch content creation workflow
+**Next Immediate Focus:**
+1. Refine media library UX
+2. Improve content generation speed
+3. Add more sophisticated content analysis

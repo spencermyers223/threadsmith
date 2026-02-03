@@ -3,10 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { TweetEditor } from '@/components/drafts/TweetEditor'
 import { ThreadEditor } from '@/components/drafts/ThreadEditor'
-import { TweetPreview } from '@/components/preview/TweetPreview'
-import { ThreadPreview, parseThreadFromContent } from '@/components/preview/ThreadPreview'
+import { parseThreadFromContent } from '@/components/preview/ThreadPreview'
 import type { ThreadTweet } from '@/components/preview/ThreadPreview'
-import { ArticlePreview } from '@/components/preview/ArticlePreview'
 import { ScheduleModal } from '@/components/drafts/ScheduleModal'
 import { DraftsSidebar } from '@/components/drafts/DraftsSidebar'
 import { Save, Calendar, ArrowLeft, Check, AlertCircle, Tag, Image as ImageIcon, Send } from 'lucide-react'
@@ -19,7 +17,6 @@ import TagSelector from '@/components/tags/TagSelector'
 import TagBadge, { Tag as TagType } from '@/components/tags/TagBadge'
 import { MediaUpload, type MediaItem } from '@/components/drafts/MediaUpload'
 import { MediaLibraryPanel } from '@/components/drafts/MediaLibraryPanel'
-import { EngagementPanel } from '@/components/drafts/EngagementPanel'
 import EditingTools from '@/components/editing/EditingTools'
 import { useXAccount } from '@/contexts/XAccountContext'
 
@@ -482,19 +479,6 @@ export default function WorkspacePage() {
     }
   }
 
-  // Thread preview handlers
-  const handleAddTweet = useCallback(() => {
-    const newId = String(Date.now())
-    setThreadTweets(prev => [...prev, { id: newId, content: '' }])
-    setHasUnsavedChanges(true)
-  }, [])
-
-  const handleDeleteTweet = useCallback((id: string) => {
-    if (threadTweets.length <= 1) return
-    setThreadTweets(prev => prev.filter(t => t.id !== id))
-    setHasUnsavedChanges(true)
-  }, [threadTweets.length])
-
   // Save draft and return postId (for media upload when no postId yet)
   const handleSaveAndGetId = useCallback(async (): Promise<string | null> => {
     setSaving(true)
@@ -586,39 +570,6 @@ export default function WorkspacePage() {
       .replace(/<[^>]*>/g, '')            // Strip remaining HTML tags
       .trim()
   }, [contentType, content, threadTweets])
-
-  const handleInsertText = useCallback((text: string) => {
-    if (contentType === 'thread') {
-      // Append to last tweet
-      const updated = [...threadTweets]
-      const last = updated[updated.length - 1]
-      if (last) {
-        updated[updated.length - 1] = { ...last, content: last.content + text }
-        setThreadTweets(updated)
-        setHasUnsavedChanges(true)
-      }
-    } else {
-      setContent(prev => prev + text)
-      setHasUnsavedChanges(true)
-    }
-  }, [contentType, threadTweets])
-
-  const renderPreview = () => {
-    switch (contentType) {
-      case 'tweet':
-        return <TweetPreview content={content} media={media} />
-      case 'thread':
-        return (
-          <ThreadPreview
-            tweets={threadTweets}
-            onAddTweet={handleAddTweet}
-            onDeleteTweet={handleDeleteTweet}
-          />
-        )
-      case 'article':
-        return <ArticlePreview content={content} headline={title} />
-    }
-  }
 
   return (
     <div className="h-full flex flex-col">
@@ -823,34 +774,30 @@ export default function WorkspacePage() {
           )}
         </div>
 
-        {/* Preview + Engagement */}
-        <div className="w-[400px] border-l border-[var(--border)] overflow-y-auto bg-[var(--background)] flex flex-col">
-          <div className="p-4 flex-1">
-            <h3 className="font-semibold mb-4 text-sm text-[var(--muted)] uppercase tracking-wider">
-              Preview
+        {/* Media Library Sidebar */}
+        <div className="w-[350px] border-l border-[var(--border)] overflow-y-auto bg-[var(--background)] flex flex-col">
+          <div className="p-4 border-b border-[var(--border)]">
+            <h3 className="font-semibold text-sm text-[var(--muted)] uppercase tracking-wider">
+              Media Library
             </h3>
-            {renderPreview()}
           </div>
-          <EngagementPanel
-            text={getPlainText()}
-            postType={contentType}
-            onInsertText={handleInsertText}
-          />
-          <MediaLibraryPanel
-            onSelectMedia={(mediaItem) => {
-              // Add media from library to current post
-              setMedia(prev => {
-                // Prevent duplicates by URL
-                if (prev.some(m => m.url === mediaItem.url)) {
-                  return prev
-                }
-                return [...prev, mediaItem]
-              })
-              setHasUnsavedChanges(true)
-            }}
-            postId={postId}
-            onSaveFirst={handleSaveAndGetId}
-          />
+          <div className="flex-1">
+            <MediaLibraryPanel
+              onSelectMedia={(mediaItem) => {
+                // Add media from library to current post
+                setMedia(prev => {
+                  // Prevent duplicates by URL
+                  if (prev.some(m => m.url === mediaItem.url)) {
+                    return prev
+                  }
+                  return [...prev, mediaItem]
+                })
+                setHasUnsavedChanges(true)
+              }}
+              postId={postId}
+              onSaveFirst={handleSaveAndGetId}
+            />
+          </div>
         </div>
       </div>
 
