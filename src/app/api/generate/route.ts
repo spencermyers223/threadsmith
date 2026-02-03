@@ -371,12 +371,24 @@ async function generateForCTNativePostType(
   // For non-thread content, use the post-type specific prompts
   // Select the appropriate prompt builder based on post type
   // When isTemplatePrompt is true, the topic is a template instruction - use it directly
+  
+  // Template wrapper: When using templates, wrap the filled-in template with clear instructions
+  const wrapTemplatePrompt = (filledTemplate: string, context?: string, mediaSuffix?: string) => {
+    return `<template_instructions>
+The following is a TEMPLATE with user-provided content. Use it to understand WHAT to write about, but write naturally WITHOUT any section headers or labels.
+
+${filledTemplate}
+</template_instructions>
+
+REMEMBER: Write a natural, flowing tweet. NO HEADERS like "THE FRAMEWORK:", "APPLICATION:", "HOOK:", etc. Just write the content conversationally.${context ? `\n\nAdditional context:\n${context}` : ''}${mediaSuffix || ''}`
+  }
+  
   switch (postType) {
     case 'market_take': {
       const context = voiceProfile?.niche ? { niche: voiceProfile.niche } : undefined
       systemPrompt = marketTakePrompt(context)
       userPrompt = isTemplatePrompt
-        ? `${topic}${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ''}${mediaSuggestionText}`
+        ? wrapTemplatePrompt(topic, additionalContext, mediaSuggestionText)
         : `Create a market take about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}${mediaSuggestionText}`
       break
     }
@@ -384,7 +396,7 @@ async function generateForCTNativePostType(
       const context = voiceProfile?.niche ? { niche: voiceProfile.niche } : undefined
       systemPrompt = hotTakePrompt(context)
       userPrompt = isTemplatePrompt
-        ? `${topic}${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ''}${mediaSuggestionText}`
+        ? wrapTemplatePrompt(topic, additionalContext, mediaSuggestionText)
         : `Create a hot take about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}${mediaSuggestionText}`
       break
     }
@@ -392,7 +404,7 @@ async function generateForCTNativePostType(
       const context = voiceProfile?.niche ? { niche: voiceProfile.niche } : undefined
       systemPrompt = onChainInsightPrompt(context)
       userPrompt = isTemplatePrompt
-        ? `${topic}${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ''}${mediaSuggestionText}`
+        ? wrapTemplatePrompt(topic, additionalContext, mediaSuggestionText)
         : `Create an on-chain insight about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}${mediaSuggestionText}`
       break
     }
@@ -435,10 +447,17 @@ async function generateForCTNativePostType(
       
       const lengthContext = `\n\n⚠️ STRICT LENGTH REQUIREMENT: Output MUST be under ${charLimit} characters. This is ${contentLength === 'short' ? 'Punchy' : contentLength === 'medium' ? 'Standard' : 'Developed'} mode.`
       
+      // When using a template, add NO HEADERS instruction
+      const templateNoHeadersContext = isTemplatePrompt 
+        ? `\n\n⚠️ CRITICAL: The topic contains a template structure. Use it to understand WHAT to write, but DO NOT include ANY section headers in your output (no "THE FRAMEWORK:", "APPLICATION:", "HOOK:", etc.). Write natural, flowing prose.`
+        : ''
+      
       const result = buildInPublicPrompt({
-        topic,
+        topic: isTemplatePrompt 
+          ? `<template_content>\n${topic}\n</template_content>\n\nWrite naturally based on the above - NO SECTION HEADERS in output.`
+          : topic,
         userProfile: voiceProfile,
-        additionalContext: (additionalContext || '') + lengthContext,
+        additionalContext: (additionalContext || '') + lengthContext + templateNoHeadersContext,
         length: bipLength,
       })
       systemPrompt = result.systemPrompt
@@ -741,7 +760,17 @@ ${templateCategory ? `Category: ${templateCategory}` : ''}
 ${templateDescription ? `Purpose: ${templateDescription}` : ''}
 ${templateWhyItWorks ? `\nWhy this format works:\n${templateWhyItWorks}` : ''}
 
-IMPORTANT: Follow the template's format and structure. The "why it works" explains the psychology - use these principles to maximize engagement.
+CRITICAL INSTRUCTIONS FOR TEMPLATE USAGE:
+1. The template structure (HOOK, FRAMEWORK, APPLICATION, etc.) is for YOUR thinking process only
+2. DO NOT include ANY section headers in your output (no "THE FRAMEWORK:", "APPLICATION:", "HOOK:", etc.)
+3. Write natural, flowing prose that incorporates the template's principles WITHOUT labeling them
+4. The final tweet should read like a human wrote it - conversational, not structured
+5. Use the template's psychology (from "why it works") to craft engaging content, but invisibly
+
+WRONG OUTPUT: "THE FRAMEWORK: Build AI into your workflow. APPLICATION: Start with small automations."
+CORRECT OUTPUT: "Most people use AI like a fancy search engine. Wrong approach. Build AI into your daily rhythm instead. Start with small automations that compound."
+
+The template guides WHAT to say. Your job is to say it naturally, as the user's voice.
 </template_context>`
       additionalContext = additionalContext ? `${additionalContext}\n\n${templateContext}` : templateContext
     }
