@@ -149,15 +149,27 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
         }
       }
 
+      // Determine post type from template category or default to market_take
+      const postType = selectedPost?.category === 'build-in-public' ? 'build_in_public'
+        : selectedPost?.category === 'contrarian' ? 'hot_take'
+        : selectedPost?.category === 'alpha' ? 'market_take'
+        : selectedPost?.category === 'engagement' ? 'hot_take'
+        : 'market_take'
+
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          topic: selectedPost?.title || 'Generate using selected templates',
+          topic: selectedPost?.prompt_template || selectedStyle?.title || 'Generate content',
           length: 'standard',
           tone: 'casual',
-          postType: 'all',
+          postType: postType,
           sourceFileId: selectedFile?.id || undefined,
+          isTemplatePrompt: !!selectedPost,
+          templateTitle: selectedPost?.title,
+          templateDescription: selectedPost?.description,
+          templateWhyItWorks: selectedPost?.why_it_works,
+          templateCategory: selectedPost?.category,
           templateData: selectedPost ? {
             templateId: selectedPost.id,
             promptTemplate: selectedPost.prompt_template,
