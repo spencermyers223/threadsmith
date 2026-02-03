@@ -879,34 +879,40 @@ export default function GeneratePage() {
             </div>
 
             {/* Style Profile Selector (Voice System V2) */}
-            {styleProfiles.length > 0 && (
-              <div className="flex items-center gap-4 mb-4">
-                <span className="text-sm font-medium text-[var(--muted)]">Incorporate style (select one):</span>
-                <div className="flex gap-2 flex-wrap">
-                  {styleProfiles.map((profile) => (
-                    <button
-                      key={profile.id}
-                      onClick={() => setSelectedStyleProfileId(
-                        selectedStyleProfileId === profile.id ? null : profile.id
-                      )}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                        selectedStyleProfileId === profile.id
-                          ? 'bg-accent text-[var(--accent-text)]'
-                          : 'bg-[var(--background)] border border-[var(--border)] hover:border-[var(--muted)]'
-                      }`}
-                      title={profile.profile_data?.summary || `Style from @${profile.account_username}`}
-                    >
-                      @{profile.account_username}
-                    </button>
-                  ))}
-                </div>
-                {!selectedStyleProfileId && (
-                  <span className="text-xs text-[var(--muted)] italic">
-                    None selected = saved posts only
-                  </span>
-                )}
-              </div>
-            )}
+            <div className="flex items-center gap-4 mb-4">
+              <span className="text-sm font-medium text-[var(--muted)]">Incorporate style (select one):</span>
+              {styleProfiles.length > 0 ? (
+                <>
+                  <div className="flex gap-2 flex-wrap">
+                    {styleProfiles.map((profile) => (
+                      <button
+                        key={profile.id}
+                        onClick={() => setSelectedStyleProfileId(
+                          selectedStyleProfileId === profile.id ? null : profile.id
+                        )}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                          selectedStyleProfileId === profile.id
+                            ? 'bg-accent text-[var(--accent-text)]'
+                            : 'bg-[var(--background)] border border-[var(--border)] hover:border-[var(--muted)]'
+                        }`}
+                        title={profile.profile_data?.summary || `Style from @${profile.account_username}`}
+                      >
+                        @{profile.account_username}
+                      </button>
+                    ))}
+                  </div>
+                  {!selectedStyleProfileId && (
+                    <span className="text-xs text-[var(--muted)] italic">
+                      None selected = saved posts only
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="text-xs text-[var(--muted)] italic">
+                  No style profiles yet — <a href="/settings/voice" className="text-accent hover:underline">add in Settings</a>
+                </span>
+              )}
+            </div>
 
             {/* Action Buttons */}
             <div className="flex gap-3">
