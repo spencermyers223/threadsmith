@@ -288,7 +288,10 @@ export default function VoiceSettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: username,
-          tweets: topTweets.map((t: { text: string }) => t.text),
+          tweets: topTweets.map((t: { text: string; metrics?: { like_count?: number } }) => ({ 
+            text: t.text, 
+            likes: t.metrics?.like_count || 0 
+          })),
           x_account_id: activeAccount.id,
         }),
       })
