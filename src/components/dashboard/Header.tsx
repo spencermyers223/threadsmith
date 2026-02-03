@@ -37,10 +37,10 @@ export function Header() {
           Analytics
         </Link>
         <Link
-          href="/settings"
+          href="/customization"
           className="px-3 py-1.5 text-sm rounded-md hover:bg-[var(--card)] transition-colors"
         >
-          Settings
+          Customization
         </Link>
       </nav>
 
