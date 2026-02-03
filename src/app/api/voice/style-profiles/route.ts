@@ -97,7 +97,8 @@ export async function POST(request: NextRequest) {
     }
     
     const isFreeProfile = totalCreated < FREE_PROFILES_LIMIT
-    const currentCredits = await getCredits(supabase, user.id)
+    const creditCheck = await getCredits(supabase, user.id)
+    const currentCredits = creditCheck.credits
 
     // If not free and no confirmation, return a warning requiring confirmation
     if (!isFreeProfile && !confirmCredit) {
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
     // Check credits if not free
     if (!isFreeProfile) {
       const hasCredits = await hasEnoughCredits(supabase, user.id, PROFILE_COST_CREDITS)
-      if (!hasCredits) {
+      if (!hasCredits.success) {
         return NextResponse.json(
           { 
             error: `Not enough credits. Need ${PROFILE_COST_CREDITS}, have ${currentCredits}.`,
