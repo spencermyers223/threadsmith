@@ -56,30 +56,36 @@ export default function AnalyticsPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-[var(--border)]">
-        <button
-          onClick={() => setActiveTab('analytics')}
-          className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors border-b-2 -mb-px ${
-            activeTab === 'analytics'
-              ? 'text-[var(--accent)] border-[var(--accent)]'
-              : 'text-[var(--muted)] border-transparent hover:text-[var(--foreground)]'
-          }`}
-        >
-          <BarChart3 className="w-5 h-5" />
-          Your Analytics
-        </button>
-        <button
-          onClick={() => setActiveTab('marketplace')}
-          className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors border-b-2 -mb-px ${
-            activeTab === 'marketplace'
-              ? 'text-[var(--accent)] border-[var(--accent)]'
-              : 'text-[var(--muted)] border-transparent hover:text-[var(--foreground)]'
-          }`}
-        >
-          <ShoppingCart className="w-5 h-5" />
-          Marketplace
-        </button>
+      {/* Tabs - matching Creator Hub style */}
+      <div className="flex justify-center mb-6">
+        <div className="flex items-center gap-1 p-1 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`
+              flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
+              ${activeTab === 'analytics'
+                ? 'bg-[var(--background)] text-[var(--foreground)] shadow-sm'
+                : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+              }
+            `}
+          >
+            <BarChart3 className="w-4 h-4" />
+            Your Analytics
+          </button>
+          <button
+            onClick={() => setActiveTab('marketplace')}
+            className={`
+              flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
+              ${activeTab === 'marketplace'
+                ? 'bg-[var(--background)] text-[var(--foreground)] shadow-sm'
+                : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+              }
+            `}
+          >
+            <ShoppingCart className="w-4 h-4" />
+            Marketplace
+          </button>
+        </div>
       </div>
 
       {/* Tab Content */}
