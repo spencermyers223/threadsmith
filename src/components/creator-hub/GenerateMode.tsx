@@ -501,7 +501,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
     setSavingIndex(post.index)
 
     try {
-      const contentType = selectedLength === 'thread' ? 'thread' : 'tweet'
+      const contentType = selectedLength === 'thread' ? 'thread' : selectedLength === 'article' ? 'article' : 'tweet'
       console.log('[Edit] contentType:', contentType)
       
       const threadTweets = contentType === 'thread' 
@@ -555,7 +555,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
     setSavingIndex(post.index)
 
     try {
-      const contentType = selectedLength === 'thread' ? 'thread' : 'tweet'
+      const contentType = selectedLength === 'thread' ? 'thread' : selectedLength === 'article' ? 'article' : 'tweet'
       const tomorrow = new Date()
       tomorrow.setDate(tomorrow.getDate() + 1)
 
@@ -584,6 +584,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   }
 
   const isThread = selectedLength === 'thread'
+  const isArticle = selectedLength === 'article'
 
   return (
     <div className="h-full overflow-auto">
@@ -906,7 +907,79 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
               </button>
             </div>
 
-            {isThread ? (
+            {isArticle && posts.length > 0 ? (
+              /* Article: Single Full-Width View */
+              <div className="space-y-4">
+                <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
+                  <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
+                    <span className="text-sm text-[var(--muted)]">📝 Your Article</span>
+                    <span className="text-xs text-[var(--muted)]">{posts[0].characterCount.toLocaleString()} characters • ~{Math.ceil(posts[0].characterCount / 1500)} min read</span>
+                  </div>
+
+                  <div className="p-6 max-h-[600px] overflow-y-auto bg-[var(--background)]/50">
+                    {/* Render markdown-style content */}
+                    <div className="prose prose-invert max-w-none">
+                      {posts[0].content.split('\n').map((line, i) => {
+                        // H1 heading
+                        if (line.startsWith('# ')) {
+                          return <h1 key={i} className="text-2xl font-bold mb-4 text-[var(--foreground)]">{line.slice(2)}</h1>
+                        }
+                        // H2 heading
+                        if (line.startsWith('## ')) {
+                          return <h2 key={i} className="text-xl font-semibold mt-6 mb-3 text-[var(--foreground)]">{line.slice(3)}</h2>
+                        }
+                        // H3 heading
+                        if (line.startsWith('### ')) {
+                          return <h3 key={i} className="text-lg font-semibold mt-4 mb-2 text-[var(--foreground)]">{line.slice(4)}</h3>
+                        }
+                        // Block quote
+                        if (line.startsWith('> ')) {
+                          return <blockquote key={i} className="border-l-4 border-[var(--accent)] pl-4 my-4 italic text-[var(--muted)]">{line.slice(2)}</blockquote>
+                        }
+                        // Bullet list
+                        if (line.startsWith('- ') || line.startsWith('* ')) {
+                          return <li key={i} className="ml-4 text-[var(--foreground)] leading-relaxed">{line.slice(2)}</li>
+                        }
+                        // Image placeholder
+                        if (line.startsWith('[Image:')) {
+                          return <div key={i} className="my-4 p-4 border border-dashed border-[var(--border)] rounded-lg text-center text-[var(--muted)] text-sm">{line}</div>
+                        }
+                        // Horizontal rule
+                        if (line === '---') {
+                          return <hr key={i} className="my-6 border-[var(--border)]" />
+                        }
+                        // Empty line
+                        if (!line.trim()) {
+                          return <div key={i} className="h-4" />
+                        }
+                        // Regular paragraph - handle **bold** and *italic*
+                        const formattedLine = line
+                          .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                          .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+                        return <p key={i} className="text-[var(--foreground)] leading-relaxed mb-3" dangerouslySetInnerHTML={{ __html: formattedLine }} />
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="p-4 border-t border-[var(--border)] space-y-3">
+                    <div className="flex gap-2">
+                      <button onClick={() => handleCopy(posts[0].content, 0)} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--border)] hover:bg-[var(--muted)]/30 rounded-lg font-medium text-sm transition-colors">
+                        {copiedIndex === 0 ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                        Copy Article
+                      </button>
+                      <button onClick={() => handleEditInWorkspace(posts[0])} disabled={savingIndex === 0} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--border)] hover:bg-[var(--muted)]/30 rounded-lg font-medium text-sm transition-colors disabled:opacity-50">
+                        {savingIndex === 0 ? <Loader2 size={14} className="animate-spin" /> : <PenLine size={14} />}
+                        Edit in Workspace
+                      </button>
+                      <button onClick={() => handleAddToCalendar(posts[0])} disabled={savingIndex === 0} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[var(--accent)] hover:opacity-90 text-[var(--background)] rounded-lg font-medium text-sm transition-opacity disabled:opacity-50">
+                        <Calendar size={14} />
+                        Save to Drafts
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : isThread ? (
               /* Thread: Carousel View */
               <div className="space-y-4">
                 <div className="flex items-center justify-center gap-4">

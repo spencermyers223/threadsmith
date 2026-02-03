@@ -24,6 +24,8 @@ import {
 } from '@/lib/prompts'
 // Import dedicated thread prompt
 import { THREAD_SYSTEM_PROMPT, buildThreadUserPrompt } from '@/lib/prompts/thread-prompt'
+// Import dedicated article prompt
+import { buildArticlePrompt } from '@/lib/prompts/article-prompt'
 
 const anthropic = new Anthropic()
 
@@ -93,7 +95,7 @@ function mapLength(length: InputLength): { contentLength: ContentLength; content
     case 'standard':
       return { contentLength: 'medium', contentType: 'tweet' }
     case 'developed':
-      return { contentLength: 'long', contentType: 'tweet' }
+      return { contentLength: 'long', contentType: 'article' }
     case 'thread':
       return { contentLength: 'medium', contentType: 'thread' }
     default:
@@ -281,9 +283,51 @@ async function generateForCTNativePostType(
   let systemPrompt: string
   let userPrompt: string
   
-  // If generating a thread, use the DEDICATED thread prompt (not append to other prompts)
+  // Check content type for specialized handling
   const isThread = contentType === 'thread'
+  const isArticle = contentType === 'article'
   
+  // ARTICLE GENERATION - Use dedicated article prompt
+  if (isArticle) {
+    const articlePrompt = buildArticlePrompt({
+      topic,
+      userProfile: voiceProfile,
+      additionalContext,
+      targetLength: contentLength === 'short' ? 'short' : contentLength === 'long' ? 'long' : 'medium'
+    })
+    
+    systemPrompt = voiceSamplesSection 
+      ? `${articlePrompt.systemPrompt}\n\n${voiceSamplesSection}`
+      : articlePrompt.systemPrompt
+    userPrompt = articlePrompt.userPrompt
+    
+    console.log('[Article Gen] Using dedicated article prompt')
+    console.log('[Article Gen] Topic:', topic)
+    
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 16384, // Higher limit for articles
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+    })
+    
+    const textContent = response.content
+      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+      .map(block => block.text)
+      .join('\n')
+    
+    console.log('[Article Gen] Response length:', textContent.length)
+    
+    // For articles, return as a single post (not parsed into multiple options)
+    return [{
+      content: textContent.trim(),
+      archetype: 'scroll_stopper',
+      postType: undefined,
+      characterCount: textContent.trim().length,
+    }]
+  }
+  
+  // THREAD GENERATION - Use dedicated thread prompt
   if (isThread) {
     // Use dedicated thread prompt - completely separate from single-tweet prompts
     // Append voice samples section for few-shot learning if available
