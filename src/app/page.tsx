@@ -214,14 +214,15 @@ export default async function LandingPage({ searchParams }: PageProps) {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-            {/* Monthly */}
+            {/* Premium */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
-              <div className="text-sm text-gray-400 mb-2">Monthly</div>
+              <div className="text-sm text-gray-400 mb-2">Premium</div>
               <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-4xl font-bold">$9.99</span>
+                <span className="text-4xl font-bold">$19.99</span>
                 <span className="text-gray-500">/month</span>
               </div>
               <ul className="space-y-3 mb-8">
+                <PricingFeature>1 X account</PricingFeature>
                 <PricingFeature>Unlimited generations</PricingFeature>
                 <PricingFeature>Voice training</PricingFeature>
                 <PricingFeature>Algorithm scoring</PricingFeature>
@@ -231,22 +232,22 @@ export default async function LandingPage({ searchParams }: PageProps) {
               <XSignInButton className="w-full" />
             </div>
 
-            {/* Annual */}
+            {/* Professional */}
             <div className="rounded-2xl border-2 border-[#D4A574] bg-gradient-to-b from-[#D4A574]/10 to-transparent p-8 relative">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#D4A574] text-black text-xs font-bold rounded-full">
-                BEST VALUE
+                MOST POPULAR
               </div>
-              <div className="text-sm text-[#D4A574] mb-2">Annual</div>
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-4xl font-bold">$99.99</span>
-                <span className="text-gray-500">/year</span>
+              <div className="text-sm text-[#D4A574] mb-2">Professional</div>
+              <div className="flex items-baseline gap-2 mb-4">
+                <span className="text-4xl font-bold">$39.99</span>
+                <span className="text-gray-500">/month</span>
               </div>
-              <div className="text-sm text-green-400 mb-4">Save $20 (2 months free)</div>
               <ul className="space-y-3 mb-8">
-                <PricingFeature>Everything in Monthly</PricingFeature>
+                <PricingFeature>5 X accounts</PricingFeature>
+                <PricingFeature>Everything in Premium</PricingFeature>
+                <PricingFeature highlight>Advanced analytics</PricingFeature>
                 <PricingFeature highlight>Priority support</PricingFeature>
-                <PricingFeature highlight>Early access to new features</PricingFeature>
-                <PricingFeature highlight>Lock in price forever</PricingFeature>
+                <PricingFeature highlight>Early access to features</PricingFeature>
               </ul>
               <XSignInButton className="w-full !bg-[#D4A574] !text-black hover:!bg-[#c49464]" />
             </div>
