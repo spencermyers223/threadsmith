@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { TiptapEditor } from '@/components/drafts/TiptapEditor'
+import { TweetEditor } from '@/components/drafts/TweetEditor'
 import { ThreadEditor } from '@/components/drafts/ThreadEditor'
 import { TweetPreview } from '@/components/preview/TweetPreview'
 import { ThreadPreview, parseThreadFromContent } from '@/components/preview/ThreadPreview'
@@ -540,7 +540,35 @@ export default function WorkspacePage() {
       )
     }
 
-    return <TiptapEditor content={content} onChange={handleContentChange} />
+    if (contentType === 'tweet') {
+      return (
+        <TweetEditor
+          content={content}
+          onChange={handleContentChange}
+          postId={postId}
+          onSaveFirst={handleSaveAndGetId}
+          media={media}
+          onMediaChange={setMedia}
+        />
+      )
+    }
+
+    // Article mode - use a simple textarea for now (could be enhanced later)
+    return (
+      <div className="space-y-3">
+        <div className="text-sm text-[var(--muted)] mb-4">
+          Write your article. Long-form content for newsletters or blogs.
+        </div>
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
+          <textarea
+            value={content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ')}
+            onChange={(e) => handleContentChange(`<p>${e.target.value.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>')}</p>`)}
+            placeholder="Start writing your article..."
+            className="w-full bg-transparent border-none focus:outline-none resize-none text-[var(--foreground)] placeholder:text-[var(--muted)] min-h-[400px] p-4"
+          />
+        </div>
+      </div>
+    )
   }
 
   // Plain text for engagement scoring - properly converts HTML to plain text with line breaks
@@ -777,19 +805,21 @@ export default function WorkspacePage() {
             )}
           </div>
 
-          {/* Media Section */}
-          <div className="mt-6 pt-6 border-t border-[var(--border)]">
-            <h4 className="text-sm font-medium text-[var(--muted)] uppercase tracking-wider flex items-center gap-2 mb-3">
-              <ImageIcon className="w-4 h-4" />
-              Media
-            </h4>
-            <MediaUpload
-              postId={postId}
-              media={media}
-              onMediaChange={setMedia}
-              onSaveFirst={handleSaveAndGetId}
-            />
-          </div>
+          {/* Media Section - only show for articles (tweets/threads handle media inline) */}
+          {contentType === 'article' && (
+            <div className="mt-6 pt-6 border-t border-[var(--border)]">
+              <h4 className="text-sm font-medium text-[var(--muted)] uppercase tracking-wider flex items-center gap-2 mb-3">
+                <ImageIcon className="w-4 h-4" />
+                Media
+              </h4>
+              <MediaUpload
+                postId={postId}
+                media={media}
+                onMediaChange={setMedia}
+                onSaveFirst={handleSaveAndGetId}
+              />
+            </div>
+          )}
         </div>
 
         {/* Preview + Engagement */}
