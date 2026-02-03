@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const MAX_VOICE_TWEETS = 5
 
-// GET - Fetch voice library (max 5)
-export async function GET() {
+// GET - Fetch voice library (max 5 per X account)
+export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -12,11 +12,21 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data, error } = await supabase
+  // Get x_account_id from query params
+  const { searchParams } = new URL(request.url)
+  const xAccountId = searchParams.get('x_account_id')
+
+  let query = supabase
     .from('voice_library')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
+
+  if (xAccountId) {
+    query = query.eq('x_account_id', xAccountId)
+  }
+
+  const { data, error } = await query
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -29,7 +39,7 @@ export async function GET() {
   })
 }
 
-// POST - Add to voice library (enforces max 5)
+// POST - Add to voice library (enforces max 5 per X account)
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -39,18 +49,26 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Check current count
+    const body = await request.json()
+    const { tweet_text, tweet_url, author_username, is_own_tweet, x_account_id } = body
+
+    if (!x_account_id) {
+      return NextResponse.json({ error: 'x_account_id is required' }, { status: 400 })
+    }
+
+    // Check current count for this X account
     const { count, error: countError } = await supabase
       .from('voice_library')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
+      .eq('x_account_id', x_account_id)
 
     if (countError) throw countError
 
     if ((count || 0) >= MAX_VOICE_TWEETS) {
       return NextResponse.json(
         { 
-          error: `Voice profile is full. Remove a tweet first.`,
+          error: `Voice library is full. Remove a tweet first.`,
           code: 'VOICE_LIBRARY_FULL',
           count,
           max: MAX_VOICE_TWEETS,
@@ -58,9 +76,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    const body = await request.json()
-    const { tweet_text, tweet_url, author_username, is_own_tweet } = body
 
     if (!tweet_text || tweet_text.trim().length === 0) {
       return NextResponse.json({ error: 'Tweet text is required' }, { status: 400 })
@@ -70,6 +85,7 @@ export async function POST(request: NextRequest) {
       .from('voice_library')
       .insert({
         user_id: user.id,
+        x_account_id: x_account_id,
         tweet_text: tweet_text.trim(),
         tweet_url: tweet_url?.trim() || null,
         author_username: author_username?.trim() || null,

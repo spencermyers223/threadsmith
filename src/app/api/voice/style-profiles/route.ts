@@ -8,8 +8,8 @@ const MAX_STYLE_PROFILES = 3
 const PROFILE_COST_CREDITS = 5  // Covers ~$0.50 X API + ~$0.15 Opus
 const FREE_PROFILES_LIMIT = 3   // First 3 are free for every user
 
-// GET - Fetch style profiles (max 3)
-export async function GET() {
+// GET - Fetch style profiles (max 3 per X account)
+export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -17,11 +17,22 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data, error } = await supabase
+  // Get x_account_id from query params
+  const { searchParams } = new URL(request.url)
+  const xAccountId = searchParams.get('x_account_id')
+
+  let query = supabase
     .from('style_profiles')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
+
+  // Filter by x_account_id if provided
+  if (xAccountId) {
+    query = query.eq('x_account_id', xAccountId)
+  }
+
+  const { data, error } = await query
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -44,11 +55,19 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Check current count
+    const body = await request.json()
+    const { username, tweets, x_account_id } = body
+
+    if (!x_account_id) {
+      return NextResponse.json({ error: 'x_account_id is required' }, { status: 400 })
+    }
+
+    // Check current count for this X account
     const { count, error: countError } = await supabase
       .from('style_profiles')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
+      .eq('x_account_id', x_account_id)
 
     if (countError) throw countError
 
@@ -100,19 +119,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const body = await request.json()
-    const { username, tweets } = body
-
     if (!username || username.trim().length === 0) {
       return NextResponse.json({ error: 'Username is required' }, { status: 400 })
     }
 
-    // Check if profile already exists for this account
+    // Check if profile already exists for this X account + target username combo
     const { data: existing } = await supabase
       .from('style_profiles')
       .select('id')
       .eq('user_id', user.id)
       .eq('account_username', username.trim().toLowerCase().replace('@', ''))
+      .eq('x_account_id', x_account_id)
       .single()
 
     if (existing) {
@@ -159,6 +176,7 @@ export async function POST(request: NextRequest) {
       .from('style_profiles')
       .insert({
         user_id: user.id,
+        x_account_id: x_account_id,
         account_username: username.trim().toLowerCase().replace('@', ''),
         account_display_name: username.trim(),
         profile_data: profileData,
