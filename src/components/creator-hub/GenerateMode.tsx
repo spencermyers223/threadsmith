@@ -182,6 +182,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   // Form state
   const [topic, setTopic] = useState('')
   const [selectedLength, setSelectedLength] = useState<string>('tweet')
+  const [suggestMedia, setSuggestMedia] = useState<boolean>(false)
 
   // UI state
   const [isGenerating, setIsGenerating] = useState(false)
@@ -255,6 +256,11 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   useEffect(() => {
     setCurrentThreadIndex(0)
   }, [posts])
+
+  // Auto-enable suggestMedia for articles, reset for others
+  useEffect(() => {
+    setSuggestMedia(selectedLength === 'article')
+  }, [selectedLength])
 
   // Clear template mode and return to normal input
   const clearTemplateMode = () => {
@@ -465,6 +471,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
           templateWhyItWorks: templateMode?.templateWhyItWorks,
           templateCategory: templateMode?.templateCategory,
           styleProfileId: selectedStyleProfileId || undefined,
+          suggestMedia: suggestMedia,
         }),
       })
 
@@ -837,6 +844,42 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
             )}
           </div>
           
+          {/* Media Suggestions Toggle */}
+          <div className="mt-4">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={suggestMedia}
+                  onChange={(e) => setSuggestMedia(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className={`
+                  w-10 h-6 rounded-full transition-colors
+                  ${suggestMedia 
+                    ? 'bg-[var(--accent)]' 
+                    : 'bg-[var(--border)]'
+                  }
+                `} />
+                <div className={`
+                  absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform
+                  ${suggestMedia ? 'translate-x-4' : 'translate-x-0'}
+                `} />
+              </div>
+              <div>
+                <span className="text-sm font-medium text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors">
+                  Suggest media implementation
+                </span>
+                <p className="text-xs text-[var(--muted)]">
+                  {selectedLength === 'article' 
+                    ? 'Enabled by default for articles'
+                    : 'Add [Image: ...] placeholders for visual suggestions'
+                  }
+                </p>
+              </div>
+            </label>
+          </div>
+
           {/* Helper text row */}
           <div className="flex gap-6 text-xs text-[var(--muted)] mt-3">
             {selectedLength === 'thread' && (

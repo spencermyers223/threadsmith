@@ -79,10 +79,14 @@ Format your entire response like this:
 - Vary sentence structure to maintain interest
 `;
 
-export function buildThreadUserPrompt(topic: string, additionalContext?: string): string {
+export function buildThreadUserPrompt(topic: string, additionalContext?: string, suggestMedia?: boolean): string {
+  const mediaInstructions = suggestMedia ? `
+MEDIA SUGGESTIONS: Include [Image: description] or [Screenshot: description] placeholders where visuals would enhance the thread. Place these on their own line AFTER the relevant tweet. Suggest 2-3 images per thread option - charts, diagrams, screenshots that would make the content more impactful.
+` : ''
+
   return `Create 3 Twitter thread options about: ${topic}
 
 ${additionalContext ? `Additional context:\n${additionalContext}` : ''}
-
+${mediaInstructions}
 Remember: Output EXACTLY 3 thread options, each with 7-10 tweets numbered "1/" "2/" "3/" etc.`;
 }

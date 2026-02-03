@@ -63,6 +63,8 @@ interface GenerateRequest {
   templateCategory?: string
   // Voice System V2
   styleProfileId?: string // Optional style profile to incorporate
+  // Media suggestions
+  suggestMedia?: boolean // When true, include [Image: ...] placeholders in output
 }
 
 interface GeneratedPost {
@@ -277,7 +279,8 @@ async function generateForCTNativePostType(
   isTemplatePrompt?: boolean,
   contentLength?: ContentLength,
   contentType?: ContentType,
-  voiceSamplesSection?: string // NEW: Few-shot voice examples for system prompt
+  voiceSamplesSection?: string, // NEW: Few-shot voice examples for system prompt
+  suggestMedia?: boolean // When true, include [Image: ...] placeholders
 ): Promise<GeneratedPost[]> {
   const voiceProfile = toUserVoiceProfile(userProfile)
   let systemPrompt: string
@@ -334,7 +337,7 @@ async function generateForCTNativePostType(
     systemPrompt = voiceSamplesSection 
       ? `${THREAD_SYSTEM_PROMPT}\n\n${voiceSamplesSection}`
       : THREAD_SYSTEM_PROMPT
-    userPrompt = buildThreadUserPrompt(topic, additionalContext)
+    userPrompt = buildThreadUserPrompt(topic, additionalContext, suggestMedia)
     
     console.log('[Thread Gen] Using dedicated thread prompt')
     console.log('[Thread Gen] Topic:', topic)
@@ -360,6 +363,9 @@ async function generateForCTNativePostType(
     return parseGeneratedPosts(textContent, 'viral-catalyst', undefined)
   }
 
+  // Media suggestion instructions for single tweets
+  const mediaSuggestionText = suggestMedia ? `\n\nMEDIA SUGGESTION: After each tweet option, on a new line, include an [Image: description] or [Screenshot: description] placeholder suggesting what visual would make this tweet more impactful (chart, diagram, screenshot, etc.)` : ''
+
   // For non-thread content, use the post-type specific prompts
   // Select the appropriate prompt builder based on post type
   // When isTemplatePrompt is true, the topic is a template instruction - use it directly
@@ -368,24 +374,24 @@ async function generateForCTNativePostType(
       const context = voiceProfile?.niche ? { niche: voiceProfile.niche } : undefined
       systemPrompt = marketTakePrompt(context)
       userPrompt = isTemplatePrompt
-        ? `${topic}${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ''}`
-        : `Create a market take about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}`
+        ? `${topic}${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ''}${mediaSuggestionText}`
+        : `Create a market take about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}${mediaSuggestionText}`
       break
     }
     case 'hot_take': {
       const context = voiceProfile?.niche ? { niche: voiceProfile.niche } : undefined
       systemPrompt = hotTakePrompt(context)
       userPrompt = isTemplatePrompt
-        ? `${topic}${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ''}`
-        : `Create a hot take about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}`
+        ? `${topic}${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ''}${mediaSuggestionText}`
+        : `Create a hot take about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}${mediaSuggestionText}`
       break
     }
     case 'on_chain_insight': {
       const context = voiceProfile?.niche ? { niche: voiceProfile.niche } : undefined
       systemPrompt = onChainInsightPrompt(context)
       userPrompt = isTemplatePrompt
-        ? `${topic}${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ''}`
-        : `Create an on-chain insight about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}`
+        ? `${topic}${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ''}${mediaSuggestionText}`
+        : `Create an on-chain insight about: ${topic}${additionalContext ? `\n\nContext:\n${additionalContext}` : ''}${mediaSuggestionText}`
       break
     }
     case 'alpha_thread': {
@@ -398,7 +404,7 @@ async function generateForCTNativePostType(
         additionalNotes: additionalContext,
       })
       systemPrompt = result.systemPrompt
-      userPrompt = result.userPrompt
+      userPrompt = result.userPrompt + mediaSuggestionText
       break
     }
     case 'protocol_breakdown': {
@@ -411,7 +417,7 @@ async function generateForCTNativePostType(
         additionalNotes: additionalContext,
       })
       systemPrompt = result.systemPrompt
-      userPrompt = result.userPrompt
+      userPrompt = result.userPrompt + mediaSuggestionText
       break
     }
     case 'build_in_public': {
@@ -434,7 +440,7 @@ async function generateForCTNativePostType(
         length: bipLength,
       })
       systemPrompt = result.systemPrompt
-      userPrompt = result.userPrompt
+      userPrompt = result.userPrompt + mediaSuggestionText
       break
     }
     default: {
@@ -791,6 +797,9 @@ Blend these stylistic elements with the user's own voice. Don't copy - adapt.
     // Check if using CT-native post types or legacy archetypes
     if (isCTNativePostType(postType)) {
       // Use CT-native post type prompts
+      // For articles, suggestMedia defaults to true if not explicitly set
+      const shouldSuggestMedia = body.suggestMedia ?? (contentType === 'article')
+      
       allPosts = await generateForCTNativePostType(
         topic,
         postType,
@@ -802,7 +811,8 @@ Blend these stylistic elements with the user's own voice. Don't copy - adapt.
         // Combine style profile patterns (if selected) with voice examples
         styleProfileSection 
           ? `${styleProfileSection}\n\n${voiceSamplesSystemSection}`
-          : voiceSamplesSystemSection
+          : voiceSamplesSystemSection,
+        shouldSuggestMedia  // Pass media suggestion flag
       )
       // Limit to 3 posts (for single tweets) - threads will have 3 options naturally
       if (contentType !== 'thread') {
