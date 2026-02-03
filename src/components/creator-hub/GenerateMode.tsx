@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+// supabase import removed - templates now loaded in TemplatesMode
 import {
   Sparkles, FileText, Loader2, X, Calendar, PenLine, Check,
   Copy, RefreshCw, Crown, AlertCircle, ChevronLeft, ChevronRight, 
-  MessageCircle, Repeat2, Heart, Search, TrendingUp, Flame, Rocket,
-  Clock, Target, ArrowRight
+  MessageCircle, Repeat2, Heart, TrendingUp, Flame, Rocket,
+  Clock, Target
 } from 'lucide-react'
 import { EditingTools } from '@/components/editing'
 import { GenerationCounter } from '@/components/subscription/GenerationCounter'
@@ -58,13 +58,73 @@ interface TemplateData {
   variables: TemplateVariable[] | null
 }
 
-// Category config
-const CATEGORIES = [
-  { id: 'all', label: 'All Templates', icon: Sparkles },
-  { id: 'alpha', label: 'Alpha', icon: TrendingUp },
-  { id: 'build-in-public', label: 'Build in Public', icon: Rocket },
-  { id: 'contrarian', label: 'Contrarian', icon: Flame },
-  { id: 'engagement', label: 'Engagement', icon: MessageCircle },
+// Prompt categories for Brain Dump quick starts
+const PROMPT_CATEGORIES = [
+  {
+    id: 'build-in-public',
+    label: 'Build in Public',
+    icon: Rocket,
+    prompts: [
+      'Something I shipped this week',
+      'A bug that took hours to fix',
+      'Behind the scenes of my workflow',
+      'Lesson learned building my product',
+      'Feature I almost built but didn\'t',
+      'Tool that 10x\'d my productivity'
+    ]
+  },
+  {
+    id: 'hot-takes',
+    label: 'Hot Takes',
+    icon: Flame,
+    prompts: [
+      'Unpopular opinion about my industry',
+      'Thing everyone does that I think is wrong',
+      'Advice I disagree with',
+      'Trend I think is overhyped',
+      'Contrarian take on a popular tool',
+      'Why the common practice is broken'
+    ]
+  },
+  {
+    id: 'knowledge',
+    label: 'Knowledge Share',
+    icon: TrendingUp,
+    prompts: [
+      'Thing I wish I knew when starting out',
+      'Framework I use to make decisions',
+      'Mistake I see beginners make',
+      'Resource that changed how I work',
+      'Concept that took me years to understand',
+      'Simple trick that gets big results'
+    ]
+  },
+  {
+    id: 'engagement',
+    label: 'Engagement',
+    icon: MessageCircle,
+    prompts: [
+      'Question I want to ask my audience',
+      'Poll idea for my followers',
+      'Hot topic I want opinions on',
+      'Debate I want to start',
+      'Prediction I want to make',
+      'Challenge for my community'
+    ]
+  },
+  {
+    id: 'personal',
+    label: 'Personal Story',
+    icon: Target,
+    prompts: [
+      'Moment that changed my career',
+      'Failure that taught me the most',
+      'Risk I took that paid off',
+      'Person who influenced my path',
+      'Turning point in my journey',
+      'Day in my life that was pivotal'
+    ]
+  }
 ]
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -78,13 +138,6 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: 'text-green-600 dark:text-green-400',
   intermediate: 'text-yellow-600 dark:text-yellow-400',
   advanced: 'text-red-600 dark:text-red-400',
-}
-
-const ENGAGEMENT_ICONS: Record<string, typeof Target> = {
-  replies: MessageCircle,
-  retweets: TrendingUp,
-  likes: Sparkles,
-  follows: Target,
 }
 
 // Length options - just Tweet or Thread
@@ -114,13 +167,12 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<string | null>(null)
   const [loadingStyleProfiles, setLoadingStyleProfiles] = useState(false)
 
-  // Template state
-  const [templates, setTemplates] = useState<PostTemplate[]>([])
-  const [templatesLoading, setTemplatesLoading] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState('all')
-  const [searchQuery, setSearchQuery] = useState('')
+  // Template state (for template mode when coming from Templates tab)
   const [selectedTemplate, setSelectedTemplate] = useState<PostTemplate | null>(null)
   const [variableValues, setVariableValues] = useState<Record<string, string>>({})
+
+  // Prompt category state for Brain Dump
+  const [selectedPromptCategory, setSelectedPromptCategory] = useState<string | null>(null)
 
   // Template mode (when user has filled variables and is ready to generate)
   const [templateMode, setTemplateMode] = useState<TemplateData | null>(null)
@@ -138,23 +190,6 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
   const [savingIndex, setSavingIndex] = useState<number | null>(null)
   const [currentThreadIndex, setCurrentThreadIndex] = useState(0)
   const [isSubscribed, setIsSubscribed] = useState<boolean | null>(null)
-
-  // Fetch templates
-  useEffect(() => {
-    async function fetchTemplates() {
-      const supabase = createClient()
-      const { data, error } = await supabase
-        .from('post_templates')
-        .select('*')
-        .order('category', { ascending: true })
-
-      if (!error && data) {
-        setTemplates(data)
-      }
-      setTemplatesLoading(false)
-    }
-    fetchTemplates()
-  }, [])
 
   // Check for template data from sessionStorage (legacy support)
   useEffect(() => {
@@ -214,18 +249,6 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
     fetchStyleProfiles()
   }, [activeAccount?.id])
 
-  // Filter templates
-  const filteredTemplates = useMemo(() => {
-    return templates.filter(t => {
-      const matchesCategory = selectedCategory === 'all' || t.category === selectedCategory
-      const matchesSearch = !searchQuery ||
-        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.category.toLowerCase().includes(searchQuery.toLowerCase())
-      return matchesCategory && matchesSearch
-    })
-  }, [templates, selectedCategory, searchQuery])
-
   // Reset carousel index when posts change
   useEffect(() => {
     setCurrentThreadIndex(0)
@@ -237,12 +260,6 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
     setSelectedTemplate(null)
     setVariableValues({})
     setTopic('')
-  }
-
-  // Open template modal
-  const openTemplate = (template: PostTemplate) => {
-    setSelectedTemplate(template)
-    setVariableValues({})
   }
 
   // Use template (after filling variables)
@@ -672,20 +689,46 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
                 </div>
               </div>
 
-              {/* Suggested Topics */}
+              {/* Prompt Categories */}
               <div className="mb-4">
-                <p className="text-xs text-[var(--muted)] mb-2">💡 Quick topics to get you started:</p>
-                <div className="flex flex-wrap gap-2">
-                  {['Something I learned this week', 'A tool that changed my workflow', 'Hot take on trending topic', 'Behind the scenes of my work', 'Mistake I made and lesson learned', 'Question for my audience'].map(prompt => (
-                    <button
-                      key={prompt}
-                      onClick={() => setTopic(prompt)}
-                      className="px-3 py-1.5 text-xs rounded-full bg-[var(--background)] border border-[var(--border)] hover:border-[var(--accent)] transition-colors text-[var(--muted)] hover:text-[var(--foreground)]"
-                    >
-                      {prompt}
-                    </button>
-                  ))}
+                <p className="text-xs text-[var(--muted)] mb-2">💡 Pick a category for prompt ideas:</p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {PROMPT_CATEGORIES.map(cat => {
+                    const Icon = cat.icon
+                    const isActive = selectedPromptCategory === cat.id
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => setSelectedPromptCategory(isActive ? null : cat.id)}
+                        className={`
+                          flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all
+                          ${isActive
+                            ? 'bg-[var(--accent)] text-[var(--background)]'
+                            : 'bg-[var(--background)] border border-[var(--border)] hover:border-[var(--accent)] text-[var(--muted)] hover:text-[var(--foreground)]'
+                          }
+                        `}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        {cat.label}
+                      </button>
+                    )
+                  })}
                 </div>
+                
+                {/* Show prompts for selected category */}
+                {selectedPromptCategory && (
+                  <div className="flex flex-wrap gap-2 animate-fade-in">
+                    {PROMPT_CATEGORIES.find(c => c.id === selectedPromptCategory)?.prompts.map(prompt => (
+                      <button
+                        key={prompt}
+                        onClick={() => setTopic(prompt)}
+                        className="px-3 py-1.5 text-xs rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/30 hover:bg-[var(--accent)]/20 transition-colors text-[var(--foreground)]"
+                      >
+                        {prompt}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Source File */}
@@ -987,121 +1030,6 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
           </div>
         )}
 
-        {/* Template Library - only show when not in template mode */}
-        {!templateMode && (
-          <div className="border-t border-[var(--border)] pt-8">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
-              <div>
-                <h2 className="text-xl font-semibold">Template Library</h2>
-                <p className="text-[var(--muted)] text-sm mt-1">
-                  Or select a proven template to get started
-                </p>
-              </div>
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]" />
-                <input
-                  type="text"
-                  placeholder="Search templates..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 rounded-lg bg-[var(--card)] border border-[var(--border)] text-sm focus:outline-none focus:border-[var(--accent)] transition-colors"
-                />
-              </div>
-            </div>
-
-            {/* Category Pills */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              {CATEGORIES.map(cat => {
-                const Icon = cat.icon
-                const isActive = selectedCategory === cat.id
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
-                    className={`
-                      flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all
-                      ${isActive
-                        ? 'bg-[var(--accent)] text-[var(--background)]'
-                        : 'bg-[var(--card)] border border-[var(--border)] hover:border-[var(--accent)]/50 text-[var(--muted)] hover:text-[var(--foreground)]'
-                      }
-                    `}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {cat.label}
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Templates Grid */}
-            {templatesLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-6 h-6 animate-spin text-[var(--accent)]" />
-              </div>
-            ) : filteredTemplates.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-[var(--muted)]">No templates found</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredTemplates.map(template => {
-                  const colors = CATEGORY_COLORS[template.category] || { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' }
-                  const EngagementIcon = template.engagement_type ? ENGAGEMENT_ICONS[template.engagement_type] || Target : Target
-                  
-                  return (
-                    <button
-                      key={template.id}
-                      onClick={() => openTemplate(template)}
-                      className="text-left bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 hover:border-[var(--accent)]/50 hover:shadow-lg transition-all group"
-                    >
-                      {/* Header */}
-                      <div className="flex items-start justify-between gap-2 mb-3">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${colors.bg} ${colors.text} border ${colors.border}`}>
-                          {template.category.replace('-', ' ')}
-                        </span>
-                        {template.difficulty && (
-                          <span className={`text-xs font-medium capitalize ${DIFFICULTY_COLORS[template.difficulty] || ''}`}>
-                            {template.difficulty}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Title */}
-                      <h3 className="font-semibold text-[var(--foreground)] mb-2 group-hover:text-[var(--accent)] transition-colors">
-                        {template.title}
-                      </h3>
-
-                      {/* Description */}
-                      {template.description && (
-                        <p className="text-sm text-[var(--muted)] line-clamp-2 mb-3">
-                          {template.description}
-                        </p>
-                      )}
-
-                      {/* Why it Works (amber box) */}
-                      {template.why_it_works && (
-                        <div className="p-3 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 mb-3">
-                          <p className="text-xs text-amber-600 dark:text-amber-400 line-clamp-2">
-                            <span className="font-medium">Why it works:</span> {template.why_it_works}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Footer */}
-                      <div className="flex items-center justify-between text-xs text-[var(--muted)]">
-                        <div className="flex items-center gap-1">
-                          <EngagementIcon className="w-3.5 h-3.5" />
-                          <span>Best for {template.engagement_type || 'engagement'}</span>
-                        </div>
-                        <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-[var(--accent)]" />
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Template Modal */}
