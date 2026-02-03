@@ -854,9 +854,8 @@ export default function GeneratePage() {
               </div>
             )}
 
-            {/* Post Length Toggle + Style Selector */}
-            <div className="space-y-4 mb-4">
-            <div className="flex items-center gap-4">
+            {/* Post Length + Style - all on one line */}
+            <div className="flex flex-wrap items-center gap-4 mb-4">
               <span className="text-sm font-medium text-[var(--muted)]">Post Length:</span>
               <div className="flex gap-2">
                 <button
@@ -882,15 +881,9 @@ export default function GeneratePage() {
                   Thread
                 </button>
               </div>
-              {postLength === 'thread' && (
-                <span className="text-xs text-[var(--muted)] italic">
-                  💡 More context recommended for threads
-                </span>
-              )}
-            </div>
-            
-            {/* Style Selector - inline with post length */}
-            <div className="flex items-center gap-3">
+              
+              <div className="border-l border-[var(--border)] h-6 mx-2" />
+              
               <span className="text-sm font-medium text-[var(--muted)]">Style:</span>
               {styleProfiles.length > 0 ? (
                 <select
@@ -910,7 +903,6 @@ export default function GeneratePage() {
                   Add in Settings →
                 </a>
               )}
-            </div>
             </div>
 
             {/* Action Buttons */}
@@ -1297,4 +1289,3 @@ export default function GeneratePage() {
     </div>
   )
 }
-// Cache bust Mon Feb  2 20:59:14 CST 2026
