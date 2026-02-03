@@ -380,10 +380,14 @@ export default function GeneratePage() {
       
       setLoadingStyleProfiles(true)
       try {
-        const res = await fetch(`/api/voice/style-profiles?x_account_id=${activeAccount.id}`)
+        const res = await fetch(`/api/voice/style-profiles?x_account_id=${activeAccount.id}`, {
+          credentials: 'include',
+        })
         if (res.ok) {
           const data = await res.json()
           setStyleProfiles(data.profiles || [])
+        } else {
+          console.error('Style profiles fetch failed:', res.status, await res.text())
         }
       } catch (err) {
         console.error('Failed to fetch style profiles:', err)
@@ -883,7 +887,7 @@ export default function GeneratePage() {
               )}
             </div>
 
-            {/* Style Profile Selector */}
+            {/* Style Profile Selector [v3] */}
             {styleProfiles.length > 0 && (
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -928,12 +932,12 @@ export default function GeneratePage() {
               </div>
             )}
             {!loadingStyleProfiles && styleProfiles.length === 0 && activeAccount && (
-              <div className="mb-4">
+              <div className="mb-4 p-3 bg-violet-500/10 border border-violet-500/20 rounded-lg">
                 <Link
                   href="/settings/voice"
-                  className="text-sm text-[var(--muted)] hover:text-violet-400 transition-colors"
+                  className="text-sm text-violet-400 hover:text-violet-300 transition-colors"
                 >
-                  💡 Add style profiles in Settings → Voice to incorporate other creators&apos; styles
+                  ✨ Add style profiles in Settings → Voice to incorporate other creators&apos; styles
                 </Link>
               </div>
             )}
