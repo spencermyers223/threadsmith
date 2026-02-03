@@ -141,6 +141,20 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   advanced: 'text-red-600 dark:text-red-400',
 }
 
+// Strip media placeholders from content for accurate character count
+// Matches [Image: ...], [Screenshot: ...], [Diagram: ...], etc.
+const stripMediaPlaceholders = (content: string): string => {
+  return content
+    .replace(/\[(?:Image|Screenshot|Diagram|Chart|Photo|Video):[^\]]*\]/gi, '')
+    .replace(/\n\s*\n/g, '\n') // Clean up extra newlines left behind
+    .trim()
+}
+
+// Get character count excluding media placeholders
+const getDisplayCharCount = (content: string): number => {
+  return stripMediaPlaceholders(content).length
+}
+
 // Length options - Tweet, Thread, or Article
 const LENGTHS = [
   { id: 'tweet', label: 'Tweet' },
@@ -1071,10 +1085,15 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
                                     <span className="text-xs flex items-center gap-1"><Repeat2 size={14} /></span>
                                     <span className="text-xs flex items-center gap-1"><Heart size={14} /></span>
                                   </div>
-                                  <span className={`text-xs font-mono px-2 py-0.5 rounded ${
-                                    tweet.charCount > 280 ? 'bg-red-500/10 text-red-400' :
-                                    tweet.charCount > 250 ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'
-                                  }`}>{tweet.charCount}/280</span>
+                                  {(() => {
+                                    const displayCount = getDisplayCharCount(tweet.text)
+                                    return (
+                                      <span className={`text-xs font-mono px-2 py-0.5 rounded ${
+                                        displayCount > 280 ? 'bg-red-500/10 text-red-400' :
+                                        displayCount > 250 ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'
+                                      }`}>{displayCount}/280</span>
+                                    )
+                                  })()}
                                 </div>
                               </div>
                             </div>
@@ -1131,7 +1150,12 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
                     <div className="p-4 border-t border-[var(--border)] space-y-3">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-[var(--muted)]">Characters</span>
-                        <span className={`font-mono ${post.characterCount > 280 ? 'text-red-400' : post.characterCount > 250 ? 'text-amber-400' : 'text-emerald-400'}`}>{post.characterCount}/280</span>
+                        {(() => {
+                          const displayCount = getDisplayCharCount(post.content)
+                          return (
+                            <span className={`font-mono ${displayCount > 280 ? 'text-red-400' : displayCount > 250 ? 'text-amber-400' : 'text-emerald-400'}`}>{displayCount}/280</span>
+                          )
+                        })()}
                       </div>
                       <EditingTools content={post.content} onContentChange={(newContent) => { setPosts(prev => prev.map((p, i) => i === post.index ? { ...p, content: newContent, characterCount: newContent.length } : p)) }} isThread={false} />
                       <div className="flex gap-2">
