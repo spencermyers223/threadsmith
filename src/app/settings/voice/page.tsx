@@ -83,6 +83,33 @@ export default function VoiceSettingsPage() {
     emojiFrequency?: string
   }>({})
 
+  // Voice System V2: Voice Library (max 5 hand-picked tweets)
+  const [voiceLibrary, setVoiceLibrary] = useState<Array<{
+    id: string
+    tweet_text: string
+    tweet_url: string | null
+    author_username: string | null
+    is_own_tweet: boolean
+  }>>([])
+  const [voiceLibraryInput, setVoiceLibraryInput] = useState('')
+  const [addingToLibrary, setAddingToLibrary] = useState(false)
+
+  // Voice System V2: Style Profiles (max 3 admired accounts with patterns)
+  const [styleProfiles, setStyleProfiles] = useState<Array<{
+    id: string
+    account_username: string
+    profile_data: {
+      summary?: string
+      patterns?: {
+        avgLength?: number
+        emojiUsage?: string
+        hookStyles?: string[]
+        toneMarkers?: string[]
+      }
+    }
+    tweets_analyzed: number
+  }>>([])
+
   const loadData = useCallback(async () => {
     if (!activeAccount?.id) return
     
@@ -95,6 +122,20 @@ export default function VoiceSettingsPage() {
     setAdmiredAccounts([])
     
     try {
+      // Load Voice Library (V2 - max 5 hand-picked tweets)
+      const libraryRes = await fetch('/api/voice/library')
+      if (libraryRes.ok) {
+        const data = await libraryRes.json()
+        setVoiceLibrary(data.tweets || [])
+      }
+
+      // Load Style Profiles (V2 - max 3 analyzed accounts)
+      const profilesRes = await fetch('/api/voice/style-profiles')
+      if (profilesRes.ok) {
+        const data = await profilesRes.json()
+        setStyleProfiles(data.profiles || [])
+      }
+
       // Load samples for this X account
       const samplesRes = await fetch(`/api/voice/samples?x_account_id=${activeAccount.id}`)
       if (samplesRes.ok) {
@@ -139,6 +180,65 @@ export default function VoiceSettingsPage() {
     
     loadData()
   }, [loadData, activeAccount?.id])
+
+  // Voice Library V2 handlers
+  async function handleAddToVoiceLibrary() {
+    if (!voiceLibraryInput.trim()) return
+    setAddingToLibrary(true)
+    setError(null)
+
+    try {
+      const res = await fetch('/api/voice/library', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tweet_text: voiceLibraryInput.trim(),
+          author_username: activeAccount?.x_username || null,
+          is_own_tweet: true,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        if (data.code === 'VOICE_LIBRARY_FULL') {
+          throw new Error('Voice library is full (max 5). Remove a tweet first.')
+        }
+        throw new Error(data.error || 'Failed to add tweet')
+      }
+
+      setVoiceLibrary(prev => [data.tweet, ...prev])
+      setVoiceLibraryInput('')
+      setSuccess('Added to voice library!')
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add tweet')
+    } finally {
+      setAddingToLibrary(false)
+    }
+  }
+
+  async function handleRemoveFromVoiceLibrary(id: string) {
+    try {
+      const res = await fetch(`/api/voice/library?id=${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to remove')
+      setVoiceLibrary(prev => prev.filter(t => t.id !== id))
+    } catch {
+      setError('Failed to remove tweet from library')
+    }
+  }
+
+  // Style Profiles V2 handlers - Note: Full implementation requires X API tweet fetching
+  async function handleRemoveStyleProfile(id: string) {
+    try {
+      const res = await fetch(`/api/voice/style-profiles?id=${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to remove')
+      setStyleProfiles(prev => prev.filter(p => p.id !== id))
+      setSuccess('Style profile removed')
+      setTimeout(() => setSuccess(null), 3000)
+    } catch {
+      setError('Failed to remove style profile')
+    }
+  }
 
   async function handleImportFromX() {
     setImportingFromX(true)
@@ -455,6 +555,103 @@ export default function VoiceSettingsPage() {
       )}
 
       <div className="space-y-6">
+        {/* Voice Library V2 Section - Max 5 hand-picked tweets */}
+        <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--background)]">
+            <h2 className="font-semibold flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-accent" />
+              Voice Library ({voiceLibrary.length}/5)
+            </h2>
+            <p className="text-xs text-[var(--muted)] mt-1">
+              These tweets are injected directly into every generation as examples of your voice.
+            </p>
+          </div>
+          <div className="p-4 space-y-3">
+            {voiceLibrary.length > 0 && (
+              <div className="space-y-2 mb-4">
+                {voiceLibrary.map((tweet) => (
+                  <div key={tweet.id} className="flex items-start gap-2 p-3 rounded-lg bg-[var(--background)] border border-[var(--border)] group">
+                    <p className="text-sm flex-1">{tweet.tweet_text}</p>
+                    <button
+                      onClick={() => handleRemoveFromVoiceLibrary(tweet.id)}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 text-red-400 transition-all flex-shrink-0"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {voiceLibrary.length < 5 && (
+              <>
+                <textarea
+                  value={voiceLibraryInput}
+                  onChange={(e) => setVoiceLibraryInput(e.target.value)}
+                  placeholder="Paste a tweet that represents your voice..."
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none resize-none text-sm"
+                />
+                <button
+                  onClick={handleAddToVoiceLibrary}
+                  disabled={addingToLibrary || !voiceLibraryInput.trim()}
+                  className="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent-hover disabled:opacity-50 text-[var(--accent-text)] rounded-lg transition-colors text-sm font-medium"
+                >
+                  {addingToLibrary ? (
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                  Add to Voice Library
+                </button>
+              </>
+            )}
+            {voiceLibrary.length === 0 && (
+              <p className="text-xs text-[var(--muted)] text-center py-2">
+                💡 Add tweets that best represent how you write.
+              </p>
+            )}
+          </div>
+        </section>
+
+        {/* Style Profiles V2 Section - Max 3 admired accounts */}
+        <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--background)]">
+            <h2 className="font-semibold flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-violet-500" />
+              Style Profiles ({styleProfiles.length}/3)
+            </h2>
+            <p className="text-xs text-[var(--muted)] mt-1">
+              Analyzed patterns from accounts you admire. Select on Generate page to incorporate.
+            </p>
+          </div>
+          <div className="p-4 space-y-3">
+            {styleProfiles.length > 0 ? (
+              <div className="space-y-2">
+                {styleProfiles.map((profile) => (
+                  <div key={profile.id} className="flex items-start gap-3 p-3 rounded-lg bg-[var(--background)] border border-[var(--border)] group">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">@{profile.account_username}</p>
+                      <p className="text-xs text-[var(--muted)] mt-1">
+                        {profile.profile_data?.summary || `Analyzed ${profile.tweets_analyzed} tweets`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveStyleProfile(profile.id)}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 text-red-400 transition-all flex-shrink-0"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-[var(--muted)] text-center py-4">
+                💡 Style profiles let you incorporate writing patterns from creators you admire.
+              </p>
+            )}
+          </div>
+        </section>
+
         {/* Import from X Section */}
         <section className="bg-[var(--card)] border border-[var(--border)] rounded-lg overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--background)]">
