@@ -17,10 +17,16 @@ import {
   Copy,
   Calendar,
   RefreshCw,
-  Edit3
+  Edit3,
+  Plus,
+  Trash2,
+  MessageSquare,
+  BookMarked,
+  Zap
 } from 'lucide-react'
 import { EditingTools } from '@/components/editing'
 import Link from 'next/link'
+import PresetCreatorModal from './PresetCreatorModal'
 
 // Types
 interface StyleTemplate {
@@ -49,6 +55,20 @@ interface GeneratedPost {
   characterCount: number
 }
 
+interface Preset {
+  id: string
+  name: string
+  content_type: 'tweet' | 'thread'
+  style_template_id: string | null
+  post_template_id: string
+  style_template?: {
+    id: string
+    title: string
+    description: string | null
+    admired_account_username: string | null
+  } | null
+}
+
 interface TemplatesModeProps {
   selectedFile: FileRecord | null
   onOpenSidebar: () => void
@@ -73,7 +93,11 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
   // Data state
   const [styleTemplates, setStyleTemplates] = useState<StyleTemplate[]>([])
   const [postTemplates, setPostTemplates] = useState<PostTemplate[]>([])
+  const [presets, setPresets] = useState<Preset[]>([])
   const [loading, setLoading] = useState(true)
+  
+  // Preset creator modal state
+  const [showPresetCreator, setShowPresetCreator] = useState(false)
 
   // Selection state
   const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null)
@@ -113,6 +137,16 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
         if (templates) {
           setPostTemplates(templates)
         }
+
+        // Fetch user presets
+        const presetsRes = await fetch(
+          `/api/presets${activeAccount?.id ? `?x_account_id=${activeAccount.id}` : ''}`,
+          { credentials: 'include' }
+        )
+        if (presetsRes.ok) {
+          const presetsData = await presetsRes.json()
+          setPresets(presetsData.presets || [])
+        }
       } catch (error) {
         console.error('Error fetching templates:', error)
       }
@@ -141,6 +175,38 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
     postTemplates.filter(t => t.content_type === 'thread' || t.category === 'thread'),
     [postTemplates]
   )
+
+  // Preset management functions
+  const applyPreset = (preset: Preset) => {
+    // Set the style template (if any)
+    setSelectedStyleId(preset.style_template_id)
+    // Set the post template
+    setSelectedPostId(preset.post_template_id)
+    // Set the template type based on preset content type (default to 'tweet' if not set)
+    const presetType = preset.content_type || 'tweet'
+    setTemplateType(presetType === 'thread' ? 'thread' : 'post')
+    setActiveTab('post')
+    // Clear variable values for the new template
+    setVariableValues({})
+  }
+
+  const deletePreset = async (presetId: string) => {
+    try {
+      const res = await fetch(`/api/presets/${presetId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+      if (res.ok) {
+        setPresets(prev => prev.filter(p => p.id !== presetId))
+      }
+    } catch (error) {
+      console.error('Error deleting preset:', error)
+    }
+  }
+
+  const handlePresetCreated = (preset: Preset) => {
+    setPresets(prev => [preset, ...prev])
+  }
 
   // Check if can generate - post format is required, voice style is optional
   const canGenerate = selectedPostId !== null
@@ -307,6 +373,116 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
       <div className="mb-6">
         <GenerationCounter />
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          SAVED PRESETS - Quick access to your favorite combinations
+          ═══════════════════════════════════════════════════════════════ */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <BookMarked className="w-5 h-5 text-[var(--accent)]" />
+            <h2 className="text-lg font-semibold">Your Presets</h2>
+            {presets.length > 0 && (
+              <span className="text-xs text-[var(--muted)] bg-[var(--border)] px-2 py-0.5 rounded-full">
+                {presets.length}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => setShowPresetCreator(true)}
+            className="flex items-center gap-2 px-3 py-2 bg-[var(--accent)] text-black rounded-lg text-sm font-medium hover:bg-[var(--accent)]/90 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            New Preset
+          </button>
+        </div>
+
+        {presets.length === 0 ? (
+          <div className="bg-gradient-to-br from-[var(--card)] to-[var(--background)] border border-dashed border-[var(--border)] rounded-xl p-6 text-center">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-[var(--accent)]/10 flex items-center justify-center">
+              <Zap className="w-6 h-6 text-[var(--accent)]" />
+            </div>
+            <h3 className="font-medium mb-1">No presets yet</h3>
+            <p className="text-sm text-[var(--muted)] mb-4">
+              Save your favorite template combinations for quick access
+            </p>
+            <button
+              onClick={() => setShowPresetCreator(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-black rounded-lg text-sm font-medium hover:bg-[var(--accent)]/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create Your First Preset
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {presets.map(preset => {
+              const postTemplate = postTemplates.find(t => t.id === preset.post_template_id)
+              return (
+                <div
+                  key={preset.id}
+                  className="group relative bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 hover:border-[var(--accent)]/50 transition-all cursor-pointer"
+                  onClick={() => applyPreset(preset)}
+                >
+                  {/* Delete button */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); deletePreset(preset.id); }}
+                    className="absolute top-2 right-2 p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded-lg transition-all"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-400" />
+                  </button>
+
+                  {/* Type badge */}
+                  <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium mb-2 ${
+                    (preset.content_type || 'tweet') === 'thread' 
+                      ? 'bg-emerald-500/10 text-emerald-400' 
+                      : 'bg-blue-500/10 text-blue-400'
+                  }`}>
+                    {(preset.content_type || 'tweet') === 'thread' ? (
+                      <Layers className="w-3 h-3" />
+                    ) : (
+                      <MessageSquare className="w-3 h-3" />
+                    )}
+                    {(preset.content_type || 'tweet') === 'thread' ? 'Thread' : 'Tweet'}
+                  </div>
+
+                  {/* Preset name */}
+                  <h3 className="font-semibold text-sm mb-1 pr-6">{preset.name}</h3>
+
+                  {/* Template info */}
+                  <p className="text-xs text-[var(--muted)] line-clamp-1">
+                    {postTemplate?.title || 'Unknown format'}
+                  </p>
+
+                  {/* Voice style badge */}
+                  {preset.style_template && (
+                    <div className="mt-2 flex items-center gap-1 text-xs text-purple-400">
+                      <PenLine className="w-3 h-3" />
+                      {preset.style_template.title}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+
+            {/* Add new preset card */}
+            <button
+              onClick={() => setShowPresetCreator(true)}
+              className="flex flex-col items-center justify-center gap-2 p-4 border-2 border-dashed border-[var(--border)] rounded-xl text-[var(--muted)] hover:border-[var(--accent)]/50 hover:text-[var(--accent)] transition-all min-h-[120px]"
+            >
+              <Plus className="w-6 h-6" />
+              <span className="text-sm font-medium">Add Preset</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Preset Creator Modal */}
+      <PresetCreatorModal
+        isOpen={showPresetCreator}
+        onClose={() => setShowPresetCreator(false)}
+        onPresetCreated={handlePresetCreated}
+      />
 
       {/* ═══════════════════════════════════════════════════════════════
           STEP 1: YOUR CONFIGURATION (Always visible at top)

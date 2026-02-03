@@ -55,6 +55,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const body = await request.json()
     const allowedFields = [
       'name',
+      'content_type',
       'style_template_id', 
       'post_template_id',
       'attached_file_ids'
@@ -70,6 +71,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     if (Object.keys(updates).length === 0) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
+    }
+
+    // Validate content_type if provided
+    if (updates.content_type) {
+      const validContentTypes = ['tweet', 'thread']
+      if (!validContentTypes.includes(updates.content_type as string)) {
+        return NextResponse.json({ error: 'Invalid content type' }, { status: 400 })
+      }
     }
 
     // If updating style_template_id, verify it belongs to user

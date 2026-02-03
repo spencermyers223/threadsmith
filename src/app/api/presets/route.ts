@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { 
       name, 
+      content_type,
       style_template_id,
       post_template_id,
       attached_file_ids,
@@ -65,24 +66,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
-    if (!style_template_id) {
-      return NextResponse.json({ error: 'Style template is required' }, { status: 400 })
-    }
-
     if (!post_template_id) {
       return NextResponse.json({ error: 'Post template is required' }, { status: 400 })
     }
 
-    // Verify style template belongs to user
-    const { data: styleTemplate, error: styleError } = await supabase
-      .from('style_templates')
-      .select('id')
-      .eq('id', style_template_id)
-      .eq('user_id', user.id)
-      .single()
+    // Validate content_type
+    const validContentTypes = ['tweet', 'thread']
+    const finalContentType = validContentTypes.includes(content_type) ? content_type : 'tweet'
 
-    if (styleError || !styleTemplate) {
-      return NextResponse.json({ error: 'Invalid style template' }, { status: 400 })
+    // If style_template_id is provided, verify it belongs to user
+    if (style_template_id) {
+      const { data: styleTemplate, error: styleError } = await supabase
+        .from('style_templates')
+        .select('id')
+        .eq('id', style_template_id)
+        .eq('user_id', user.id)
+        .single()
+
+      if (styleError || !styleTemplate) {
+        return NextResponse.json({ error: 'Invalid style template' }, { status: 400 })
+      }
     }
 
     const { data, error } = await supabase
@@ -91,7 +94,8 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         x_account_id: x_account_id || null,
         name,
-        style_template_id,
+        content_type: finalContentType,
+        style_template_id: style_template_id || null,
         post_template_id,
         attached_file_ids: attached_file_ids || []
       })
