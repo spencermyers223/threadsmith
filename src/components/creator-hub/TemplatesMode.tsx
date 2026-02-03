@@ -72,7 +72,8 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
   engagement: { bg: 'bg-purple-500/10', text: 'text-purple-400' },
 }
 
-export default function TemplatesMode({ selectedFile, onOpenSidebar, onClearFile }: TemplatesModeProps) {
+export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSidebar, onClearFile }: TemplatesModeProps) {
+  void _onOpenSidebar // Reserved for future use
   const { activeAccount } = useXAccount()
   const supabase = createClient()
 
@@ -106,10 +107,6 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar, onClearFile
   })
 
   // Fetch data on mount
-  useEffect(() => {
-    fetchData()
-  }, [activeAccount?.id])
-
   const fetchData = async () => {
     setLoading(true)
     try {
@@ -147,6 +144,11 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar, onClearFile
     }
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    fetchData()
+  }, [activeAccount?.id])
 
   // Get selected post template
   const selectedPostTemplate = useMemo(() => {

@@ -5,7 +5,7 @@ import { FilesSidebar, FileRecord } from '@/components/generate/FilesSidebar'
 import WriteMode from '@/components/creator-hub/WriteMode'
 import GenerateMode from '@/components/creator-hub/GenerateMode'
 import TemplatesMode from '@/components/creator-hub/TemplatesMode'
-import { PenLine, Sparkles, Layers, Lightbulb } from 'lucide-react'
+import { PenLine, Layers, Lightbulb } from 'lucide-react'
 
 type Mode = 'write' | 'braindump' | 'templates'
 

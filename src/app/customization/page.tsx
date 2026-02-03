@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { useXAccount } from '@/contexts/XAccountContext'
 import {
   ArrowLeft,
@@ -365,7 +364,6 @@ function StyleTemplateEditor({
 
 export default function CustomizationPage() {
   const { activeAccount } = useXAccount()
-  const supabase = createClient()
   
   // State
   const [styleTemplates, setStyleTemplates] = useState<StyleTemplate[]>([])
@@ -395,10 +393,6 @@ export default function CustomizationPage() {
   const [editingTemplate, setEditingTemplate] = useState<StyleTemplate | null>(null)
 
   // Fetch data on mount
-  useEffect(() => {
-    fetchData()
-  }, [activeAccount?.id])
-
   const fetchData = async () => {
     setLoading(true)
     try {
@@ -434,6 +428,11 @@ export default function CustomizationPage() {
     }
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    fetchData()
+  }, [activeAccount?.id])
 
   // Save style template
   const saveStyleTemplate = async (data: Partial<StyleTemplate>) => {
