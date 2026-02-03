@@ -112,7 +112,10 @@ export default function VoiceSettingsPage() {
   const [analyzingAccount, setAnalyzingAccount] = useState<string | null>(null)
 
   const loadData = useCallback(async () => {
-    if (!activeAccount?.id) return
+    if (!activeAccount?.id) {
+      setLoading(false)
+      return
+    }
     
     setLoading(true)
     // Reset state when loading new account data
