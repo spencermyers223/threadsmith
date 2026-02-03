@@ -705,82 +705,85 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
             </>
           )}
 
-          {/* Post Length Toggle */}
-          <div>
-            <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
-              Post Length
-            </label>
-            <div className="flex gap-2">
-              {LENGTHS.map((length) => {
-                const isSelected = selectedLength === length.id
-                return (
-                  <button
-                    key={length.id}
-                    onClick={() => setSelectedLength(length.id)}
-                    className={`
-                      px-6 py-2.5 rounded-lg text-sm font-medium transition-all
-                      ${isSelected
-                        ? 'bg-[var(--accent)] text-[var(--background)]'
-                        : 'bg-[var(--background)] border border-[var(--border)] hover:border-[var(--muted)]'
-                      }
-                    `}
-                  >
-                    {length.label}
-                  </button>
-                )
-              })}
-            </div>
-            {selectedLength === 'thread' && (
-              <p className="text-xs text-[var(--muted)] mt-2 flex items-center gap-1">
-                💡 More context recommended for threads
-              </p>
-            )}
-          </div>
-
-          {/* Style Profile Selector */}
-          {loadingStyleProfiles && (
-            <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Loading style profiles...
-            </div>
-          )}
-          {!loadingStyleProfiles && styleProfiles.length > 0 && (
+          {/* Post Length + Style Profile Row */}
+          <div className="flex flex-wrap items-end gap-6">
+            {/* Post Length */}
             <div>
               <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
-                Incorporate style (select one):
+                Post Length
               </label>
-              <div className="flex flex-wrap gap-2">
-                {styleProfiles.map((profile) => (
-                  <button
-                    key={profile.id}
-                    onClick={() => setSelectedStyleProfileId(
-                      selectedStyleProfileId === profile.id ? null : profile.id
-                    )}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      selectedStyleProfileId === profile.id
-                        ? 'bg-violet-500/20 text-violet-400 border border-violet-500/50'
-                        : 'bg-[var(--background)] border border-[var(--border)] hover:border-violet-500/30 text-[var(--muted)] hover:text-[var(--foreground)]'
-                    }`}
-                  >
-                    <span className={`w-2 h-2 rounded-full ${
-                      selectedStyleProfileId === profile.id ? 'bg-violet-400' : 'bg-[var(--border)]'
-                    }`} />
-                    @{profile.account_username}
-                  </button>
-                ))}
+              <div className="flex gap-2">
+                {LENGTHS.map((length) => {
+                  const isSelected = selectedLength === length.id
+                  return (
+                    <button
+                      key={length.id}
+                      onClick={() => setSelectedLength(length.id)}
+                      className={`
+                        px-6 py-2.5 rounded-lg text-sm font-medium transition-all
+                        ${isSelected
+                          ? 'bg-[var(--accent)] text-[var(--background)]'
+                          : 'bg-[var(--background)] border border-[var(--border)] hover:border-[var(--muted)]'
+                        }
+                      `}
+                    >
+                      {length.label}
+                    </button>
+                  )
+                })}
               </div>
-              {selectedStyleProfileId && (
-                <p className="mt-2 text-xs text-violet-400/80">
-                  {styleProfiles.find(p => p.id === selectedStyleProfileId)?.profile_data?.summary}
-                </p>
-              )}
-              {!selectedStyleProfileId && (
-                <p className="mt-2 text-xs text-[var(--muted)]">
-                  None selected = your voice only
-                </p>
-              )}
             </div>
-          )}
+
+            {/* Style Profile Selector */}
+            {loadingStyleProfiles && (
+              <div className="flex items-center gap-2 text-sm text-[var(--muted)] pb-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading...
+              </div>
+            )}
+            {!loadingStyleProfiles && styleProfiles.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
+                  Incorporate style (select one):
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {styleProfiles.map((profile) => (
+                    <button
+                      key={profile.id}
+                      onClick={() => setSelectedStyleProfileId(
+                        selectedStyleProfileId === profile.id ? null : profile.id
+                      )}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        selectedStyleProfileId === profile.id
+                          ? 'bg-violet-500/20 text-violet-400 border border-violet-500/50'
+                          : 'bg-[var(--background)] border border-[var(--border)] hover:border-violet-500/30 text-[var(--muted)] hover:text-[var(--foreground)]'
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${
+                        selectedStyleProfileId === profile.id ? 'bg-violet-400' : 'bg-[var(--border)]'
+                      }`} />
+                      @{profile.account_username}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Helper text row */}
+          <div className="flex gap-6 text-xs text-[var(--muted)]">
+            {selectedLength === 'thread' && (
+              <span>💡 More context recommended for threads</span>
+            )}
+            {!loadingStyleProfiles && styleProfiles.length > 0 && selectedStyleProfileId && (
+              <span className="text-violet-400/80">
+                {styleProfiles.find(p => p.id === selectedStyleProfileId)?.profile_data?.summary}
+              </span>
+            )}
+            {!loadingStyleProfiles && styleProfiles.length > 0 && !selectedStyleProfileId && (
+              <span>None selected = your voice only</span>
+            )}
+          </div>
         </div>
 
         {/* Generate Button */}
