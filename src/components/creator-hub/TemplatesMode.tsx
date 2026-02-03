@@ -530,21 +530,21 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {filteredThreadTemplates.map(template => {
-                  const colors = { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' }
+                  const colors = CATEGORY_COLORS['thread'] || { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30' }
                   return (
                     <button
                       key={template.id}
                       onClick={() => { setSelectedPostId(template.id); setVariableValues({}); }}
                       className={`p-4 rounded-lg border text-left transition-all ${
                         selectedPostId === template.id
-                          ? 'bg-emerald-500/10 border-emerald-500/50 ring-2 ring-emerald-500/30'
-                          : 'bg-[var(--background)] border-[var(--border)] hover:border-emerald-500/30'
+                          ? 'bg-blue-500/10 border-blue-500/50 ring-2 ring-blue-500/30'
+                          : 'bg-[var(--background)] border-[var(--border)] hover:border-blue-500/30'
                       }`}
                     >
                       <div className="flex items-start justify-between mb-1">
                         <span className="font-medium text-sm">{template.title}</span>
                         {selectedPostId === template.id && (
-                          <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                          <Check className="w-4 h-4 text-blue-400 flex-shrink-0" />
                         )}
                       </div>
                       <span className={`inline-block text-xs px-2 py-0.5 rounded ${colors.bg} ${colors.text} ${colors.border} border`}>
