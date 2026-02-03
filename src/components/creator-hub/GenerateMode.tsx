@@ -755,12 +755,12 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
                       )}
                       className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                         selectedStyleProfileId === profile.id
-                          ? 'bg-violet-500/20 text-violet-400 border border-violet-500/50'
-                          : 'bg-[var(--background)] border border-[var(--border)] hover:border-violet-500/30 text-[var(--muted)] hover:text-[var(--foreground)]'
+                          ? 'bg-[var(--accent)] text-[var(--background)]'
+                          : 'bg-[var(--background)] border border-[var(--border)] hover:border-[var(--muted)]'
                       }`}
                     >
                       <span className={`w-2 h-2 rounded-full ${
-                        selectedStyleProfileId === profile.id ? 'bg-violet-400' : 'bg-[var(--border)]'
+                        selectedStyleProfileId === profile.id ? 'bg-[var(--background)]' : 'bg-[var(--border)]'
                       }`} />
                       @{profile.account_username}
                     </button>
@@ -776,7 +776,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
               <span>💡 More context recommended for threads</span>
             )}
             {!loadingStyleProfiles && styleProfiles.length > 0 && selectedStyleProfileId && (
-              <span className="text-violet-400/80">
+              <span className="text-[var(--accent)]">
                 {styleProfiles.find(p => p.id === selectedStyleProfileId)?.profile_data?.summary}
               </span>
             )}
