@@ -1498,53 +1498,6 @@ async function handleMessageClick(btn, handle) {
   }
 }
 
-// Handle "Add to Voice" button click
-async function handleVoiceClick(btn, handle) {
-  if (!userToken) {
-    showToast('Please sign in to xthread first. Click the extension icon.');
-    return;
-  }
-  
-  btn.classList.add('xthread-loading');
-  btn.innerHTML = getProfileIcon('loader');
-  
-  try {
-    const response = await fetch(`${XTHREAD_API}/admired-accounts`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${userToken}`
-      },
-      body: JSON.stringify({ username: handle })
-    });
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(error.error || 'Failed to add account');
-    }
-    
-    const data = await response.json();
-    
-    // Update button to show success
-    btn.classList.add('xthread-voice-added');
-    btn.innerHTML = getProfileIcon('check');
-    showToast(data.message || `Added @${handle} to your voice profile`);
-    
-    // Reset button after 2 seconds
-    setTimeout(() => {
-      btn.classList.remove('xthread-voice-added');
-      btn.innerHTML = getProfileIcon('mic');
-    }, 2000);
-    
-  } catch (err) {
-    console.error('[xthread] Error adding to voice:', err);
-    showToast(err.message || 'Failed to add account. Please try again.');
-    btn.innerHTML = getProfileIcon('mic');
-  } finally {
-    btn.classList.remove('xthread-loading');
-  }
-}
-
 // ============================================================
 // Style Template Integration
 // ============================================================
@@ -1610,14 +1563,6 @@ async function showVoiceDropdown(btn, handle) {
     <div class="xthread-dropdown-item xthread-create-new" data-action="create">
       <span class="xthread-dropdown-icon">✨</span>
       <span class="xthread-dropdown-text">Create New Style Template</span>
-    </div>
-    <div class="xthread-dropdown-divider"></div>
-    <div class="xthread-dropdown-item" data-action="voice">
-      <span class="xthread-dropdown-icon">🎤</span>
-      <div>
-        <div class="xthread-dropdown-text">Add to Voice (Legacy)</div>
-        <div class="xthread-dropdown-subtitle">Old system - use templates instead</div>
-      </div>
     </div>
   `;
   
@@ -1698,12 +1643,6 @@ async function showVoiceDropdown(btn, handle) {
     const profileInfo = extractProfileInfo();
     // Open xthread with pre-filled data
     window.open(`https://xthread.io/customization?tab=templates&create=true&username=${handle}&avatar=${encodeURIComponent(profileInfo.avatar || '')}`, '_blank');
-  });
-  
-  // Handle legacy voice click
-  dropdown.querySelector('[data-action="voice"]').addEventListener('click', async () => {
-    closeAllDropdowns();
-    await handleVoiceClick(btn, handle);
   });
   
   // Close on click outside
