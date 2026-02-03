@@ -229,7 +229,7 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
     if (sections.length <= 1) {
       // Try alternate format: numbered sections like "1\n" or "---\n1\n"
       const numberedPattern = /(?:^|\n)---*\n*(\d+)\n([\s\S]*?)(?=\n---*\n*\d+\n|$)/g
-      const matches = [...content.matchAll(numberedPattern)]
+      const matches = Array.from(content.matchAll(numberedPattern))
       
       if (matches.length > 1) {
         return matches.map((match) => ({
