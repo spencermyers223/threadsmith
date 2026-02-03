@@ -249,7 +249,7 @@ export default function VoiceSettingsPage() {
     }
   }
 
-  async function handleAnalyzeAccount(username: string) {
+  async function handleAnalyzeAccount(username: string, confirmCredit = false) {
     if (!activeAccount?.id) {
       setError('Please select an X account first')
       return
@@ -293,10 +293,28 @@ export default function VoiceSettingsPage() {
             likes: t.metrics?.like_count || 0 
           })),
           x_account_id: activeAccount.id,
+          confirmCredit,
         }),
       })
 
       const data = await res.json()
+      
+      // Handle credit confirmation required
+      if (res.status === 402 && data.requiresConfirmation) {
+        setAnalyzingAccount(null)
+        const confirmed = window.confirm(
+          `⚠️ Credit Required\n\n` +
+          `You've used your ${data.freeLimit} free style profiles.\n\n` +
+          `This analysis will cost ${data.creditCost} credits.\n` +
+          `You have ${data.currentCredits} credits.\n\n` +
+          `Continue?`
+        )
+        if (confirmed) {
+          return handleAnalyzeAccount(username, true)
+        }
+        return
+      }
+      
       if (!res.ok) throw new Error(data.error || 'Failed to analyze')
 
       setStyleProfiles(prev => [...prev, data.profile])

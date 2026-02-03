@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
   })
 }
 
-// POST - Create a style profile (costs 3 credits)
+// POST - Create a style profile (costs 5 credits after first 3 free)
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { username, tweets, x_account_id } = body
+    const { username, tweets, x_account_id, confirmCredit } = body
 
     if (!x_account_id) {
       return NextResponse.json({ error: 'x_account_id is required' }, { status: 400 })
@@ -84,7 +84,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Count total profiles ever created to determine if free
-    // Try to get from profiles table, fallback to current count if column doesn't exist
     let totalCreated = 0
     try {
       const { data: userProfile } = await supabase
@@ -94,25 +93,34 @@ export async function POST(request: NextRequest) {
         .single()
       totalCreated = userProfile?.style_profiles_created || 0
     } catch {
-      // Column might not exist yet, use current count as fallback
       totalCreated = count || 0
     }
     
     const isFreeProfile = totalCreated < FREE_PROFILES_LIMIT
+    const currentCredits = await getCredits(supabase, user.id)
 
-    // Check credits only if not a free profile
+    // If not free and no confirmation, return a warning requiring confirmation
+    if (!isFreeProfile && !confirmCredit) {
+      return NextResponse.json({
+        requiresConfirmation: true,
+        creditCost: PROFILE_COST_CREDITS,
+        currentCredits,
+        message: `This will use ${PROFILE_COST_CREDITS} credits. You have ${currentCredits} credits.`,
+        freeUsed: totalCreated,
+        freeLimit: FREE_PROFILES_LIMIT,
+      }, { status: 402 })
+    }
+
+    // Check credits if not free
     if (!isFreeProfile) {
       const hasCredits = await hasEnoughCredits(supabase, user.id, PROFILE_COST_CREDITS)
       if (!hasCredits) {
-        const currentCredits = await getCredits(supabase, user.id)
         return NextResponse.json(
           { 
-            error: `Not enough credits. Need ${PROFILE_COST_CREDITS}, have ${currentCredits}. (First ${FREE_PROFILES_LIMIT} profiles are free)`,
+            error: `Not enough credits. Need ${PROFILE_COST_CREDITS}, have ${currentCredits}.`,
             code: 'INSUFFICIENT_CREDITS',
             required: PROFILE_COST_CREDITS,
             current: currentCredits,
-            freeUsed: totalCreated,
-            freeLimit: FREE_PROFILES_LIMIT,
           },
           { status: 402 }
         )
@@ -139,7 +147,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Expect tweets to be passed from frontend (which fetches from X API)
+    // Validate tweets
     if (!tweets || !Array.isArray(tweets) || tweets.length === 0) {
       return NextResponse.json(
         { error: 'Tweets array is required for analysis' },
@@ -147,17 +155,62 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate tweet structure
+    const validTweets = tweets.filter(t => t && typeof t.text === 'string' && t.text.trim().length > 0)
+    if (validTweets.length < 3) {
+      return NextResponse.json(
+        { error: `Need at least 3 valid tweets with text content. Got ${validTweets.length}.` },
+        { status: 400 }
+      )
+    }
+
     // Sort by engagement and take top 10
-    const sortedTweets = tweets
+    const sortedTweets = validTweets
       .sort((a: { likes?: number }, b: { likes?: number }) => (b.likes || 0) - (a.likes || 0))
       .slice(0, 10)
 
-    // Analyze patterns with AI
-    const profileData = await analyzeStylePatterns(sortedTweets, username)
+    // Analyze patterns with AI (with retry logic)
+    let profileData: Record<string, unknown>
+    let analysisSucceeded = false
+    let lastError = ''
+    
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        profileData = await analyzeStylePatterns(sortedTweets, username)
+        
+        // Verify we got a real analysis, not fallback
+        if (profileData.summary && 
+            typeof profileData.summary === 'string' && 
+            !profileData.summary.startsWith('Style patterns from @')) {
+          analysisSucceeded = true
+          break
+        } else {
+          lastError = 'Analysis returned generic fallback'
+        }
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : 'Analysis failed'
+        console.error(`Style analysis attempt ${attempt} failed:`, lastError)
+      }
+      
+      // Wait before retry
+      if (attempt < 3) {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+    }
 
-    // Deduct credits only if not a free profile
+    if (!analysisSucceeded) {
+      return NextResponse.json(
+        { 
+          error: `Failed to analyze style after 3 attempts: ${lastError}`,
+          code: 'ANALYSIS_FAILED',
+        },
+        { status: 500 }
+      )
+    }
+
+    // NOW deduct credits (only after successful analysis)
     let creditsUsed = 0
-    let creditsRemaining = 0
+    let creditsRemaining = currentCredits
     
     if (!isFreeProfile) {
       const deductResult = await deductCredits(supabase, user.id, PROFILE_COST_CREDITS, 'style_profile_creation')
@@ -179,7 +232,7 @@ export async function POST(request: NextRequest) {
         x_account_id: x_account_id,
         account_username: username.trim().toLowerCase().replace('@', ''),
         account_display_name: username.trim(),
-        profile_data: profileData,
+        profile_data: profileData!,
         tweets_analyzed: sortedTweets.length,
       })
       .select()
@@ -187,7 +240,7 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error
 
-    // Update total profiles created counter (safe - ignore if column doesn't exist)
+    // Update total profiles created counter
     try {
       await supabase
         .from('profiles')
@@ -259,12 +312,20 @@ async function analyzeStylePatterns(
   tweets: Array<{ text: string; likes?: number }>,
   username: string
 ): Promise<Record<string, unknown>> {
-  const tweetTexts = tweets.map((t, i) => `${i + 1}. "${t.text}" (${t.likes?.toLocaleString() || '?'} likes)`).join('\n')
+  // Build tweet text with validation
+  const tweetTexts = tweets
+    .filter(t => t.text && t.text.trim().length > 0)
+    .map((t, i) => `${i + 1}. "${t.text}" (${t.likes?.toLocaleString() || '0'} likes)`)
+    .join('\n')
+
+  if (!tweetTexts) {
+    throw new Error('No valid tweet content to analyze')
+  }
 
   const response = await anthropic.messages.create({
     model: 'claude-opus-4-20250514',
     max_tokens: 1024,
-    system: `You are a social media analyst. Analyze the writing patterns in these tweets and extract a style profile. Return ONLY valid JSON, no other text.`,
+    system: `You are a social media analyst. Analyze the writing patterns in these tweets and extract a style profile. Return ONLY valid JSON, no markdown, no explanation.`,
     messages: [{
       role: 'user',
       content: `Analyze these top tweets from @${username} and extract their writing style patterns:
@@ -273,7 +334,7 @@ ${tweetTexts}
 
 Return a JSON object with this exact structure:
 {
-  "summary": "Brief 1-sentence description of their style",
+  "summary": "Brief 1-sentence description of their unique style (be specific, not generic)",
   "patterns": {
     "avgLength": <number>,
     "lengthRange": [<min>, <max>],
@@ -293,7 +354,7 @@ Return a JSON object with this exact structure:
   ]
 }
 
-Return ONLY the JSON object, nothing else.`
+IMPORTANT: Return ONLY the raw JSON object. No markdown code blocks. No explanation. Just the JSON.`
     }],
   })
 
@@ -301,28 +362,35 @@ Return ONLY the JSON object, nothing else.`
     .filter((block): block is Anthropic.TextBlock => block.type === 'text')
     .map(block => block.text)
     .join('')
+    .trim()
+
+  // Try to extract JSON if wrapped in markdown code block
+  let jsonStr = textContent
+  const jsonMatch = textContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
+  if (jsonMatch) {
+    jsonStr = jsonMatch[1].trim()
+  }
+  
+  // Also try to find JSON object directly
+  const objectMatch = jsonStr.match(/\{[\s\S]*\}/)
+  if (objectMatch) {
+    jsonStr = objectMatch[0]
+  }
 
   try {
-    // Try to parse the JSON response
-    const parsed = JSON.parse(textContent)
-    return parsed
-  } catch {
-    // If parsing fails, return a basic structure
-    console.error('Failed to parse AI response:', textContent)
-    return {
-      summary: `Style patterns from @${username}`,
-      patterns: {
-        avgLength: 150,
-        lengthRange: [50, 280],
-        emojiUsage: 'unknown',
-        hookStyles: ['various'],
-        toneMarkers: ['unknown'],
-        sentenceStyle: 'varied',
-        questionUsage: 'unknown',
-        hashtagUsage: 'unknown',
-        ctaStyle: 'unknown',
-      },
-      topTweets: tweets.slice(0, 3).map(t => ({ text: t.text, likes: t.likes || 0 })),
+    const parsed = JSON.parse(jsonStr)
+    
+    // Validate required fields
+    if (!parsed.summary || typeof parsed.summary !== 'string') {
+      throw new Error('Missing or invalid summary field')
     }
+    if (!parsed.patterns || typeof parsed.patterns !== 'object') {
+      throw new Error('Missing or invalid patterns field')
+    }
+    
+    return parsed
+  } catch (parseError) {
+    console.error('Failed to parse AI response:', textContent)
+    throw new Error(`JSON parsing failed: ${parseError instanceof Error ? parseError.message : 'unknown error'}`)
   }
 }
