@@ -140,10 +140,11 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   advanced: 'text-red-600 dark:text-red-400',
 }
 
-// Length options - just Tweet or Thread
+// Length options - Tweet, Thread, or Article
 const LENGTHS = [
   { id: 'tweet', label: 'Tweet' },
   { id: 'thread', label: 'Thread' },
+  { id: 'article', label: 'Article', description: 'Long-form content' },
 ]
 
 interface GeneratedPost {
@@ -446,7 +447,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
       }
 
       // Map length to API format
-      const apiLength = selectedLength === 'thread' ? 'thread' : 'standard'
+      const apiLength = selectedLength === 'thread' ? 'thread' : selectedLength === 'article' ? 'developed' : 'standard'
 
       const res = await fetch('/api/generate', {
         method: 'POST',
@@ -667,24 +668,29 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
             <>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
-                  What&apos;s on your mind? Brain dump your thoughts here...
+                  {selectedLength === 'article' 
+                    ? 'Brain dump everything — notes, ideas, bullet points, rough drafts...'
+                    : 'What\'s on your mind? Brain dump your thoughts here...'}
                 </label>
                 <div className="relative">
                   <textarea
                     value={topic}
-                    onChange={(e) => setTopic(e.target.value.slice(0, 500))}
-                    placeholder="Just start typing - raw thoughts, ideas, anything..."
-                    rows={3}
-                    className="
-                      w-full px-4 py-3 rounded-xl resize-none
+                    onChange={(e) => setTopic(e.target.value.slice(0, selectedLength === 'article' ? 5000 : 500))}
+                    placeholder={selectedLength === 'article' 
+                      ? "Paste your notes, brain dump ideas, or write a rough outline. The more context you provide, the better the article..."
+                      : "Just start typing - raw thoughts, ideas, anything..."}
+                    rows={selectedLength === 'article' ? 8 : 3}
+                    className={`
+                      w-full px-4 py-3 rounded-xl
                       bg-[var(--background)] border border-[var(--border)]
                       text-[var(--foreground)] placeholder-[var(--muted)]
                       focus:outline-none focus:border-[var(--accent)]
                       transition-colors
-                    "
+                      ${selectedLength === 'article' ? 'resize-y min-h-[200px]' : 'resize-none'}
+                    `}
                   />
                   <span className="absolute bottom-3 right-3 text-xs text-[var(--muted)]">
-                    {topic.length}/500
+                    {topic.length}/{selectedLength === 'article' ? '5000' : '500'}
                   </span>
                 </div>
               </div>
@@ -834,6 +840,9 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
             {selectedLength === 'thread' && (
               <span>💡 More context recommended for threads</span>
             )}
+            {selectedLength === 'article' && (
+              <span>📝 Brain dump your ideas — we&apos;ll turn them into a polished article</span>
+            )}
             {!loadingStyleProfiles && styleProfiles.length > 0 && selectedStyleProfileId && (
               <span className="text-[var(--accent)]">
                 {styleProfiles.find(p => p.id === selectedStyleProfileId)?.profile_data?.summary}
@@ -860,12 +869,12 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
           {isGenerating ? (
             <>
               <Loader2 size={20} className="animate-spin" />
-              Generating...
+              {selectedLength === 'article' ? 'Writing article...' : 'Generating...'}
             </>
           ) : (
             <>
               <Sparkles size={20} />
-              Generate 3 Options
+              {selectedLength === 'article' ? 'Generate Article' : 'Generate 3 Options'}
             </>
           )}
         </button>
