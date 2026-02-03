@@ -101,14 +101,6 @@ export default function CreatorHubPage() {
               Media
             </button>
           </div>
-
-          {/* Mode description */}
-          <p className="text-sm text-[var(--muted)] hidden sm:block">
-            {mode === 'write' && 'Write and organize your research notes'}
-            {mode === 'braindump' && 'Free-flow your ideas and get inspired'}
-            {mode === 'templates' && 'Use presets for quick generation'}
-            {mode === 'media' && 'Upload and organize your media library'}
-          </p>
         </div>
       </div>
 
