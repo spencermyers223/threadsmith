@@ -2,9 +2,16 @@
 
 import { Plus, X, AlertCircle, Link as LinkIcon, ImageIcon } from 'lucide-react'
 
+export interface TweetMedia {
+  url: string
+  type: 'image' | 'video' | 'gif'
+  filename: string
+}
+
 export interface ThreadTweet {
   id: string
   content: string
+  media?: TweetMedia[]
 }
 
 interface ThreadPreviewProps {

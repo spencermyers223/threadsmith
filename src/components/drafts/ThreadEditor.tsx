@@ -1,16 +1,24 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
-import { Plus, X, GripVertical } from 'lucide-react'
-import type { ThreadTweet } from '@/components/preview/ThreadPreview'
+import { useRef, useEffect, useState, useCallback } from 'react'
+import { Plus, X, GripVertical, ImageIcon, Smile, Loader2 } from 'lucide-react'
+import Image from 'next/image'
+import type { ThreadTweet, TweetMedia } from '@/components/preview/ThreadPreview'
+import EmojiPicker from 'emoji-picker-react'
 
 interface ThreadEditorProps {
   tweets: ThreadTweet[]
   onTweetsChange: (tweets: ThreadTweet[]) => void
+  postId?: string | null
+  onSaveFirst?: () => Promise<string | null>
 }
 
-export function ThreadEditor({ tweets, onTweetsChange }: ThreadEditorProps) {
+export function ThreadEditor({ tweets, onTweetsChange, postId, onSaveFirst }: ThreadEditorProps) {
   const textareaRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map())
+  const fileInputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
+  const [uploadingTweetId, setUploadingTweetId] = useState<string | null>(null)
+  const [emojiPickerTweetId, setEmojiPickerTweetId] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   const handleTweetChange = (id: string, content: string) => {
     onTweetsChange(
@@ -82,6 +90,109 @@ export function ThreadEditor({ tweets, onTweetsChange }: ThreadEditorProps) {
     return 'text-[var(--muted)]'
   }
 
+  // Handle media upload for a specific tweet
+  const handleMediaUpload = useCallback(async (tweetId: string, file: File) => {
+    setUploadError(null)
+    setUploadingTweetId(tweetId)
+
+    try {
+      // Check file type
+      const isImage = file.type.startsWith('image/')
+      const isVideo = file.type.startsWith('video/')
+      const isGif = file.type === 'image/gif'
+      
+      if (!isImage && !isVideo) {
+        throw new Error('Only images and videos are supported')
+      }
+
+      // Check file size (10MB for images, 512MB for video)
+      const maxSize = isVideo ? 512 * 1024 * 1024 : 10 * 1024 * 1024
+      if (file.size > maxSize) {
+        throw new Error(`File too large. Max: ${isVideo ? '512MB' : '10MB'}`)
+      }
+
+      // Get or create post ID
+      let targetPostId = postId
+      if (!targetPostId && onSaveFirst) {
+        targetPostId = await onSaveFirst()
+        if (!targetPostId) {
+          throw new Error('Please save the draft first')
+        }
+      }
+
+      if (!targetPostId) {
+        throw new Error('Please save the draft first')
+      }
+
+      // Upload to server
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('tweetId', tweetId)
+
+      const res = await fetch(`/api/posts/${targetPostId}/media`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Upload failed')
+      }
+
+      const mediaItem = await res.json()
+
+      // Update the tweet with the new media
+      const newMedia: TweetMedia = {
+        url: mediaItem.url,
+        type: isGif ? 'gif' : isVideo ? 'video' : 'image',
+        filename: mediaItem.filename
+      }
+
+      onTweetsChange(
+        tweets.map(t => t.id === tweetId 
+          ? { ...t, media: [...(t.media || []), newMedia] }
+          : t
+        )
+      )
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploadingTweetId(null)
+    }
+  }, [postId, onSaveFirst, tweets, onTweetsChange])
+
+  // Handle media removal
+  const handleRemoveMedia = (tweetId: string, mediaIndex: number) => {
+    onTweetsChange(
+      tweets.map(t => t.id === tweetId 
+        ? { ...t, media: t.media?.filter((_, i) => i !== mediaIndex) }
+        : t
+      )
+    )
+  }
+
+  // Handle emoji selection
+  const handleEmojiSelect = (tweetId: string, emoji: string) => {
+    const textarea = textareaRefs.current.get(tweetId)
+    if (textarea) {
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      const currentTweet = tweets.find(t => t.id === tweetId)
+      if (currentTweet) {
+        const newContent = currentTweet.content.substring(0, start) + emoji + currentTweet.content.substring(end)
+        onTweetsChange(
+          tweets.map(t => t.id === tweetId ? { ...t, content: newContent } : t)
+        )
+        // Reset cursor position after emoji
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + emoji.length
+          textarea.focus()
+        }, 0)
+      }
+    }
+    setEmojiPickerTweetId(null)
+  }
+
   return (
     <div className="space-y-3">
       <div className="text-sm text-[var(--muted)] mb-4">
@@ -132,17 +243,108 @@ export function ThreadEditor({ tweets, onTweetsChange }: ThreadEditorProps) {
             />
           </div>
 
-          {/* Character Count */}
+          {/* Media Preview */}
+          {tweet.media && tweet.media.length > 0 && (
+            <div className="px-4 pl-12 pb-2">
+              <div className="flex gap-2 flex-wrap">
+                {tweet.media.map((m, mIdx) => (
+                  <div key={mIdx} className="relative group/media">
+                    {m.type === 'video' ? (
+                      <video 
+                        src={m.url} 
+                        className="w-24 h-24 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <Image 
+                        src={m.url} 
+                        alt={m.filename}
+                        width={96}
+                        height={96}
+                        className="w-24 h-24 object-cover rounded-lg"
+                      />
+                    )}
+                    <button
+                      onClick={() => handleRemoveMedia(tweet.id, mIdx)}
+                      className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full opacity-0 group-hover/media:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Footer: Char Count + Media/Emoji Buttons */}
           <div className="px-4 pb-3 pl-12 flex items-center justify-between">
-            <span className={`text-xs font-mono ${getCharCountColor(tweet.content.length)}`}>
-              {tweet.content.length}/280
-            </span>
-            {tweet.content.length > 280 && (
-              <span className="text-xs text-red-400">
-                -{tweet.content.length - 280} characters
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-mono ${getCharCountColor(tweet.content.length)}`}>
+                {tweet.content.length}/280
               </span>
-            )}
+              {tweet.content.length > 280 && (
+                <span className="text-xs text-red-400">
+                  -{tweet.content.length - 280} characters
+                </span>
+              )}
+            </div>
+
+            {/* Media + Emoji Buttons */}
+            <div className="flex items-center gap-1">
+              {/* Media Upload Button */}
+              <input
+                type="file"
+                accept="image/*,video/*"
+                className="hidden"
+                ref={(el) => {
+                  if (el) fileInputRefs.current.set(tweet.id, el)
+                }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleMediaUpload(tweet.id, file)
+                  e.target.value = ''
+                }}
+              />
+              <button
+                onClick={() => fileInputRefs.current.get(tweet.id)?.click()}
+                disabled={uploadingTweetId === tweet.id || (tweet.media?.length || 0) >= 4}
+                className="p-1.5 rounded-lg hover:bg-[var(--accent)]/10 text-[var(--muted)] hover:text-[var(--accent)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title={tweet.media?.length === 4 ? 'Max 4 media per tweet' : 'Add image or video'}
+              >
+                {uploadingTweetId === tweet.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ImageIcon className="w-4 h-4" />
+                )}
+              </button>
+
+              {/* Emoji Picker Button */}
+              <div className="relative">
+                <button
+                  onClick={() => setEmojiPickerTweetId(emojiPickerTweetId === tweet.id ? null : tweet.id)}
+                  className="p-1.5 rounded-lg hover:bg-[var(--accent)]/10 text-[var(--muted)] hover:text-[var(--accent)] transition-colors"
+                  title="Add emoji"
+                >
+                  <Smile className="w-4 h-4" />
+                </button>
+                {emojiPickerTweetId === tweet.id && (
+                  <div className="absolute bottom-full right-0 mb-2 z-50">
+                    <EmojiPicker
+                      onEmojiClick={(emojiData) => handleEmojiSelect(tweet.id, emojiData.emoji)}
+                      width={300}
+                      height={400}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
+
+          {/* Upload Error */}
+          {uploadError && uploadingTweetId === tweet.id && (
+            <div className="px-4 pb-2 pl-12">
+              <p className="text-xs text-red-400">{uploadError}</p>
+            </div>
+          )}
         </div>
       ))}
 

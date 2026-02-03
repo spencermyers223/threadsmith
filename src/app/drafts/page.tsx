@@ -534,6 +534,8 @@ export default function WorkspacePage() {
         <ThreadEditor
           tweets={threadTweets}
           onTweetsChange={handleThreadChange}
+          postId={postId}
+          onSaveFirst={handleSaveAndGetId}
         />
       )
     }
