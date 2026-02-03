@@ -892,10 +892,10 @@ export default function GeneratePage() {
             </div>
 
             {/* Style Profile Selector - incorporate a creator's analyzed style */}
-            <div className="mb-4">
+            <div className="mb-4 p-3 border border-violet-500/50 rounded-lg bg-violet-500/10">
               <div className="flex items-center gap-3 mb-2">
-                <label className="text-sm font-medium text-[var(--muted)]">
-                  Incorporate style from:
+                <label className="text-sm font-medium text-violet-400">
+                  ✨ Incorporate style from:
                 </label>
                 {styleProfiles.length > 0 ? (
                   <select
