@@ -11,7 +11,6 @@ import {
   Loader2,
   Check,
   X,
-  FileText,
   PenLine,
   Layers,
   AlertCircle,
@@ -61,8 +60,9 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string
   engagement: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/30' },
 }
 
-export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSidebar, onClearFile }: TemplatesModeProps) {
+export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSidebar, onClearFile: _onClearFile }: TemplatesModeProps) {
   void _onOpenSidebar
+  void _onClearFile
   const { activeAccount } = useXAccount()
   const supabase = createClient()
 
@@ -78,7 +78,6 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
 
   // UI state
   const [activeTab, setActiveTab] = useState<'style' | 'post'>('style')
-  const [topic, setTopic] = useState('')
   const [generating, setGenerating] = useState(false)
   const [posts, setPosts] = useState<GeneratedPost[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -128,8 +127,8 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
     [postTemplates, selectedPostId]
   )
 
-  // Check if can generate
-  const canGenerate = topic.trim() && (selectedStyleId || selectedPostId)
+  // Check if can generate - need at least one template selected
+  const canGenerate = selectedStyleId || selectedPostId
 
   // Handle generation
   const handleGenerate = async () => {
@@ -154,7 +153,7 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          topic: topic.trim(),
+          topic: selectedPost?.title || 'Generate using selected templates',
           length: 'standard',
           tone: 'casual',
           postType: 'all',
@@ -413,28 +412,7 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════
-          STEP 3: TOPIC INPUT
-          ═══════════════════════════════════════════════════════════════ */}
-      <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 mb-6">
-        <label className="block text-sm font-medium mb-2">What&apos;s your topic?</label>
-        <textarea
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          placeholder="Enter your topic, idea, or raw thoughts..."
-          rows={3}
-          className="w-full px-4 py-3 bg-[var(--background)] border border-[var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 resize-none"
-        />
-        {selectedFile && (
-          <div className="mt-2 flex items-center gap-2 text-sm text-[var(--muted)]">
-            <FileText className="w-4 h-4" />
-            Using: {selectedFile.name}
-            <button onClick={onClearFile} className="text-red-400 hover:underline">Remove</button>
-          </div>
-        )}
-      </div>
-
-      {/* ═══════════════════════════════════════════════════════════════
-          STEP 4: GENERATE BUTTON
+          STEP 3: GENERATE BUTTON
           ═══════════════════════════════════════════════════════════════ */}
       <button
         onClick={handleGenerate}
@@ -457,7 +435,7 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
       {/* Helper text */}
       {!canGenerate && (
         <p className="text-center text-sm text-[var(--muted)] mt-2">
-          {!topic.trim() ? 'Enter a topic to generate' : 'Select at least one template'}
+          Select a voice style or post format to generate
         </p>
       )}
 
