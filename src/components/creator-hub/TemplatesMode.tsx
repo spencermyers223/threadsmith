@@ -16,8 +16,10 @@ import {
   AlertCircle,
   Copy,
   Calendar,
-  RefreshCw
+  RefreshCw,
+  Edit3
 } from 'lucide-react'
+import { EditingTools } from '@/components/editing'
 import Link from 'next/link'
 
 // Types
@@ -209,6 +211,70 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
     await navigator.clipboard.writeText(content)
     setCopiedIndex(index)
     setTimeout(() => setCopiedIndex(null), 2000)
+  }
+
+  // Parse posts that might be combined with --- delimiters
+  const parsedPosts = useMemo(() => {
+    if (posts.length === 0) return []
+    
+    // If we have multiple posts already separated, return them
+    if (posts.length > 1) return posts
+    
+    // Otherwise, try to parse a single combined post
+    const content = posts[0]?.content || ''
+    
+    // Split by --- delimiter pattern (handles various formats)
+    const sections = content.split(/\n---+\n/).filter(s => s.trim())
+    
+    if (sections.length <= 1) {
+      // Try alternate format: numbered sections like "1\n" or "---\n1\n"
+      const numberedPattern = /(?:^|\n)---*\n*(\d+)\n([\s\S]*?)(?=\n---*\n*\d+\n|$)/g
+      const matches = [...content.matchAll(numberedPattern)]
+      
+      if (matches.length > 1) {
+        return matches.map((match) => ({
+          content: match[2].trim().replace(/\nSave this ↓\n?---*$/i, '').trim(),
+          archetype: posts[0]?.archetype || 'scroll_stopper',
+          characterCount: match[2].trim().length
+        }))
+      }
+      
+      // Return original if no parsing needed
+      return posts
+    }
+    
+    // Parse the sections
+    return sections
+      .map(section => {
+        // Clean up the section - remove leading number and "Save this" footer
+        const cleaned = section
+          .replace(/^---*\s*/, '')
+          .replace(/^\d+\s*\n/, '')
+          .replace(/\nSave this ↓\s*$/i, '')
+          .trim()
+        
+        return {
+          content: cleaned,
+          archetype: posts[0]?.archetype || 'scroll_stopper',
+          characterCount: cleaned.length
+        }
+      })
+      .filter(p => p.content.length > 20) // Filter out empty/tiny sections
+  }, [posts])
+
+  // Update content for a specific post
+  const updatePostContent = (index: number, newContent: string) => {
+    // This updates the parsed view - for simplicity we'll work with parsedPosts
+    setPosts(prev => {
+      if (prev.length > 1) {
+        return prev.map((p, i) => i === index ? { ...p, content: newContent, characterCount: newContent.length } : p)
+      }
+      // If it was a combined post, we need to reconstruct
+      const newPosts = parsedPosts.map((p, i) => 
+        i === index ? { ...p, content: newContent, characterCount: newContent.length } : p
+      )
+      return newPosts
+    })
   }
 
   if (loading) {
@@ -471,10 +537,10 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
       {/* ═══════════════════════════════════════════════════════════════
           GENERATED POSTS
           ═══════════════════════════════════════════════════════════════ */}
-      {posts.length > 0 && (
+      {parsedPosts.length > 0 && (
         <div className="mt-8 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Your Options</h2>
+            <h2 className="text-xl font-semibold">Your Options ({parsedPosts.length})</h2>
             <button
               onClick={() => { setPosts([]); handleGenerate(); }}
               className="flex items-center gap-2 text-sm text-[var(--muted)] hover:text-[var(--foreground)]"
@@ -484,25 +550,50 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
             </button>
           </div>
           
-          <div className="grid gap-4">
-            {posts.map((post, idx) => (
-              <div key={idx} className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden">
-                <div className="p-4">
-                  <p className="whitespace-pre-wrap leading-relaxed">{post.content}</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {parsedPosts.map((post, idx) => (
+              <div key={idx} className="bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden flex flex-col">
+                {/* Header */}
+                <div className="px-4 py-2 border-b border-[var(--border)] bg-[var(--background)]/50">
+                  <span className="text-sm text-[var(--muted)]">Option {idx + 1}</span>
                 </div>
-                <div className="px-4 py-3 bg-[var(--background)] border-t border-[var(--border)] flex items-center justify-between">
-                  <span className={`text-sm font-mono ${post.characterCount > 280 ? 'text-red-400' : 'text-[var(--muted)]'}`}>
-                    {post.characterCount}/280
-                  </span>
+                
+                {/* Content */}
+                <div className="p-4 flex-1">
+                  <p className="whitespace-pre-wrap leading-relaxed text-sm">{post.content}</p>
+                </div>
+                
+                {/* Footer with tools and buttons */}
+                <div className="px-4 py-3 bg-[var(--background)] border-t border-[var(--border)] space-y-3">
+                  {/* Character count */}
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-[var(--muted)]">Characters</span>
+                    <span className={`font-mono ${post.characterCount > 280 ? 'text-red-400' : post.characterCount > 250 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                      {post.characterCount}/280
+                    </span>
+                  </div>
+                  
+                  {/* Editing Tools */}
+                  <EditingTools
+                    content={post.content}
+                    onContentChange={(newContent) => updatePostContent(idx, newContent)}
+                    isThread={false}
+                  />
+                  
+                  {/* Action Buttons */}
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleCopy(post.content, idx)}
-                      className="px-3 py-1.5 bg-[var(--border)] hover:bg-[var(--muted)]/30 rounded-lg text-sm flex items-center gap-1.5"
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--border)] hover:bg-[var(--muted)]/30 rounded-lg text-sm transition-colors"
                     >
-                      {copiedIndex === idx ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                      {copiedIndex === idx ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                       {copiedIndex === idx ? 'Copied' : 'Copy'}
                     </button>
-                    <button className="px-3 py-1.5 bg-[var(--accent)] text-black rounded-lg text-sm flex items-center gap-1.5 font-medium">
+                    <button className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--border)] hover:bg-[var(--muted)]/30 rounded-lg text-sm transition-colors">
+                      <Edit3 className="w-4 h-4" />
+                      Edit
+                    </button>
+                    <button className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-[var(--accent)] text-black rounded-lg text-sm font-medium transition-colors">
                       <Calendar className="w-4 h-4" />
                       Schedule
                     </button>
