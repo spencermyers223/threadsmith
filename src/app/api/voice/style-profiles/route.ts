@@ -5,7 +5,8 @@ import { deductCredits, hasEnoughCredits, getCredits } from '@/lib/credits'
 
 const anthropic = new Anthropic()
 const MAX_STYLE_PROFILES = 3
-const PROFILE_COST_CREDITS = 5  // Covers ~$0.50 X API + ~$0.01 Claude
+const PROFILE_COST_CREDITS = 5  // Covers ~$0.50 X API + ~$0.15 Opus
+const FREE_PROFILES_LIMIT = 3   // First 3 are free for every user
 
 // GET - Fetch style profiles (max 3)
 export async function GET() {
@@ -63,19 +64,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check credits
-    const hasCredits = await hasEnoughCredits(supabase, user.id, PROFILE_COST_CREDITS)
-    if (!hasCredits) {
-      const currentCredits = await getCredits(supabase, user.id)
-      return NextResponse.json(
-        { 
-          error: `Not enough credits. Need ${PROFILE_COST_CREDITS}, have ${currentCredits}.`,
-          code: 'INSUFFICIENT_CREDITS',
-          required: PROFILE_COST_CREDITS,
-          current: currentCredits,
-        },
-        { status: 402 }
-      )
+    // Count total profiles ever created to determine if free
+    // Try to get from profiles table, fallback to current count if column doesn't exist
+    let totalCreated = 0
+    try {
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('style_profiles_created')
+        .eq('id', user.id)
+        .single()
+      totalCreated = userProfile?.style_profiles_created || 0
+    } catch {
+      // Column might not exist yet, use current count as fallback
+      totalCreated = count || 0
+    }
+    
+    const isFreeProfile = totalCreated < FREE_PROFILES_LIMIT
+
+    // Check credits only if not a free profile
+    if (!isFreeProfile) {
+      const hasCredits = await hasEnoughCredits(supabase, user.id, PROFILE_COST_CREDITS)
+      if (!hasCredits) {
+        const currentCredits = await getCredits(supabase, user.id)
+        return NextResponse.json(
+          { 
+            error: `Not enough credits. Need ${PROFILE_COST_CREDITS}, have ${currentCredits}. (First ${FREE_PROFILES_LIMIT} profiles are free)`,
+            code: 'INSUFFICIENT_CREDITS',
+            required: PROFILE_COST_CREDITS,
+            current: currentCredits,
+            freeUsed: totalCreated,
+            freeLimit: FREE_PROFILES_LIMIT,
+          },
+          { status: 402 }
+        )
+      }
     }
 
     const body = await request.json()
@@ -116,13 +138,20 @@ export async function POST(request: NextRequest) {
     // Analyze patterns with AI
     const profileData = await analyzeStylePatterns(sortedTweets, username)
 
-    // Deduct credits AFTER successful analysis
-    const deductResult = await deductCredits(supabase, user.id, PROFILE_COST_CREDITS, 'style_profile_creation')
-    if (!deductResult.success) {
-      return NextResponse.json(
-        { error: 'Failed to deduct credits', code: 'CREDIT_DEDUCTION_FAILED' },
-        { status: 500 }
-      )
+    // Deduct credits only if not a free profile
+    let creditsUsed = 0
+    let creditsRemaining = 0
+    
+    if (!isFreeProfile) {
+      const deductResult = await deductCredits(supabase, user.id, PROFILE_COST_CREDITS, 'style_profile_creation')
+      if (!deductResult.success) {
+        return NextResponse.json(
+          { error: 'Failed to deduct credits', code: 'CREDIT_DEDUCTION_FAILED' },
+          { status: 500 }
+        )
+      }
+      creditsUsed = PROFILE_COST_CREDITS
+      creditsRemaining = deductResult.creditsRemaining || 0
     }
 
     // Save profile
@@ -140,12 +169,24 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error
 
+    // Update total profiles created counter (safe - ignore if column doesn't exist)
+    try {
+      await supabase
+        .from('profiles')
+        .update({ style_profiles_created: totalCreated + 1 })
+        .eq('id', user.id)
+    } catch {
+      // Column might not exist yet, ignore
+    }
+
     return NextResponse.json({
       profile: data,
       count: (count || 0) + 1,
       max: MAX_STYLE_PROFILES,
-      creditsUsed: PROFILE_COST_CREDITS,
-      creditsRemaining: deductResult.creditsRemaining,
+      creditsUsed,
+      creditsRemaining,
+      wasFree: isFreeProfile,
+      freeRemaining: Math.max(0, FREE_PROFILES_LIMIT - totalCreated - 1),
     })
   } catch (err) {
     console.error('Style profile creation error:', err)
@@ -203,7 +244,7 @@ async function analyzeStylePatterns(
   const tweetTexts = tweets.map((t, i) => `${i + 1}. "${t.text}" (${t.likes?.toLocaleString() || '?'} likes)`).join('\n')
 
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-opus-4-20250514',
     max_tokens: 1024,
     system: `You are a social media analyst. Analyze the writing patterns in these tweets and extract a style profile. Return ONLY valid JSON, no other text.`,
     messages: [{
