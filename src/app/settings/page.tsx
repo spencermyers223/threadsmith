@@ -7,7 +7,7 @@ import { useXAccount } from '@/contexts/XAccountContext'
 import {
   ArrowLeft, Bell, Moon, Sun, User, Check, AlertCircle, LogOut,
   Target, Mic, Users, Plus, X, ChevronDown, ChevronUp, MessageSquare,
-  Edit2, Trash2, Copy, CreditCard, ExternalLink
+  Edit2, Trash2, Copy, CreditCard, ExternalLink, Sparkles, Loader2
 } from 'lucide-react'
 import Link from 'next/link'
 import { useTheme } from '@/components/providers/ThemeProvider'
@@ -110,6 +110,15 @@ export default function SettingsPage() {
     postsLimit: number
     tier: string
   } | null>(null)
+
+  // Style Profiles V2 state
+  const [styleProfiles, setStyleProfiles] = useState<Array<{
+    id: string
+    account_username: string
+    profile_data: { summary?: string }
+    tweets_analyzed: number
+  }>>([])
+  const [analyzingAccount, setAnalyzingAccount] = useState<string | null>(null)
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
@@ -249,6 +258,17 @@ export default function SettingsPage() {
       } catch (err) {
         console.error('Failed to load usage:', err)
       }
+
+      // Load Style Profiles (V2)
+      try {
+        const profilesRes = await fetch('/api/voice/style-profiles')
+        if (profilesRes.ok) {
+          const profilesData = await profilesRes.json()
+          setStyleProfiles(profilesData.profiles || [])
+        }
+      } catch (err) {
+        console.error('Failed to load style profiles:', err)
+      }
       
       // Get X username from user metadata or x_accounts table
       const xUsernameFromMeta = user.user_metadata?.x_username
@@ -368,18 +388,64 @@ export default function SettingsPage() {
     setContentProfile(prev => ({ ...prev, ...updates }))
   }
 
-  const addAdmiredAccount = () => {
-    const handle = newAccount.trim().replace(/^@/, '')
-    if (handle && !contentProfile.admired_accounts.includes(handle)) {
-      updateContentProfile({ admired_accounts: [...contentProfile.admired_accounts, handle] })
-      setNewAccount('')
+  // Style Profiles V2 handlers
+  const handleAnalyzeAccount = async (username: string) => {
+    if (styleProfiles.length >= 3) {
+      setError('Style profiles full (max 3). Remove one first.')
+      return
+    }
+    if (styleProfiles.some(p => p.account_username.toLowerCase() === username.toLowerCase())) {
+      setError(`@${username} is already analyzed`)
+      return
+    }
+
+    setAnalyzingAccount(username)
+    setError(null)
+
+    try {
+      // Fetch tweets from X API
+      const tweetsRes = await fetch(`/api/x/user-tweets?username=${username}&max_results=20`)
+      const tweetsData = await tweetsRes.json()
+
+      if (!tweetsRes.ok) {
+        throw new Error(tweetsData.error || 'Failed to fetch tweets')
+      }
+
+      if (!tweetsData.tweets || tweetsData.tweets.length < 5) {
+        throw new Error('Need at least 5 tweets to analyze')
+      }
+
+      // Send tweets to style profile API for analysis
+      const res = await fetch('/api/voice/style-profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          account_username: username,
+          tweets: tweetsData.tweets.map((t: { text: string }) => t.text),
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to analyze')
+
+      setStyleProfiles(prev => [...prev, data.profile])
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to analyze account')
+    } finally {
+      setAnalyzingAccount(null)
     }
   }
 
-  const removeAdmiredAccount = (handle: string) => {
-    updateContentProfile({
-      admired_accounts: contentProfile.admired_accounts.filter(a => a !== handle)
-    })
+  const handleRemoveStyleProfile = async (id: string) => {
+    try {
+      const res = await fetch(`/api/voice/style-profiles?id=${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to remove')
+      setStyleProfiles(prev => prev.filter(p => p.id !== id))
+    } catch {
+      setError('Failed to remove style profile')
+    }
   }
 
   const toggleSecondaryInterest = (id: string) => {
@@ -732,56 +798,109 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Accounts You Admire - Prominent section */}
+            {/* Style Profiles V2 - Accounts with Analyze */}
             <div className="pt-4 border-t border-[var(--border)]">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="w-4 h-4 text-accent" />
-                <label className="text-sm font-medium">Accounts You Admire</label>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-violet-500" />
+                  <label className="text-sm font-medium">Style Profiles ({styleProfiles.length}/3)</label>
+                </div>
               </div>
               <p className="text-sm text-[var(--muted)] mb-3">
-                We&apos;ll analyze their best-performing tweets to incorporate elements of their style into your generated content. You can also add accounts through the Chrome extension.
+                Analyze creators you admire to incorporate their writing patterns into generated content. Select profiles on the Generate page.
               </p>
-              <div className="flex gap-2 mb-3">
-                <div className="flex-1 relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]">@</span>
-                  <input
-                    type="text"
-                    value={newAccount}
-                    onChange={(e) => setNewAccount(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && addAdmiredAccount()}
-                    placeholder="handle"
-                    className="w-full pl-8 pr-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none"
-                  />
-                </div>
-                <button
-                  onClick={addAdmiredAccount}
-                  disabled={!newAccount.trim()}
-                  className="px-4 py-2 rounded-lg bg-accent text-[var(--accent-text)] hover:opacity-90 disabled:opacity-50 font-medium"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-              {contentProfile.admired_accounts.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {contentProfile.admired_accounts.map(handle => (
-                    <div
-                      key={handle}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/30 text-sm"
-                    >
-                      <span className="text-accent">@</span>
-                      <span className="font-medium">{handle}</span>
+
+              {/* Analyzed profiles */}
+              {styleProfiles.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  {styleProfiles.map((profile) => (
+                    <div key={profile.id} className="flex items-center gap-3 p-3 rounded-lg bg-violet-500/10 border border-violet-500/20 group">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium flex items-center gap-2">
+                          @{profile.account_username}
+                          <span className="text-xs text-violet-400">✓ Analyzed</span>
+                        </p>
+                        <p className="text-xs text-[var(--muted)] mt-0.5">
+                          {profile.profile_data?.summary || `Analyzed ${profile.tweets_analyzed} tweets`}
+                        </p>
+                      </div>
                       <button
-                        onClick={() => removeAdmiredAccount(handle)}
-                        className="ml-1 text-[var(--muted)] hover:text-red-400"
+                        onClick={() => handleRemoveStyleProfile(profile.id)}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-red-500/20 text-red-400 transition-all"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   ))}
                 </div>
-              ) : (
+              )}
+
+              {/* Add new account to analyze */}
+              {styleProfiles.length < 3 && (
+                <>
+                  <div className="flex gap-2 mb-3">
+                    <div className="flex-1 relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]">@</span>
+                      <input
+                        type="text"
+                        value={newAccount}
+                        onChange={(e) => setNewAccount(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && newAccount.trim() && handleAnalyzeAccount(newAccount.trim().replace(/^@/, ''))}
+                        placeholder="handle"
+                        className="w-full pl-8 pr-3 py-2 rounded-lg bg-[var(--background)] border border-[var(--border)] focus:border-accent focus:outline-none"
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
+                        const handle = newAccount.trim().replace(/^@/, '')
+                        if (handle) {
+                          handleAnalyzeAccount(handle)
+                          setNewAccount('')
+                        }
+                      }}
+                      disabled={!newAccount.trim() || analyzingAccount !== null}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-500 text-white hover:bg-violet-600 disabled:opacity-50 font-medium"
+                    >
+                      {analyzingAccount ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-4 h-4" />
+                      )}
+                      Analyze
+                    </button>
+                  </div>
+
+                  {/* Quick analyze existing admired accounts */}
+                  {contentProfile.admired_accounts.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-[var(--muted)]">Quick analyze from your saved accounts:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {contentProfile.admired_accounts
+                          .filter(acc => !styleProfiles.some(p => p.account_username.toLowerCase() === acc.toLowerCase()))
+                          .map(handle => (
+                            <button
+                              key={handle}
+                              onClick={() => handleAnalyzeAccount(handle)}
+                              disabled={analyzingAccount === handle}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] hover:border-violet-500 text-sm transition-colors"
+                            >
+                              {analyzingAccount === handle ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Sparkles className="w-3 h-3 text-violet-500" />
+                              )}
+                              @{handle}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {styleProfiles.length === 0 && contentProfile.admired_accounts.length === 0 && (
                 <div className="text-center py-4 text-[var(--muted)] text-sm border border-dashed border-[var(--border)] rounded-lg">
-                  No accounts added yet. Add creators whose style you admire!
+                  Add an account handle above and click Analyze to get started!
                 </div>
               )}
             </div>
