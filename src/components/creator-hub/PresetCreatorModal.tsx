@@ -19,6 +19,7 @@ interface StyleTemplate {
   title: string
   description: string | null
   admired_account_username: string | null
+  content_type: 'tweet' | 'thread' | 'article'
 }
 
 interface PostTemplate {
@@ -105,9 +106,25 @@ export default function PresetCreatorModal({ isOpen, onClose, onPresetCreated }:
     }
   }, [postTemplates, contentType])
 
-  // Reset post selection when content type changes
+  // Filter style templates by content type
+  // Tweet presets can use tweet style templates
+  // Thread presets can use thread style templates
+  // Article style templates are not used in presets (only in Brain Dump)
+  const filteredStyleTemplates = useMemo(() => {
+    return styleTemplates.filter(t => {
+      const styleType = t.content_type || 'tweet'
+      if (contentType === 'tweet') {
+        return styleType === 'tweet'
+      } else {
+        return styleType === 'thread'
+      }
+    })
+  }, [styleTemplates, contentType])
+
+  // Reset selections when content type changes
   useEffect(() => {
     setSelectedPostId(null)
+    setSelectedStyleId(null)
   }, [contentType])
 
   // Get selected items for preview
@@ -320,18 +337,18 @@ export default function PresetCreatorModal({ isOpen, onClose, onPresetCreated }:
                   Voice Style <span className="text-[var(--muted)] text-xs font-normal">(optional)</span>
                 </label>
                 <p className="text-sm text-[var(--muted)] mb-3">
-                  Add a voice style to match a specific writing style
+                  Add a {contentType === 'tweet' ? 'tweet' : 'thread'} voice style to match a specific writing style
                 </p>
                 
-                {styleTemplates.length === 0 ? (
+                {filteredStyleTemplates.length === 0 ? (
                   <div className="p-4 border border-dashed border-[var(--border)] rounded-xl text-center text-[var(--muted)]">
                     <PenLine className="w-6 h-6 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No voice styles created yet</p>
-                    <p className="text-xs mt-1">You can create one in the Customization section</p>
+                    <p className="text-sm">No {contentType} voice styles created yet</p>
+                    <p className="text-xs mt-1">Create one in Customization → Style Templates</p>
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {styleTemplates.map(template => (
+                    {filteredStyleTemplates.map(template => (
                       <button
                         key={template.id}
                         onClick={() => setSelectedStyleId(selectedStyleId === template.id ? null : template.id)}
