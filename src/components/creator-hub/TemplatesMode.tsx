@@ -84,6 +84,15 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string
   engagement: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/30' },
 }
 
+// Strip media placeholders from content for accurate character count
+const getDisplayCharCount = (content: string): number => {
+  return content
+    .replace(/\[(?:Image|Screenshot|Diagram|Chart|Photo|Video):[^\]]*\]/gi, '')
+    .replace(/\n\s*\n/g, '\n')
+    .trim()
+    .length
+}
+
 export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSidebar, onClearFile: _onClearFile }: TemplatesModeProps) {
   void _onOpenSidebar
   void _onClearFile
@@ -112,6 +121,7 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
   const [error, setError] = useState<string | null>(null)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
+  const [suggestMedia, setSuggestMedia] = useState<boolean>(false)
 
   // Fetch data
   useEffect(() => {
@@ -268,7 +278,8 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
             promptTemplate: selectedPost.prompt_template,
             variableValues: variableValues
           } : undefined,
-          styleProfileId: selectedStyleId || undefined
+          styleProfileId: selectedStyleId || undefined,
+          suggestMedia: suggestMedia
         })
       })
 
@@ -418,6 +429,7 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {presets.map(preset => {
               const postTemplate = postTemplates.find(t => t.id === preset.post_template_id)
+              const templateColors = postTemplate ? (CATEGORY_COLORS[postTemplate.category] || { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/30' }) : { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/30' }
               return (
                 <div
                   key={preset.id}
@@ -432,8 +444,19 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
                     <Trash2 className="w-4 h-4 text-red-400" />
                   </button>
 
+                  {/* Preset name */}
+                  <h3 className="font-semibold text-sm mb-2 pr-6">{preset.name}</h3>
+
+                  {/* Post Template - PROMINENT with category coloring */}
+                  {postTemplate && (
+                    <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg mb-2 ${templateColors.bg} border ${templateColors.border}`}>
+                      <Layers className={`w-3.5 h-3.5 ${templateColors.text}`} />
+                      <span className={`text-xs font-medium ${templateColors.text}`}>{postTemplate.title}</span>
+                    </div>
+                  )}
+
                   {/* Type badge */}
-                  <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium mb-2 ${
+                  <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
                     (preset.content_type || 'tweet') === 'thread' 
                       ? 'bg-emerald-500/10 text-emerald-400' 
                       : 'bg-blue-500/10 text-blue-400'
@@ -445,14 +468,6 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
                     )}
                     {(preset.content_type || 'tweet') === 'thread' ? 'Thread' : 'Tweet'}
                   </div>
-
-                  {/* Preset name */}
-                  <h3 className="font-semibold text-sm mb-1 pr-6">{preset.name}</h3>
-
-                  {/* Template info */}
-                  <p className="text-xs text-[var(--muted)] line-clamp-1">
-                    {postTemplate?.title || 'Unknown format'}
-                  </p>
 
                   {/* Voice style badge */}
                   {preset.style_template && (
@@ -586,8 +601,41 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
           </div>
         )}
 
+        {/* Media Suggestions Toggle */}
+        <div className="mt-4 pt-4 border-t border-[var(--border)]">
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={suggestMedia}
+                onChange={(e) => setSuggestMedia(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className={`
+                w-10 h-6 rounded-full transition-colors
+                ${suggestMedia 
+                  ? 'bg-[var(--accent)]' 
+                  : 'bg-[var(--border)]'
+                }
+              `} />
+              <div className={`
+                absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform
+                ${suggestMedia ? 'translate-x-4' : 'translate-x-0'}
+              `} />
+            </div>
+            <div>
+              <span className="text-sm font-medium text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors">
+                Suggest media implementation
+              </span>
+              <p className="text-xs text-[var(--muted)]">
+                Add [Image: ...] placeholders for visual suggestions
+              </p>
+            </div>
+          </label>
+        </div>
+
         {/* Generate Button - inside config card for visibility */}
-        <div className="mt-6 pt-4 border-t border-[var(--border)]">
+        <div className="mt-4 pt-4 border-t border-[var(--border)]">
           <button
             onClick={handleGenerate}
             disabled={!canGenerate || generating}
@@ -810,9 +858,14 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
                   {/* Character count */}
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-[var(--muted)]">Characters</span>
-                    <span className={`font-mono ${post.characterCount > 280 ? 'text-red-400' : post.characterCount > 250 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                      {post.characterCount}/280
-                    </span>
+                    {(() => {
+                      const displayCount = getDisplayCharCount(post.content)
+                      return (
+                        <span className={`font-mono ${displayCount > 280 ? 'text-red-400' : displayCount > 250 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                          {displayCount}/280
+                        </span>
+                      )
+                    })()}
                   </div>
                   
                   {/* Editing Tools */}
