@@ -40,6 +40,7 @@ interface PostTemplate {
   variables: Array<{ name: string; label: string; placeholder: string; required: boolean }> | null
   difficulty: string | null
   why_it_works: string | null
+  content_type?: 'post' | 'thread' // New field for template type
 }
 
 interface GeneratedPost {
@@ -80,6 +81,7 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
 
   // UI state - default to 'post' tab since post format is priority 1
   const [activeTab, setActiveTab] = useState<'style' | 'post'>('post')
+  const [templateType, setTemplateType] = useState<'post' | 'thread'>('post') // Filter for post vs thread templates
   const [generating, setGenerating] = useState(false)
   const [posts, setPosts] = useState<GeneratedPost[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -129,6 +131,16 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
     [postTemplates, selectedPostId]
   )
 
+  // Filter templates by type (post vs thread)
+  const filteredPostTemplates = useMemo(() => 
+    postTemplates.filter(t => (t.content_type || 'post') === 'post' && t.category !== 'thread'),
+    [postTemplates]
+  )
+  const filteredThreadTemplates = useMemo(() => 
+    postTemplates.filter(t => t.content_type === 'thread' || t.category === 'thread'),
+    [postTemplates]
+  )
+
   // Check if can generate - post format is required, voice style is optional
   const canGenerate = selectedPostId !== null
 
@@ -167,14 +179,17 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
         }
       }
 
+      // Determine if this is a thread template
+      const isThreadTemplate = selectedPost?.content_type === 'thread' || selectedPost?.category === 'thread'
+      
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           topic: topic,
-          length: 'standard',
+          length: isThreadTemplate ? 'thread' : 'standard',
           tone: 'casual',
-          postType: postType,
+          postType: isThreadTemplate ? 'alpha_thread' : postType,
           sourceFileId: selectedFile?.id || undefined,
           isTemplatePrompt: !!selectedPost,
           templateTitle: selectedPost?.title,
@@ -436,15 +451,26 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
         {/* Tabs - Post Formats first (priority), Voice Styles second (optional) */}
         <div className="flex border-b border-[var(--border)]">
           <button
-            onClick={() => setActiveTab('post')}
+            onClick={() => { setActiveTab('post'); setTemplateType('post'); }}
             className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-              activeTab === 'post'
+              activeTab === 'post' && templateType === 'post'
                 ? 'text-blue-400 border-b-2 border-blue-400 -mb-px'
                 : 'text-[var(--muted)] hover:text-[var(--foreground)]'
             }`}
           >
             <Layers className="w-4 h-4" />
-            Post Formats ({postTemplates.length})
+            Single Posts ({filteredPostTemplates.length})
+          </button>
+          <button
+            onClick={() => { setActiveTab('post'); setTemplateType('thread'); }}
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+              activeTab === 'post' && templateType === 'thread'
+                ? 'text-emerald-400 border-b-2 border-emerald-400 -mb-px'
+                : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            Threads ({filteredThreadTemplates.length})
           </button>
           <button
             onClick={() => setActiveTab('style')}
@@ -459,12 +485,12 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
           </button>
         </div>
 
-        {/* Tab Content - Post formats first, voice styles second */}
+        {/* Tab Content */}
         <div className="p-4">
-          {activeTab === 'post' ? (
-            // Post Templates Grid (Priority 1)
+          {activeTab === 'post' && templateType === 'post' ? (
+            // Single Post Templates Grid
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {postTemplates.map(template => {
+              {filteredPostTemplates.map(template => {
                 const colors = CATEGORY_COLORS[template.category] || { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/30' }
                 return (
                   <button
@@ -492,6 +518,45 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
                 )
               })}
             </div>
+          ) : activeTab === 'post' && templateType === 'thread' ? (
+            // Thread Templates Grid
+            filteredThreadTemplates.length === 0 ? (
+              <div className="text-center py-8">
+                <Layers className="w-10 h-10 text-[var(--muted)] mx-auto mb-3" />
+                <p className="text-[var(--muted)] mb-2">No thread templates yet</p>
+                <p className="text-xs text-[var(--muted)]">Thread templates coming soon!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {filteredThreadTemplates.map(template => {
+                  const colors = { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' }
+                  return (
+                    <button
+                      key={template.id}
+                      onClick={() => { setSelectedPostId(template.id); setVariableValues({}); }}
+                      className={`p-4 rounded-lg border text-left transition-all ${
+                        selectedPostId === template.id
+                          ? 'bg-emerald-500/10 border-emerald-500/50 ring-2 ring-emerald-500/30'
+                          : 'bg-[var(--background)] border-[var(--border)] hover:border-emerald-500/30'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-1">
+                        <span className="font-medium text-sm">{template.title}</span>
+                        {selectedPostId === template.id && (
+                          <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                        )}
+                      </div>
+                      <span className={`inline-block text-xs px-2 py-0.5 rounded ${colors.bg} ${colors.text} ${colors.border} border`}>
+                        thread
+                      </span>
+                      {template.description && (
+                        <p className="text-xs text-[var(--muted)] mt-2 line-clamp-2">{template.description}</p>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            )
           ) : (
             // Style Templates Grid (Optional)
             styleTemplates.length === 0 ? (
