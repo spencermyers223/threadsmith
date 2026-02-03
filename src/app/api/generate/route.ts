@@ -629,22 +629,22 @@ export async function POST(request: NextRequest) {
             questionUsage?: string
             hashtagUsage?: string
             ctaStyle?: string
+            engagementTactics?: string[]
           }
         }
         const patterns = pd.patterns || {}
         styleProfileSection = `
-STYLE PATTERNS (from @${styleProfile.account_username}):
-${pd.summary ? `- Summary: ${pd.summary}` : ''}
-${patterns.avgLength ? `- Typical length: ${patterns.avgLength} chars` : ''}
-${patterns.lengthRange ? `- Length range: ${patterns.lengthRange[0]}-${patterns.lengthRange[1]} chars` : ''}
-${patterns.emojiUsage ? `- Emoji usage: ${patterns.emojiUsage}` : ''}
-${patterns.hookStyles?.length ? `- Hook styles: ${patterns.hookStyles.join(', ')}` : ''}
+WRITING STYLE & ENGAGEMENT TACTICS (inspired by @${styleProfile.account_username}):
+${pd.summary ? `- Style: ${pd.summary}` : ''}
+${patterns.hookStyles?.length ? `- Hook techniques: ${patterns.hookStyles.join(', ')}` : ''}
 ${patterns.toneMarkers?.length ? `- Tone: ${patterns.toneMarkers.join(', ')}` : ''}
-${patterns.sentenceStyle ? `- Sentence style: ${patterns.sentenceStyle}` : ''}
-${patterns.questionUsage ? `- Question usage: ${patterns.questionUsage}` : ''}
-${patterns.ctaStyle ? `- CTA style: ${patterns.ctaStyle}` : ''}
+${patterns.sentenceStyle ? `- Sentence rhythm: ${patterns.sentenceStyle}` : ''}
+${patterns.engagementTactics?.length ? `- Engagement tactics: ${patterns.engagementTactics.join(', ')}` : ''}
+${patterns.ctaStyle ? `- How they drive action: ${patterns.ctaStyle}` : ''}
+${patterns.avgLength ? `- Typical length: ${patterns.avgLength} chars` : ''}
+${patterns.emojiUsage ? `- Emoji: ${patterns.emojiUsage}` : ''}
 
-Follow these style patterns while maintaining the user's voice from the examples.
+Apply these writing techniques and engagement tactics to the user's topic.
 `
       }
     }

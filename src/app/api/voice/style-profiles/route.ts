@@ -326,27 +326,30 @@ async function analyzeStylePatterns(
   const response = await anthropic.messages.create({
     model: 'claude-opus-4-20250514',
     max_tokens: 1024,
-    system: `You are a social media analyst. Analyze the writing patterns in these tweets and extract a style profile. Return ONLY valid JSON, no markdown, no explanation.`,
+    system: `You are a social media engagement analyst. Your job is to extract WRITING STYLE and ENGAGEMENT TACTICS from tweets - NOT what topics they write about. Focus on HOW they write, not WHAT they write about. The goal is to help others write about ANY topic using this person's engagement techniques. Return ONLY valid JSON, no markdown, no explanation.`,
     messages: [{
       role: 'user',
-      content: `Analyze these top tweets from @${username} and extract their writing style patterns:
+      content: `Analyze these top-performing tweets from @${username} and extract their WRITING STYLE and ENGAGEMENT TACTICS:
 
 ${tweetTexts}
 
+IMPORTANT: Focus on HOW they write to drive engagement, NOT what topics they cover. The user wants to apply this style to ANY topic.
+
 Return a JSON object with this exact structure:
 {
-  "summary": "Brief 1-sentence description of their unique style (be specific, not generic)",
+  "summary": "Brief 1-sentence description of their WRITING STYLE and engagement approach (DO NOT mention their topics/niche - focus only on HOW they write)",
   "patterns": {
     "avgLength": <number>,
     "lengthRange": [<min>, <max>],
     "emojiUsage": "never" | "rare" | "occasional" | "frequent",
     "emojiTypes": ["list", "of", "common", "emojis"] or [],
-    "hookStyles": ["list", "of", "how they start tweets"],
+    "hookStyles": ["list", "of", "attention-grabbing opener techniques they use"],
     "toneMarkers": ["list", "of", "tone descriptors"],
-    "sentenceStyle": "description of sentence patterns",
+    "sentenceStyle": "description of sentence patterns and rhythm",
     "questionUsage": "never" | "rare" | "occasional" | "frequent",
     "hashtagUsage": "never" | "rare" | "occasional" | "frequent",
-    "ctaStyle": "how they end tweets / call to action style"
+    "ctaStyle": "how they end tweets / drive engagement",
+    "engagementTactics": ["list", "of", "specific techniques that make their tweets go viral"]
   },
   "topTweets": [
     {"text": "best tweet", "likes": <number>},
