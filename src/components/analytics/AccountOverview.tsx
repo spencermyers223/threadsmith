@@ -52,12 +52,6 @@ export function AccountOverview() {
   const [overview, setOverview] = useState<OverviewData | null>(null)
   const [tweets, setTweets] = useState<Tweet[]>([])
 
-  useEffect(() => {
-    if (activeAccount) {
-      loadTweetsAndAnalyze()
-    }
-  }, [activeAccount, loadTweetsAndAnalyze])
-
   const loadTweetsAndAnalyze = async () => {
     if (!activeAccount) return
     
@@ -174,6 +168,13 @@ export function AccountOverview() {
       }
     })
   }
+
+  useEffect(() => {
+    if (activeAccount) {
+      loadTweetsAndAnalyze()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAccount])
 
   const handleRefresh = () => {
     loadTweetsAndAnalyze()

@@ -56,11 +56,6 @@ export default function RepurposeMode() {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
-  // Load saved inspirations
-  useEffect(() => {
-    loadInspirations()
-  }, [activeAccount?.id, loadInspirations])
-
   const loadInspirations = async () => {
     setLoading(true)
     try {
@@ -74,6 +69,12 @@ export default function RepurposeMode() {
     }
     setLoading(false)
   }
+
+  // Load saved inspirations
+  useEffect(() => {
+    loadInspirations()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAccount?.id])
 
   const extractTweetId = (url: string): string | null => {
     // Match various X/Twitter URL formats

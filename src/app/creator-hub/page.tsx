@@ -6,10 +6,11 @@ import WriteMode from '@/components/creator-hub/WriteMode'
 import GenerateMode from '@/components/creator-hub/GenerateMode'
 import TemplatesMode from '@/components/creator-hub/TemplatesMode'
 import MediaMode from '@/components/creator-hub/MediaMode'
-import { PenLine, Layers, Lightbulb } from 'lucide-react'
+import RepurposeMode from '@/components/creator-hub/RepurposeMode'
+import { PenLine, Layers, Lightbulb, Zap } from 'lucide-react'
 import Image from 'lucide-react/icons/image'
 
-type Mode = 'write' | 'braindump' | 'templates' | 'media'
+type Mode = 'write' | 'braindump' | 'templates' | 'repurpose' | 'media'
 
 export default function CreatorHubPage() {
   const [mode, setMode] = useState<Mode>('braindump')
@@ -89,6 +90,19 @@ export default function CreatorHubPage() {
               Templates
             </button>
             <button
+              onClick={() => setMode('repurpose')}
+              className={`
+                flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
+                ${mode === 'repurpose'
+                  ? 'bg-[var(--background)] text-[var(--foreground)] shadow-sm'
+                  : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+                }
+              `}
+            >
+              <Zap size={16} />
+              Repurpose
+            </button>
+            <button
               onClick={() => setMode('media')}
               className={`
                 flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
@@ -108,8 +122,8 @@ export default function CreatorHubPage() {
 
       {/* Main Content Row */}
       <div className="flex-1 flex overflow-hidden">
-        {/* File Sidebar - hidden in Media mode */}
-        {mode !== 'media' && (
+        {/* File Sidebar - hidden in Media and Repurpose modes */}
+        {mode !== 'media' && mode !== 'repurpose' && (
           <FilesSidebar
             isExpanded={sidebarExpanded}
             onToggleExpanded={() => setSidebarExpanded(!sidebarExpanded)}
@@ -142,6 +156,9 @@ export default function CreatorHubPage() {
               onOpenSidebar={() => setSidebarExpanded(true)}
               onClearFile={() => setSelectedFile(null)}
             />
+          )}
+          {mode === 'repurpose' && (
+            <RepurposeMode />
           )}
           {mode === 'media' && (
             <MediaMode />
