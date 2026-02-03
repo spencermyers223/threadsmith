@@ -887,6 +887,11 @@ export default function GeneratePage() {
               )}
             </div>
 
+            {/* Style Profile Debug */}
+            <div className="mb-4 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-xs font-mono text-yellow-400">
+              DEBUG: account={activeAccount?.id?.slice(0,8) || 'null'} | profiles={styleProfiles.length} | loading={loadingStyleProfiles ? 'yes' : 'no'}
+            </div>
+
             {/* Style Profile Selector [v3] */}
             {styleProfiles.length > 0 && (
               <div className="mb-4">
