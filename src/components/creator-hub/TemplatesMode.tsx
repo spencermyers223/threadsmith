@@ -629,9 +629,7 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
       )}
 
       {/* Upgrade Modal */}
-      {showUpgradeModal && (
-        <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
-      )}
+      <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
     </div>
   )
 }
