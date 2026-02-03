@@ -403,8 +403,8 @@ export default function SettingsPage() {
     setError(null)
 
     try {
-      // Fetch tweets from X API
-      const tweetsRes = await fetch(`/api/x/user-tweets?username=${username}&max_results=20`)
+      // Fetch last 100 tweets from X API (already sorted by engagement)
+      const tweetsRes = await fetch(`/api/x/user-tweets?username=${username}&max_results=100`)
       const tweetsData = await tweetsRes.json()
 
       if (!tweetsRes.ok) {
@@ -415,13 +415,17 @@ export default function SettingsPage() {
         throw new Error('Need at least 5 tweets to analyze')
       }
 
-      // Send tweets to style profile API for analysis
+      // Take top 5 tweets by engagement (API already sorted them)
+      const topTweets = tweetsData.tweets.slice(0, 5)
+      console.log(`Analyzing top 5 of ${tweetsData.tweets.length} tweets from @${username}`)
+
+      // Send top 5 tweets to style profile API for analysis
       const res = await fetch('/api/voice/style-profiles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          account_username: username,
-          tweets: tweetsData.tweets.map((t: { text: string }) => t.text),
+          username: username,
+          tweets: topTweets.map((t: { text: string }) => t.text),
         }),
       })
 
