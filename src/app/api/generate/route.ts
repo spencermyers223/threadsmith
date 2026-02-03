@@ -23,7 +23,7 @@ import {
   type UserVoiceProfile,
 } from '@/lib/prompts'
 // Import dedicated thread prompt
-import { THREAD_SYSTEM_PROMPT, buildThreadUserPrompt } from '@/lib/prompts/thread-prompt'
+import { buildThreadUserPrompt, buildThreadSystemPrompt } from '@/lib/prompts/thread-prompt'
 // Import dedicated article prompt
 import { buildArticlePrompt } from '@/lib/prompts/article-prompt'
 
@@ -333,10 +333,12 @@ async function generateForCTNativePostType(
   // THREAD GENERATION - Use dedicated thread prompt
   if (isThread) {
     // Use dedicated thread prompt - completely separate from single-tweet prompts
+    // Build system prompt with optional media suggestions
+    const threadSystemPrompt = buildThreadSystemPrompt(suggestMedia)
     // Append voice samples section for few-shot learning if available
     systemPrompt = voiceSamplesSection 
-      ? `${THREAD_SYSTEM_PROMPT}\n\n${voiceSamplesSection}`
-      : THREAD_SYSTEM_PROMPT
+      ? `${threadSystemPrompt}\n\n${voiceSamplesSection}`
+      : threadSystemPrompt
     userPrompt = buildThreadUserPrompt(topic, additionalContext, suggestMedia)
     
     console.log('[Thread Gen] Using dedicated thread prompt')

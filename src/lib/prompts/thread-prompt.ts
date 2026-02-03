@@ -3,7 +3,7 @@
  * Dedicated prompt for generating Twitter threads - NOT appended to other prompts
  */
 
-export const THREAD_SYSTEM_PROMPT = `You are an expert Twitter thread writer. Your ONLY job is to create engaging Twitter threads.
+const THREAD_SYSTEM_PROMPT_BASE = `You are an expert Twitter thread writer. Your ONLY job is to create engaging Twitter threads.
 
 ## OUTPUT FORMAT - FOLLOW EXACTLY
 
@@ -68,7 +68,6 @@ Format your entire response like this:
 5. The 1/ tweet is the HOOK - it must be compelling enough to make people stop scrolling
 6. DO NOT include any explanation, analysis, or "why this works" sections
 7. DO NOT use --- delimiters
-8. DO NOT output anything other than the 3 thread options in the exact format above
 
 ## THREAD WRITING TIPS
 
@@ -78,6 +77,39 @@ Format your entire response like this:
 - End with a question or call to action
 - Vary sentence structure to maintain interest
 `;
+
+const MEDIA_SUGGESTION_RULES = `
+## MEDIA SUGGESTIONS (IMPORTANT)
+
+After relevant tweets, add media placeholders on their own line. Format:
+[Image: specific description of visual that would enhance this point]
+
+Example thread with media:
+1/ Big claim that hooks readers
+
+2/ Supporting evidence for the claim
+
+[Image: Chart showing the data trend mentioned above]
+
+3/ Next point in the thread
+
+Include 2-3 media suggestions per thread option. Suggest:
+- Charts/graphs for data points
+- Screenshots for examples
+- Diagrams for concepts
+- Comparisons for before/after
+`;
+
+// Export for backwards compatibility (without media)
+export const THREAD_SYSTEM_PROMPT = THREAD_SYSTEM_PROMPT_BASE;
+
+// Build system prompt with optional media suggestions
+export function buildThreadSystemPrompt(suggestMedia?: boolean): string {
+  if (suggestMedia) {
+    return THREAD_SYSTEM_PROMPT_BASE + MEDIA_SUGGESTION_RULES;
+  }
+  return THREAD_SYSTEM_PROMPT_BASE;
+}
 
 export function buildThreadUserPrompt(topic: string, additionalContext?: string, suggestMedia?: boolean): string {
   const mediaInstructions = suggestMedia ? `
