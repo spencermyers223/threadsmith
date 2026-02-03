@@ -43,10 +43,24 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
     const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
     
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Support both session-based and token-based auth (for extension)
+    const authHeader = request.headers.get('Authorization')
+    let user
+    
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1]
+      const { data, error } = await supabase.auth.getUser(token)
+      if (error || !data.user) {
+        return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+      }
+      user = data.user
+    } else {
+      const { data, error } = await supabase.auth.getUser()
+      if (error || !data.user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+      user = data.user
     }
 
     const body = await request.json()

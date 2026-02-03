@@ -729,11 +729,17 @@ async function injectWatchButton(handle) {
   buttonContainer.insertBefore(statsBtn, followContainer);
   buttonContainer.insertBefore(watchlistBtn, followContainer);
   
-  // Voice button click handler
+  // Voice button click handler - now shows Style Template dropdown
   voiceBtn.addEventListener('click', async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    await handleVoiceClick(voiceBtn, handle);
+    // Check if dropdown is already open
+    const existingDropdown = voiceBtn.querySelector('.xthread-voice-dropdown');
+    if (existingDropdown) {
+      closeAllDropdowns();
+      return;
+    }
+    await showVoiceDropdown(voiceBtn, handle);
   });
 
   // Stats button click handler (uses existing Top Tweets logic)
@@ -1538,6 +1544,245 @@ async function handleVoiceClick(btn, handle) {
     btn.classList.remove('xthread-loading');
   }
 }
+
+// ============================================================
+// Style Template Integration
+// ============================================================
+
+// Cache for style templates (refresh on click)
+let cachedStyleTemplates = null;
+let styleTemplatesLastFetch = 0;
+const STYLE_TEMPLATES_CACHE_MS = 30000; // 30 seconds
+
+// Fetch user's style templates from API
+async function fetchStyleTemplates(forceRefresh = false) {
+  if (!userToken) return [];
+  
+  const now = Date.now();
+  if (!forceRefresh && cachedStyleTemplates && (now - styleTemplatesLastFetch) < STYLE_TEMPLATES_CACHE_MS) {
+    return cachedStyleTemplates;
+  }
+  
+  try {
+    const response = await fetch(`${XTHREAD_API}/extension/style-templates`, {
+      headers: {
+        'Authorization': `Bearer ${userToken}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch style templates');
+    }
+    
+    const data = await response.json();
+    cachedStyleTemplates = data.templates || [];
+    styleTemplatesLastFetch = now;
+    return cachedStyleTemplates;
+  } catch (err) {
+    console.error('[xthread] Error fetching style templates:', err);
+    return cachedStyleTemplates || [];
+  }
+}
+
+// Show Voice/Style Template dropdown on profile
+async function showVoiceDropdown(btn, handle) {
+  // Remove any existing dropdown
+  closeAllDropdowns();
+  
+  if (!userToken) {
+    showToast('Please sign in to xthread first. Click the extension icon.');
+    return;
+  }
+  
+  // Create dropdown
+  const dropdown = document.createElement('div');
+  dropdown.className = 'xthread-voice-dropdown';
+  dropdown.innerHTML = `
+    <div class="xthread-dropdown-section">
+      <div class="xthread-dropdown-section-title">Add to Style Template</div>
+      <div class="xthread-template-list-compact" id="xthread-template-list">
+        <div class="xthread-dropdown-item xthread-disabled" style="justify-content: center; color: #71767b;">
+          Loading...
+        </div>
+      </div>
+    </div>
+    <div class="xthread-dropdown-divider"></div>
+    <div class="xthread-dropdown-item xthread-create-new" data-action="create">
+      <span class="xthread-dropdown-icon">✨</span>
+      <span class="xthread-dropdown-text">Create New Style Template</span>
+    </div>
+    <div class="xthread-dropdown-divider"></div>
+    <div class="xthread-dropdown-item" data-action="voice">
+      <span class="xthread-dropdown-icon">🎤</span>
+      <div>
+        <div class="xthread-dropdown-text">Add to Voice (Legacy)</div>
+        <div class="xthread-dropdown-subtitle">Old system - use templates instead</div>
+      </div>
+    </div>
+  `;
+  
+  // Position relative to button
+  btn.style.position = 'relative';
+  btn.appendChild(dropdown);
+  
+  // Fetch templates and populate list
+  const templates = await fetchStyleTemplates();
+  const listEl = dropdown.querySelector('#xthread-template-list');
+  
+  if (templates.length === 0) {
+    listEl.innerHTML = `
+      <div class="xthread-dropdown-item" style="color: #71767b; font-size: 13px;">
+        No templates yet. Create one to start collecting inspiration.
+      </div>
+    `;
+  } else {
+    // Get profile info for the account we're viewing
+    const profileInfo = extractProfileInfo();
+    
+    listEl.innerHTML = templates.map(t => {
+      const tweetCount = t.tweets?.length || 0;
+      const maxTweets = t.content_type === 'tweet' ? 5 : t.content_type === 'thread' ? 15 : 0;
+      const isFull = tweetCount >= maxTweets;
+      const isArticle = t.content_type === 'article';
+      const matchesAccount = t.admired_account_username?.toLowerCase() === handle.toLowerCase();
+      
+      // Check if already associated with this account
+      const alreadyHasAccount = matchesAccount && tweetCount > 0;
+      
+      let statusHtml = '';
+      if (isArticle) {
+        statusHtml = `<span class="xthread-template-count" title="Articles use style essence, not tweets">📝</span>`;
+      } else if (isFull) {
+        statusHtml = `<span class="xthread-template-count" title="Template full">✓ Full</span>`;
+      } else {
+        statusHtml = `<span class="xthread-template-count">${tweetCount}/${maxTweets}</span>`;
+      }
+      
+      return `
+        <div class="xthread-template-item ${isFull || isArticle ? 'xthread-disabled' : ''}" 
+             data-template-id="${escapeHtml(t.id)}"
+             data-template-name="${escapeHtml(t.title)}"
+             title="${isFull ? 'Template is full' : isArticle ? 'Articles use style essence' : 'Click to add this account'}">
+          ${t.admired_account_avatar_url 
+            ? `<img src="${escapeHtml(t.admired_account_avatar_url)}" class="xthread-template-avatar">`
+            : `<div class="xthread-template-avatar" style="background:#2f3336;display:flex;align-items:center;justify-content:center;font-size:12px;">📝</div>`
+          }
+          <div class="xthread-template-info">
+            <div class="xthread-template-name">${escapeHtml(t.title)}</div>
+            ${t.admired_account_username 
+              ? `<div class="xthread-template-account">@${escapeHtml(t.admired_account_username)}</div>` 
+              : ''}
+          </div>
+          ${statusHtml}
+        </div>
+      `;
+    }).join('');
+  }
+  
+  // Handle template item clicks
+  listEl.addEventListener('click', async (e) => {
+    const item = e.target.closest('.xthread-template-item');
+    if (!item || item.classList.contains('xthread-disabled')) return;
+    
+    const templateId = item.dataset.templateId;
+    const templateName = item.dataset.templateName;
+    
+    closeAllDropdowns();
+    await handleAddAccountToTemplate(btn, handle, templateId, templateName);
+  });
+  
+  // Handle create new click
+  dropdown.querySelector('.xthread-create-new').addEventListener('click', () => {
+    closeAllDropdowns();
+    // Get profile info
+    const profileInfo = extractProfileInfo();
+    // Open xthread with pre-filled data
+    window.open(`https://xthread.io/customization?tab=templates&create=true&username=${handle}&avatar=${encodeURIComponent(profileInfo.avatar || '')}`, '_blank');
+  });
+  
+  // Handle legacy voice click
+  dropdown.querySelector('[data-action="voice"]').addEventListener('click', async () => {
+    closeAllDropdowns();
+    await handleVoiceClick(btn, handle);
+  });
+  
+  // Close on click outside
+  setTimeout(() => {
+    document.addEventListener('click', handleClickOutsideDropdown);
+  }, 10);
+}
+
+// Close all xthread dropdowns
+function closeAllDropdowns() {
+  document.querySelectorAll('.xthread-voice-dropdown, .xthread-dropdown').forEach(d => d.remove());
+  document.removeEventListener('click', handleClickOutsideDropdown);
+}
+
+function handleClickOutsideDropdown(e) {
+  if (!e.target.closest('.xthread-voice-dropdown, .xthread-dropdown, .xthread-profile-btn')) {
+    closeAllDropdowns();
+  }
+}
+
+// Add account to a specific style template
+async function handleAddAccountToTemplate(btn, handle, templateId, templateName) {
+  if (!userToken) {
+    showToast('Please sign in to xthread first.');
+    return;
+  }
+  
+  btn.classList.add('xthread-loading');
+  btn.innerHTML = getProfileIcon('loader');
+  
+  try {
+    // Get the profile info to pass avatar, etc.
+    const profileInfo = extractProfileInfo();
+    
+    // First, update the template's admired account if not set
+    const response = await fetch(`${XTHREAD_API}/style-templates/${templateId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({
+        admired_account_username: handle,
+        admired_account_display_name: profileInfo.displayName || handle,
+        admired_account_avatar_url: profileInfo.avatar || null
+      })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Failed to update template');
+    }
+    
+    // Show success
+    btn.classList.add('xthread-voice-added');
+    btn.innerHTML = getProfileIcon('check');
+    showToast(`@${handle} added to "${templateName}"! Now save some tweets.`);
+    
+    // Invalidate cache
+    cachedStyleTemplates = null;
+    
+    // Reset button after 2 seconds
+    setTimeout(() => {
+      btn.classList.remove('xthread-voice-added');
+      btn.innerHTML = getProfileIcon('mic');
+    }, 2000);
+    
+  } catch (err) {
+    console.error('[xthread] Error adding to template:', err);
+    showToast(err.message || 'Failed to add account. Please try again.');
+    btn.innerHTML = getProfileIcon('mic');
+  } finally {
+    btn.classList.remove('xthread-loading');
+  }
+}
+
+// ============================================================
+// End Style Template Integration
+// ============================================================
 
 // Show message template selector modal
 function showMessageTemplateModal(handle, templates) {
@@ -2576,12 +2821,12 @@ function injectButtons(post) {
     handleGetCoaching(post, coachBtn);
   });
   
-  // Save button handler
+  // Save button handler - now shows dropdown menu
   const saveBtn = btnContainer.querySelector('.xthread-save-btn');
   saveBtn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    handleSavePost(post, saveBtn);
+    showSaveDropdown(post, saveBtn);
   });
   
   // Check if already saved
@@ -2847,6 +3092,236 @@ function openReplyComposer(post) {
   const replyBtn = post.querySelector('[data-testid="reply"]');
   if (replyBtn) {
     replyBtn.click();
+  }
+}
+
+// Show save dropdown menu for a tweet
+async function showSaveDropdown(post, btn) {
+  // Remove any existing dropdowns
+  closeAllDropdowns();
+  
+  const postData = extractPostData(post);
+  
+  // Create dropdown
+  const dropdown = document.createElement('div');
+  dropdown.className = 'xthread-dropdown';
+  dropdown.style.position = 'absolute';
+  dropdown.style.bottom = '100%';
+  dropdown.style.right = '0';
+  dropdown.style.marginBottom = '8px';
+  
+  dropdown.innerHTML = `
+    <div class="xthread-dropdown-header">Save Tweet</div>
+    <div class="xthread-dropdown-item" data-action="save-local">
+      <span class="xthread-dropdown-icon">📌</span>
+      <span class="xthread-dropdown-text">Save for Later</span>
+    </div>
+    <div class="xthread-dropdown-item" data-action="save-inspiration">
+      <span class="xthread-dropdown-icon">💡</span>
+      <div>
+        <span class="xthread-dropdown-text">Save to Inspiration</span>
+        <div class="xthread-dropdown-subtitle">Sync to xthread.io</div>
+      </div>
+    </div>
+    <div class="xthread-dropdown-divider"></div>
+    <div class="xthread-dropdown-header">Add to Style Template</div>
+    <div class="xthread-template-list-dropdown" id="xthread-save-template-list">
+      <div class="xthread-dropdown-item xthread-disabled" style="font-size: 12px; color: #71767b;">
+        Loading templates...
+      </div>
+    </div>
+  `;
+  
+  // Position dropdown relative to button
+  btn.style.position = 'relative';
+  btn.appendChild(dropdown);
+  
+  // Handle save locally
+  dropdown.querySelector('[data-action="save-local"]').addEventListener('click', async () => {
+    closeAllDropdowns();
+    await handleSavePost(post, btn);
+  });
+  
+  // Handle save to inspiration (sync to xthread)
+  dropdown.querySelector('[data-action="save-inspiration"]').addEventListener('click', async () => {
+    closeAllDropdowns();
+    await handleSaveToInspiration(post, btn, postData);
+  });
+  
+  // Fetch and populate style templates
+  if (userToken) {
+    const templates = await fetchStyleTemplates();
+    const listEl = dropdown.querySelector('#xthread-save-template-list');
+    
+    if (templates.length === 0) {
+      listEl.innerHTML = `
+        <div class="xthread-dropdown-item" data-action="create-template" style="color: #C9B896;">
+          <span class="xthread-dropdown-icon">✨</span>
+          <span class="xthread-dropdown-text">Create Style Template</span>
+        </div>
+      `;
+    } else {
+      // Filter to only show tweet/thread templates (not articles)
+      const validTemplates = templates.filter(t => t.content_type !== 'article');
+      
+      if (validTemplates.length === 0) {
+        listEl.innerHTML = `
+          <div class="xthread-dropdown-item" style="font-size: 12px; color: #71767b;">
+            No tweet/thread templates
+          </div>
+          <div class="xthread-dropdown-item" data-action="create-template" style="color: #C9B896;">
+            <span class="xthread-dropdown-icon">✨</span>
+            <span class="xthread-dropdown-text">Create Style Template</span>
+          </div>
+        `;
+      } else {
+        listEl.innerHTML = validTemplates.map(t => {
+          const tweetCount = t.tweets?.length || 0;
+          const maxTweets = t.content_type === 'tweet' ? 5 : 15;
+          const isFull = tweetCount >= maxTweets;
+          
+          return `
+            <div class="xthread-dropdown-item ${isFull ? 'xthread-disabled' : ''}" 
+                 data-template-id="${escapeHtml(t.id)}"
+                 data-template-name="${escapeHtml(t.title)}"
+                 title="${isFull ? 'Template is full' : ''}">
+              ${t.admired_account_avatar_url 
+                ? `<img src="${escapeHtml(t.admired_account_avatar_url)}" style="width:20px;height:20px;border-radius:50%;">`
+                : `<span class="xthread-dropdown-icon">📝</span>`
+              }
+              <span class="xthread-dropdown-text" style="flex:1">${escapeHtml(t.title)}</span>
+              <span style="font-size:11px;color:#71767b;">${tweetCount}/${maxTweets}</span>
+            </div>
+          `;
+        }).join('') + `
+          <div class="xthread-dropdown-divider"></div>
+          <div class="xthread-dropdown-item" data-action="create-template" style="color: #C9B896;">
+            <span class="xthread-dropdown-icon">✨</span>
+            <span class="xthread-dropdown-text">Create New Template</span>
+          </div>
+        `;
+      }
+    }
+    
+    // Handle template clicks
+    listEl.addEventListener('click', async (e) => {
+      const item = e.target.closest('.xthread-dropdown-item');
+      if (!item || item.classList.contains('xthread-disabled')) return;
+      
+      if (item.dataset.action === 'create-template') {
+        closeAllDropdowns();
+        window.open('https://xthread.io/customization?tab=templates&create=true', '_blank');
+        return;
+      }
+      
+      const templateId = item.dataset.templateId;
+      const templateName = item.dataset.templateName;
+      if (!templateId) return;
+      
+      closeAllDropdowns();
+      await handleAddTweetToTemplate(post, btn, postData, templateId, templateName);
+    });
+  } else {
+    const listEl = dropdown.querySelector('#xthread-save-template-list');
+    listEl.innerHTML = `
+      <div class="xthread-dropdown-item" style="font-size: 12px; color: #71767b;">
+        Sign in to use Style Templates
+      </div>
+    `;
+  }
+  
+  // Close on click outside
+  setTimeout(() => {
+    document.addEventListener('click', handleClickOutsideDropdown);
+  }, 10);
+}
+
+// Save tweet to website's inspiration library
+async function handleSaveToInspiration(post, btn, postData) {
+  if (!userToken) {
+    showToast('Please sign in to xthread first.');
+    // Fall back to local save
+    await handleSavePost(post, btn);
+    return;
+  }
+  
+  btn.classList.add('xthread-loading');
+  
+  try {
+    const response = await fetch(`${XTHREAD_API}/inspiration`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({
+        tweet_text: postData.text,
+        tweet_url: postData.url,
+        author_handle: postData.handle || postData.author,
+        author_name: postData.author,
+        engagement_metrics: postData.metrics,
+        source: 'extension'
+      })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Failed to save');
+    }
+    
+    btn.classList.add('xthread-saved');
+    showToast('Saved to Inspiration! 💡');
+    
+  } catch (err) {
+    console.error('[xthread] Error saving to inspiration:', err);
+    showToast(err.message || 'Failed to save. Try again.');
+  } finally {
+    btn.classList.remove('xthread-loading');
+  }
+}
+
+// Add tweet to a specific style template
+async function handleAddTweetToTemplate(post, btn, postData, templateId, templateName) {
+  if (!userToken) {
+    showToast('Please sign in to xthread first.');
+    return;
+  }
+  
+  btn.classList.add('xthread-loading');
+  
+  try {
+    const response = await fetch(`${XTHREAD_API}/extension/style-templates/${templateId}/tweets`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${userToken}`
+      },
+      body: JSON.stringify({
+        text: postData.text,
+        url: postData.url,
+        author_handle: postData.handle || null,
+        author_name: postData.author || null
+      })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Failed to add tweet');
+    }
+    
+    const data = await response.json();
+    
+    btn.classList.add('xthread-saved');
+    showToast(`Added to "${templateName}"! (${data.tweetCount}/${data.maxTweets})`);
+    
+    // Invalidate cache
+    cachedStyleTemplates = null;
+    
+  } catch (err) {
+    console.error('[xthread] Error adding tweet to template:', err);
+    showToast(err.message || 'Failed to add tweet. Try again.');
+  } finally {
+    btn.classList.remove('xthread-loading');
   }
 }
 
