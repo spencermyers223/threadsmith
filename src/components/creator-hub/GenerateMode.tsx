@@ -771,7 +771,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
           </div>
           
           {/* Helper text row */}
-          <div className="flex gap-6 text-xs text-[var(--muted)]">
+          <div className="flex gap-6 text-xs text-[var(--muted)] mt-3">
             {selectedLength === 'thread' && (
               <span>💡 More context recommended for threads</span>
             )}
