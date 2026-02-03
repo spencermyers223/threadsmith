@@ -109,6 +109,7 @@ export default function VoiceSettingsPage() {
     }
     tweets_analyzed: number
   }>>([])
+  const [analyzingAccount, setAnalyzingAccount] = useState<string | null>(null)
 
   const loadData = useCallback(async () => {
     if (!activeAccount?.id) return
@@ -227,7 +228,7 @@ export default function VoiceSettingsPage() {
     }
   }
 
-  // Style Profiles V2 handlers - Note: Full implementation requires X API tweet fetching
+  // Style Profiles V2 handlers
   async function handleRemoveStyleProfile(id: string) {
     try {
       const res = await fetch(`/api/voice/style-profiles?id=${id}`, { method: 'DELETE' })
@@ -237,6 +238,55 @@ export default function VoiceSettingsPage() {
       setTimeout(() => setSuccess(null), 3000)
     } catch {
       setError('Failed to remove style profile')
+    }
+  }
+
+  async function handleAnalyzeAccount(username: string) {
+    if (styleProfiles.length >= 3) {
+      setError('Style profiles full (max 3). Remove one first.')
+      return
+    }
+    if (styleProfiles.some(p => p.account_username.toLowerCase() === username.toLowerCase())) {
+      setError(`@${username} is already analyzed`)
+      return
+    }
+
+    setAnalyzingAccount(username)
+    setError(null)
+
+    try {
+      // Fetch tweets from X API
+      const tweetsRes = await fetch(`/api/x/user-tweets?username=${username}&max_results=20`)
+      const tweetsData = await tweetsRes.json()
+
+      if (!tweetsRes.ok) {
+        throw new Error(tweetsData.error || 'Failed to fetch tweets')
+      }
+
+      if (!tweetsData.tweets || tweetsData.tweets.length < 5) {
+        throw new Error('Need at least 5 tweets to analyze')
+      }
+
+      // Send tweets to style profile API for analysis
+      const res = await fetch('/api/voice/style-profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          account_username: username,
+          tweets: tweetsData.tweets.map((t: { text: string }) => t.text),
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to analyze')
+
+      setStyleProfiles(prev => [...prev, data.profile])
+      setSuccess(`Analyzed @${username}'s style!`)
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to analyze account')
+    } finally {
+      setAnalyzingAccount(null)
     }
   }
 
@@ -625,12 +675,16 @@ export default function VoiceSettingsPage() {
             </p>
           </div>
           <div className="p-4 space-y-3">
-            {styleProfiles.length > 0 ? (
-              <div className="space-y-2">
+            {/* Existing analyzed profiles */}
+            {styleProfiles.length > 0 && (
+              <div className="space-y-2 mb-4">
                 {styleProfiles.map((profile) => (
-                  <div key={profile.id} className="flex items-start gap-3 p-3 rounded-lg bg-[var(--background)] border border-[var(--border)] group">
+                  <div key={profile.id} className="flex items-start gap-3 p-3 rounded-lg bg-violet-500/10 border border-violet-500/20 group">
                     <div className="flex-1">
-                      <p className="text-sm font-medium">@{profile.account_username}</p>
+                      <p className="text-sm font-medium flex items-center gap-2">
+                        @{profile.account_username}
+                        <span className="text-xs text-violet-400">✓ Analyzed</span>
+                      </p>
                       <p className="text-xs text-[var(--muted)] mt-1">
                         {profile.profile_data?.summary || `Analyzed ${profile.tweets_analyzed} tweets`}
                       </p>
@@ -644,9 +698,42 @@ export default function VoiceSettingsPage() {
                   </div>
                 ))}
               </div>
-            ) : (
+            )}
+
+            {/* Admired accounts not yet analyzed */}
+            {admiredAccounts.length > 0 && styleProfiles.length < 3 && (
+              <div className="space-y-2">
+                <p className="text-xs text-[var(--muted)]">Click to analyze an admired account:</p>
+                {admiredAccounts
+                  .filter(acc => !styleProfiles.some(p => p.account_username.toLowerCase() === acc.toLowerCase()))
+                  .map((account) => (
+                    <div key={account} className="flex items-center gap-3 p-3 rounded-lg bg-[var(--background)] border border-[var(--border)]">
+                      <p className="text-sm font-medium flex-1">@{account}</p>
+                      <button
+                        onClick={() => handleAnalyzeAccount(account)}
+                        disabled={analyzingAccount === account}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-violet-500 hover:bg-violet-600 disabled:opacity-50 text-white rounded-lg transition-colors text-xs font-medium"
+                      >
+                        {analyzingAccount === account ? (
+                          <>
+                            <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3 h-3" />
+                            Analyze Style
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            {admiredAccounts.length === 0 && styleProfiles.length === 0 && (
               <p className="text-xs text-[var(--muted)] text-center py-4">
-                💡 Style profiles let you incorporate writing patterns from creators you admire.
+                💡 Add accounts you admire below, then analyze their style here.
               </p>
             )}
           </div>
