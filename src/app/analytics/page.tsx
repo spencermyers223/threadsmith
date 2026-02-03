@@ -4,14 +4,15 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { XAnalyticsDashboard } from '@/components/analytics/XAnalyticsDashboard'
-import { Marketplace } from '@/components/analytics/Marketplace'
-import { BarChart3, ShoppingCart, Loader2 } from 'lucide-react'
+import { AccountResearcher } from '@/components/analytics/AccountResearcher'
+import { AccountOverview } from '@/components/analytics/AccountOverview'
+import { BarChart3, Search, Sparkles, Loader2 } from 'lucide-react'
 
-type TabType = 'analytics' | 'marketplace'
+type TabType = 'posts' | 'overview' | 'research'
 
 export default function AnalyticsPage() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<TabType>('analytics')
+  const [activeTab, setActiveTab] = useState<TabType>('posts')
   const [userCredits, setUserCredits] = useState(0)
   const [loading, setLoading] = useState(true)
 
@@ -25,15 +26,15 @@ export default function AnalyticsPage() {
         return
       }
 
-      // Fetch user's credits
-      const { data: profile } = await supabase
-        .from('profiles')
+      // Fetch user's credits from subscriptions table
+      const { data: subscription } = await supabase
+        .from('subscriptions')
         .select('credits')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .single()
 
-      if (profile) {
-        setUserCredits(profile.credits || 0)
+      if (subscription) {
+        setUserCredits(subscription.credits || 0)
       }
       
       setLoading(false)
@@ -60,39 +61,54 @@ export default function AnalyticsPage() {
       <div className="flex justify-center mb-6">
         <div className="flex items-center gap-1 p-1 bg-[var(--card)] rounded-lg border border-[var(--border)]">
           <button
-            onClick={() => setActiveTab('analytics')}
+            onClick={() => setActiveTab('posts')}
             className={`
               flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
-              ${activeTab === 'analytics'
+              ${activeTab === 'posts'
                 ? 'bg-[var(--background)] text-[var(--foreground)] shadow-sm'
                 : 'text-[var(--muted)] hover:text-[var(--foreground)]'
               }
             `}
           >
             <BarChart3 className="w-4 h-4" />
-            Your Analytics
+            Recent Posts
           </button>
           <button
-            onClick={() => setActiveTab('marketplace')}
+            onClick={() => setActiveTab('overview')}
             className={`
               flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
-              ${activeTab === 'marketplace'
+              ${activeTab === 'overview'
                 ? 'bg-[var(--background)] text-[var(--foreground)] shadow-sm'
                 : 'text-[var(--muted)] hover:text-[var(--foreground)]'
               }
             `}
           >
-            <ShoppingCart className="w-4 h-4" />
-            Marketplace
+            <Sparkles className="w-4 h-4" />
+            Account Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('research')}
+            className={`
+              flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
+              ${activeTab === 'research'
+                ? 'bg-[var(--background)] text-[var(--foreground)] shadow-sm'
+                : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+              }
+            `}
+          >
+            <Search className="w-4 h-4" />
+            Account Research
           </button>
         </div>
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'analytics' ? (
+      {activeTab === 'posts' ? (
         <XAnalyticsDashboard />
+      ) : activeTab === 'overview' ? (
+        <AccountOverview />
       ) : (
-        <Marketplace 
+        <AccountResearcher 
           userCredits={userCredits} 
           onCreditsUsed={handleCreditsUsed}
         />

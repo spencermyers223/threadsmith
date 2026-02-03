@@ -82,6 +82,7 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string
   'build-in-public': { bg: 'bg-pink-500/10', text: 'text-pink-400', border: 'border-pink-500/30' },
   contrarian: { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/30' },
   engagement: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/30' },
+  viral: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/30' },
 }
 
 // Strip media placeholders from content for accurate character count
@@ -115,7 +116,7 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
 
   // UI state - default to 'post' tab since post format is priority 1
   const [activeTab, setActiveTab] = useState<'style' | 'post'>('post')
-  const [templateType, setTemplateType] = useState<'post' | 'thread'>('post') // Filter for post vs thread templates
+  const [templateType, setTemplateType] = useState<'post' | 'thread' | 'viral'>('post') // Filter for post vs thread vs viral templates
   const [generating, setGenerating] = useState(false)
   const [posts, setPosts] = useState<GeneratedPost[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -176,13 +177,17 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
     [postTemplates, selectedPostId]
   )
 
-  // Filter templates by type (post vs thread)
+  // Filter templates by type (post vs thread vs viral)
   const filteredPostTemplates = useMemo(() => 
-    postTemplates.filter(t => (t.content_type || 'post') === 'post' && t.category !== 'thread'),
+    postTemplates.filter(t => (t.content_type || 'post') === 'post' && t.category !== 'thread' && t.category !== 'viral'),
     [postTemplates]
   )
   const filteredThreadTemplates = useMemo(() => 
     postTemplates.filter(t => t.content_type === 'thread' || t.category === 'thread'),
+    [postTemplates]
+  )
+  const filteredViralTemplates = useMemo(() =>
+    postTemplates.filter(t => t.category === 'viral'),
     [postTemplates]
   )
 
@@ -698,6 +703,17 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
             Threads ({filteredThreadTemplates.length})
           </button>
           <button
+            onClick={() => { setActiveTab('post'); setTemplateType('viral'); }}
+            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+              activeTab === 'post' && templateType === 'viral'
+                ? 'text-amber-400 border-b-2 border-amber-400 -mb-px'
+                : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+            }`}
+          >
+            🔥
+            Viral Examples ({filteredViralTemplates.length})
+          </button>
+          <button
             onClick={() => setActiveTab('style')}
             className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
               activeTab === 'style'
@@ -777,6 +793,53 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
                       {template.description && (
                         <p className="text-xs text-[var(--muted)] mt-2 line-clamp-2">{template.description}</p>
                       )}
+                    </button>
+                  )
+                })}
+              </div>
+            )
+          ) : activeTab === 'post' && templateType === 'viral' ? (
+            // 🔥 Viral Examples Grid
+            filteredViralTemplates.length === 0 ? (
+              <div className="text-center py-8">
+                <span className="text-4xl mb-3 block">🔥</span>
+                <p className="text-[var(--muted)] mb-2">No viral examples yet</p>
+                <p className="text-xs text-[var(--muted)]">Viral tweet templates with real examples coming soon!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredViralTemplates.map(template => {
+                  const colors = CATEGORY_COLORS['viral']
+                  return (
+                    <button
+                      key={template.id}
+                      onClick={() => { setSelectedPostId(template.id); setVariableValues({}); }}
+                      className={`p-4 rounded-lg border text-left transition-all ${
+                        selectedPostId === template.id
+                          ? 'bg-amber-500/10 border-amber-500/50 ring-2 ring-amber-500/30'
+                          : 'bg-[var(--background)] border-[var(--border)] hover:border-amber-500/30'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🔥</span>
+                          <span className="font-medium">{template.title}</span>
+                        </div>
+                        {selectedPostId === template.id && (
+                          <Check className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                        )}
+                      </div>
+                      {template.description && (
+                        <p className="text-sm text-[var(--muted)] mb-3">{template.description}</p>
+                      )}
+                      {template.why_it_works && (
+                        <div className="p-2 bg-amber-500/10 rounded text-xs text-amber-400">
+                          <strong>Why it works:</strong> {template.why_it_works}
+                        </div>
+                      )}
+                      <span className={`inline-block text-xs px-2 py-0.5 rounded mt-3 ${colors.bg} ${colors.text} ${colors.border} border`}>
+                        viral format
+                      </span>
                     </button>
                   )
                 })}

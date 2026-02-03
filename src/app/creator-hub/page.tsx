@@ -6,7 +6,8 @@ import WriteMode from '@/components/creator-hub/WriteMode'
 import GenerateMode from '@/components/creator-hub/GenerateMode'
 import TemplatesMode from '@/components/creator-hub/TemplatesMode'
 import MediaMode from '@/components/creator-hub/MediaMode'
-import { PenLine, Layers, Lightbulb, Image } from 'lucide-react'
+import { PenLine, Layers, Lightbulb } from 'lucide-react'
+import Image from 'lucide-react/icons/image'
 
 type Mode = 'write' | 'braindump' | 'templates' | 'media'
 
@@ -97,6 +98,7 @@ export default function CreatorHubPage() {
                 }
               `}
             >
+              {/* eslint-disable-next-line jsx-a11y/alt-text */}
               <Image size={16} />
               Media
             </button>

@@ -675,49 +675,52 @@ export default function CustomizationPage() {
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<StyleTemplate | null>(null)
 
-  // Fetch data on mount
-  const fetchData = async () => {
+  const fetchTemplates = useCallback(async () => {
+    const res = await fetch(
+      `/api/style-templates${activeAccount?.id ? `?x_account_id=${activeAccount.id}` : ''}`,
+      { credentials: 'include' }
+    )
+    if (res.ok) {
+      const data = await res.json()
+      setStyleTemplates(data.templates || [])
+    }
+  }, [activeAccount?.id])
+
+  const fetchCustomization = useCallback(async () => {
+    const res = await fetch(
+      `/api/user-customization${activeAccount?.id ? `?x_account_id=${activeAccount.id}` : ''}`,
+      { credentials: 'include' }
+    )
+    if (res.ok) {
+      const data = await res.json()
+      const customData = data.customization || {
+        tone_preferences: {},
+        content_niches: [],
+        goals_audience: null,
+        style_description: null,
+        admired_accounts: [],
+        outreach_templates: []
+      }
+      setCustomization(customData)
+      setOriginalCustomization(JSON.parse(JSON.stringify(customData)))
+    }
+  }, [activeAccount?.id])
+
+  const stableFetchData = useCallback(async () => {
     setLoading(true)
     try {
-      // Fetch style templates
-      const templatesRes = await fetch(
-        `/api/style-templates${activeAccount?.id ? `?x_account_id=${activeAccount.id}` : ''}`,
-        { credentials: 'include' }
-      )
-      if (templatesRes.ok) {
-        const data = await templatesRes.json()
-        setStyleTemplates(data.templates || [])
-      }
-
-      // Fetch customization
-      const customRes = await fetch(
-        `/api/user-customization${activeAccount?.id ? `?x_account_id=${activeAccount.id}` : ''}`,
-        { credentials: 'include' }
-      )
-      if (customRes.ok) {
-        const data = await customRes.json()
-        const customData = data.customization || {
-          tone_preferences: {},
-          content_niches: [],
-          goals_audience: null,
-          style_description: null,
-          admired_accounts: [],
-          outreach_templates: []
-        }
-        setCustomization(customData)
-        setOriginalCustomization(JSON.parse(JSON.stringify(customData))) // Deep copy for comparison
-      }
+      await Promise.all([fetchTemplates(), fetchCustomization()])
     } catch (error) {
       console.error('Error fetching customization data:', error)
       setToast({ message: 'Failed to load customization data', type: 'error' })
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
-  }
+  }, [fetchTemplates, fetchCustomization])
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    fetchData()
-  }, [activeAccount?.id])
+    stableFetchData()
+  }, [stableFetchData])
 
   // Save style template
   const saveStyleTemplate = async (data: Partial<StyleTemplate>) => {
