@@ -5,7 +5,7 @@ import { deductCredits, hasEnoughCredits, getCredits } from '@/lib/credits'
 
 const anthropic = new Anthropic()
 const MAX_STYLE_PROFILES = 3
-const PROFILE_COST_CREDITS = 3
+const PROFILE_COST_CREDITS = 5  // Covers ~$0.50 X API + ~$0.01 Claude
 
 // GET - Fetch style profiles (max 3)
 export async function GET() {
