@@ -244,8 +244,8 @@ export function TemplateSelector({ onSelectTemplate, activeTemplate }: TemplateS
 
               {/* Why This Works */}
               {selectedTemplate.why_it_works && (
-                <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-                  <h3 className="text-sm font-semibold mb-2 text-amber-400 flex items-center gap-2">
+                <div className="p-4 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/20">
+                  <h3 className="text-sm font-semibold mb-2 text-[var(--accent)] flex items-center gap-2">
                     <Sparkles className="w-4 h-4" />
                     Why This Works
                   </h3>

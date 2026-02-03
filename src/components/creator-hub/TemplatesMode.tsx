@@ -579,8 +579,8 @@ export default function TemplatesMode({ selectedFile, onOpenSidebar: _onOpenSide
 
         {/* Why it works hint */}
         {selectedPost?.why_it_works && (
-          <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-            <p className="text-sm text-amber-400">
+          <div className="mt-4 p-3 bg-[var(--accent)]/10 border border-[var(--accent)]/20 rounded-lg">
+            <p className="text-sm text-[var(--accent)]">
               <span className="font-medium">💡 Why this works:</span> {selectedPost.why_it_works}
             </p>
           </div>

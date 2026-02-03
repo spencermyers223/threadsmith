@@ -653,8 +653,8 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
               )}
 
               {templateMode.templateWhyItWorks && (
-                <div className="p-4 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-                  <h3 className="text-sm font-semibold mb-2 text-amber-400 flex items-center gap-2">
+                <div className="p-4 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/20">
+                  <h3 className="text-sm font-semibold mb-2 text-[var(--accent)] flex items-center gap-2">
                     <Sparkles size={14} />
                     Why This Works
                   </h3>
@@ -1073,8 +1073,8 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
               )}
 
               {selectedTemplate.why_it_works && (
-                <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-                  <h3 className="text-sm font-semibold mb-1 text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                <div className="p-4 rounded-xl bg-[var(--accent)]/10 border border-[var(--accent)]/20">
+                  <h3 className="text-sm font-semibold mb-1 text-[var(--accent)] flex items-center gap-2">
                     <Sparkles size={14} />
                     Why This Works
                   </h3>
