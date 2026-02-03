@@ -440,10 +440,9 @@ export default function CustomizationPage() {
     setLoading(false)
   }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchData()
-  }, [activeAccount?.id])
+  }, [activeAccount?.id, fetchData])
 
   // Save style template
   const saveStyleTemplate = async (data: Partial<StyleTemplate>) => {
