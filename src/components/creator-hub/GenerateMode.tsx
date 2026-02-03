@@ -12,8 +12,15 @@ import {
 import { EditingTools } from '@/components/editing'
 import { GenerationCounter } from '@/components/subscription/GenerationCounter'
 import { UpgradeModal } from '@/components/subscription/UpgradeModal'
+import { useXAccount } from '@/contexts/XAccountContext'
 
 import type { FileRecord } from '@/components/generate/FilesSidebar'
+
+interface StyleProfile {
+  id: string
+  account_username: string
+  profile_data: { summary?: string }
+}
 
 // Types
 interface TemplateVariable {
@@ -100,6 +107,12 @@ interface GenerateModeProps {
 
 export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile }: GenerateModeProps) {
   const router = useRouter()
+  const { activeAccount } = useXAccount()
+
+  // Style Profiles
+  const [styleProfiles, setStyleProfiles] = useState<StyleProfile[]>([])
+  const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<string | null>(null)
+  const [loadingStyleProfiles, setLoadingStyleProfiles] = useState(false)
 
   // Template state
   const [templates, setTemplates] = useState<PostTemplate[]>([])
@@ -174,6 +187,32 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
     }
     checkSubscription()
   }, [])
+
+  // Fetch style profiles when active account changes
+  useEffect(() => {
+    async function fetchStyleProfiles() {
+      if (!activeAccount?.id) {
+        setStyleProfiles([])
+        return
+      }
+      
+      setLoadingStyleProfiles(true)
+      try {
+        const res = await fetch(`/api/voice/style-profiles?x_account_id=${activeAccount.id}`)
+        if (res.ok) {
+          const data = await res.json()
+          setStyleProfiles(data.profiles || [])
+        } else {
+          console.error('Style profiles fetch failed:', res.status)
+        }
+      } catch (err) {
+        console.error('Failed to fetch style profiles:', err)
+      }
+      setLoadingStyleProfiles(false)
+    }
+    
+    fetchStyleProfiles()
+  }, [activeAccount?.id])
 
   // Filter templates
   const filteredTemplates = useMemo(() => {
@@ -406,6 +445,7 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
           templateDescription: templateMode?.templateDescription,
           templateWhyItWorks: templateMode?.templateWhyItWorks,
           templateCategory: templateMode?.templateCategory,
+          styleProfileId: selectedStyleProfileId || undefined,
         }),
       })
 
@@ -696,6 +736,51 @@ export default function GenerateMode({ selectedFile, onOpenSidebar, onClearFile 
               </p>
             )}
           </div>
+
+          {/* Style Profile Selector */}
+          {loadingStyleProfiles && (
+            <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading style profiles...
+            </div>
+          )}
+          {!loadingStyleProfiles && styleProfiles.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-[var(--foreground)] mb-2">
+                Incorporate style (select one):
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {styleProfiles.map((profile) => (
+                  <button
+                    key={profile.id}
+                    onClick={() => setSelectedStyleProfileId(
+                      selectedStyleProfileId === profile.id ? null : profile.id
+                    )}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      selectedStyleProfileId === profile.id
+                        ? 'bg-violet-500/20 text-violet-400 border border-violet-500/50'
+                        : 'bg-[var(--background)] border border-[var(--border)] hover:border-violet-500/30 text-[var(--muted)] hover:text-[var(--foreground)]'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${
+                      selectedStyleProfileId === profile.id ? 'bg-violet-400' : 'bg-[var(--border)]'
+                    }`} />
+                    @{profile.account_username}
+                  </button>
+                ))}
+              </div>
+              {selectedStyleProfileId && (
+                <p className="mt-2 text-xs text-violet-400/80">
+                  {styleProfiles.find(p => p.id === selectedStyleProfileId)?.profile_data?.summary}
+                </p>
+              )}
+              {!selectedStyleProfileId && (
+                <p className="mt-2 text-xs text-[var(--muted)]">
+                  None selected = your voice only
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Generate Button */}
