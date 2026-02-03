@@ -18,6 +18,7 @@ import { postTweet, postThread, openXIntent, openTweet } from '@/lib/x-posting'
 import TagSelector from '@/components/tags/TagSelector'
 import TagBadge, { Tag as TagType } from '@/components/tags/TagBadge'
 import { MediaUpload, type MediaItem } from '@/components/drafts/MediaUpload'
+import { MediaLibraryPanel } from '@/components/drafts/MediaLibraryPanel'
 import { EngagementPanel } from '@/components/drafts/EngagementPanel'
 import EditingTools from '@/components/editing/EditingTools'
 import { useXAccount } from '@/contexts/XAccountContext'
@@ -834,6 +835,21 @@ export default function WorkspacePage() {
             text={getPlainText()}
             postType={contentType}
             onInsertText={handleInsertText}
+          />
+          <MediaLibraryPanel
+            onSelectMedia={(mediaItem) => {
+              // Add media from library to current post
+              setMedia(prev => {
+                // Prevent duplicates by URL
+                if (prev.some(m => m.url === mediaItem.url)) {
+                  return prev
+                }
+                return [...prev, mediaItem]
+              })
+              setHasUnsavedChanges(true)
+            }}
+            postId={postId}
+            onSaveFirst={handleSaveAndGetId}
           />
         </div>
       </div>

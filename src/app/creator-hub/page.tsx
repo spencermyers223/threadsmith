@@ -5,9 +5,10 @@ import { FilesSidebar, FileRecord } from '@/components/generate/FilesSidebar'
 import WriteMode from '@/components/creator-hub/WriteMode'
 import GenerateMode from '@/components/creator-hub/GenerateMode'
 import TemplatesMode from '@/components/creator-hub/TemplatesMode'
-import { PenLine, Layers, Lightbulb } from 'lucide-react'
+import MediaMode from '@/components/creator-hub/MediaMode'
+import { PenLine, Layers, Lightbulb, Image } from 'lucide-react'
 
-type Mode = 'write' | 'braindump' | 'templates'
+type Mode = 'write' | 'braindump' | 'templates' | 'media'
 
 export default function CreatorHubPage() {
   const [mode, setMode] = useState<Mode>('braindump')
@@ -42,15 +43,17 @@ export default function CreatorHubPage() {
 
   return (
     <div className="h-full flex">
-      {/* File Sidebar */}
-      <FilesSidebar
-        isExpanded={sidebarExpanded}
-        onToggleExpanded={() => setSidebarExpanded(!sidebarExpanded)}
-        selectedFileId={selectedFile?.id || null}
-        onSelectFile={handleFileSelect}
-        onEditFile={handleEditFile}
-        refreshTrigger={refreshTrigger}
-      />
+      {/* File Sidebar - hidden in Media mode */}
+      {mode !== 'media' && (
+        <FilesSidebar
+          isExpanded={sidebarExpanded}
+          onToggleExpanded={() => setSidebarExpanded(!sidebarExpanded)}
+          selectedFileId={selectedFile?.id || null}
+          onSelectFile={handleFileSelect}
+          onEditFile={handleEditFile}
+          refreshTrigger={refreshTrigger}
+        />
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -98,6 +101,19 @@ export default function CreatorHubPage() {
                 <Layers size={16} />
                 Templates
               </button>
+              <button
+                onClick={() => setMode('media')}
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
+                  ${mode === 'media'
+                    ? 'bg-[var(--background)] text-[var(--foreground)] shadow-sm'
+                    : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+                  }
+                `}
+              >
+                <Image size={16} />
+                Media
+              </button>
             </div>
 
             {/* Mode description */}
@@ -105,6 +121,7 @@ export default function CreatorHubPage() {
               {mode === 'write' && 'Write and organize your research notes'}
               {mode === 'braindump' && 'Free-flow your ideas and get inspired'}
               {mode === 'templates' && 'Use presets for quick generation'}
+              {mode === 'media' && 'Upload and organize your media library'}
             </p>
           </div>
         </div>
@@ -131,6 +148,9 @@ export default function CreatorHubPage() {
               onOpenSidebar={() => setSidebarExpanded(true)}
               onClearFile={() => setSelectedFile(null)}
             />
+          )}
+          {mode === 'media' && (
+            <MediaMode />
           )}
         </div>
       </div>
