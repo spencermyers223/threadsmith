@@ -77,10 +77,27 @@ export async function postThread(tweets: string[]): Promise<ThreadResult> {
 
 /**
  * Fallback to X intent URL (for users without X connection)
+ * Note: X intent doesn't support media, user must add manually
  */
-export function openXIntent(text: string) {
+export function openXIntent(text: string, options?: { hasMedia?: boolean }) {
   const url = `https://x.com/intent/post?text=${encodeURIComponent(text)}`
   window.open(url, '_blank', 'width=550,height=420')
+  
+  // Return info for caller to show media reminder if needed
+  return { hasMedia: options?.hasMedia }
+}
+
+/**
+ * Copy thread tweets to clipboard for manual posting
+ */
+export async function copyThreadToClipboard(tweets: string[]): Promise<boolean> {
+  try {
+    const text = tweets.map((t, i) => `${i + 1}/${tweets.length}\n${t}`).join('\n\n---\n\n')
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    return false
+  }
 }
 
 /**
