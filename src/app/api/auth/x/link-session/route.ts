@@ -14,10 +14,13 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import { generateCodeVerifier, generateCodeChallenge } from '@/lib/x-auth'
 
-const supabaseAdmin = createAdminClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Lazy initialization to avoid build-time errors
+function getSupabaseAdmin() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 // POST - Create a new link session
 export async function POST() {
@@ -30,13 +33,13 @@ export async function POST() {
 
   try {
     // Check subscription limits
-    const { data: subscription } = await supabaseAdmin
+    const { data: subscription } = await getSupabaseAdmin()
       .from('subscriptions')
       .select('max_x_accounts')
       .eq('user_id', user.id)
       .single()
 
-    const { count: currentCount } = await supabaseAdmin
+    const { count: currentCount } = await getSupabaseAdmin()
       .from('x_accounts')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
@@ -57,7 +60,7 @@ export async function POST() {
     // Store session in database (expires in 10 minutes)
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
-    const { error: insertError } = await supabaseAdmin
+    const { error: insertError } = await getSupabaseAdmin()
       .from('x_link_sessions')
       .insert({
         id: sessionId,
@@ -71,9 +74,9 @@ export async function POST() {
     if (insertError) {
       // Table might not exist, create it
       if (insertError.code === '42P01') {
-        await supabaseAdmin.rpc('create_link_sessions_table')
+        await getSupabaseAdmin().rpc('create_link_sessions_table')
         // Retry insert
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('x_link_sessions')
           .insert({
             id: sessionId,
@@ -114,7 +117,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { data: session, error } = await supabaseAdmin
+    const { data: session, error } = await getSupabaseAdmin()
       .from('x_link_sessions')
       .select('status, linked_x_username, expires_at')
       .eq('id', sessionId)

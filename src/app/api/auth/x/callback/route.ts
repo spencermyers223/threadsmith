@@ -16,11 +16,13 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { exchangeCodeForTokens, fetchXUser } from '@/lib/x-auth'
 import crypto from 'crypto'
 
-// Create admin Supabase client for token storage
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Lazy init admin Supabase client to avoid build-time errors
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -103,7 +105,7 @@ async function handleCrossDeviceLink(
   console.log('Cross-device link mode: Session', sessionId)
 
   // Fetch the link session to get the original user
-  const { data: session, error: sessionError } = await supabaseAdmin
+  const { data: session, error: sessionError } = await getSupabaseAdmin()
     .from('x_link_sessions')
     .select('user_id, status')
     .eq('id', sessionId)
@@ -127,7 +129,7 @@ async function handleCrossDeviceLink(
   console.log('Linking X account', xUser.username, 'to user', userId)
 
   // Check if this X account is already linked to ANY user
-  const { data: existingAccount } = await supabaseAdmin
+  const { data: existingAccount } = await getSupabaseAdmin()
     .from('x_accounts')
     .select('id, user_id')
     .eq('x_user_id', xUser.id)
@@ -141,7 +143,7 @@ async function handleCrossDeviceLink(
     } else {
       // Linked to a different user - error
       console.error('X account already linked to another user')
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('x_link_sessions')
         .update({ status: 'failed', error: 'account_already_linked' })
         .eq('id', sessionId)
@@ -152,7 +154,7 @@ async function handleCrossDeviceLink(
     }
   } else {
     // Create new x_account
-    const { data: newAccount, error: createError } = await supabaseAdmin
+    const { data: newAccount, error: createError } = await getSupabaseAdmin()
       .from('x_accounts')
       .insert({
         user_id: userId,
@@ -167,7 +169,7 @@ async function handleCrossDeviceLink(
 
     if (createError || !newAccount) {
       console.error('Failed to create x_account:', createError)
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('x_link_sessions')
         .update({ status: 'failed', error: 'create_failed' })
         .eq('id', sessionId)
@@ -187,7 +189,7 @@ async function handleCrossDeviceLink(
   }
 
   // Mark session as completed
-  await supabaseAdmin
+  await getSupabaseAdmin()
     .from('x_link_sessions')
     .update({ 
       status: 'completed', 
@@ -224,7 +226,7 @@ async function handleLinkAccount(
   console.log('Link mode: Adding X account for user', user.id)
   
   // Check if this X account is already linked to ANY user
-  const { data: existingAccount } = await supabaseAdmin
+  const { data: existingAccount } = await getSupabaseAdmin()
     .from('x_accounts')
     .select('id, user_id')
     .eq('x_user_id', xUser.id)
@@ -244,13 +246,13 @@ async function handleLinkAccount(
     }
   } else {
     // Check subscription limits
-    const { data: subscription } = await supabaseAdmin
+    const { data: subscription } = await getSupabaseAdmin()
       .from('subscriptions')
       .select('max_x_accounts')
       .eq('user_id', user.id)
       .single()
     
-    const { count: currentCount } = await supabaseAdmin
+    const { count: currentCount } = await getSupabaseAdmin()
       .from('x_accounts')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
@@ -264,7 +266,7 @@ async function handleLinkAccount(
     }
     
     // Create new x_account
-    const { data: newAccount, error: createError } = await supabaseAdmin
+    const { data: newAccount, error: createError } = await getSupabaseAdmin()
       .from('x_accounts')
       .insert({
         user_id: user.id,
@@ -309,7 +311,7 @@ async function handleLogin(
   baseUrl: string
 ) {
   // Check if this X account exists in x_accounts
-  const { data: existingXAccount } = await supabaseAdmin
+  const { data: existingXAccount } = await getSupabaseAdmin()
     .from('x_accounts')
     .select('id, user_id')
     .eq('x_user_id', xUser.id)
@@ -325,7 +327,7 @@ async function handleLogin(
     console.log('Existing X account found, logging in user:', userId)
     
     // Update X account metadata (profile picture, display name might have changed)
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from('x_accounts')
       .update({
         x_username: xUser.username,
@@ -336,7 +338,7 @@ async function handleLogin(
       .eq('id', xAccountId)
     
     // Update user metadata in auth
-    await supabaseAdmin.auth.admin.updateUserById(userId, {
+    await getSupabaseAdmin().auth.admin.updateUserById(userId, {
       user_metadata: {
         x_user_id: xUser.id,
         x_username: xUser.username,
@@ -346,7 +348,7 @@ async function handleLogin(
     })
   } else {
     // Check if user exists in profiles (legacy - before x_accounts)
-    const { data: legacyUser } = await supabaseAdmin
+    const { data: legacyUser } = await getSupabaseAdmin()
       .from('profiles')
       .select('id')
       .eq('x_user_id', xUser.id)
@@ -358,7 +360,7 @@ async function handleLogin(
       console.log('Legacy user found, migrating to x_accounts:', userId)
       
       // Create x_account for them
-      const { data: newAccount } = await supabaseAdmin
+      const { data: newAccount } = await getSupabaseAdmin()
         .from('x_accounts')
         .insert({
           user_id: userId,
@@ -379,7 +381,7 @@ async function handleLogin(
       }
       
       // Update user metadata
-      await supabaseAdmin.auth.admin.updateUserById(userId, {
+      await getSupabaseAdmin().auth.admin.updateUserById(userId, {
         user_metadata: {
           x_user_id: xUser.id,
           x_username: xUser.username,
@@ -401,7 +403,7 @@ async function handleLogin(
       const userEmail = `${xUser.id}@x.xthread.io`
       
       // Create auth user
-      const { data: authUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      const { data: authUser, error: createError } = await getSupabaseAdmin().auth.admin.createUser({
         email: userEmail,
         password: userPassword,
         email_confirm: true,
@@ -422,7 +424,7 @@ async function handleLogin(
       console.log('Created new user:', userId)
       
       // Update profile with X info
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('profiles')
         .update({
           x_user_id: xUser.id,
@@ -433,7 +435,7 @@ async function handleLogin(
         .eq('id', userId)
       
       // Create x_account for new user
-      const { data: newAccount } = await supabaseAdmin
+      const { data: newAccount } = await getSupabaseAdmin()
         .from('x_accounts')
         .insert({
           user_id: userId,
@@ -462,7 +464,7 @@ async function handleLogin(
     .update(xUser.id)
     .digest('hex')
   
-  await supabaseAdmin.auth.admin.updateUserById(userId, {
+  await getSupabaseAdmin().auth.admin.updateUserById(userId, {
     password: userPassword,
   })
   
@@ -485,7 +487,7 @@ async function updateTokens(
   tokens: { access_token: string; refresh_token: string; expires_in: number }
 ) {
   // Check if token record exists for this x_account
-  const { data: existing } = await supabaseAdmin
+  const { data: existing } = await getSupabaseAdmin()
     .from('x_tokens')
     .select('id')
     .eq('x_account_id', xAccountId)
@@ -504,13 +506,13 @@ async function updateTokens(
   
   if (existing) {
     // Update existing record
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from('x_tokens')
       .update(tokenData)
       .eq('id', existing.id)
   } else {
     // Insert new record
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from('x_tokens')
       .insert(tokenData)
   }
@@ -524,7 +526,7 @@ async function updateTokens(
 async function createContentProfileForAccount(xAccountId: string, userId: string) {
   try {
     // Check if profile already exists
-    const { data: existing } = await supabaseAdmin
+    const { data: existing } = await getSupabaseAdmin()
       .from('content_profiles')
       .select('id')
       .eq('x_account_id', xAccountId)
@@ -536,7 +538,7 @@ async function createContentProfileForAccount(xAccountId: string, userId: string
     }
     
     // Create new content_profile
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from('content_profiles')
       .insert({
         user_id: userId,

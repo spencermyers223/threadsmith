@@ -32,11 +32,13 @@ function jsonResponse(data: unknown, options: { status?: number; headers?: Recor
   });
 }
 
-// Create admin Supabase client
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Lazy init to avoid build-time errors
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,14 +51,14 @@ export async function POST(request: NextRequest) {
     const token = authHeader.slice(7)
     
     // Verify the token and get user
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+    const { data: { user }, error: authError } = await getSupabaseAdmin().auth.getUser(token)
     
     if (authError || !user) {
       return jsonResponse({ error: 'Invalid token' }, { status: 401 })
     }
     
     // Check premium status
-    const { data: profile } = await supabaseAdmin
+    const { data: profile } = await getSupabaseAdmin()
       .from('profiles')
       .select('subscription_status')
       .eq('id', user.id)
@@ -76,7 +78,7 @@ export async function POST(request: NextRequest) {
     // Get user's X tokens - check x_tokens first, then x_accounts
     let tokens = null
     
-    const { data: xTokens } = await supabaseAdmin
+    const { data: xTokens } = await getSupabaseAdmin()
       .from('x_tokens')
       .select('access_token, expires_at')
       .eq('user_id', user.id)
@@ -86,7 +88,7 @@ export async function POST(request: NextRequest) {
       tokens = xTokens
     } else {
       // Fallback: check x_accounts table
-      const { data: xAccount } = await supabaseAdmin
+      const { data: xAccount } = await getSupabaseAdmin()
         .from('x_accounts')
         .select('access_token, token_expires_at')
         .eq('user_id', user.id)

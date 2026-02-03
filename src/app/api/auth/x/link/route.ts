@@ -12,10 +12,13 @@ import { cookies } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import { buildAuthUrl, generateState } from '@/lib/x-auth'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Lazy init to avoid build-time errors
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function GET(request: NextRequest) {
   const sessionId = request.nextUrl.searchParams.get('session')
@@ -33,7 +36,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Fetch the link session to get the code challenge
-    const { data: session, error } = await supabaseAdmin
+    const { data: session, error } = await getSupabaseAdmin()
       .from('x_link_sessions')
       .select('*')
       .eq('id', sessionId)
