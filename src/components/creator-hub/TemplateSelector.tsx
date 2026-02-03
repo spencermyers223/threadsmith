@@ -30,6 +30,7 @@ const CATEGORY_ICONS: Record<string, typeof Sparkles> = {
 }
 
 const CATEGORY_COLORS: Record<string, { text: string; bg: string; border: string }> = {
+  thread: { text: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/30' },
   alpha: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
   contrarian: { text: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/30' },
   'build-in-public': { text: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/30' },
