@@ -56,33 +56,41 @@ export async function getValidXTokens(userId: string, xAccountId?: string): Prom
       tokenRecordId = xTokens.id
     }
   } else {
-    // Legacy: check x_tokens first, then x_accounts as fallback
-    const { data: xTokens } = await supabaseAdmin
-      .from('x_tokens')
-      .select('id, access_token, refresh_token, x_user_id, x_username, expires_at')
+    // Get primary X account first, then fetch its tokens
+    const { data: primaryAccount } = await supabaseAdmin
+      .from('x_accounts')
+      .select('id')
       .eq('user_id', userId)
+      .eq('is_primary', true)
       .single()
     
-    if (xTokens?.access_token) {
-      tokens = xTokens
-      tokenRecordId = xTokens.id
-    } else {
-      // Fallback: check x_accounts table (multi-account support)
-      const { data: xAccount } = await supabaseAdmin
-        .from('x_accounts')
-        .select('access_token, refresh_token, x_user_id, x_username, token_expires_at')
+    if (primaryAccount?.id) {
+      // Fetch tokens for primary X account
+      const { data: xTokens } = await supabaseAdmin
+        .from('x_tokens')
+        .select('id, access_token, refresh_token, x_user_id, x_username, expires_at')
+        .eq('x_account_id', primaryAccount.id)
         .eq('user_id', userId)
-        .eq('is_primary', true)
         .single()
       
-      if (xAccount?.access_token) {
-        tokens = {
-          access_token: xAccount.access_token,
-          refresh_token: xAccount.refresh_token,
-          x_user_id: xAccount.x_user_id,
-          x_username: xAccount.x_username,
-          expires_at: xAccount.token_expires_at,
-        }
+      if (xTokens?.access_token) {
+        tokens = xTokens
+        tokenRecordId = xTokens.id
+      }
+    }
+    
+    // Fallback: check x_tokens without x_account_id (legacy)
+    if (!tokens) {
+      const { data: legacyTokens } = await supabaseAdmin
+        .from('x_tokens')
+        .select('id, access_token, refresh_token, x_user_id, x_username, expires_at')
+        .eq('user_id', userId)
+        .is('x_account_id', null)
+        .single()
+      
+      if (legacyTokens?.access_token) {
+        tokens = legacyTokens
+        tokenRecordId = legacyTokens.id
       }
     }
   }
