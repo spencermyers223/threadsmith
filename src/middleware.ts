@@ -33,14 +33,22 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // Always refresh the session - this updates tokens if needed
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const pathname = request.nextUrl.pathname
+
+  // For API routes, just return response with refreshed cookies (no redirects)
+  if (pathname.startsWith('/api')) {
+    return response
+  }
+
   // Protected routes - redirect to login if not authenticated
   const protectedPaths = ['/dashboard', '/drafts', '/settings', '/profile', '/generate', '/calendar', '/creator-hub', '/customization', '/analytics']
   const isProtectedPath = protectedPaths.some(path =>
-    request.nextUrl.pathname.startsWith(path)
+    pathname.startsWith(path)
   )
 
   if (isProtectedPath && !user) {
@@ -48,12 +56,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect authenticated users away from landing page to creator-hub
-  if (request.nextUrl.pathname === '/' && user) {
+  if (pathname === '/' && user) {
     return NextResponse.redirect(new URL('/creator-hub', request.url))
   }
 
   // Redirect old /generate route to /creator-hub
-  if (request.nextUrl.pathname === '/generate' && user) {
+  if (pathname === '/generate' && user) {
     return NextResponse.redirect(new URL('/creator-hub', request.url))
   }
 
@@ -67,8 +75,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - api (API routes)
+     * Now includes API routes for session refresh!
      */
-    '/((?!_next/static|_next/image|favicon.ico|api).*)',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }
