@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useXAccount } from '@/contexts/XAccountContext'
 import {
   ArrowLeft,

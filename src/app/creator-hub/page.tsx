@@ -7,8 +7,7 @@ import GenerateMode from '@/components/creator-hub/GenerateMode'
 import TemplatesMode from '@/components/creator-hub/TemplatesMode'
 import MediaMode from '@/components/creator-hub/MediaMode'
 import RepurposeMode from '@/components/creator-hub/RepurposeMode'
-import { PenLine, Layers, Lightbulb, Zap } from 'lucide-react'
-import Image from 'lucide-react/icons/image'
+import { PenLine, Layers, Lightbulb, Zap, Image as ImageIcon } from 'lucide-react'
 
 type Mode = 'write' | 'braindump' | 'templates' | 'repurpose' | 'media'
 
@@ -112,8 +111,7 @@ export default function CreatorHubPage() {
                 }
               `}
             >
-              {/* eslint-disable-next-line jsx-a11y/alt-text */}
-              <Image size={16} />
+              <ImageIcon size={16} />
               Media
             </button>
           </div>
